@@ -1,0 +1,57 @@
+# oapi-codegen configuration for Slurm REST API client generation
+
+# Configuration for v0.0.42 (stable version)
+v0_0_42:
+  package: v0_0_42
+  output: internal/api/v0_0_42/client.go
+  generate:
+    client: true
+    models: true
+    embedded-spec: true
+  compatibility:
+    always-prefix-enum-values: true
+  output-options:
+    skip-fmt: false
+    skip-prune: false
+
+# Configuration for v0.0.43 (latest version)  
+v0_0_43:
+  package: v0_0_43
+  output: internal/api/v0_0_43/client.go
+  generate:
+    client: true
+    models: true
+    embedded-spec: true
+  compatibility:
+    always-prefix-enum-values: true
+  output-options:
+    skip-fmt: false
+    skip-prune: false
+
+# Configuration for v0.0.41
+v0_0_41:
+  package: v0_0_41
+  output: internal/api/v0_0_41/client.go
+  generate:
+    client: true
+    models: true
+    embedded-spec: true
+  compatibility:
+    always-prefix-enum-values: true
+  output-options:
+    skip-fmt: false
+    skip-prune: false
+
+# Configuration for v0.0.40
+v0_0_40:
+  package: v0_0_40
+  output: internal/api/v0_0_40/client.go
+  generate:
+    client: true
+    models: true
+    embedded-spec: true
+  compatibility:
+    always-prefix-enum-values: true
+  output-options:
+    skip-fmt: false
+    skip-prune: false
