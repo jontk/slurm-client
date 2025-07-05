@@ -1,6 +1,6 @@
 # Makefile for slurm-client
 
-.PHONY: build test lint fmt vet clean docs help install-tools
+.PHONY: build test lint fmt vet clean docs help install-tools generate download-specs
 
 # Variables
 BINARY_NAME=slurm-client
@@ -64,6 +64,10 @@ install-tools:
 	@command -v golangci-lint >/dev/null 2>&1 || { \
 		echo "Installing golangci-lint..."; \
 		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+	}
+	@command -v oapi-codegen >/dev/null 2>&1 || { \
+		echo "Installing oapi-codegen..."; \
+		go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest; \
 	}
 
 # Tidy up dependencies
@@ -132,6 +136,28 @@ check-version:
 release-prep: check-version clean tidy fmt vet lint test
 	@echo "Release preparation complete"
 
+# Download OpenAPI specifications
+download-specs:
+	@echo "Downloading OpenAPI specifications..."
+	@./tools/codegen/download-specs.sh
+
+# Generate API clients from OpenAPI specs
+generate: install-tools download-specs
+	@echo "Generating API clients..."
+	@for version in v0.0.40 v0.0.41 v0.0.42 v0.0.43; do \
+		echo "Generating client for $$version..."; \
+		go run tools/codegen/generate.go $$version || echo "Failed to generate $$version client"; \
+	done
+
+# Generate specific version client
+generate-version: install-tools
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Usage: make generate-version VERSION=v0.0.42"; \
+		exit 1; \
+	fi
+	@echo "Generating client for $(VERSION)..."
+	@go run tools/codegen/generate.go $(VERSION)
+
 # Show help
 help:
 	@echo "Available targets:"
@@ -145,6 +171,9 @@ help:
 	@echo "  clean           - Clean build artifacts"
 	@echo "  docs            - Generate documentation"
 	@echo "  install-tools   - Install development tools"
+	@echo "  download-specs  - Download OpenAPI specifications"
+	@echo "  generate        - Generate all API clients from specs"
+	@echo "  generate-version - Generate specific version client (VERSION=v0.0.42)"
 	@echo "  tidy            - Tidy up dependencies"
 	@echo "  update          - Update dependencies"
 	@echo "  security        - Run security audit"
