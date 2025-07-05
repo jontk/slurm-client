@@ -1,0 +1,176 @@
+openapi: 3.0.2
+info:
+  title: Slurm REST API
+  version: v0.0.43
+  description: Placeholder specification for Slurm REST API v0.0.43
+servers:
+  - url: /slurm/v0.0.43
+paths:
+  /jobs:
+    get:
+      summary: List jobs
+      operationId: listJobs
+      responses:
+        '200':
+          description: Job list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Job'
+    post:
+      summary: Submit job
+      operationId: submitJob
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobSubmission'
+      responses:
+        '200':
+          description: Job submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobSubmitResponse'
+  /job/{job_id}:
+    parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get job
+      operationId: getJob
+      responses:
+        '200':
+          description: Job details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+    delete:
+      summary: Cancel job
+      operationId: cancelJob
+      responses:
+        '200':
+          description: Job cancelled
+  /nodes:
+    get:
+      summary: List nodes
+      operationId: listNodes
+      responses:
+        '200':
+          description: Node list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nodes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Node'
+  /partitions:
+    get:
+      summary: List partitions
+      operationId: listPartitions
+      responses:
+        '200':
+          description: Partition list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  partitions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Partition'
+components:
+  schemas:
+    Job:
+      type: object
+      properties:
+        job_id:
+          type: string
+        name:
+          type: string
+        user_id:
+          type: string
+        job_state:
+          type: string
+          enum: [PENDING, RUNNING, COMPLETED, CANCELLED, FAILED, TIMEOUT]
+        partition:
+          type: string
+        submit_time:
+          type: string
+          format: date-time
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        cpus:
+          type: integer
+        memory:
+          type: integer
+    JobSubmission:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        script:
+          type: string
+        partition:
+          type: string
+        cpus:
+          type: integer
+        memory:
+          type: integer
+        time_limit:
+          type: integer
+    JobSubmitResponse:
+      type: object
+      properties:
+        job_id:
+          type: string
+    Node:
+      type: object
+      properties:
+        name:
+          type: string
+        state:
+          type: string
+          enum: [IDLE, ALLOCATED, DRAIN, DOWN, MIX]
+        cpus:
+          type: integer
+        memory:
+          type: integer
+        features:
+          type: array
+          items:
+            type: string
+    Partition:
+      type: object
+      properties:
+        name:
+          type: string
+        state:
+          type: string
+        total_cpus:
+          type: integer
+        total_memory:
+          type: integer
+        max_time_limit:
+          type: integer
+        default_time_limit:
+          type: integer
