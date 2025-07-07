@@ -3,20 +3,25 @@
 package v0_0_41
 
 import (
-	"context"
 	"net/http"
-	
-	"github.com/jontk/slurm-client/internal/factory"
 )
 
-// Client implements the SlurmClient interface for API version v0.0.41
-type Client struct {
-	apiClient *ClientWithResponses
-	config    *factory.ClientConfig
+// ClientConfig holds configuration for the API client
+type ClientConfig struct {
+	BaseURL     string
+	HTTPClient  *http.Client
+	APIKey      string
+	Debug       bool
 }
 
-// NewClient creates a new v0.0.41 client
-func NewClient(config *factory.ClientConfig) (*Client, error) {
+// WrapperClient wraps the generated client for version v0.0.41
+type WrapperClient struct {
+	apiClient *ClientWithResponses
+	config    *ClientConfig
+}
+
+// NewWrapperClient creates a new v0.0.41 wrapper client
+func NewWrapperClient(config *ClientConfig) (*WrapperClient, error) {
 	// Create HTTP client with authentication
 	httpClient := config.HTTPClient
 	if httpClient == nil {
@@ -29,39 +34,39 @@ func NewClient(config *factory.ClientConfig) (*Client, error) {
 		return nil, err
 	}
 	
-	return &Client{
+	return &WrapperClient{
 		apiClient: apiClient,
 		config:    config,
 	}, nil
 }
 
 // Version returns the API version
-func (c *Client) Version() string {
+func (c *WrapperClient) Version() string {
 	return "v0.0.41"
 }
 
 // Jobs returns the JobManager
-func (c *Client) Jobs() factory.JobManager {
-	return &JobManager{client: c}
+func (c *WrapperClient) Jobs() *JobManager {
+	return NewJobManager(c)
 }
 
 // Nodes returns the NodeManager  
-func (c *Client) Nodes() factory.NodeManager {
-	return &NodeManager{client: c}
+func (c *WrapperClient) Nodes() *NodeManager {
+	return NewNodeManager(c)
 }
 
 // Partitions returns the PartitionManager
-func (c *Client) Partitions() factory.PartitionManager {
-	return &PartitionManager{client: c}
+func (c *WrapperClient) Partitions() *PartitionManager {
+	return NewPartitionManager(c)
 }
 
 // Info returns the InfoManager
-func (c *Client) Info() factory.InfoManager {
-	return &InfoManager{client: c}
+func (c *WrapperClient) Info() *InfoManager {
+	return NewInfoManager(c)
 }
 
 // Close closes the client
-func (c *Client) Close() error {
+func (c *WrapperClient) Close() error {
 	// No resources to close for HTTP client
 	return nil
 }
