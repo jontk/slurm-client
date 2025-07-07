@@ -2,7 +2,6 @@ package retry
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"math/rand"
 	"net/http"

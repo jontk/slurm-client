@@ -3,9 +3,7 @@
 package v0_0_42
 
 import (
-	"context"
 	"net/http"
-	"time"
 )
 
 // ClientConfig holds configuration for the API client
@@ -49,22 +47,22 @@ func (c *WrapperClient) Version() string {
 
 // Jobs returns the JobManager
 func (c *WrapperClient) Jobs() *JobManager {
-	return &JobManager{client: c}
+	return NewJobManager(c)
 }
 
 // Nodes returns the NodeManager  
 func (c *WrapperClient) Nodes() *NodeManager {
-	return &NodeManager{client: c}
+	return NewNodeManager(c)
 }
 
 // Partitions returns the PartitionManager
 func (c *WrapperClient) Partitions() *PartitionManager {
-	return &PartitionManager{client: c}
+	return NewPartitionManager(c)
 }
 
 // Info returns the InfoManager
 func (c *WrapperClient) Info() *InfoManager {
-	return &InfoManager{client: c}
+	return NewInfoManager(c)
 }
 
 // Close closes the client

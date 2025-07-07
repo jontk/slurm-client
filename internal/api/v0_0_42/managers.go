@@ -174,7 +174,7 @@ func (j *JobManager) List(ctx context.Context, opts *ListJobsOptions) (*JobList,
 	// Convert API response to common format
 	jobs := make([]Job, 0)
 	if resp.JSON200 != nil && resp.JSON200.Jobs != nil {
-		for _, apiJob := range *resp.JSON200.Jobs {
+		for _, apiJob := range resp.JSON200.Jobs {
 			job := convertJobFromAPI(apiJob)
 			jobs = append(jobs, job)
 		}
@@ -188,7 +188,7 @@ func (j *JobManager) List(ctx context.Context, opts *ListJobsOptions) (*JobList,
 
 // Get retrieves a specific job by ID
 func (j *JobManager) Get(ctx context.Context, jobID string) (*Job, error) {
-	resp, err := j.client.apiClient.GetJobWithResponse(ctx, jobID)
+	resp, err := j.client.apiClient.SlurmV0042GetJobWithResponse(ctx, jobID, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get job %s: %w", jobID, err)
 	}
@@ -197,11 +197,11 @@ func (j *JobManager) Get(ctx context.Context, jobID string) (*Job, error) {
 		return nil, fmt.Errorf("API error: %d", resp.StatusCode())
 	}
 	
-	if resp.JSON200 == nil {
+	if resp.JSON200 == nil || len(resp.JSON200.Jobs) == 0 {
 		return nil, fmt.Errorf("no job data returned")
 	}
 	
-	job := convertJobFromAPI(*resp.JSON200)
+	job := convertJobFromAPI(resp.JSON200.Jobs[0])
 	return &job, nil
 }
 
@@ -210,7 +210,7 @@ func (j *JobManager) Submit(ctx context.Context, job *JobSubmission) (*JobSubmit
 	// Convert submission to API format
 	apiSubmission := convertJobSubmissionToAPI(job)
 	
-	resp, err := j.client.apiClient.SubmitJobWithResponse(ctx, apiSubmission)
+	resp, err := j.client.apiClient.SlurmV0042PostJobSubmitWithResponse(ctx, apiSubmission)
 	if err != nil {
 		return nil, fmt.Errorf("failed to submit job: %w", err)
 	}
@@ -224,13 +224,13 @@ func (j *JobManager) Submit(ctx context.Context, job *JobSubmission) (*JobSubmit
 	}
 	
 	return &JobSubmitResponse{
-		JobID: *resp.JSON200.JobId,
+		JobID: strconv.Itoa(int(*resp.JSON200.JobId)),
 	}, nil
 }
 
 // Cancel cancels a job
 func (j *JobManager) Cancel(ctx context.Context, jobID string) error {
-	resp, err := j.client.apiClient.CancelJobWithResponse(ctx, jobID)
+	resp, err := j.client.apiClient.SlurmV0042DeleteJobWithResponse(ctx, jobID, nil)
 	if err != nil {
 		return fmt.Errorf("failed to cancel job %s: %w", jobID, err)
 	}
@@ -274,23 +274,12 @@ func NewNodeManager(client *WrapperClient) *NodeManager {
 
 // List lists nodes with optional filtering
 func (n *NodeManager) List(ctx context.Context, opts *ListNodesOptions) (*NodeList, error) {
-	params := &ListNodesParams{}
+	params := &SlurmV0042GetNodesParams{}
 	
-	if opts != nil {
-		if opts.State != "" {
-			state := string(opts.State)
-			params.State = &state
-		}
-		if opts.Partition != "" {
-			params.Partition = &opts.Partition
-		}
-		if len(opts.Features) > 0 {
-			features := strings.Join(opts.Features, ",")
-			params.Features = &features
-		}
-	}
+	// Note: v0.0.42 API doesn't support filtering parameters in the URL params
+	// Filtering would need to be done client-side or with different endpoints
 	
-	resp, err := n.client.apiClient.ListNodesWithResponse(ctx, params)
+	resp, err := n.client.apiClient.SlurmV0042GetNodesWithResponse(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list nodes: %w", err)
 	}
@@ -301,8 +290,8 @@ func (n *NodeManager) List(ctx context.Context, opts *ListNodesOptions) (*NodeLi
 	
 	// Convert API response to common format
 	nodes := make([]Node, 0)
-	if resp.JSON200 != nil && resp.JSON200.Nodes != nil {
-		for _, apiNode := range *resp.JSON200.Nodes {
+	if resp.JSON200 != nil {
+		for _, apiNode := range resp.JSON200.Nodes {
 			node := convertNodeFromAPI(apiNode)
 			nodes = append(nodes, node)
 		}
@@ -350,7 +339,7 @@ func NewPartitionManager(client *WrapperClient) *PartitionManager {
 
 // List lists partitions
 func (p *PartitionManager) List(ctx context.Context) (*PartitionList, error) {
-	resp, err := p.client.apiClient.ListPartitionsWithResponse(ctx)
+	resp, err := p.client.apiClient.SlurmV0042GetPartitionsWithResponse(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list partitions: %w", err)
 	}
@@ -361,8 +350,8 @@ func (p *PartitionManager) List(ctx context.Context) (*PartitionList, error) {
 	
 	// Convert API response to common format
 	partitions := make([]Partition, 0)
-	if resp.JSON200 != nil && resp.JSON200.Partitions != nil {
-		for _, apiPartition := range *resp.JSON200.Partitions {
+	if resp.JSON200 != nil {
+		for _, apiPartition := range resp.JSON200.Partitions {
 			partition := convertPartitionFromAPI(apiPartition)
 			partitions = append(partitions, partition)
 		}
@@ -398,7 +387,7 @@ func NewInfoManager(client *WrapperClient) *InfoManager {
 // Ping tests connectivity to the Slurm REST API
 func (i *InfoManager) Ping(ctx context.Context) error {
 	// Try to get a simple endpoint to test connectivity
-	_, err := i.client.apiClient.ListPartitionsWithResponse(ctx)
+	_, err := i.client.apiClient.SlurmV0042GetPartitionsWithResponse(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("ping failed: %w", err)
 	}
@@ -428,46 +417,52 @@ func (i *InfoManager) Statistics(ctx context.Context) (*ClusterStats, error) {
 
 // Conversion functions between API types and common types
 
-func convertJobFromAPI(apiJob Job) Job {
+func convertJobFromAPI(apiJob V0042JobInfo) Job {
 	job := Job{
 		Metadata: make(map[string]interface{}),
 	}
 	
 	if apiJob.JobId != nil {
-		job.ID = *apiJob.JobId
+		job.ID = strconv.Itoa(int(*apiJob.JobId))
 	}
 	if apiJob.Name != nil {
 		job.Name = *apiJob.Name
 	}
 	if apiJob.UserId != nil {
-		job.UserID = *apiJob.UserId
+		job.UserID = strconv.Itoa(int(*apiJob.UserId))
 	}
-	if apiJob.JobState != nil {
-		job.State = JobState(*apiJob.JobState)
+	if apiJob.JobState != nil && len(*apiJob.JobState) > 0 {
+		job.State = JobState((*apiJob.JobState)[0])
 	}
 	if apiJob.Partition != nil {
 		job.Partition = *apiJob.Partition
 	}
-	if apiJob.Cpus != nil {
-		job.CPUs = int(*apiJob.Cpus)
+	if apiJob.Cpus != nil && apiJob.Cpus.Set != nil && *apiJob.Cpus.Set {
+		if apiJob.Cpus.Number != nil {
+			job.CPUs = int(*apiJob.Cpus.Number)
+		}
 	}
-	if apiJob.Memory != nil {
-		job.Memory = int(*apiJob.Memory)
+	if apiJob.MemoryPerNode != nil && apiJob.MemoryPerNode.Set != nil && *apiJob.MemoryPerNode.Set {
+		if apiJob.MemoryPerNode.Number != nil {
+			job.Memory = int(*apiJob.MemoryPerNode.Number)
+		}
 	}
 	
 	// Handle time fields
-	if apiJob.SubmitTime != nil {
-		if t, err := time.Parse(time.RFC3339, *apiJob.SubmitTime); err == nil {
-			job.SubmitTime = t
+	if apiJob.SubmitTime != nil && apiJob.SubmitTime.Set != nil && *apiJob.SubmitTime.Set {
+		if apiJob.SubmitTime.Number != nil {
+			job.SubmitTime = time.Unix(*apiJob.SubmitTime.Number, 0)
 		}
 	}
-	if apiJob.StartTime != nil {
-		if t, err := time.Parse(time.RFC3339, *apiJob.StartTime); err == nil {
+	if apiJob.StartTime != nil && apiJob.StartTime.Set != nil && *apiJob.StartTime.Set {
+		if apiJob.StartTime.Number != nil {
+			t := time.Unix(*apiJob.StartTime.Number, 0)
 			job.StartTime = &t
 		}
 	}
-	if apiJob.EndTime != nil {
-		if t, err := time.Parse(time.RFC3339, *apiJob.EndTime); err == nil {
+	if apiJob.EndTime != nil && apiJob.EndTime.Set != nil && *apiJob.EndTime.Set {
+		if apiJob.EndTime.Number != nil {
+			t := time.Unix(*apiJob.EndTime.Number, 0)
 			job.EndTime = &t
 		}
 	}
@@ -475,35 +470,46 @@ func convertJobFromAPI(apiJob Job) Job {
 	return job
 }
 
-func convertJobSubmissionToAPI(submission *JobSubmission) JobSubmission {
-	apiSubmission := JobSubmission{}
+func convertJobSubmissionToAPI(submission *JobSubmission) V0042JobSubmitReq {
+	jobDesc := &V0042JobDescMsg{}
 	
 	if submission.Name != "" {
-		apiSubmission.Name = &submission.Name
+		jobDesc.Name = &submission.Name
 	}
 	if submission.Script != "" {
-		apiSubmission.Script = &submission.Script
+		jobDesc.Script = &submission.Script
 	}
 	if submission.Partition != "" {
-		apiSubmission.Partition = &submission.Partition
+		jobDesc.Partition = &submission.Partition
 	}
 	if submission.CPUs > 0 {
-		cpus := int32(submission.CPUs)
-		apiSubmission.Cpus = &cpus
+		jobDesc.CpusPerTask = int32ptr(int32(submission.CPUs))
 	}
 	if submission.Memory > 0 {
-		memory := int32(submission.Memory)
-		apiSubmission.Memory = &memory
+		jobDesc.MemoryPerNode = &V0042Uint64NoValStruct{
+			Set:    boolptr(true),
+			Number: int64ptr(int64(submission.Memory)),
+		}
 	}
 	if submission.TimeLimit > 0 {
-		timeLimit := int32(submission.TimeLimit)
-		apiSubmission.TimeLimit = &timeLimit
+		jobDesc.TimeLimit = &V0042Uint32NoValStruct{
+			Set:    boolptr(true),
+			Number: int32ptr(int32(submission.TimeLimit)),
+		}
 	}
 	
-	return apiSubmission
+	return V0042JobSubmitReq{
+		Job: jobDesc,
+	}
 }
 
-func convertNodeFromAPI(apiNode Node) Node {
+// Helper functions for pointer creation
+func int32ptr(i int32) *int32 { return &i }
+func int64ptr(i int64) *int64 { return &i }
+func uint32ptr(i uint32) *uint32 { return &i }
+func boolptr(b bool) *bool { return &b }
+
+func convertNodeFromAPI(apiNode V0042Node) Node {
 	node := Node{
 		Metadata: make(map[string]interface{}),
 	}
@@ -511,23 +517,23 @@ func convertNodeFromAPI(apiNode Node) Node {
 	if apiNode.Name != nil {
 		node.Name = *apiNode.Name
 	}
-	if apiNode.State != nil {
-		node.State = NodeState(*apiNode.State)
+	if apiNode.State != nil && len(*apiNode.State) > 0 {
+		node.State = NodeState((*apiNode.State)[0])
 	}
 	if apiNode.Cpus != nil {
 		node.CPUs = int(*apiNode.Cpus)
 	}
-	if apiNode.Memory != nil {
-		node.Memory = int(*apiNode.Memory)
+	if apiNode.AllocMemory != nil {
+		node.Memory = int(*apiNode.AllocMemory)
 	}
-	if apiNode.Features != nil {
-		node.Features = *apiNode.Features
+	if apiNode.ActiveFeatures != nil && len(*apiNode.ActiveFeatures) > 0 {
+		node.Features = strings.Join(*apiNode.ActiveFeatures, ",")
 	}
 	
 	return node
 }
 
-func convertPartitionFromAPI(apiPartition Partition) Partition {
+func convertPartitionFromAPI(apiPartition V0042PartitionInfo) Partition {
 	partition := Partition{
 		Metadata: make(map[string]interface{}),
 	}
@@ -535,20 +541,24 @@ func convertPartitionFromAPI(apiPartition Partition) Partition {
 	if apiPartition.Name != nil {
 		partition.Name = *apiPartition.Name
 	}
-	if apiPartition.State != nil {
-		partition.State = *apiPartition.State
+	if apiPartition.Partition != nil && apiPartition.Partition.State != nil && len(*apiPartition.Partition.State) > 0 {
+		partition.State = (*apiPartition.Partition.State)[0]
 	}
-	if apiPartition.TotalCpus != nil {
-		partition.TotalCPUs = int(*apiPartition.TotalCpus)
+	if apiPartition.Cpus != nil && apiPartition.Cpus.Total != nil {
+		partition.TotalCPUs = int(*apiPartition.Cpus.Total)
 	}
-	if apiPartition.TotalMemory != nil {
-		partition.TotalMemory = int(*apiPartition.TotalMemory)
+	if apiPartition.Defaults != nil && apiPartition.Defaults.MemoryPerCpu != nil {
+		partition.TotalMemory = int(*apiPartition.Defaults.MemoryPerCpu)
 	}
-	if apiPartition.MaxTimeLimit != nil {
-		partition.MaxTimeLimit = int(*apiPartition.MaxTimeLimit)
+	if apiPartition.Maximums != nil && apiPartition.Maximums.Time != nil && apiPartition.Maximums.Time.Set != nil && *apiPartition.Maximums.Time.Set {
+		if apiPartition.Maximums.Time.Number != nil {
+			partition.MaxTimeLimit = int(*apiPartition.Maximums.Time.Number)
+		}
 	}
-	if apiPartition.DefaultTimeLimit != nil {
-		partition.DefaultTimeLimit = int(*apiPartition.DefaultTimeLimit)
+	if apiPartition.Defaults != nil && apiPartition.Defaults.Time != nil && apiPartition.Defaults.Time.Set != nil && *apiPartition.Defaults.Time.Set {
+		if apiPartition.Defaults.Time.Number != nil {
+			partition.DefaultTimeLimit = int(*apiPartition.Defaults.Time.Number)
+		}
 	}
 	
 	return partition
