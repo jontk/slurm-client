@@ -6,7 +6,6 @@ import (
 	"context"
 	"net/http"
 	
-	"github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/internal/factory"
 )
 
@@ -42,22 +41,22 @@ func (c *Client) Version() string {
 }
 
 // Jobs returns the JobManager
-func (c *Client) Jobs() slurm.JobManager {
+func (c *Client) Jobs() factory.JobManager {
 	return &JobManager{client: c}
 }
 
 // Nodes returns the NodeManager  
-func (c *Client) Nodes() slurm.NodeManager {
+func (c *Client) Nodes() factory.NodeManager {
 	return &NodeManager{client: c}
 }
 
 // Partitions returns the PartitionManager
-func (c *Client) Partitions() slurm.PartitionManager {
+func (c *Client) Partitions() factory.PartitionManager {
 	return &PartitionManager{client: c}
 }
 
 // Info returns the InfoManager
-func (c *Client) Info() slurm.InfoManager {
+func (c *Client) Info() factory.InfoManager {
 	return &InfoManager{client: c}
 }
 

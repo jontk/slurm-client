@@ -15,87 +15,4145 @@ import (
 	"net/url"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/oapi-codegen/runtime"
 )
 
-// Defines values for JobJobState.
 const (
-	CANCELLED JobJobState = "CANCELLED"
-	COMPLETED JobJobState = "COMPLETED"
-	FAILED    JobJobState = "FAILED"
-	PENDING   JobJobState = "PENDING"
-	RUNNING   JobJobState = "RUNNING"
-	TIMEOUT   JobJobState = "TIMEOUT"
+	BearerAuthScopes = "bearerAuth.Scopes"
+	TokenScopes      = "token.Scopes"
+	UserScopes       = "user.Scopes"
 )
 
-// Defines values for NodeState.
+// Defines values for V0040RollupStatsType.
 const (
-	ALLOCATED NodeState = "ALLOCATED"
-	DOWN      NodeState = "DOWN"
-	DRAIN     NodeState = "DRAIN"
-	IDLE      NodeState = "IDLE"
-	MIX       NodeState = "MIX"
+	Internal V0040RollupStatsType = "internal"
+	Unknown  V0040RollupStatsType = "unknown"
+	User     V0040RollupStatsType = "user"
 )
 
-// Job defines model for Job.
-type Job struct {
-	Cpus       *int         `json:"cpus,omitempty"`
-	EndTime    *time.Time   `json:"end_time,omitempty"`
-	JobId      *string      `json:"job_id,omitempty"`
-	JobState   *JobJobState `json:"job_state,omitempty"`
-	Memory     *int         `json:"memory,omitempty"`
-	Name       *string      `json:"name,omitempty"`
-	Partition  *string      `json:"partition,omitempty"`
-	StartTime  *time.Time   `json:"start_time,omitempty"`
-	SubmitTime *time.Time   `json:"submit_time,omitempty"`
-	UserId     *string      `json:"user_id,omitempty"`
+// Defines values for SlurmV0040DeleteJobParamsFlags.
+const (
+	ARRAYTASK         SlurmV0040DeleteJobParamsFlags = "ARRAY_TASK"
+	BATCHJOB          SlurmV0040DeleteJobParamsFlags = "BATCH_JOB"
+	CRONJOBS          SlurmV0040DeleteJobParamsFlags = "CRON_JOBS"
+	FEDERATIONREQUEUE SlurmV0040DeleteJobParamsFlags = "FEDERATION_REQUEUE"
+	FULLJOB           SlurmV0040DeleteJobParamsFlags = "FULL_JOB"
+	FULLSTEPSONLY     SlurmV0040DeleteJobParamsFlags = "FULL_STEPS_ONLY"
+	HURRY             SlurmV0040DeleteJobParamsFlags = "HURRY"
+	NOCRONJOBS        SlurmV0040DeleteJobParamsFlags = "NO_CRON_JOBS"
+	NOSIBLINGJOBS     SlurmV0040DeleteJobParamsFlags = "NO_SIBLING_JOBS"
+	OUTOFMEMORY       SlurmV0040DeleteJobParamsFlags = "OUT_OF_MEMORY"
+	RESERVATIONJOB    SlurmV0040DeleteJobParamsFlags = "RESERVATION_JOB"
+	VERBOSE           SlurmV0040DeleteJobParamsFlags = "VERBOSE"
+	WARNINGSENT       SlurmV0040DeleteJobParamsFlags = "WARNING_SENT"
+)
+
+// Defines values for SlurmV0040GetJobParamsFlags.
+const (
+	SlurmV0040GetJobParamsFlagsALL        SlurmV0040GetJobParamsFlags = "ALL"
+	SlurmV0040GetJobParamsFlagsDETAIL     SlurmV0040GetJobParamsFlags = "DETAIL"
+	SlurmV0040GetJobParamsFlagsFEDERATION SlurmV0040GetJobParamsFlags = "FEDERATION"
+	SlurmV0040GetJobParamsFlagsFUTURE     SlurmV0040GetJobParamsFlags = "FUTURE"
+	SlurmV0040GetJobParamsFlagsLOCAL      SlurmV0040GetJobParamsFlags = "LOCAL"
+	SlurmV0040GetJobParamsFlagsMIXED      SlurmV0040GetJobParamsFlags = "MIXED"
+	SlurmV0040GetJobParamsFlagsSIBLING    SlurmV0040GetJobParamsFlags = "SIBLING"
+)
+
+// Defines values for SlurmV0040GetJobsParamsFlags.
+const (
+	SlurmV0040GetJobsParamsFlagsALL        SlurmV0040GetJobsParamsFlags = "ALL"
+	SlurmV0040GetJobsParamsFlagsDETAIL     SlurmV0040GetJobsParamsFlags = "DETAIL"
+	SlurmV0040GetJobsParamsFlagsFEDERATION SlurmV0040GetJobsParamsFlags = "FEDERATION"
+	SlurmV0040GetJobsParamsFlagsFUTURE     SlurmV0040GetJobsParamsFlags = "FUTURE"
+	SlurmV0040GetJobsParamsFlagsLOCAL      SlurmV0040GetJobsParamsFlags = "LOCAL"
+	SlurmV0040GetJobsParamsFlagsMIXED      SlurmV0040GetJobsParamsFlags = "MIXED"
+	SlurmV0040GetJobsParamsFlagsSIBLING    SlurmV0040GetJobsParamsFlags = "SIBLING"
+)
+
+// Defines values for SlurmV0040GetNodeParamsFlags.
+const (
+	SlurmV0040GetNodeParamsFlagsALL        SlurmV0040GetNodeParamsFlags = "ALL"
+	SlurmV0040GetNodeParamsFlagsDETAIL     SlurmV0040GetNodeParamsFlags = "DETAIL"
+	SlurmV0040GetNodeParamsFlagsFEDERATION SlurmV0040GetNodeParamsFlags = "FEDERATION"
+	SlurmV0040GetNodeParamsFlagsFUTURE     SlurmV0040GetNodeParamsFlags = "FUTURE"
+	SlurmV0040GetNodeParamsFlagsLOCAL      SlurmV0040GetNodeParamsFlags = "LOCAL"
+	SlurmV0040GetNodeParamsFlagsMIXED      SlurmV0040GetNodeParamsFlags = "MIXED"
+	SlurmV0040GetNodeParamsFlagsSIBLING    SlurmV0040GetNodeParamsFlags = "SIBLING"
+)
+
+// Defines values for SlurmV0040GetNodesParamsFlags.
+const (
+	SlurmV0040GetNodesParamsFlagsALL        SlurmV0040GetNodesParamsFlags = "ALL"
+	SlurmV0040GetNodesParamsFlagsDETAIL     SlurmV0040GetNodesParamsFlags = "DETAIL"
+	SlurmV0040GetNodesParamsFlagsFEDERATION SlurmV0040GetNodesParamsFlags = "FEDERATION"
+	SlurmV0040GetNodesParamsFlagsFUTURE     SlurmV0040GetNodesParamsFlags = "FUTURE"
+	SlurmV0040GetNodesParamsFlagsLOCAL      SlurmV0040GetNodesParamsFlags = "LOCAL"
+	SlurmV0040GetNodesParamsFlagsMIXED      SlurmV0040GetNodesParamsFlags = "MIXED"
+	SlurmV0040GetNodesParamsFlagsSIBLING    SlurmV0040GetNodesParamsFlags = "SIBLING"
+)
+
+// Defines values for SlurmV0040GetPartitionParamsFlags.
+const (
+	SlurmV0040GetPartitionParamsFlagsALL        SlurmV0040GetPartitionParamsFlags = "ALL"
+	SlurmV0040GetPartitionParamsFlagsDETAIL     SlurmV0040GetPartitionParamsFlags = "DETAIL"
+	SlurmV0040GetPartitionParamsFlagsFEDERATION SlurmV0040GetPartitionParamsFlags = "FEDERATION"
+	SlurmV0040GetPartitionParamsFlagsFUTURE     SlurmV0040GetPartitionParamsFlags = "FUTURE"
+	SlurmV0040GetPartitionParamsFlagsLOCAL      SlurmV0040GetPartitionParamsFlags = "LOCAL"
+	SlurmV0040GetPartitionParamsFlagsMIXED      SlurmV0040GetPartitionParamsFlags = "MIXED"
+	SlurmV0040GetPartitionParamsFlagsSIBLING    SlurmV0040GetPartitionParamsFlags = "SIBLING"
+)
+
+// Defines values for SlurmV0040GetPartitionsParamsFlags.
+const (
+	SlurmV0040GetPartitionsParamsFlagsALL        SlurmV0040GetPartitionsParamsFlags = "ALL"
+	SlurmV0040GetPartitionsParamsFlagsDETAIL     SlurmV0040GetPartitionsParamsFlags = "DETAIL"
+	SlurmV0040GetPartitionsParamsFlagsFEDERATION SlurmV0040GetPartitionsParamsFlags = "FEDERATION"
+	SlurmV0040GetPartitionsParamsFlagsFUTURE     SlurmV0040GetPartitionsParamsFlags = "FUTURE"
+	SlurmV0040GetPartitionsParamsFlagsLOCAL      SlurmV0040GetPartitionsParamsFlags = "LOCAL"
+	SlurmV0040GetPartitionsParamsFlagsMIXED      SlurmV0040GetPartitionsParamsFlags = "MIXED"
+	SlurmV0040GetPartitionsParamsFlagsSIBLING    SlurmV0040GetPartitionsParamsFlags = "SIBLING"
+)
+
+// Defines values for SlurmdbV0040DeleteClusterParamsClassification.
+const (
+	SlurmdbV0040DeleteClusterParamsClassificationCAPABILITY                          SlurmdbV0040DeleteClusterParamsClassification = "CAPABILITY"
+	SlurmdbV0040DeleteClusterParamsClassificationCAPACITY                            SlurmdbV0040DeleteClusterParamsClassification = "CAPACITY"
+	SlurmdbV0040DeleteClusterParamsClassificationCAPAPACITYBothCAPABILITYAndCAPACITY SlurmdbV0040DeleteClusterParamsClassification = "CAPAPACITY (both CAPABILITY and CAPACITY)"
+	SlurmdbV0040DeleteClusterParamsClassificationUNCLASSIFIED                        SlurmdbV0040DeleteClusterParamsClassification = "UNCLASSIFIED"
+)
+
+// Defines values for SlurmdbV0040DeleteClusterParamsFlags.
+const (
+	SlurmdbV0040DeleteClusterParamsFlagsEXTERNAL       SlurmdbV0040DeleteClusterParamsFlags = "EXTERNAL"
+	SlurmdbV0040DeleteClusterParamsFlagsFEDERATION     SlurmdbV0040DeleteClusterParamsFlags = "FEDERATION"
+	SlurmdbV0040DeleteClusterParamsFlagsMULTIPLESLURMD SlurmdbV0040DeleteClusterParamsFlags = "MULTIPLE_SLURMD"
+	SlurmdbV0040DeleteClusterParamsFlagsREGISTERING    SlurmdbV0040DeleteClusterParamsFlags = "REGISTERING"
+)
+
+// Defines values for SlurmdbV0040GetClusterParamsClassification.
+const (
+	SlurmdbV0040GetClusterParamsClassificationCAPABILITY                          SlurmdbV0040GetClusterParamsClassification = "CAPABILITY"
+	SlurmdbV0040GetClusterParamsClassificationCAPACITY                            SlurmdbV0040GetClusterParamsClassification = "CAPACITY"
+	SlurmdbV0040GetClusterParamsClassificationCAPAPACITYBothCAPABILITYAndCAPACITY SlurmdbV0040GetClusterParamsClassification = "CAPAPACITY (both CAPABILITY and CAPACITY)"
+	SlurmdbV0040GetClusterParamsClassificationUNCLASSIFIED                        SlurmdbV0040GetClusterParamsClassification = "UNCLASSIFIED"
+)
+
+// Defines values for SlurmdbV0040GetClusterParamsFlags.
+const (
+	SlurmdbV0040GetClusterParamsFlagsEXTERNAL       SlurmdbV0040GetClusterParamsFlags = "EXTERNAL"
+	SlurmdbV0040GetClusterParamsFlagsFEDERATION     SlurmdbV0040GetClusterParamsFlags = "FEDERATION"
+	SlurmdbV0040GetClusterParamsFlagsMULTIPLESLURMD SlurmdbV0040GetClusterParamsFlags = "MULTIPLE_SLURMD"
+	SlurmdbV0040GetClusterParamsFlagsREGISTERING    SlurmdbV0040GetClusterParamsFlags = "REGISTERING"
+)
+
+// Defines values for SlurmdbV0040GetQosParamsPreemptMode.
+const (
+	SlurmdbV0040GetQosParamsPreemptModeCANCEL   SlurmdbV0040GetQosParamsPreemptMode = "CANCEL"
+	SlurmdbV0040GetQosParamsPreemptModeDISABLED SlurmdbV0040GetQosParamsPreemptMode = "DISABLED"
+	SlurmdbV0040GetQosParamsPreemptModeGANG     SlurmdbV0040GetQosParamsPreemptMode = "GANG"
+	SlurmdbV0040GetQosParamsPreemptModeREQUEUE  SlurmdbV0040GetQosParamsPreemptMode = "REQUEUE"
+	SlurmdbV0040GetQosParamsPreemptModeSUSPEND  SlurmdbV0040GetQosParamsPreemptMode = "SUSPEND"
+)
+
+// Defines values for SlurmdbV0040PostQosParamsPreemptMode.
+const (
+	SlurmdbV0040PostQosParamsPreemptModeCANCEL   SlurmdbV0040PostQosParamsPreemptMode = "CANCEL"
+	SlurmdbV0040PostQosParamsPreemptModeDISABLED SlurmdbV0040PostQosParamsPreemptMode = "DISABLED"
+	SlurmdbV0040PostQosParamsPreemptModeGANG     SlurmdbV0040PostQosParamsPreemptMode = "GANG"
+	SlurmdbV0040PostQosParamsPreemptModeREQUEUE  SlurmdbV0040PostQosParamsPreemptMode = "REQUEUE"
+	SlurmdbV0040PostQosParamsPreemptModeSUSPEND  SlurmdbV0040PostQosParamsPreemptMode = "SUSPEND"
+)
+
+// Defines values for SlurmdbV0040GetUsersParamsAdminLevel.
+const (
+	Administrator SlurmdbV0040GetUsersParamsAdminLevel = "Administrator"
+	None          SlurmdbV0040GetUsersParamsAdminLevel = "None"
+	NotSet        SlurmdbV0040GetUsersParamsAdminLevel = "Not Set"
+	Operator      SlurmdbV0040GetUsersParamsAdminLevel = "Operator"
+)
+
+// Defines values for SlurmdbV0040PostUsersAssociationParamsFlags.
+const (
+	ALL        SlurmdbV0040PostUsersAssociationParamsFlags = "ALL"
+	DETAIL     SlurmdbV0040PostUsersAssociationParamsFlags = "DETAIL"
+	FEDERATION SlurmdbV0040PostUsersAssociationParamsFlags = "FEDERATION"
+	FUTURE     SlurmdbV0040PostUsersAssociationParamsFlags = "FUTURE"
+	LOCAL      SlurmdbV0040PostUsersAssociationParamsFlags = "LOCAL"
+	MIXED      SlurmdbV0040PostUsersAssociationParamsFlags = "MIXED"
+	SIBLING    SlurmdbV0040PostUsersAssociationParamsFlags = "SIBLING"
+)
+
+// V0040Account defines model for v0.0.40_account.
+type V0040Account struct {
+	Associations *V0040AssocShortList `json:"associations,omitempty"`
+	Coordinators *V0040CoordList      `json:"coordinators,omitempty"`
+
+	// Description Arbitrary string describing the account
+	Description string             `json:"description"`
+	Flags       *V0040AccountFlags `json:"flags,omitempty"`
+
+	// Name Account name
+	Name string `json:"name"`
+
+	// Organization Organization to which the account belongs
+	Organization string `json:"organization"`
 }
 
-// JobJobState defines model for Job.JobState.
-type JobJobState string
+// V0040AccountFlags defines model for v0.0.40_account_flags.
+type V0040AccountFlags = []string
 
-// JobSubmission defines model for JobSubmission.
-type JobSubmission struct {
-	Cpus      *int    `json:"cpus,omitempty"`
-	Memory    *int    `json:"memory,omitempty"`
-	Name      string  `json:"name"`
+// V0040AccountList defines model for v0.0.40_account_list.
+type V0040AccountList = []V0040Account
+
+// V0040AccountShort defines model for v0.0.40_account_short.
+type V0040AccountShort struct {
+	// Description Arbitrary string describing the account
+	Description *string `json:"description,omitempty"`
+
+	// Organization Organization to which the account belongs
+	Organization *string `json:"organization,omitempty"`
+}
+
+// V0040Accounting defines model for v0.0.40_accounting.
+type V0040Accounting struct {
+	TRES      *V0040Tres `json:"TRES,omitempty"`
+	Allocated *struct {
+		// Seconds Number of cpu seconds allocated
+		Seconds *int64 `json:"seconds,omitempty"`
+	} `json:"allocated,omitempty"`
+
+	// Id Association ID or Workload characterization key ID
+	Id *int32 `json:"id,omitempty"`
+
+	// Start When the record was started
+	Start *int64 `json:"start,omitempty"`
+}
+
+// V0040AccountingList defines model for v0.0.40_accounting_list.
+type V0040AccountingList = []V0040Accounting
+
+// V0040AccountsAddCond defines model for v0.0.40_accounts_add_cond.
+type V0040AccountsAddCond struct {
+	Accounts    V0040StringList   `json:"accounts"`
+	Association *V0040AssocRecSet `json:"association,omitempty"`
+	Clusters    *V0040StringList  `json:"clusters,omitempty"`
+}
+
+// V0040AcctGatherEnergy defines model for v0.0.40_acct_gather_energy.
+type V0040AcctGatherEnergy struct {
+	// AverageWatts Average power consumption, in watts
+	AverageWatts *int32 `json:"average_watts,omitempty"`
+
+	// BaseConsumedEnergy The energy consumed between when the node was powered on and the last time it was registered by slurmd, in joules
+	BaseConsumedEnergy *int64 `json:"base_consumed_energy,omitempty"`
+
+	// ConsumedEnergy The energy consumed between the last time the node was registered by the slurmd daemon and the last node energy accounting sample, in joules
+	ConsumedEnergy *int64 `json:"consumed_energy,omitempty"`
+
+	// CurrentWatts Integer number with flags
+	CurrentWatts *V0040Uint32NoVal `json:"current_watts,omitempty"`
+
+	// LastCollected Time when energy data was last retrieved (UNIX timestamp)
+	LastCollected *int64 `json:"last_collected,omitempty"`
+
+	// PreviousConsumedEnergy Previous value of consumed_energy
+	PreviousConsumedEnergy *int64 `json:"previous_consumed_energy,omitempty"`
+}
+
+// V0040AcctGatherProfile defines model for v0.0.40_acct_gather_profile.
+type V0040AcctGatherProfile = []string
+
+// V0040AdminLvl defines model for v0.0.40_admin_lvl.
+type V0040AdminLvl = []string
+
+// V0040Assoc defines model for v0.0.40_assoc.
+type V0040Assoc struct {
+	// Account Account
+	Account    *string              `json:"account,omitempty"`
+	Accounting *V0040AccountingList `json:"accounting,omitempty"`
+
+	// Cluster Cluster name
+	Cluster *string `json:"cluster,omitempty"`
+
+	// Comment Arbitrary comment
+	Comment *string `json:"comment,omitempty"`
+	Default *struct {
+		// Qos Default QOS
+		Qos *string `json:"qos,omitempty"`
+	} `json:"default,omitempty"`
+	Flags *V0040AssocFlags `json:"flags,omitempty"`
+	Id    *V0040AssocShort `json:"id,omitempty"`
+
+	// IsDefault Is default association for user
+	IsDefault *bool `json:"is_default,omitempty"`
+
+	// Lineage Complete path up the hierarchy to the root association
+	Lineage *string `json:"lineage,omitempty"`
+	Max     *struct {
+		Jobs *struct {
+			// Accruing Integer number with flags
+			Accruing *V0040Uint32NoVal `json:"accruing,omitempty"`
+
+			// Active Integer number with flags
+			Active *V0040Uint32NoVal `json:"active,omitempty"`
+			Per    *struct {
+				// Accruing Integer number with flags
+				Accruing *V0040Uint32NoVal `json:"accruing,omitempty"`
+
+				// Count Integer number with flags
+				Count *V0040Uint32NoVal `json:"count,omitempty"`
+
+				// Submitted Integer number with flags
+				Submitted *V0040Uint32NoVal `json:"submitted,omitempty"`
+
+				// WallClock Integer number with flags
+				WallClock *V0040Uint32NoVal `json:"wall_clock,omitempty"`
+			} `json:"per,omitempty"`
+
+			// Total Integer number with flags
+			Total *V0040Uint32NoVal `json:"total,omitempty"`
+		} `json:"jobs,omitempty"`
+		Per *struct {
+			Account *struct {
+				// WallClock Integer number with flags
+				WallClock *V0040Uint32NoVal `json:"wall_clock,omitempty"`
+			} `json:"account,omitempty"`
+		} `json:"per,omitempty"`
+		Tres *struct {
+			Group *struct {
+				Active  *V0040TresList `json:"active,omitempty"`
+				Minutes *V0040TresList `json:"minutes,omitempty"`
+			} `json:"group,omitempty"`
+			Minutes *struct {
+				Per *struct {
+					Job *V0040TresList `json:"job,omitempty"`
+				} `json:"per,omitempty"`
+				Total *V0040TresList `json:"total,omitempty"`
+			} `json:"minutes,omitempty"`
+			Per *struct {
+				Job  *V0040TresList `json:"job,omitempty"`
+				Node *V0040TresList `json:"node,omitempty"`
+			} `json:"per,omitempty"`
+			Total *V0040TresList `json:"total,omitempty"`
+		} `json:"tres,omitempty"`
+	} `json:"max,omitempty"`
+	Min *struct {
+		// PriorityThreshold Integer number with flags
+		PriorityThreshold *V0040Uint32NoVal `json:"priority_threshold,omitempty"`
+	} `json:"min,omitempty"`
+
+	// ParentAccount Name of parent account
+	ParentAccount *string `json:"parent_account,omitempty"`
+
+	// Partition Partition name
 	Partition *string `json:"partition,omitempty"`
-	Script    *string `json:"script,omitempty"`
-	TimeLimit *int    `json:"time_limit,omitempty"`
+
+	// Priority Integer number with flags
+	Priority *V0040Uint32NoVal `json:"priority,omitempty"`
+
+	// Qos List of QOS names
+	Qos *V0040QosStringIdList `json:"qos,omitempty"`
+
+	// SharesRaw Allocated shares used for fairshare calculation
+	SharesRaw *int32 `json:"shares_raw,omitempty"`
+
+	// User User name
+	User string `json:"user"`
 }
 
-// JobSubmitResponse defines model for JobSubmitResponse.
-type JobSubmitResponse struct {
+// V0040AssocFlags defines model for v0.0.40_assoc_flags.
+type V0040AssocFlags = []string
+
+// V0040AssocList defines model for v0.0.40_assoc_list.
+type V0040AssocList = []V0040Assoc
+
+// V0040AssocRecSet defines model for v0.0.40_assoc_rec_set.
+type V0040AssocRecSet struct {
+	// Comment Arbitrary comment
+	Comment *string `json:"comment,omitempty"`
+
+	// Defaultqos Default QOS
+	Defaultqos *string `json:"defaultqos,omitempty"`
+
+	// Fairshare Allocated shares used for fairshare calculation
+	Fairshare *int32 `json:"fairshare,omitempty"`
+
+	// Grpjobs Integer number with flags
+	Grpjobs *V0040Uint32NoVal `json:"grpjobs,omitempty"`
+
+	// Grpjobsaccrue Integer number with flags
+	Grpjobsaccrue *V0040Uint32NoVal `json:"grpjobsaccrue,omitempty"`
+
+	// Grpsubmitjobs Integer number with flags
+	Grpsubmitjobs  *V0040Uint32NoVal `json:"grpsubmitjobs,omitempty"`
+	Grptres        *V0040TresList    `json:"grptres,omitempty"`
+	Grptresmins    *V0040TresList    `json:"grptresmins,omitempty"`
+	Grptresrunmins *V0040TresList    `json:"grptresrunmins,omitempty"`
+
+	// Grpwall Integer number with flags
+	Grpwall *V0040Uint32NoVal `json:"grpwall,omitempty"`
+
+	// Maxjobs Integer number with flags
+	Maxjobs *V0040Uint32NoVal `json:"maxjobs,omitempty"`
+
+	// Maxjobsaccrue Integer number with flags
+	Maxjobsaccrue *V0040Uint32NoVal `json:"maxjobsaccrue,omitempty"`
+
+	// Maxsubmitjobs Integer number with flags
+	Maxsubmitjobs     *V0040Uint32NoVal `json:"maxsubmitjobs,omitempty"`
+	Maxtresminsperjob *V0040TresList    `json:"maxtresminsperjob,omitempty"`
+	Maxtresperjob     *V0040TresList    `json:"maxtresperjob,omitempty"`
+	Maxtrespernode    *V0040TresList    `json:"maxtrespernode,omitempty"`
+	Maxtresrunmins    *V0040TresList    `json:"maxtresrunmins,omitempty"`
+
+	// Maxwalldurationperjob Integer number with flags
+	Maxwalldurationperjob *V0040Uint32NoVal `json:"maxwalldurationperjob,omitempty"`
+
+	// Minpriothresh Integer number with flags
+	Minpriothresh *V0040Uint32NoVal `json:"minpriothresh,omitempty"`
+
+	// Parent Name of parent account
+	Parent *string `json:"parent,omitempty"`
+
+	// Priority Integer number with flags
+	Priority *V0040Uint32NoVal `json:"priority,omitempty"`
+
+	// Qoslevel List of QOS names
+	Qoslevel *V0040QosStringIdList `json:"qoslevel,omitempty"`
+}
+
+// V0040AssocSharesObjList defines model for v0.0.40_assoc_shares_obj_list.
+type V0040AssocSharesObjList = []V0040AssocSharesObjWrap
+
+// V0040AssocSharesObjWrap defines model for v0.0.40_assoc_shares_obj_wrap.
+type V0040AssocSharesObjWrap struct {
+	// Cluster Cluster name
+	Cluster *string `json:"cluster,omitempty"`
+
+	// EffectiveUsage Effective, normalized usage
+	EffectiveUsage *float64 `json:"effective_usage,omitempty"`
+	Fairshare      *struct {
+		// Factor Fairshare factor
+		Factor *float64 `json:"factor,omitempty"`
+
+		// Level Fairshare factor at this level; stored on an assoc as a long double, but that is not needed for display in sshare
+		Level *float64 `json:"level,omitempty"`
+	} `json:"fairshare,omitempty"`
+
+	// Id Association ID
+	Id *int32 `json:"id,omitempty"`
+
+	// Name Share name
+	Name *string `json:"name,omitempty"`
+
+	// Parent Parent name
+	Parent *string `json:"parent,omitempty"`
+
+	// Partition Partition name
+	Partition *string `json:"partition,omitempty"`
+
+	// Shares Integer number with flags
+	Shares *V0040Uint32NoVal `json:"shares,omitempty"`
+
+	// SharesNormalized 64 bit floating point number with flags
+	SharesNormalized *V0040Float64NoVal `json:"shares_normalized,omitempty"`
+	Tres             *struct {
+		GroupMinutes *V0040SharesUint64TresList   `json:"group_minutes,omitempty"`
+		RunSeconds   *V0040SharesUint64TresList   `json:"run_seconds,omitempty"`
+		Usage        *V0040SharesFloat128TresList `json:"usage,omitempty"`
+	} `json:"tres,omitempty"`
+	Type *V0040AssocSharesObjWrapType `json:"type,omitempty"`
+
+	// Usage Measure of tresbillableunits usage
+	Usage *int64 `json:"usage,omitempty"`
+
+	// UsageNormalized 64 bit floating point number with flags
+	UsageNormalized *V0040Float64NoVal `json:"usage_normalized,omitempty"`
+}
+
+// V0040AssocSharesObjWrapType defines model for v0.0.40_assoc_shares_obj_wrap_type.
+type V0040AssocSharesObjWrapType = []string
+
+// V0040AssocShort defines model for v0.0.40_assoc_short.
+type V0040AssocShort struct {
+	// Account Account
+	Account *string `json:"account,omitempty"`
+
+	// Cluster Cluster
+	Cluster *string `json:"cluster,omitempty"`
+
+	// Id Numeric association ID
+	Id *int32 `json:"id,omitempty"`
+
+	// Partition Partition
+	Partition *string `json:"partition,omitempty"`
+
+	// User User name
+	User string `json:"user"`
+}
+
+// V0040AssocShortList defines model for v0.0.40_assoc_short_list.
+type V0040AssocShortList = []V0040AssocShort
+
+// V0040BfExitFields defines model for v0.0.40_bf_exit_fields.
+type V0040BfExitFields struct {
+	// BfMaxJobStart Reached number of jobs allowed to start
+	BfMaxJobStart *int32 `json:"bf_max_job_start,omitempty"`
+
+	// BfMaxJobTest Reached number of jobs allowed to be tested
+	BfMaxJobTest *int32 `json:"bf_max_job_test,omitempty"`
+
+	// BfMaxTime Reached maximum allowed scheduler time
+	BfMaxTime *int32 `json:"bf_max_time,omitempty"`
+
+	// BfNodeSpaceSize Reached table size limit
+	BfNodeSpaceSize *int32 `json:"bf_node_space_size,omitempty"`
+
+	// EndJobQueue Reached end of queue
+	EndJobQueue *int32 `json:"end_job_queue,omitempty"`
+
+	// StateChanged System state changed
+	StateChanged *int32 `json:"state_changed,omitempty"`
+}
+
+// V0040ClusterRec defines model for v0.0.40_cluster_rec.
+type V0040ClusterRec struct {
+	Associations *struct {
+		Root *V0040AssocShort `json:"root,omitempty"`
+	} `json:"associations,omitempty"`
+	Controller *struct {
+		// Host ControlHost
+		Host *string `json:"host,omitempty"`
+
+		// Port ControlPort
+		Port *int32 `json:"port,omitempty"`
+	} `json:"controller,omitempty"`
+	Flags *V0040ClusterRecFlags `json:"flags,omitempty"`
+
+	// Name ClusterName
+	Name *string `json:"name,omitempty"`
+
+	// Nodes Node names
+	Nodes *string `json:"nodes,omitempty"`
+
+	// RpcVersion RPC version used in the cluster
+	RpcVersion   *int32         `json:"rpc_version,omitempty"`
+	SelectPlugin *string        `json:"select_plugin,omitempty"`
+	Tres         *V0040TresList `json:"tres,omitempty"`
+}
+
+// V0040ClusterRecFlags defines model for v0.0.40_cluster_rec_flags.
+type V0040ClusterRecFlags = []string
+
+// V0040ClusterRecList defines model for v0.0.40_cluster_rec_list.
+type V0040ClusterRecList = []V0040ClusterRec
+
+// V0040ControllerPing defines model for v0.0.40_controller_ping.
+type V0040ControllerPing struct {
+	// Hostname Target for ping
+	Hostname *string `json:"hostname,omitempty"`
+
+	// Latency Number of microseconds it took to successfully ping or timeout
+	Latency *int64 `json:"latency,omitempty"`
+
+	// Mode The operating mode of the responding slurmctld
+	Mode *string `json:"mode,omitempty"`
+
+	// Pinged Ping result
+	Pinged *string `json:"pinged,omitempty"`
+}
+
+// V0040ControllerPingArray defines model for v0.0.40_controller_ping_array.
+type V0040ControllerPingArray = []V0040ControllerPing
+
+// V0040Coord defines model for v0.0.40_coord.
+type V0040Coord struct {
+	// Direct Indicates whether the coordinator was directly assigned to this account
+	Direct *bool `json:"direct,omitempty"`
+
+	// Name User name
+	Name string `json:"name"`
+}
+
+// V0040CoordList defines model for v0.0.40_coord_list.
+type V0040CoordList = []V0040Coord
+
+// V0040CpuBindingFlags defines model for v0.0.40_cpu_binding_flags.
+type V0040CpuBindingFlags = []string
+
+// V0040CronEntry defines model for v0.0.40_cron_entry.
+type V0040CronEntry struct {
+	// Command Command to run
+	Command *string `json:"command,omitempty"`
+
+	// DayOfMonth Ranged string specifying eligible day of month values (e.g. 0-10,29)
+	DayOfMonth *string `json:"day_of_month,omitempty"`
+
+	// DayOfWeek Ranged string specifying eligible day of week values (e.g.0-3,7)
+	DayOfWeek *string              `json:"day_of_week,omitempty"`
+	Flags     *V0040CronEntryFlags `json:"flags,omitempty"`
+
+	// Hour Ranged string specifying eligible hour values (e.g. 0-5,23)
+	Hour *string `json:"hour,omitempty"`
+	Line *struct {
+		// End End of this entry in file
+		End *int32 `json:"end,omitempty"`
+
+		// Start Start of this entry in file
+		Start *int32 `json:"start,omitempty"`
+	} `json:"line,omitempty"`
+
+	// Minute Ranged string specifying eligible minute values (e.g. 0-10,50)
+	Minute *string `json:"minute,omitempty"`
+
+	// Month Ranged string specifying eligible month values (e.g. 0-5,12)
+	Month *string `json:"month,omitempty"`
+
+	// Specification Time specification (* means valid for all allowed values) - minute hour day_of_month month day_of_week
+	Specification *string `json:"specification,omitempty"`
+}
+
+// V0040CronEntryFlags defines model for v0.0.40_cron_entry_flags.
+type V0040CronEntryFlags = []string
+
+// V0040CsvString defines model for v0.0.40_csv_string.
+type V0040CsvString = []string
+
+// V0040ExtSensorsData removed field
+type V0040ExtSensorsData = map[string]interface{}
+
+// V0040Float64NoVal 64 bit floating point number with flags
+type V0040Float64NoVal struct {
+	// Infinite True if number has been set to infinite. "set" and "number" will be ignored.
+	Infinite *bool `json:"infinite,omitempty"`
+
+	// Number If set is True the number will be set with value. Otherwise ignore number contents.
+	Number *float64 `json:"number,omitempty"`
+
+	// Set True if number has been set. False if number is unset
+	Set *bool `json:"set,omitempty"`
+}
+
+// V0040Hostlist defines model for v0.0.40_hostlist.
+type V0040Hostlist = []string
+
+// V0040HostlistString defines model for v0.0.40_hostlist_string.
+type V0040HostlistString = []string
+
+// V0040Instance defines model for v0.0.40_instance.
+type V0040Instance struct {
+	// Cluster Cluster name
+	Cluster *string `json:"cluster,omitempty"`
+
+	// Extra Arbitrary string used for node filtering if extra constraints are enabled
+	Extra *string `json:"extra,omitempty"`
+
+	// InstanceId Cloud instance ID
+	InstanceId *string `json:"instance_id,omitempty"`
+
+	// InstanceType Cloud instance type
+	InstanceType *string `json:"instance_type,omitempty"`
+
+	// NodeName NodeName
+	NodeName *string `json:"node_name,omitempty"`
+	Time     *struct {
+		// TimeEnd When the instance will end (UNIX timestamp)
+		TimeEnd *int64 `json:"time_end,omitempty"`
+
+		// TimeStart When the instance will start (UNIX timestamp)
+		TimeStart *int64 `json:"time_start,omitempty"`
+	} `json:"time,omitempty"`
+}
+
+// V0040InstanceList defines model for v0.0.40_instance_list.
+type V0040InstanceList = []V0040Instance
+
+// V0040Job defines model for v0.0.40_job.
+type V0040Job struct {
+	// Account Account the job ran under
+	Account *string `json:"account,omitempty"`
+
+	// AllocationNodes List of nodes allocated to the job
+	AllocationNodes *int32 `json:"allocation_nodes,omitempty"`
+	Array           *struct {
+		// JobId Job ID of job array, or 0 if N/A
+		JobId  *int32 `json:"job_id,omitempty"`
+		Limits *struct {
+			Max *struct {
+				Running *struct {
+					// Tasks Maximum number of simultaneously running tasks, 0 if no limit
+					Tasks *int32 `json:"tasks,omitempty"`
+				} `json:"running,omitempty"`
+			} `json:"max,omitempty"`
+		} `json:"limits,omitempty"`
+
+		// Task String expression of task IDs in this record
+		Task *string `json:"task,omitempty"`
+
+		// TaskId Integer number with flags
+		TaskId *V0040Uint32NoVal `json:"task_id,omitempty"`
+	} `json:"array,omitempty"`
+	Association *V0040AssocShort `json:"association,omitempty"`
+
+	// Block The name of the block to be used (used with Blue Gene systems)
+	Block *string `json:"block,omitempty"`
+
+	// Cluster Cluster name
+	Cluster *string `json:"cluster,omitempty"`
+	Comment *struct {
+		// Administrator Arbitrary comment made by administrator
+		Administrator *string `json:"administrator,omitempty"`
+
+		// Job Arbitrary comment made by user
+		Job *string `json:"job,omitempty"`
+
+		// System Arbitrary comment from slurmctld
+		System *string `json:"system,omitempty"`
+	} `json:"comment,omitempty"`
+
+	// Constraints Feature(s) the job requested as a constraint
+	Constraints *string `json:"constraints,omitempty"`
+
+	// Container Absolute path to OCI container bundle
+	Container       *string                      `json:"container,omitempty"`
+	DerivedExitCode *V0040ProcessExitCodeVerbose `json:"derived_exit_code,omitempty"`
+	ExitCode        *V0040ProcessExitCodeVerbose `json:"exit_code,omitempty"`
+
+	// Extra Arbitrary string used for node filtering if extra constraints are enabled
+	Extra *string `json:"extra,omitempty"`
+
+	// FailedNode Name of node that caused job failure
+	FailedNode *string               `json:"failed_node,omitempty"`
+	Flags      *V0040SlurmdbJobFlags `json:"flags,omitempty"`
+
+	// Group Group ID of the user that owns the job
+	Group *string `json:"group,omitempty"`
+	Het   *struct {
+		// JobId Heterogeneous job ID, if applicable
+		JobId *int32 `json:"job_id,omitempty"`
+
+		// JobOffset Integer number with flags
+		JobOffset *V0040Uint32NoVal `json:"job_offset,omitempty"`
+	} `json:"het,omitempty"`
+
+	// Hold Job held
+	Hold *bool `json:"hold,omitempty"`
+
+	// JobId Job ID
+	JobId *int32 `json:"job_id,omitempty"`
+
+	// KillRequestUser User ID that requested termination of the job
+	KillRequestUser *string `json:"kill_request_user,omitempty"`
+
+	// Licenses License(s) required by the job
+	Licenses *string `json:"licenses,omitempty"`
+	Mcs      *struct {
+		// Label Multi-Category Security label on the job
+		Label *string `json:"label,omitempty"`
+	} `json:"mcs,omitempty"`
+
+	// Name Job name
+	Name *string `json:"name,omitempty"`
+
+	// Nodes Node(s) allocated to the job
+	Nodes *string `json:"nodes,omitempty"`
+
+	// Partition Partition assigned to the job
+	Partition *string `json:"partition,omitempty"`
+
+	// Priority Integer number with flags
+	Priority *V0040Uint32NoVal `json:"priority,omitempty"`
+
+	// Qos Quality of Service assigned to the job
+	Qos      *string `json:"qos,omitempty"`
+	Required *struct {
+		// CPUs Minimum number of CPUs required
+		CPUs *int32 `json:"CPUs,omitempty"`
+
+		// MemoryPerCpu Integer number with flags
+		MemoryPerCpu *V0040Uint64NoVal `json:"memory_per_cpu,omitempty"`
+
+		// MemoryPerNode Integer number with flags
+		MemoryPerNode *V0040Uint64NoVal `json:"memory_per_node,omitempty"`
+	} `json:"required,omitempty"`
+	Reservation *struct {
+		// Id Unique identifier of requested reservation
+		Id *int32 `json:"id,omitempty"`
+
+		// Name Name of reservation to use
+		Name *string `json:"name,omitempty"`
+	} `json:"reservation,omitempty"`
+
+	// Script Job batch script; only the first component in a HetJob is populated or honored
+	Script *string `json:"script,omitempty"`
+	State  *struct {
+		Current *V0040JobState `json:"current,omitempty"`
+
+		// Reason Reason for previous Pending or Failed state
+		Reason *string `json:"reason,omitempty"`
+	} `json:"state,omitempty"`
+	Steps *V0040StepList `json:"steps,omitempty"`
+
+	// SubmitLine Command used to submit the job
+	SubmitLine *string `json:"submit_line,omitempty"`
+	Time       *struct {
+		// Elapsed Elapsed time in seconds
+		Elapsed *int32 `json:"elapsed,omitempty"`
+
+		// Eligible Time when the job became eligible to run (UNIX timestamp)
+		Eligible *int64 `json:"eligible,omitempty"`
+
+		// End End time (UNIX timestamp)
+		End *int64 `json:"end,omitempty"`
+
+		// Limit Integer number with flags
+		Limit *V0040Uint32NoVal `json:"limit,omitempty"`
+
+		// Start Time execution began (UNIX timestamp)
+		Start *int64 `json:"start,omitempty"`
+
+		// Submission Time when the job was submitted (UNIX timestamp)
+		Submission *int64 `json:"submission,omitempty"`
+
+		// Suspended Total time in suspended state in seconds
+		Suspended *int32 `json:"suspended,omitempty"`
+		System    *struct {
+			// Microseconds System CPU time used by the job in microseconds
+			Microseconds *int64 `json:"microseconds,omitempty"`
+
+			// Seconds System CPU time used by the job in seconds
+			Seconds *int64 `json:"seconds,omitempty"`
+		} `json:"system,omitempty"`
+		Total *struct {
+			// Microseconds Sum of System and User CPU time used by the job in microseconds
+			Microseconds *int64 `json:"microseconds,omitempty"`
+
+			// Seconds Sum of System and User CPU time used by the job in seconds
+			Seconds *int64 `json:"seconds,omitempty"`
+		} `json:"total,omitempty"`
+		User *struct {
+			// Microseconds User CPU time used by the job in microseconds
+			Microseconds *int64 `json:"microseconds,omitempty"`
+
+			// Seconds User CPU time used by the job in seconds
+			Seconds *int64 `json:"seconds,omitempty"`
+		} `json:"user,omitempty"`
+	} `json:"time,omitempty"`
+	Tres *struct {
+		Allocated *V0040TresList `json:"allocated,omitempty"`
+		Requested *V0040TresList `json:"requested,omitempty"`
+	} `json:"tres,omitempty"`
+
+	// UsedGres Generic resources used by job
+	UsedGres *string `json:"used_gres,omitempty"`
+
+	// User User that owns the job
+	User  *string              `json:"user,omitempty"`
+	Wckey *V0040WckeyTagStruct `json:"wckey,omitempty"`
+
+	// WorkingDirectory Path to current working directory
+	WorkingDirectory *string `json:"working_directory,omitempty"`
+}
+
+// V0040JobArrayResponseArray defines model for v0.0.40_job_array_response_array.
+type V0040JobArrayResponseArray = []V0040JobArrayResponseMsgEntry
+
+// V0040JobArrayResponseMsgEntry defines model for v0.0.40_job_array_response_msg_entry.
+type V0040JobArrayResponseMsgEntry struct {
+	// Error Verbose update status or error
+	Error *string `json:"error,omitempty"`
+
+	// ErrorCode Verbose update status or error
+	ErrorCode *int32 `json:"error_code,omitempty"`
+
+	// JobId Job ID for updated Job
+	JobId *int32 `json:"job_id,omitempty"`
+
+	// StepId Step ID for updated Job
+	StepId *string `json:"step_id,omitempty"`
+
+	// Why Update response message
+	Why *string `json:"why,omitempty"`
+}
+
+// V0040JobDescMsg defines model for v0.0.40_job_desc_msg.
+type V0040JobDescMsg struct {
+	// Account Account associated with the job
+	Account *string `json:"account,omitempty"`
+
+	// AccountGatherFrequency Job accounting and profiling sampling intervals in seconds
+	AccountGatherFrequency *string `json:"account_gather_frequency,omitempty"`
+
+	// AdminComment Arbitrary comment made by administrator
+	AdminComment *string `json:"admin_comment,omitempty"`
+
+	// AllocationNodeList Local node making the resource allocation
+	AllocationNodeList *string `json:"allocation_node_list,omitempty"`
+
+	// AllocationNodePort Port to send allocation confirmation to
+	AllocationNodePort *int32            `json:"allocation_node_port,omitempty"`
+	Argv               *V0040StringArray `json:"argv,omitempty"`
+
+	// Array Job array index value specification
+	Array *string `json:"array,omitempty"`
+
+	// BatchFeatures Features required for batch script's node
+	BatchFeatures *string `json:"batch_features,omitempty"`
+
+	// BeginTime Integer number with flags
+	BeginTime *V0040Uint64NoVal `json:"begin_time,omitempty"`
+
+	// BurstBuffer Burst buffer specifications
+	BurstBuffer *string `json:"burst_buffer,omitempty"`
+
+	// ClusterConstraint Required features that a federated cluster must have to have a sibling job submitted to it
+	ClusterConstraint *string `json:"cluster_constraint,omitempty"`
+
+	// Clusters Clusters that a federated job can run on
+	Clusters *string `json:"clusters,omitempty"`
+
+	// Comment Arbitrary comment made by user
+	Comment *string `json:"comment,omitempty"`
+
+	// Constraints Comma separated list of features that are required
+	Constraints *string `json:"constraints,omitempty"`
+
+	// Container Absolute path to OCI container bundle
+	Container *string `json:"container,omitempty"`
+
+	// ContainerId OCI container ID
+	ContainerId *string `json:"container_id,omitempty"`
+
+	// Contiguous True if job requires contiguous nodes
+	Contiguous *bool `json:"contiguous,omitempty"`
+
+	// CoreSpecification Specialized core count
+	CoreSpecification *int32 `json:"core_specification,omitempty"`
+
+	// CoresPerSocket Cores per socket required
+	CoresPerSocket *int32 `json:"cores_per_socket,omitempty"`
+
+	// CpuBinding Method for binding tasks to allocated CPUs
+	CpuBinding      *string               `json:"cpu_binding,omitempty"`
+	CpuBindingFlags *V0040CpuBindingFlags `json:"cpu_binding_flags,omitempty"`
+
+	// CpuFrequency Requested CPU frequency range <p1>[-p2][:p3]
+	CpuFrequency *string `json:"cpu_frequency,omitempty"`
+
+	// CpusPerTask Number of CPUs required by each task
+	CpusPerTask *int32 `json:"cpus_per_task,omitempty"`
+
+	// CpusPerTres Semicolon delimited list of TRES=# values values indicating how many CPUs should be allocated for each specified TRES (currently only used for gres/gpu)
+	CpusPerTres *string         `json:"cpus_per_tres,omitempty"`
+	Crontab     *V0040CronEntry `json:"crontab,omitempty"`
+
+	// CurrentWorkingDirectory Working directory to use for the job
+	CurrentWorkingDirectory *string `json:"current_working_directory,omitempty"`
+
+	// Deadline Latest time that the job may start (UNIX timestamp)
+	Deadline *int64 `json:"deadline,omitempty"`
+
+	// DelayBoot Number of seconds after job eligible start that nodes will be rebooted to satisfy feature specification
+	DelayBoot *int32 `json:"delay_boot,omitempty"`
+
+	// Dependency Other jobs that must meet certain criteria before this job can start
+	Dependency *string `json:"dependency,omitempty"`
+
+	// Distribution Layout
+	Distribution *string `json:"distribution,omitempty"`
+
+	// DistributionPlaneSize Plane size specification when distribution specifies plane
+	DistributionPlaneSize *int32 `json:"distribution_plane_size,omitempty"`
+
+	// EndTime Expected end time (UNIX timestamp)
+	EndTime       *int64                  `json:"end_time,omitempty"`
+	Environment   *V0040StringArray       `json:"environment,omitempty"`
+	ExcludedNodes *V0040CsvString         `json:"excluded_nodes,omitempty"`
+	Exclusive     *V0040JobExclusiveFlags `json:"exclusive,omitempty"`
+
+	// Extra Arbitrary string used for node filtering if extra constraints are enabled
+	Extra *string        `json:"extra,omitempty"`
+	Flags *V0040JobFlags `json:"flags,omitempty"`
+
+	// GroupId Group ID of the user that owns the job
+	GroupId *string `json:"group_id,omitempty"`
+
+	// HetjobGroup Unique sequence number applied to this component of the heterogeneous job
+	HetjobGroup *int32 `json:"hetjob_group,omitempty"`
+
+	// Hold Job held
+	Hold *bool `json:"hold,omitempty"`
+
+	// Immediate If true, exit if resources are not available within the time period specified
+	Immediate *bool `json:"immediate,omitempty"`
+
+	// JobId Job ID
+	JobId *int32 `json:"job_id,omitempty"`
+
+	// KillOnNodeFail If true, kill job on node failure
+	KillOnNodeFail *bool `json:"kill_on_node_fail,omitempty"`
+
+	// KillWarningDelay Integer number with flags
+	KillWarningDelay *V0040Uint16NoVal `json:"kill_warning_delay,omitempty"`
+	KillWarningFlags *V0040WarnFlags   `json:"kill_warning_flags,omitempty"`
+
+	// KillWarningSignal Signal to send when approaching end time (e.g. "10" or "USR1")
+	KillWarningSignal *string `json:"kill_warning_signal,omitempty"`
+
+	// Licenses License(s) required by the job
+	Licenses *string            `json:"licenses,omitempty"`
+	MailType *V0040JobMailFlags `json:"mail_type,omitempty"`
+
+	// MailUser User to receive email notifications
+	MailUser *string `json:"mail_user,omitempty"`
+
+	// MaximumCpus Maximum number of CPUs required
+	MaximumCpus *int32 `json:"maximum_cpus,omitempty"`
+
+	// MaximumNodes Maximum node count
+	MaximumNodes *int32 `json:"maximum_nodes,omitempty"`
+
+	// McsLabel Multi-Category Security label on the job
+	McsLabel *string `json:"mcs_label,omitempty"`
+
+	// MemoryBinding Binding map for map/mask_cpu
+	MemoryBinding     *string                 `json:"memory_binding,omitempty"`
+	MemoryBindingType *V0040MemoryBindingType `json:"memory_binding_type,omitempty"`
+
+	// MemoryPerCpu Integer number with flags
+	MemoryPerCpu *V0040Uint64NoVal `json:"memory_per_cpu,omitempty"`
+
+	// MemoryPerNode Integer number with flags
+	MemoryPerNode *V0040Uint64NoVal `json:"memory_per_node,omitempty"`
+
+	// MemoryPerTres Semicolon delimited list of TRES=# values indicating how much memory in megabytes should be allocated for each specified TRES (currently only used for gres/gpu)
+	MemoryPerTres *string `json:"memory_per_tres,omitempty"`
+
+	// MinimumBoardsPerNode Boards per node required
+	MinimumBoardsPerNode *int32 `json:"minimum_boards_per_node,omitempty"`
+
+	// MinimumCpus Minimum number of CPUs required
+	MinimumCpus *int32 `json:"minimum_cpus,omitempty"`
+
+	// MinimumCpusPerNode Minimum number of CPUs per node
+	MinimumCpusPerNode *int32 `json:"minimum_cpus_per_node,omitempty"`
+
+	// MinimumNodes Minimum node count
+	MinimumNodes *int32 `json:"minimum_nodes,omitempty"`
+
+	// MinimumSocketsPerBoard Sockets per board required
+	MinimumSocketsPerBoard *int32 `json:"minimum_sockets_per_board,omitempty"`
+
+	// Name Job name
+	Name *string `json:"name,omitempty"`
+
+	// Network Network specs for job step
+	Network *string `json:"network,omitempty"`
+
+	// Nice Requested job priority change
+	Nice *int32 `json:"nice,omitempty"`
+
+	// Nodes Node count range specification (e.g. 1-15:4)
+	Nodes *string `json:"nodes,omitempty"`
+
+	// NtasksPerTres Number of tasks that can access each GPU
+	NtasksPerTres *int32         `json:"ntasks_per_tres,omitempty"`
+	OpenMode      *V0040OpenMode `json:"open_mode,omitempty"`
+
+	// Overcommit Overcommit resources
+	Overcommit    *bool `json:"overcommit,omitempty"`
+	Oversubscribe *bool `json:"oversubscribe,omitempty"`
+
+	// Partition Partition assigned to the job
+	Partition *string `json:"partition,omitempty"`
+
+	// PowerFlags removed field
+	// Deprecated:
+	PowerFlags *V0040PowerFlags `json:"power_flags,omitempty"`
+
+	// Prefer Comma separated list of features that are preferred but not required
+	Prefer *string `json:"prefer,omitempty"`
+
+	// Priority Integer number with flags
+	Priority *V0040Uint32NoVal       `json:"priority,omitempty"`
+	Profile  *V0040AcctGatherProfile `json:"profile,omitempty"`
+
+	// Qos Quality of Service assigned to the job
+	Qos *string `json:"qos,omitempty"`
+
+	// Reboot Node reboot requested before start
+	Reboot *bool `json:"reboot,omitempty"`
+
+	// Requeue Determines whether the job may be requeued
+	Requeue       *bool           `json:"requeue,omitempty"`
+	RequiredNodes *V0040CsvString `json:"required_nodes,omitempty"`
+
+	// RequiredSwitches Integer number with flags
+	RequiredSwitches *V0040Uint32NoVal `json:"required_switches,omitempty"`
+
+	// Reservation Name of reservation to use
+	Reservation *string `json:"reservation,omitempty"`
+
+	// ReservePorts Port to send various notification msg to
+	ReservePorts *int32 `json:"reserve_ports,omitempty"`
+	Rlimits      *struct {
+		// As Integer number with flags
+		As *V0040Uint64NoVal `json:"as,omitempty"`
+
+		// Core Integer number with flags
+		Core *V0040Uint64NoVal `json:"core,omitempty"`
+
+		// Cpu Integer number with flags
+		Cpu *V0040Uint64NoVal `json:"cpu,omitempty"`
+
+		// Data Integer number with flags
+		Data *V0040Uint64NoVal `json:"data,omitempty"`
+
+		// Fsize Integer number with flags
+		Fsize *V0040Uint64NoVal `json:"fsize,omitempty"`
+
+		// Memlock Integer number with flags
+		Memlock *V0040Uint64NoVal `json:"memlock,omitempty"`
+
+		// Nofile Integer number with flags
+		Nofile *V0040Uint64NoVal `json:"nofile,omitempty"`
+
+		// Nproc Integer number with flags
+		Nproc *V0040Uint64NoVal `json:"nproc,omitempty"`
+
+		// Rss Integer number with flags
+		Rss *V0040Uint64NoVal `json:"rss,omitempty"`
+
+		// Stack Integer number with flags
+		Stack *V0040Uint64NoVal `json:"stack,omitempty"`
+	} `json:"rlimits,omitempty"`
+
+	// Script Job batch script; only the first component in a HetJob is populated or honored
+	Script *string `json:"script,omitempty"`
+
+	// SelinuxContext SELinux context
+	SelinuxContext *string         `json:"selinux_context,omitempty"`
+	Shared         *V0040JobShared `json:"shared,omitempty"`
+
+	// SiteFactor Site-specific priority factor
+	SiteFactor *int32 `json:"site_factor,omitempty"`
+
+	// SocketsPerNode Sockets per node required
+	SocketsPerNode   *int32            `json:"sockets_per_node,omitempty"`
+	SpankEnvironment *V0040StringArray `json:"spank_environment,omitempty"`
+
+	// StandardError Path to stderr file
+	StandardError *string `json:"standard_error,omitempty"`
+
+	// StandardInput Path to stdin file
+	StandardInput *string `json:"standard_input,omitempty"`
+
+	// StandardOutput Path to stdout file
+	StandardOutput *string `json:"standard_output,omitempty"`
+
+	// Tasks Number of tasks
+	Tasks *int32 `json:"tasks,omitempty"`
+
+	// TasksPerBoard Number of tasks to invoke on each board
+	TasksPerBoard *int32 `json:"tasks_per_board,omitempty"`
+
+	// TasksPerCore Number of tasks to invoke on each core
+	TasksPerCore *int32 `json:"tasks_per_core,omitempty"`
+
+	// TasksPerNode Number of tasks to invoke on each node
+	TasksPerNode *int32 `json:"tasks_per_node,omitempty"`
+
+	// TasksPerSocket Number of tasks to invoke on each socket
+	TasksPerSocket *int32 `json:"tasks_per_socket,omitempty"`
+
+	// TemporaryDiskPerNode Minimum tmp disk space required per node
+	TemporaryDiskPerNode *int32 `json:"temporary_disk_per_node,omitempty"`
+
+	// ThreadSpecification Specialized thread count
+	ThreadSpecification *int32 `json:"thread_specification,omitempty"`
+
+	// ThreadsPerCore Threads per core required
+	ThreadsPerCore *int32 `json:"threads_per_core,omitempty"`
+
+	// TimeLimit Integer number with flags
+	TimeLimit *V0040Uint32NoVal `json:"time_limit,omitempty"`
+
+	// TimeMinimum Integer number with flags
+	TimeMinimum *V0040Uint32NoVal `json:"time_minimum,omitempty"`
+
+	// TresBind Task to TRES binding directives
+	TresBind *string `json:"tres_bind,omitempty"`
+
+	// TresFreq TRES frequency directives
+	TresFreq *string `json:"tres_freq,omitempty"`
+
+	// TresPerJob Comma separated list of TRES=# values to be allocated for every job
+	TresPerJob *string `json:"tres_per_job,omitempty"`
+
+	// TresPerNode Comma separated list of TRES=# values to be allocated for every node
+	TresPerNode *string `json:"tres_per_node,omitempty"`
+
+	// TresPerSocket Comma separated list of TRES=# values to be allocated for every socket
+	TresPerSocket *string `json:"tres_per_socket,omitempty"`
+
+	// TresPerTask Comma separated list of TRES=# values to be allocated for every task
+	TresPerTask *string `json:"tres_per_task,omitempty"`
+
+	// UserId User ID that owns the job
+	UserId *string `json:"user_id,omitempty"`
+
+	// WaitAllNodes If true, wait to start until after all nodes have booted
+	WaitAllNodes *bool `json:"wait_all_nodes,omitempty"`
+
+	// WaitForSwitch Maximum time to wait for switches in seconds
+	WaitForSwitch *int32 `json:"wait_for_switch,omitempty"`
+
+	// Wckey Workload characterization key
+	Wckey *string        `json:"wckey,omitempty"`
+	X11   *V0040X11Flags `json:"x11,omitempty"`
+
+	// X11MagicCookie Magic cookie for X11 forwarding
+	X11MagicCookie *string `json:"x11_magic_cookie,omitempty"`
+
+	// X11TargetHost Hostname or UNIX socket if x11_target_port=0
+	X11TargetHost *string `json:"x11_target_host,omitempty"`
+
+	// X11TargetPort TCP port
+	X11TargetPort *int32 `json:"x11_target_port,omitempty"`
+}
+
+// V0040JobDescMsgList defines model for v0.0.40_job_desc_msg_list.
+type V0040JobDescMsgList = []V0040JobDescMsg
+
+// V0040JobExclusiveFlags defines model for v0.0.40_job_exclusive_flags.
+type V0040JobExclusiveFlags = []string
+
+// V0040JobFlags defines model for v0.0.40_job_flags.
+type V0040JobFlags = []string
+
+// V0040JobInfo defines model for v0.0.40_job_info.
+type V0040JobInfo struct {
+	// Account Account associated with the job
+	Account *string `json:"account,omitempty"`
+
+	// AccrueTime Integer number with flags
+	AccrueTime *V0040Uint64NoVal `json:"accrue_time,omitempty"`
+
+	// AdminComment Arbitrary comment made by administrator
+	AdminComment *string `json:"admin_comment,omitempty"`
+
+	// AllocatingNode Local node making the resource allocation
+	AllocatingNode *string `json:"allocating_node,omitempty"`
+
+	// ArrayJobId Integer number with flags
+	ArrayJobId *V0040Uint32NoVal `json:"array_job_id,omitempty"`
+
+	// ArrayMaxTasks Integer number with flags
+	ArrayMaxTasks *V0040Uint32NoVal `json:"array_max_tasks,omitempty"`
+
+	// ArrayTaskId Integer number with flags
+	ArrayTaskId *V0040Uint32NoVal `json:"array_task_id,omitempty"`
+
+	// ArrayTaskString String expression of task IDs in this record
+	ArrayTaskString *string `json:"array_task_string,omitempty"`
+
+	// AssociationId Unique identifier for the association
+	AssociationId *int32 `json:"association_id,omitempty"`
+
+	// BatchFeatures Features required for batch script's node
+	BatchFeatures *string `json:"batch_features,omitempty"`
+
+	// BatchFlag True if batch job
+	BatchFlag *bool `json:"batch_flag,omitempty"`
+
+	// BatchHost Name of host running batch script
+	BatchHost *string `json:"batch_host,omitempty"`
+
+	// BillableTres 64 bit floating point number with flags
+	BillableTres *V0040Float64NoVal `json:"billable_tres,omitempty"`
+
+	// BurstBuffer Burst buffer specifications
+	BurstBuffer *string `json:"burst_buffer,omitempty"`
+
+	// BurstBufferState Burst buffer state details
+	BurstBufferState *string `json:"burst_buffer_state,omitempty"`
+
+	// Cluster Cluster name
+	Cluster *string `json:"cluster,omitempty"`
+
+	// ClusterFeatures List of required cluster features
+	ClusterFeatures *string `json:"cluster_features,omitempty"`
+
+	// Command Executed command
+	Command *string `json:"command,omitempty"`
+
+	// Comment Arbitrary comment
+	Comment *string `json:"comment,omitempty"`
+
+	// Container Absolute path to OCI container bundle
+	Container *string `json:"container,omitempty"`
+
+	// ContainerId OCI container ID
+	ContainerId *string `json:"container_id,omitempty"`
+
+	// Contiguous True if job requires contiguous nodes
+	Contiguous *bool `json:"contiguous,omitempty"`
+
+	// CoreSpec Specialized core count
+	CoreSpec *int32 `json:"core_spec,omitempty"`
+
+	// CoresPerSocket Integer number with flags
+	CoresPerSocket *V0040Uint16NoVal `json:"cores_per_socket,omitempty"`
+
+	// CpuFrequencyGovernor Integer number with flags
+	CpuFrequencyGovernor *V0040Uint32NoVal `json:"cpu_frequency_governor,omitempty"`
+
+	// CpuFrequencyMaximum Integer number with flags
+	CpuFrequencyMaximum *V0040Uint32NoVal `json:"cpu_frequency_maximum,omitempty"`
+
+	// CpuFrequencyMinimum Integer number with flags
+	CpuFrequencyMinimum *V0040Uint32NoVal `json:"cpu_frequency_minimum,omitempty"`
+
+	// Cpus Integer number with flags
+	Cpus *V0040Uint32NoVal `json:"cpus,omitempty"`
+
+	// CpusPerTask Integer number with flags
+	CpusPerTask *V0040Uint16NoVal `json:"cpus_per_task,omitempty"`
+
+	// CpusPerTres Semicolon delimited list of TRES=# values indicating how many CPUs should be allocated for each specified TRES (currently only used for gres/gpu)
+	CpusPerTres *string `json:"cpus_per_tres,omitempty"`
+
+	// Cron Time specification for scrontab job
+	Cron *string `json:"cron,omitempty"`
+
+	// CurrentWorkingDirectory Working directory to use for the job
+	CurrentWorkingDirectory *string `json:"current_working_directory,omitempty"`
+
+	// Deadline Integer number with flags
+	Deadline *V0040Uint64NoVal `json:"deadline,omitempty"`
+
+	// DelayBoot Integer number with flags
+	DelayBoot *V0040Uint32NoVal `json:"delay_boot,omitempty"`
+
+	// Dependency Other jobs that must meet certain criteria before this job can start
+	Dependency      *string                      `json:"dependency,omitempty"`
+	DerivedExitCode *V0040ProcessExitCodeVerbose `json:"derived_exit_code,omitempty"`
+
+	// EligibleTime Integer number with flags
+	EligibleTime *V0040Uint64NoVal `json:"eligible_time,omitempty"`
+
+	// EndTime Integer number with flags
+	EndTime *V0040Uint64NoVal `json:"end_time,omitempty"`
+
+	// ExcludedNodes Comma separated list of nodes that may not be used
+	ExcludedNodes *string                      `json:"excluded_nodes,omitempty"`
+	Exclusive     *V0040JobExclusiveFlags      `json:"exclusive,omitempty"`
+	ExitCode      *V0040ProcessExitCodeVerbose `json:"exit_code,omitempty"`
+
+	// Extra Arbitrary string used for node filtering if extra constraints are enabled
+	Extra *string `json:"extra,omitempty"`
+
+	// FailedNode Name of node that caused job failure
+	FailedNode *string `json:"failed_node,omitempty"`
+
+	// Features Comma separated list of features that are required
+	Features *string `json:"features,omitempty"`
+
+	// FederationOrigin Origin cluster's name (when using federation)
+	FederationOrigin *string `json:"federation_origin,omitempty"`
+
+	// FederationSiblingsActive Active sibling job names
+	FederationSiblingsActive *string `json:"federation_siblings_active,omitempty"`
+
+	// FederationSiblingsViable Viable sibling job names
+	FederationSiblingsViable *string                 `json:"federation_siblings_viable,omitempty"`
+	Flags                    *V0040JobFlags          `json:"flags,omitempty"`
+	GresDetail               *V0040JobInfoGresDetail `json:"gres_detail,omitempty"`
+
+	// GroupId Group ID of the user that owns the job
+	GroupId *int32 `json:"group_id,omitempty"`
+
+	// GroupName Group name of the user that owns the job
+	GroupName *string `json:"group_name,omitempty"`
+
+	// HetJobId Integer number with flags
+	HetJobId *V0040Uint32NoVal `json:"het_job_id,omitempty"`
+
+	// HetJobIdSet Job ID range for all heterogeneous job components
+	HetJobIdSet *string `json:"het_job_id_set,omitempty"`
+
+	// HetJobOffset Integer number with flags
+	HetJobOffset *V0040Uint32NoVal `json:"het_job_offset,omitempty"`
+
+	// Hold Job held
+	Hold *bool `json:"hold,omitempty"`
+
+	// JobId Job ID
+	JobId        *int32          `json:"job_id,omitempty"`
+	JobResources *V0040JobRes    `json:"job_resources,omitempty"`
+	JobSizeStr   *V0040CsvString `json:"job_size_str,omitempty"`
+	JobState     *V0040JobState  `json:"job_state,omitempty"`
+
+	// LastSchedEvaluation Integer number with flags
+	LastSchedEvaluation *V0040Uint64NoVal `json:"last_sched_evaluation,omitempty"`
+
+	// Licenses License(s) required by the job
+	Licenses *string            `json:"licenses,omitempty"`
+	MailType *V0040JobMailFlags `json:"mail_type,omitempty"`
+
+	// MailUser User to receive email notifications
+	MailUser *string `json:"mail_user,omitempty"`
+
+	// MaxCpus Integer number with flags
+	MaxCpus *V0040Uint32NoVal `json:"max_cpus,omitempty"`
+
+	// MaxNodes Integer number with flags
+	MaxNodes *V0040Uint32NoVal `json:"max_nodes,omitempty"`
+
+	// MaximumSwitchWaitTime Maximum time to wait for switches in seconds
+	MaximumSwitchWaitTime *int32 `json:"maximum_switch_wait_time,omitempty"`
+
+	// McsLabel Multi-Category Security label on the job
+	McsLabel *string `json:"mcs_label,omitempty"`
+
+	// MemoryPerCpu Integer number with flags
+	MemoryPerCpu *V0040Uint64NoVal `json:"memory_per_cpu,omitempty"`
+
+	// MemoryPerNode Integer number with flags
+	MemoryPerNode *V0040Uint64NoVal `json:"memory_per_node,omitempty"`
+
+	// MemoryPerTres Semicolon delimited list of TRES=# values indicating how much memory in megabytes should be allocated for each specified TRES (currently only used for gres/gpu)
+	MemoryPerTres *string `json:"memory_per_tres,omitempty"`
+
+	// MinimumCpusPerNode Integer number with flags
+	MinimumCpusPerNode *V0040Uint16NoVal `json:"minimum_cpus_per_node,omitempty"`
+
+	// MinimumSwitches Maximum number of switches (the 'minimum' in the key is incorrect)
+	MinimumSwitches *int32 `json:"minimum_switches,omitempty"`
+
+	// MinimumTmpDiskPerNode Integer number with flags
+	MinimumTmpDiskPerNode *V0040Uint32NoVal `json:"minimum_tmp_disk_per_node,omitempty"`
+
+	// Name Job name
+	Name *string `json:"name,omitempty"`
+
+	// Network Network specs for the job
+	Network *string `json:"network,omitempty"`
+
+	// Nice Requested job priority change
+	Nice *int32 `json:"nice,omitempty"`
+
+	// NodeCount Integer number with flags
+	NodeCount *V0040Uint32NoVal `json:"node_count,omitempty"`
+
+	// Nodes Node(s) allocated to the job
+	Nodes         *string `json:"nodes,omitempty"`
+	Oversubscribe *bool   `json:"oversubscribe,omitempty"`
+
+	// Partition Partition assigned to the job
+	Partition *string `json:"partition,omitempty"`
+	Power     *struct {
+		// Flags removed field
+		// Deprecated:
+		Flags *V0040PowerFlags `json:"flags,omitempty"`
+	} `json:"power,omitempty"`
+
+	// PreSusTime Integer number with flags
+	PreSusTime *V0040Uint64NoVal `json:"pre_sus_time,omitempty"`
+
+	// PreemptTime Integer number with flags
+	PreemptTime *V0040Uint64NoVal `json:"preempt_time,omitempty"`
+
+	// PreemptableTime Integer number with flags
+	PreemptableTime *V0040Uint64NoVal `json:"preemptable_time,omitempty"`
+
+	// Prefer Feature(s) the job requested but that are not required
+	Prefer *string `json:"prefer,omitempty"`
+
+	// Priority Integer number with flags
+	Priority *V0040Uint32NoVal       `json:"priority,omitempty"`
+	Profile  *V0040AcctGatherProfile `json:"profile,omitempty"`
+
+	// Qos Quality of Service assigned to the job, if pending the QOS requested
+	Qos *string `json:"qos,omitempty"`
+
+	// Reboot Node reboot requested before start
+	Reboot *bool `json:"reboot,omitempty"`
+
+	// Requeue Determines whether the job may be requeued
+	Requeue *bool `json:"requeue,omitempty"`
+
+	// RequiredNodes Comma separated list of required nodes
+	RequiredNodes *string `json:"required_nodes,omitempty"`
+
+	// ResizeTime Integer number with flags
+	ResizeTime *V0040Uint64NoVal `json:"resize_time,omitempty"`
+
+	// RestartCnt Number of job restarts
+	RestartCnt *int32 `json:"restart_cnt,omitempty"`
+
+	// ResvName Name of reservation to use
+	ResvName *string `json:"resv_name,omitempty"`
+
+	// ScheduledNodes List of nodes scheduled to be used for the job
+	ScheduledNodes *string `json:"scheduled_nodes,omitempty"`
+
+	// SelinuxContext SELinux context
+	SelinuxContext *string            `json:"selinux_context,omitempty"`
+	Shared         *V0040JobShared    `json:"shared,omitempty"`
+	ShowFlags      *V0040JobShowFlags `json:"show_flags,omitempty"`
+
+	// SocketsPerBoard Number of sockets per board required
+	SocketsPerBoard *int32 `json:"sockets_per_board,omitempty"`
+
+	// SocketsPerNode Integer number with flags
+	SocketsPerNode *V0040Uint16NoVal `json:"sockets_per_node,omitempty"`
+
+	// StandardError Path to stderr file
+	StandardError *string `json:"standard_error,omitempty"`
+
+	// StandardInput Path to stdin file
+	StandardInput *string `json:"standard_input,omitempty"`
+
+	// StandardOutput Path to stdout file
+	StandardOutput *string `json:"standard_output,omitempty"`
+
+	// StartTime Integer number with flags
+	StartTime *V0040Uint64NoVal `json:"start_time,omitempty"`
+
+	// StateDescription Optional details for state_reason
+	StateDescription *string `json:"state_description,omitempty"`
+
+	// StateReason Reason for current Pending or Failed state
+	StateReason *string `json:"state_reason,omitempty"`
+
+	// SubmitTime Integer number with flags
+	SubmitTime *V0040Uint64NoVal `json:"submit_time,omitempty"`
+
+	// SuspendTime Integer number with flags
+	SuspendTime *V0040Uint64NoVal `json:"suspend_time,omitempty"`
+
+	// SystemComment Arbitrary comment from slurmctld
+	SystemComment *string `json:"system_comment,omitempty"`
+
+	// Tasks Integer number with flags
+	Tasks *V0040Uint32NoVal `json:"tasks,omitempty"`
+
+	// TasksPerBoard Integer number with flags
+	TasksPerBoard *V0040Uint16NoVal `json:"tasks_per_board,omitempty"`
+
+	// TasksPerCore Integer number with flags
+	TasksPerCore *V0040Uint16NoVal `json:"tasks_per_core,omitempty"`
+
+	// TasksPerNode Integer number with flags
+	TasksPerNode *V0040Uint16NoVal `json:"tasks_per_node,omitempty"`
+
+	// TasksPerSocket Integer number with flags
+	TasksPerSocket *V0040Uint16NoVal `json:"tasks_per_socket,omitempty"`
+
+	// TasksPerTres Integer number with flags
+	TasksPerTres *V0040Uint16NoVal `json:"tasks_per_tres,omitempty"`
+
+	// ThreadSpec Specialized thread count
+	ThreadSpec *int32 `json:"thread_spec,omitempty"`
+
+	// ThreadsPerCore Integer number with flags
+	ThreadsPerCore *V0040Uint16NoVal `json:"threads_per_core,omitempty"`
+
+	// TimeLimit Integer number with flags
+	TimeLimit *V0040Uint32NoVal `json:"time_limit,omitempty"`
+
+	// TimeMinimum Integer number with flags
+	TimeMinimum *V0040Uint32NoVal `json:"time_minimum,omitempty"`
+
+	// TresAllocStr TRES used by the job
+	TresAllocStr *string `json:"tres_alloc_str,omitempty"`
+
+	// TresBind Task to TRES binding directives
+	TresBind *string `json:"tres_bind,omitempty"`
+
+	// TresFreq TRES frequency directives
+	TresFreq *string `json:"tres_freq,omitempty"`
+
+	// TresPerJob Comma separated list of TRES=# values to be allocated per job
+	TresPerJob *string `json:"tres_per_job,omitempty"`
+
+	// TresPerNode Comma separated list of TRES=# values to be allocated per node
+	TresPerNode *string `json:"tres_per_node,omitempty"`
+
+	// TresPerSocket Comma separated list of TRES=# values to be allocated per socket
+	TresPerSocket *string `json:"tres_per_socket,omitempty"`
+
+	// TresPerTask Comma separated list of TRES=# values to be allocated per task
+	TresPerTask *string `json:"tres_per_task,omitempty"`
+
+	// TresReqStr TRES requested by the job
+	TresReqStr *string `json:"tres_req_str,omitempty"`
+
+	// UserId User ID that owns the job
+	UserId *int32 `json:"user_id,omitempty"`
+
+	// UserName User name that owns the job
+	UserName *string `json:"user_name,omitempty"`
+
+	// Wckey Workload characterization key
+	Wckey *string `json:"wckey,omitempty"`
+}
+
+// V0040JobInfoGresDetail defines model for v0.0.40_job_info_gres_detail.
+type V0040JobInfoGresDetail = []string
+
+// V0040JobInfoMsg defines model for v0.0.40_job_info_msg.
+type V0040JobInfoMsg = []V0040JobInfo
+
+// V0040JobList defines model for v0.0.40_job_list.
+type V0040JobList = []V0040Job
+
+// V0040JobMailFlags defines model for v0.0.40_job_mail_flags.
+type V0040JobMailFlags = []string
+
+// V0040JobRes defines model for v0.0.40_job_res.
+type V0040JobRes struct {
+	// AllocatedCores Number of allocated cores
+	AllocatedCores *int32 `json:"allocated_cores,omitempty"`
+
+	// AllocatedCpus Number of allocated CPUs
+	AllocatedCpus *int32 `json:"allocated_cpus,omitempty"`
+
+	// AllocatedHosts Number of allocated hosts
+	AllocatedHosts *int32 `json:"allocated_hosts,omitempty"`
+
+	// AllocatedNodes job node resources
+	AllocatedNodes *V0040JobResNodes `json:"allocated_nodes,omitempty"`
+
+	// Nodes Node(s) allocated to the job
+	Nodes *string `json:"nodes,omitempty"`
+}
+
+// V0040JobResNodes job node resources
+type V0040JobResNodes = []interface{}
+
+// V0040JobShared defines model for v0.0.40_job_shared.
+type V0040JobShared = []string
+
+// V0040JobShowFlags defines model for v0.0.40_job_show_flags.
+type V0040JobShowFlags = []string
+
+// V0040JobState defines model for v0.0.40_job_state.
+type V0040JobState = []string
+
+// V0040JobSubmitReq defines model for v0.0.40_job_submit_req.
+type V0040JobSubmitReq struct {
+	Job  *V0040JobDescMsg     `json:"job,omitempty"`
+	Jobs *V0040JobDescMsgList `json:"jobs,omitempty"`
+
+	// Script Batch job script; must be specified in first component of jobs or in job if this field is not populated
+	Script *string `json:"script,omitempty"`
+}
+
+// V0040JobSubmitResponseMsg defines model for v0.0.40_job_submit_response_msg.
+type V0040JobSubmitResponseMsg struct {
+	// Error Error message
+	Error *string `json:"error,omitempty"`
+
+	// ErrorCode Error code
+	ErrorCode *int32 `json:"error_code,omitempty"`
+
+	// JobId New job ID
+	JobId *int32 `json:"job_id,omitempty"`
+
+	// JobSubmitUserMsg Message to user from job_submit plugin
+	JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
+
+	// StepId New job step ID
+	StepId *string `json:"step_id,omitempty"`
+}
+
+// V0040KillJobsMsg defines model for v0.0.40_kill_jobs_msg.
+type V0040KillJobsMsg struct {
+	// Account Filter jobs to a specific account
+	Account *string         `json:"account,omitempty"`
+	Flags   *V0040WarnFlags `json:"flags,omitempty"`
+
+	// JobName Filter jobs to a specific name
+	JobName  *string                    `json:"job_name,omitempty"`
+	JobState *V0040JobState             `json:"job_state,omitempty"`
+	Jobs     *V0040KillJobsMsgJobsArray `json:"jobs,omitempty"`
+	Nodes    *V0040HostlistString       `json:"nodes,omitempty"`
+
+	// Partition Filter jobs to a specific partition
+	Partition *string `json:"partition,omitempty"`
+
+	// Qos Filter jobs to a specific QOS
+	Qos *string `json:"qos,omitempty"`
+
+	// Reservation Filter jobs to a specific reservation
+	Reservation *string `json:"reservation,omitempty"`
+
+	// Signal Signal to send to jobs
+	Signal *string `json:"signal,omitempty"`
+
+	// UserId Filter jobs to a specific numeric user id
+	UserId *string `json:"user_id,omitempty"`
+
+	// UserName Filter jobs to a specific user name
+	UserName *string `json:"user_name,omitempty"`
+
+	// Wckey Filter jobs to a specific wckey
+	Wckey *string `json:"wckey,omitempty"`
+}
+
+// V0040KillJobsMsgJobsArray defines model for v0.0.40_kill_jobs_msg_jobs_array.
+type V0040KillJobsMsgJobsArray = []string
+
+// V0040KillJobsRespJob defines model for v0.0.40_kill_jobs_resp_job.
+type V0040KillJobsRespJob struct {
+	Error *struct {
+		// Code Numeric error encountered signaling job
+		Code *int32 `json:"code,omitempty"`
+
+		// Message Error message why signaling job failed
+		Message *string `json:"message,omitempty"`
+
+		// String String error encountered signaling job
+		String *string `json:"string,omitempty"`
+	} `json:"error,omitempty"`
+	Federation *struct {
+		// Sibling Name of federation sibling (may be empty for non-federation)
+		Sibling *string `json:"sibling,omitempty"`
+	} `json:"federation,omitempty"`
+
+	// JobId Integer number with flags
+	JobId V0040Uint32NoVal `json:"job_id"`
+
+	// StepId Job or Step ID that signaling failed
+	StepId string `json:"step_id"`
+}
+
+// V0040KillJobsRespMsg List of jobs signal responses
+type V0040KillJobsRespMsg = []V0040KillJobsRespJob
+
+// V0040License defines model for v0.0.40_license.
+type V0040License struct {
+	// Free Number of licenses currently available
+	Free *int32 `json:"Free,omitempty"`
+
+	// LastConsumed Last known number of licenses that were consumed in the license manager (Remote Only)
+	LastConsumed *int32 `json:"LastConsumed,omitempty"`
+
+	// LastDeficit Number of "missing licenses" from the cluster's perspective
+	LastDeficit *int32 `json:"LastDeficit,omitempty"`
+
+	// LastUpdate When the license information was last updated (UNIX Timestamp)
+	LastUpdate *int64 `json:"LastUpdate,omitempty"`
+
+	// LicenseName Name of the license
+	LicenseName *string `json:"LicenseName,omitempty"`
+
+	// Remote Indicates whether licenses are served by the database
+	Remote *bool `json:"Remote,omitempty"`
+
+	// Reserved Number of licenses reserved
+	Reserved *int32 `json:"Reserved,omitempty"`
+
+	// Total Total number of licenses present
+	Total *int32 `json:"Total,omitempty"`
+
+	// Used Number of licenses in use
+	Used *int32 `json:"Used,omitempty"`
+}
+
+// V0040Licenses defines model for v0.0.40_licenses.
+type V0040Licenses = []V0040License
+
+// V0040MemoryBindingType defines model for v0.0.40_memory_binding_type.
+type V0040MemoryBindingType = []string
+
+// V0040Node defines model for v0.0.40_node.
+type V0040Node struct {
+	ActiveFeatures *V0040CsvString `json:"active_features,omitempty"`
+
+	// Address NodeAddr, used to establish a communication path
+	Address *string `json:"address,omitempty"`
+
+	// AllocCpus Total number of CPUs currently allocated for jobs
+	AllocCpus *int32 `json:"alloc_cpus,omitempty"`
+
+	// AllocIdleCpus Total number of idle CPUs
+	AllocIdleCpus *int32 `json:"alloc_idle_cpus,omitempty"`
+
+	// AllocMemory Total memory in MB currently allocated for jobs
+	AllocMemory *int64 `json:"alloc_memory,omitempty"`
+
+	// Architecture Computer architecture
+	Architecture *string `json:"architecture,omitempty"`
+
+	// Boards Number of Baseboards in nodes with a baseboard controller
+	Boards *int32 `json:"boards,omitempty"`
+
+	// BootTime Integer number with flags
+	BootTime *V0040Uint64NoVal `json:"boot_time,omitempty"`
+
+	// BurstbufferNetworkAddress Alternate network path to be used for sbcast network traffic
+	BurstbufferNetworkAddress *string `json:"burstbuffer_network_address,omitempty"`
+
+	// ClusterName Cluster name (only set in federated environments)
+	ClusterName *string `json:"cluster_name,omitempty"`
+
+	// Comment Arbitrary comment
+	Comment *string `json:"comment,omitempty"`
+
+	// Cores Number of cores in a single physical processor socket
+	Cores *int32 `json:"cores,omitempty"`
+
+	// CpuBinding Default method for binding tasks to allocated CPUs
+	CpuBinding *int32 `json:"cpu_binding,omitempty"`
+
+	// CpuLoad CPU load as reported by the OS
+	CpuLoad *int32 `json:"cpu_load,omitempty"`
+
+	// Cpus Total CPUs, including cores and threads
+	Cpus *int32 `json:"cpus,omitempty"`
+
+	// EffectiveCpus Number of effective CPUs (excluding specialized CPUs)
+	EffectiveCpus *int32                 `json:"effective_cpus,omitempty"`
+	Energy        *V0040AcctGatherEnergy `json:"energy,omitempty"`
+
+	// ExternalSensors removed field
+	// Deprecated:
+	ExternalSensors *V0040ExtSensorsData `json:"external_sensors,omitempty"`
+
+	// Extra Arbitrary string used for node filtering if extra constraints are enabled
+	Extra    *string         `json:"extra,omitempty"`
+	Features *V0040CsvString `json:"features,omitempty"`
+
+	// FreeMem Integer number with flags
+	FreeMem *V0040Uint64NoVal `json:"free_mem,omitempty"`
+
+	// Gres Generic resources
+	Gres *string `json:"gres,omitempty"`
+
+	// GresDrained Drained generic resources
+	GresDrained *string `json:"gres_drained,omitempty"`
+
+	// GresUsed Generic resources currently in use
+	GresUsed *string `json:"gres_used,omitempty"`
+
+	// Hostname NodeHostname
+	Hostname *string `json:"hostname,omitempty"`
+
+	// InstanceId Cloud instance ID
+	InstanceId *string `json:"instance_id,omitempty"`
+
+	// InstanceType Cloud instance type
+	InstanceType *string `json:"instance_type,omitempty"`
+
+	// LastBusy Integer number with flags
+	LastBusy *V0040Uint64NoVal `json:"last_busy,omitempty"`
+
+	// McsLabel Multi-Category Security label
+	McsLabel *string `json:"mcs_label,omitempty"`
+
+	// Name NodeName
+	Name                 *string          `json:"name,omitempty"`
+	NextStateAfterReboot *V0040NodeStates `json:"next_state_after_reboot,omitempty"`
+
+	// OperatingSystem Operating system reported by the node
+	OperatingSystem *string `json:"operating_system,omitempty"`
+
+	// Owner User allowed to run jobs on this node (unset if no restriction)
+	Owner      *string         `json:"owner,omitempty"`
+	Partitions *V0040CsvString `json:"partitions,omitempty"`
+
+	// Port TCP port number of the slurmd
+	Port *int32 `json:"port,omitempty"`
+
+	// Power removed field
+	// Deprecated:
+	Power *V0040PowerMgmtData `json:"power,omitempty"`
+
+	// RealMemory Total memory in MB on the node
+	RealMemory *int64 `json:"real_memory,omitempty"`
+
+	// Reason Describes why the node is in a "DOWN", "DRAINED", "DRAINING", "FAILING" or "FAIL" state
+	Reason *string `json:"reason,omitempty"`
+
+	// ReasonChangedAt Integer number with flags
+	ReasonChangedAt *V0040Uint64NoVal `json:"reason_changed_at,omitempty"`
+
+	// ReasonSetByUser User who set the reason
+	ReasonSetByUser *string `json:"reason_set_by_user,omitempty"`
+
+	// Reservation Name of reservation containing this node
+	Reservation *string `json:"reservation,omitempty"`
+
+	// ResumeAfter Integer number with flags
+	ResumeAfter *V0040Uint64NoVal `json:"resume_after,omitempty"`
+
+	// SlurmdStartTime Integer number with flags
+	SlurmdStartTime *V0040Uint64NoVal `json:"slurmd_start_time,omitempty"`
+
+	// Sockets Number of physical processor sockets/chips on the node
+	Sockets *int32 `json:"sockets,omitempty"`
+
+	// SpecializedCores Number of cores reserved for system use
+	SpecializedCores *int32 `json:"specialized_cores,omitempty"`
+
+	// SpecializedCpus Abstract CPU IDs on this node reserved for exclusive use by slurmd and slurmstepd
+	SpecializedCpus *string `json:"specialized_cpus,omitempty"`
+
+	// SpecializedMemory Combined memory limit, in MB, for Slurm compute node daemons
+	SpecializedMemory *int64           `json:"specialized_memory,omitempty"`
+	State             *V0040NodeStates `json:"state,omitempty"`
+
+	// TemporaryDisk Total size in MB of temporary disk storage in TmpFS
+	TemporaryDisk *int32 `json:"temporary_disk,omitempty"`
+
+	// Threads Number of logical threads in a single physical core
+	Threads *int32 `json:"threads,omitempty"`
+
+	// Tres Configured trackable resources
+	Tres *string `json:"tres,omitempty"`
+
+	// TresUsed Trackable resources currently allocated for jobs
+	TresUsed *string `json:"tres_used,omitempty"`
+
+	// TresWeighted Ignored. Was weighted number of billable trackable resources allocated
+	TresWeighted *float64 `json:"tres_weighted,omitempty"`
+
+	// Version Slurmd version
+	Version *string `json:"version,omitempty"`
+
+	// Weight Weight of the node for scheduling purposes
+	Weight *int32 `json:"weight,omitempty"`
+}
+
+// V0040NodeStates defines model for v0.0.40_node_states.
+type V0040NodeStates = []string
+
+// V0040Nodes defines model for v0.0.40_nodes.
+type V0040Nodes = []V0040Node
+
+// V0040OpenMode defines model for v0.0.40_open_mode.
+type V0040OpenMode = []string
+
+// V0040OpenapiAccountsAddCondResp defines model for v0.0.40_openapi_accounts_add_cond_resp.
+type V0040OpenapiAccountsAddCondResp struct {
+	Account              *V0040AccountShort    `json:"account,omitempty"`
+	AssociationCondition *V0040AccountsAddCond `json:"association_condition,omitempty"`
+	Errors               *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta                 *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings             *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiAccountsAddCondRespStr defines model for v0.0.40_openapi_accounts_add_cond_resp_str.
+type V0040OpenapiAccountsAddCondRespStr struct {
+	// AddedAccounts added_accounts
+	AddedAccounts string                `json:"added_accounts"`
+	Errors        *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta          *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings      *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiAccountsRemovedResp defines model for v0.0.40_openapi_accounts_removed_resp.
+type V0040OpenapiAccountsRemovedResp struct {
+	Errors          *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta            *V0040OpenapiMeta     `json:"meta,omitempty"`
+	RemovedAccounts V0040StringList       `json:"removed_accounts"`
+	Warnings        *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiAccountsResp defines model for v0.0.40_openapi_accounts_resp.
+type V0040OpenapiAccountsResp struct {
+	Accounts V0040AccountList      `json:"accounts"`
+	Errors   *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta     *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiAssocsRemovedResp defines model for v0.0.40_openapi_assocs_removed_resp.
+type V0040OpenapiAssocsRemovedResp struct {
+	Errors              *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta                *V0040OpenapiMeta     `json:"meta,omitempty"`
+	RemovedAssociations V0040StringList       `json:"removed_associations"`
+	Warnings            *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiAssocsResp defines model for v0.0.40_openapi_assocs_resp.
+type V0040OpenapiAssocsResp struct {
+	Associations V0040AssocList        `json:"associations"`
+	Errors       *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta         *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings     *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiClustersRemovedResp defines model for v0.0.40_openapi_clusters_removed_resp.
+type V0040OpenapiClustersRemovedResp struct {
+	DeletedClusters V0040StringList       `json:"deleted_clusters"`
+	Errors          *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta            *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings        *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiClustersResp defines model for v0.0.40_openapi_clusters_resp.
+type V0040OpenapiClustersResp struct {
+	Clusters V0040ClusterRecList   `json:"clusters"`
+	Errors   *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta     *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiDiagResp defines model for v0.0.40_openapi_diag_resp.
+type V0040OpenapiDiagResp struct {
+	Errors     *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta       *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Statistics V0040StatsMsg         `json:"statistics"`
+	Warnings   *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiError defines model for v0.0.40_openapi_error.
+type V0040OpenapiError struct {
+	// Description Long form error description
+	Description *string `json:"description,omitempty"`
+
+	// Error Short form error description
+	Error *string `json:"error,omitempty"`
+
+	// ErrorNumber Slurm numeric error identifier
+	ErrorNumber *int32 `json:"error_number,omitempty"`
+
+	// Source Source of error or where error was first detected
+	Source *string `json:"source,omitempty"`
+}
+
+// V0040OpenapiErrors defines model for v0.0.40_openapi_errors.
+type V0040OpenapiErrors = []V0040OpenapiError
+
+// V0040OpenapiInstancesResp defines model for v0.0.40_openapi_instances_resp.
+type V0040OpenapiInstancesResp struct {
+	Errors    *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Instances V0040InstanceList     `json:"instances"`
+	Meta      *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings  *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiJobInfoResp defines model for v0.0.40_openapi_job_info_resp.
+type V0040OpenapiJobInfoResp struct {
+	Errors *V0040OpenapiErrors `json:"errors,omitempty"`
+	Jobs   V0040JobInfoMsg     `json:"jobs"`
+
+	// LastBackfill Integer number with flags
+	LastBackfill V0040Uint64NoVal `json:"last_backfill"`
+
+	// LastUpdate Integer number with flags
+	LastUpdate V0040Uint64NoVal      `json:"last_update"`
+	Meta       *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings   *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiJobPostResponse defines model for v0.0.40_openapi_job_post_response.
+type V0040OpenapiJobPostResponse struct {
+	Errors *V0040OpenapiErrors `json:"errors,omitempty"`
+
+	// JobId First updated Job ID - Use results instead
 	JobId *string `json:"job_id,omitempty"`
+
+	// JobSubmitUserMsg First updated Job submission user message - Use results instead
+	JobSubmitUserMsg *string                     `json:"job_submit_user_msg,omitempty"`
+	Meta             *V0040OpenapiMeta           `json:"meta,omitempty"`
+	Results          *V0040JobArrayResponseArray `json:"results,omitempty"`
+
+	// StepId First updated Step ID - Use results instead
+	StepId   *string               `json:"step_id,omitempty"`
+	Warnings *V0040OpenapiWarnings `json:"warnings,omitempty"`
 }
 
-// Node defines model for Node.
-type Node struct {
-	Cpus     *int       `json:"cpus,omitempty"`
-	Features *[]string  `json:"features,omitempty"`
-	Memory   *int       `json:"memory,omitempty"`
-	Name     *string    `json:"name,omitempty"`
-	State    *NodeState `json:"state,omitempty"`
+// V0040OpenapiJobSubmitResponse defines model for v0.0.40_openapi_job_submit_response.
+type V0040OpenapiJobSubmitResponse struct {
+	Errors *V0040OpenapiErrors `json:"errors,omitempty"`
+
+	// JobId Submitted Job ID
+	JobId *int32 `json:"job_id,omitempty"`
+
+	// JobSubmitUserMsg job submission user message
+	JobSubmitUserMsg *string                    `json:"job_submit_user_msg,omitempty"`
+	Meta             *V0040OpenapiMeta          `json:"meta,omitempty"`
+	Result           *V0040JobSubmitResponseMsg `json:"result,omitempty"`
+
+	// StepId Submitted Step ID
+	StepId   *string               `json:"step_id,omitempty"`
+	Warnings *V0040OpenapiWarnings `json:"warnings,omitempty"`
 }
 
-// NodeState defines model for Node.State.
-type NodeState string
+// V0040OpenapiKillJobsResp defines model for v0.0.40_openapi_kill_jobs_resp.
+type V0040OpenapiKillJobsResp struct {
+	Errors *V0040OpenapiErrors `json:"errors,omitempty"`
+	Meta   *V0040OpenapiMeta   `json:"meta,omitempty"`
 
-// Partition defines model for Partition.
-type Partition struct {
-	DefaultTimeLimit *int    `json:"default_time_limit,omitempty"`
-	MaxTimeLimit     *int    `json:"max_time_limit,omitempty"`
-	Name             *string `json:"name,omitempty"`
-	State            *string `json:"state,omitempty"`
-	TotalCpus        *int    `json:"total_cpus,omitempty"`
-	TotalMemory      *int    `json:"total_memory,omitempty"`
+	// Status List of jobs signal responses
+	Status   V0040KillJobsRespMsg  `json:"status"`
+	Warnings *V0040OpenapiWarnings `json:"warnings,omitempty"`
 }
 
-// SubmitJobJSONRequestBody defines body for SubmitJob for application/json ContentType.
-type SubmitJobJSONRequestBody = JobSubmission
+// V0040OpenapiLicensesResp defines model for v0.0.40_openapi_licenses_resp.
+type V0040OpenapiLicensesResp struct {
+	Errors *V0040OpenapiErrors `json:"errors,omitempty"`
+
+	// LastUpdate Integer number with flags
+	LastUpdate V0040Uint64NoVal      `json:"last_update"`
+	Licenses   V0040Licenses         `json:"licenses"`
+	Meta       *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings   *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiMeta defines model for v0.0.40_openapi_meta.
+type V0040OpenapiMeta struct {
+	Client *struct {
+		// Group Client group (if known)
+		Group *string `json:"group,omitempty"`
+
+		// Source Client source description
+		Source *string `json:"source,omitempty"`
+
+		// User Client user (if known)
+		User *string `json:"user,omitempty"`
+	} `json:"client,omitempty"`
+	Command *V0040StringArray `json:"command,omitempty"`
+	Plugin  *struct {
+		// AccountingStorage Slurm accounting plugin
+		AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+		// DataParser Slurm data_parser plugin
+		DataParser *string `json:"data_parser,omitempty"`
+
+		// Name Slurm plugin name (if applicable)
+		Name *string `json:"name,omitempty"`
+
+		// Type Slurm plugin type (if applicable)
+		Type *string `json:"type,omitempty"`
+	} `json:"plugin,omitempty"`
+	Slurm *struct {
+		// Cluster Slurm cluster name
+		Cluster *string `json:"cluster,omitempty"`
+
+		// Release Slurm release string
+		Release *string `json:"release,omitempty"`
+		Version *struct {
+			// Major Slurm release major version
+			Major *string `json:"major,omitempty"`
+
+			// Micro Slurm release micro version
+			Micro *string `json:"micro,omitempty"`
+
+			// Minor Slurm release minor version
+			Minor *string `json:"minor,omitempty"`
+		} `json:"version,omitempty"`
+	} `json:"slurm,omitempty"`
+}
+
+// V0040OpenapiNodesResp defines model for v0.0.40_openapi_nodes_resp.
+type V0040OpenapiNodesResp struct {
+	Errors *V0040OpenapiErrors `json:"errors,omitempty"`
+
+	// LastUpdate Integer number with flags
+	LastUpdate V0040Uint64NoVal      `json:"last_update"`
+	Meta       *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Nodes      V0040Nodes            `json:"nodes"`
+	Warnings   *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiPartitionResp defines model for v0.0.40_openapi_partition_resp.
+type V0040OpenapiPartitionResp struct {
+	Errors *V0040OpenapiErrors `json:"errors,omitempty"`
+
+	// LastUpdate Integer number with flags
+	LastUpdate V0040Uint64NoVal      `json:"last_update"`
+	Meta       *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Partitions V0040PartitionInfoMsg `json:"partitions"`
+	Warnings   *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiPingArrayResp defines model for v0.0.40_openapi_ping_array_resp.
+type V0040OpenapiPingArrayResp struct {
+	Errors   *V0040OpenapiErrors      `json:"errors,omitempty"`
+	Meta     *V0040OpenapiMeta        `json:"meta,omitempty"`
+	Pings    V0040ControllerPingArray `json:"pings"`
+	Warnings *V0040OpenapiWarnings    `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiReservationResp defines model for v0.0.40_openapi_reservation_resp.
+type V0040OpenapiReservationResp struct {
+	Errors *V0040OpenapiErrors `json:"errors,omitempty"`
+
+	// LastUpdate Integer number with flags
+	LastUpdate   V0040Uint64NoVal        `json:"last_update"`
+	Meta         *V0040OpenapiMeta       `json:"meta,omitempty"`
+	Reservations V0040ReservationInfoMsg `json:"reservations"`
+	Warnings     *V0040OpenapiWarnings   `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiResp defines model for v0.0.40_openapi_resp.
+type V0040OpenapiResp struct {
+	Errors   *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta     *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiSharesResp defines model for v0.0.40_openapi_shares_resp.
+type V0040OpenapiSharesResp struct {
+	Errors   *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta     *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Shares   V0040SharesRespMsg    `json:"shares"`
+	Warnings *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiSlurmdbdConfigResp defines model for v0.0.40_openapi_slurmdbd_config_resp.
+type V0040OpenapiSlurmdbdConfigResp struct {
+	Accounts     *V0040AccountList     `json:"accounts,omitempty"`
+	Associations *V0040AssocList       `json:"associations,omitempty"`
+	Clusters     *V0040ClusterRecList  `json:"clusters,omitempty"`
+	Errors       *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Instances    *V0040InstanceList    `json:"instances,omitempty"`
+	Meta         *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Qos          *V0040QosList         `json:"qos,omitempty"`
+	Tres         *V0040TresList        `json:"tres,omitempty"`
+	Users        *V0040UserList        `json:"users,omitempty"`
+	Warnings     *V0040OpenapiWarnings `json:"warnings,omitempty"`
+	Wckeys       *V0040WckeyList       `json:"wckeys,omitempty"`
+}
+
+// V0040OpenapiSlurmdbdJobsResp defines model for v0.0.40_openapi_slurmdbd_jobs_resp.
+type V0040OpenapiSlurmdbdJobsResp struct {
+	Errors   *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Jobs     V0040JobList          `json:"jobs"`
+	Meta     *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiSlurmdbdQosRemovedResp defines model for v0.0.40_openapi_slurmdbd_qos_removed_resp.
+type V0040OpenapiSlurmdbdQosRemovedResp struct {
+	Errors     *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta       *V0040OpenapiMeta     `json:"meta,omitempty"`
+	RemovedQos V0040StringList       `json:"removed_qos"`
+	Warnings   *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiSlurmdbdQosResp defines model for v0.0.40_openapi_slurmdbd_qos_resp.
+type V0040OpenapiSlurmdbdQosResp struct {
+	Errors   *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta     *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Qos      V0040QosList          `json:"qos"`
+	Warnings *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiSlurmdbdStatsResp defines model for v0.0.40_openapi_slurmdbd_stats_resp.
+type V0040OpenapiSlurmdbdStatsResp struct {
+	Errors     *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta       *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Statistics V0040StatsRec         `json:"statistics"`
+	Warnings   *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiTresResp defines model for v0.0.40_openapi_tres_resp.
+type V0040OpenapiTresResp struct {
+	TRES     V0040TresList         `json:"TRES"`
+	Errors   *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta     *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiUsersAddCondResp defines model for v0.0.40_openapi_users_add_cond_resp.
+type V0040OpenapiUsersAddCondResp struct {
+	AssociationCondition V0040UsersAddCond     `json:"association_condition"`
+	Errors               *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta                 *V0040OpenapiMeta     `json:"meta,omitempty"`
+	User                 V0040UserShort        `json:"user"`
+	Warnings             *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiUsersAddCondRespStr defines model for v0.0.40_openapi_users_add_cond_resp_str.
+type V0040OpenapiUsersAddCondRespStr struct {
+	// AddedUsers added_users
+	AddedUsers string                `json:"added_users"`
+	Errors     *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta       *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings   *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiUsersResp defines model for v0.0.40_openapi_users_resp.
+type V0040OpenapiUsersResp struct {
+	Errors   *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta     *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Users    V0040UserList         `json:"users"`
+	Warnings *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiWarning defines model for v0.0.40_openapi_warning.
+type V0040OpenapiWarning struct {
+	// Description Long form warning description
+	Description *string `json:"description,omitempty"`
+
+	// Source Source of warning or where warning was first detected
+	Source *string `json:"source,omitempty"`
+}
+
+// V0040OpenapiWarnings defines model for v0.0.40_openapi_warnings.
+type V0040OpenapiWarnings = []V0040OpenapiWarning
+
+// V0040OpenapiWckeyRemovedResp defines model for v0.0.40_openapi_wckey_removed_resp.
+type V0040OpenapiWckeyRemovedResp struct {
+	DeletedWckeys V0040StringList       `json:"deleted_wckeys"`
+	Errors        *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta          *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings      *V0040OpenapiWarnings `json:"warnings,omitempty"`
+}
+
+// V0040OpenapiWckeyResp defines model for v0.0.40_openapi_wckey_resp.
+type V0040OpenapiWckeyResp struct {
+	Errors   *V0040OpenapiErrors   `json:"errors,omitempty"`
+	Meta     *V0040OpenapiMeta     `json:"meta,omitempty"`
+	Warnings *V0040OpenapiWarnings `json:"warnings,omitempty"`
+	Wckeys   V0040WckeyList        `json:"wckeys"`
+}
+
+// V0040OversubscribeFlags defines model for v0.0.40_oversubscribe_flags.
+type V0040OversubscribeFlags = []string
+
+// V0040PartitionInfo defines model for v0.0.40_partition_info.
+type V0040PartitionInfo struct {
+	Accounts *struct {
+		// Allowed AllowAccounts
+		Allowed *string `json:"allowed,omitempty"`
+
+		// Deny DenyAccounts
+		Deny *string `json:"deny,omitempty"`
+	} `json:"accounts,omitempty"`
+
+	// Alternate Alternate
+	Alternate *string `json:"alternate,omitempty"`
+
+	// Cluster Cluster name
+	Cluster *string `json:"cluster,omitempty"`
+	Cpus    *struct {
+		// TaskBinding CpuBind
+		TaskBinding *int32 `json:"task_binding,omitempty"`
+
+		// Total TotalCPUs
+		Total *int32 `json:"total,omitempty"`
+	} `json:"cpus,omitempty"`
+	Defaults *struct {
+		// Job JobDefaults
+		Job *string `json:"job,omitempty"`
+
+		// MemoryPerCpu DefMemPerCPU or DefMemPerNode
+		MemoryPerCpu *int64 `json:"memory_per_cpu,omitempty"`
+
+		// PartitionMemoryPerCpu Integer number with flags
+		PartitionMemoryPerCpu *V0040Uint64NoVal `json:"partition_memory_per_cpu,omitempty"`
+
+		// PartitionMemoryPerNode Integer number with flags
+		PartitionMemoryPerNode *V0040Uint64NoVal `json:"partition_memory_per_node,omitempty"`
+
+		// Time Integer number with flags
+		Time *V0040Uint32NoVal `json:"time,omitempty"`
+	} `json:"defaults,omitempty"`
+
+	// GraceTime GraceTime
+	GraceTime *int32 `json:"grace_time,omitempty"`
+	Groups    *struct {
+		// Allowed AllowGroups
+		Allowed *string `json:"allowed,omitempty"`
+	} `json:"groups,omitempty"`
+	Maximums *struct {
+		// CpusPerNode Integer number with flags
+		CpusPerNode *V0040Uint32NoVal `json:"cpus_per_node,omitempty"`
+
+		// CpusPerSocket Integer number with flags
+		CpusPerSocket *V0040Uint32NoVal `json:"cpus_per_socket,omitempty"`
+
+		// MemoryPerCpu MaxMemPerCPU or MaxMemPerNode
+		MemoryPerCpu *int64 `json:"memory_per_cpu,omitempty"`
+
+		// Nodes Integer number with flags
+		Nodes *V0040Uint32NoVal `json:"nodes,omitempty"`
+
+		// OverTimeLimit Integer number with flags
+		OverTimeLimit *V0040Uint16NoVal `json:"over_time_limit,omitempty"`
+		Oversubscribe *struct {
+			Flags *V0040OversubscribeFlags `json:"flags,omitempty"`
+
+			// Jobs Maximum number of jobs allowed to oversubscribe resources
+			Jobs *int32 `json:"jobs,omitempty"`
+		} `json:"oversubscribe,omitempty"`
+
+		// PartitionMemoryPerCpu Integer number with flags
+		PartitionMemoryPerCpu *V0040Uint64NoVal `json:"partition_memory_per_cpu,omitempty"`
+
+		// PartitionMemoryPerNode Integer number with flags
+		PartitionMemoryPerNode *V0040Uint64NoVal `json:"partition_memory_per_node,omitempty"`
+
+		// Shares OverSubscribe
+		Shares *int32 `json:"shares,omitempty"`
+
+		// Time Integer number with flags
+		Time *V0040Uint32NoVal `json:"time,omitempty"`
+	} `json:"maximums,omitempty"`
+	Minimums *struct {
+		// Nodes MinNodes
+		Nodes *int32 `json:"nodes,omitempty"`
+	} `json:"minimums,omitempty"`
+
+	// Name PartitionName
+	Name *string `json:"name,omitempty"`
+
+	// NodeSets NodeSets
+	NodeSets *string `json:"node_sets,omitempty"`
+	Nodes    *struct {
+		// AllowedAllocation AllocNodes
+		AllowedAllocation *string `json:"allowed_allocation,omitempty"`
+
+		// Configured Nodes
+		Configured *string `json:"configured,omitempty"`
+
+		// Total TotalNodes
+		Total *int32 `json:"total,omitempty"`
+	} `json:"nodes,omitempty"`
+	Partition *struct {
+		State *V0040PartitionStates `json:"state,omitempty"`
+	} `json:"partition,omitempty"`
+	Priority *struct {
+		// JobFactor PriorityJobFactor
+		JobFactor *int32 `json:"job_factor,omitempty"`
+
+		// Tier PriorityTier
+		Tier *int32 `json:"tier,omitempty"`
+	} `json:"priority,omitempty"`
+	Qos *struct {
+		// Allowed AllowQOS
+		Allowed *string `json:"allowed,omitempty"`
+
+		// Assigned QOS
+		Assigned *string `json:"assigned,omitempty"`
+
+		// Deny DenyQOS
+		Deny *string `json:"deny,omitempty"`
+	} `json:"qos,omitempty"`
+
+	// SuspendTime Integer number with flags
+	SuspendTime *V0040Uint32NoVal `json:"suspend_time,omitempty"`
+	Timeouts    *struct {
+		// Resume Integer number with flags
+		Resume *V0040Uint16NoVal `json:"resume,omitempty"`
+
+		// Suspend Integer number with flags
+		Suspend *V0040Uint16NoVal `json:"suspend,omitempty"`
+	} `json:"timeouts,omitempty"`
+	Tres *struct {
+		// BillingWeights TRESBillingWeights
+		BillingWeights *string `json:"billing_weights,omitempty"`
+
+		// Configured TRES
+		Configured *string `json:"configured,omitempty"`
+	} `json:"tres,omitempty"`
+}
+
+// V0040PartitionInfoMsg defines model for v0.0.40_partition_info_msg.
+type V0040PartitionInfoMsg = []V0040PartitionInfo
+
+// V0040PartitionStates defines model for v0.0.40_partition_states.
+type V0040PartitionStates = []string
+
+// V0040PowerFlags removed field
+type V0040PowerFlags = []interface{}
+
+// V0040PowerMgmtData removed field
+type V0040PowerMgmtData = map[string]interface{}
+
+// V0040ProcessExitCodeStatus defines model for v0.0.40_process_exit_code_status.
+type V0040ProcessExitCodeStatus = []string
+
+// V0040ProcessExitCodeVerbose defines model for v0.0.40_process_exit_code_verbose.
+type V0040ProcessExitCodeVerbose struct {
+	// ReturnCode Integer number with flags
+	ReturnCode *V0040Uint32NoVal `json:"return_code,omitempty"`
+	Signal     *struct {
+		// Id Integer number with flags
+		Id *V0040Uint16NoVal `json:"id,omitempty"`
+
+		// Name Signal sent to process
+		Name *string `json:"name,omitempty"`
+	} `json:"signal,omitempty"`
+	Status *V0040ProcessExitCodeStatus `json:"status,omitempty"`
+}
+
+// V0040Qos defines model for v0.0.40_qos.
+type V0040Qos struct {
+	// Description Arbitrary description
+	Description *string        `json:"description,omitempty"`
+	Flags       *V0040QosFlags `json:"flags,omitempty"`
+
+	// Id Unique ID
+	Id     *int32 `json:"id,omitempty"`
+	Limits *struct {
+		// Factor 64 bit floating point number with flags
+		Factor *V0040Float64NoVal `json:"factor,omitempty"`
+
+		// GraceTime GraceTime
+		GraceTime *int32 `json:"grace_time,omitempty"`
+		Max       *struct {
+			Accruing *struct {
+				Per *struct {
+					// Account Integer number with flags
+					Account *V0040Uint32NoVal `json:"account,omitempty"`
+
+					// User Integer number with flags
+					User *V0040Uint32NoVal `json:"user,omitempty"`
+				} `json:"per,omitempty"`
+			} `json:"accruing,omitempty"`
+			ActiveJobs *struct {
+				// Accruing Integer number with flags
+				Accruing *V0040Uint32NoVal `json:"accruing,omitempty"`
+
+				// Count Integer number with flags
+				Count *V0040Uint32NoVal `json:"count,omitempty"`
+			} `json:"active_jobs,omitempty"`
+			Jobs *struct {
+				ActiveJobs *struct {
+					Per *struct {
+						// Account Integer number with flags
+						Account *V0040Uint32NoVal `json:"account,omitempty"`
+
+						// User Integer number with flags
+						User *V0040Uint32NoVal `json:"user,omitempty"`
+					} `json:"per,omitempty"`
+				} `json:"active_jobs,omitempty"`
+				Per *struct {
+					// Account Integer number with flags
+					Account *V0040Uint32NoVal `json:"account,omitempty"`
+
+					// User Integer number with flags
+					User *V0040Uint32NoVal `json:"user,omitempty"`
+				} `json:"per,omitempty"`
+			} `json:"jobs,omitempty"`
+			Tres *struct {
+				Minutes *struct {
+					Per *struct {
+						Account *V0040TresList `json:"account,omitempty"`
+						Job     *V0040TresList `json:"job,omitempty"`
+						Qos     *V0040TresList `json:"qos,omitempty"`
+						User    *V0040TresList `json:"user,omitempty"`
+					} `json:"per,omitempty"`
+				} `json:"minutes,omitempty"`
+				Per *struct {
+					Account *V0040TresList `json:"account,omitempty"`
+					Job     *V0040TresList `json:"job,omitempty"`
+					Node    *V0040TresList `json:"node,omitempty"`
+					User    *V0040TresList `json:"user,omitempty"`
+				} `json:"per,omitempty"`
+				Total *V0040TresList `json:"total,omitempty"`
+			} `json:"tres,omitempty"`
+			WallClock *struct {
+				Per *struct {
+					// Job Integer number with flags
+					Job *V0040Uint32NoVal `json:"job,omitempty"`
+
+					// Qos Integer number with flags
+					Qos *V0040Uint32NoVal `json:"qos,omitempty"`
+				} `json:"per,omitempty"`
+			} `json:"wall_clock,omitempty"`
+		} `json:"max,omitempty"`
+		Min *struct {
+			// PriorityThreshold Integer number with flags
+			PriorityThreshold *V0040Uint32NoVal `json:"priority_threshold,omitempty"`
+			Tres              *struct {
+				Per *struct {
+					Job *V0040TresList `json:"job,omitempty"`
+				} `json:"per,omitempty"`
+			} `json:"tres,omitempty"`
+		} `json:"min,omitempty"`
+	} `json:"limits,omitempty"`
+
+	// Name Name
+	Name    *string `json:"name,omitempty"`
+	Preempt *struct {
+		// ExemptTime Integer number with flags
+		ExemptTime *V0040Uint32NoVal     `json:"exempt_time,omitempty"`
+		List       *V0040QosPreemptList  `json:"list,omitempty"`
+		Mode       *V0040QosPreemptModes `json:"mode,omitempty"`
+	} `json:"preempt,omitempty"`
+
+	// Priority Integer number with flags
+	Priority *V0040Uint32NoVal `json:"priority,omitempty"`
+
+	// UsageFactor 64 bit floating point number with flags
+	UsageFactor *V0040Float64NoVal `json:"usage_factor,omitempty"`
+
+	// UsageThreshold 64 bit floating point number with flags
+	UsageThreshold *V0040Float64NoVal `json:"usage_threshold,omitempty"`
+}
+
+// V0040QosFlags defines model for v0.0.40_qos_flags.
+type V0040QosFlags = []string
+
+// V0040QosList defines model for v0.0.40_qos_list.
+type V0040QosList = []V0040Qos
+
+// V0040QosPreemptList defines model for v0.0.40_qos_preempt_list.
+type V0040QosPreemptList = []string
+
+// V0040QosPreemptModes defines model for v0.0.40_qos_preempt_modes.
+type V0040QosPreemptModes = []string
+
+// V0040QosStringIdList List of QOS names
+type V0040QosStringIdList = []string
+
+// V0040ReservationCoreSpec defines model for v0.0.40_reservation_core_spec.
+type V0040ReservationCoreSpec struct {
+	// Core IDs of reserved cores
+	Core *string `json:"core,omitempty"`
+
+	// Node Name of reserved node
+	Node *string `json:"node,omitempty"`
+}
+
+// V0040ReservationFlags defines model for v0.0.40_reservation_flags.
+type V0040ReservationFlags = []string
+
+// V0040ReservationInfo defines model for v0.0.40_reservation_info.
+type V0040ReservationInfo struct {
+	// Accounts Comma separated list of permitted accounts
+	Accounts *string `json:"accounts,omitempty"`
+
+	// BurstBuffer BurstBuffer
+	BurstBuffer *string `json:"burst_buffer,omitempty"`
+
+	// CoreCount CoreCnt
+	CoreCount           *int32                        `json:"core_count,omitempty"`
+	CoreSpecializations *V0040ReservationInfoCoreSpec `json:"core_specializations,omitempty"`
+
+	// EndTime Integer number with flags
+	EndTime *V0040Uint64NoVal `json:"end_time,omitempty"`
+
+	// Features Features
+	Features *string                `json:"features,omitempty"`
+	Flags    *V0040ReservationFlags `json:"flags,omitempty"`
+
+	// Groups Groups
+	Groups *string `json:"groups,omitempty"`
+
+	// Licenses Licenses
+	Licenses *string `json:"licenses,omitempty"`
+
+	// MaxStartDelay MaxStartDelay in seconds
+	MaxStartDelay *int32 `json:"max_start_delay,omitempty"`
+
+	// Name ReservationName
+	Name *string `json:"name,omitempty"`
+
+	// NodeCount NodeCnt
+	NodeCount *int32 `json:"node_count,omitempty"`
+
+	// NodeList Nodes
+	NodeList *string `json:"node_list,omitempty"`
+
+	// Partition PartitionName
+	Partition      *string `json:"partition,omitempty"`
+	PurgeCompleted *struct {
+		// Time Integer number with flags
+		Time *V0040Uint32NoVal `json:"time,omitempty"`
+	} `json:"purge_completed,omitempty"`
+
+	// StartTime Integer number with flags
+	StartTime *V0040Uint64NoVal `json:"start_time,omitempty"`
+
+	// Tres Comma separated list of required TRES
+	Tres *string `json:"tres,omitempty"`
+
+	// Users Comma separated list of permitted users
+	Users *string `json:"users,omitempty"`
+
+	// Watts Integer number with flags
+	Watts *V0040Uint32NoVal `json:"watts,omitempty"`
+}
+
+// V0040ReservationInfoCoreSpec defines model for v0.0.40_reservation_info_core_spec.
+type V0040ReservationInfoCoreSpec = []V0040ReservationCoreSpec
+
+// V0040ReservationInfoMsg defines model for v0.0.40_reservation_info_msg.
+type V0040ReservationInfoMsg = []V0040ReservationInfo
+
+// V0040RollupStats list of recorded rollup statistics
+type V0040RollupStats = []struct {
+	// LastRun Last time rollup ran (UNIX timestamp)
+	LastRun *int32 `json:"last run,omitempty"`
+
+	// MaxCycle longest rollup time (seconds)
+	MaxCycle *int64 `json:"max_cycle,omitempty"`
+
+	// MeanCycles average time for rollup (seconds)
+	MeanCycles *int64 `json:"mean_cycles,omitempty"`
+
+	// TotalCycles number of rollups since last_run
+	TotalCycles *int64 `json:"total_cycles,omitempty"`
+
+	// TotalTime total time spent doing rollups (seconds)
+	TotalTime *int64 `json:"total_time,omitempty"`
+
+	// Type type
+	Type *V0040RollupStatsType `json:"type,omitempty"`
+}
+
+// V0040RollupStatsType type
+type V0040RollupStatsType string
+
+// V0040ScheduleExitFields defines model for v0.0.40_schedule_exit_fields.
+type V0040ScheduleExitFields struct {
+	// DefaultQueueDepth Reached number of jobs allowed to be tested
+	DefaultQueueDepth *int32 `json:"default_queue_depth,omitempty"`
+
+	// EndJobQueue Reached end of queue
+	EndJobQueue *int32 `json:"end_job_queue,omitempty"`
+
+	// Licenses Blocked on licenses
+	Licenses *int32 `json:"licenses,omitempty"`
+
+	// MaxJobStart Reached number of jobs allowed to start
+	MaxJobStart *int32 `json:"max_job_start,omitempty"`
+
+	// MaxRpcCnt Reached RPC limit
+	MaxRpcCnt *int32 `json:"max_rpc_cnt,omitempty"`
+
+	// MaxSchedTime Reached maximum allowed scheduler time
+	MaxSchedTime *int32 `json:"max_sched_time,omitempty"`
+}
+
+// V0040SharesFloat128Tres defines model for v0.0.40_shares_float128_tres.
+type V0040SharesFloat128Tres struct {
+	// Name TRES name
+	Name *string `json:"name,omitempty"`
+
+	// Value TRES value
+	Value *float32 `json:"value,omitempty"`
+}
+
+// V0040SharesFloat128TresList defines model for v0.0.40_shares_float128_tres_list.
+type V0040SharesFloat128TresList = []V0040SharesFloat128Tres
+
+// V0040SharesRespMsg defines model for v0.0.40_shares_resp_msg.
+type V0040SharesRespMsg struct {
+	Shares *V0040AssocSharesObjList `json:"shares,omitempty"`
+
+	// TotalShares Total number of shares
+	TotalShares *int64 `json:"total_shares,omitempty"`
+}
+
+// V0040SharesUint64Tres defines model for v0.0.40_shares_uint64_tres.
+type V0040SharesUint64Tres struct {
+	// Name TRES name
+	Name *string `json:"name,omitempty"`
+
+	// Value Integer number with flags
+	Value *V0040Uint64NoVal `json:"value,omitempty"`
+}
+
+// V0040SharesUint64TresList defines model for v0.0.40_shares_uint64_tres_list.
+type V0040SharesUint64TresList = []V0040SharesUint64Tres
+
+// V0040SlurmdbJobFlags defines model for v0.0.40_slurmdb_job_flags.
+type V0040SlurmdbJobFlags = []string
+
+// V0040StatsMsg defines model for v0.0.40_stats_msg.
+type V0040StatsMsg struct {
+	// AgentCount Number of agent threads
+	AgentCount *int32 `json:"agent_count,omitempty"`
+
+	// AgentQueueSize Number of enqueued outgoing RPC requests in an internal retry list
+	AgentQueueSize *int32 `json:"agent_queue_size,omitempty"`
+
+	// AgentThreadCount Total number of active threads created by all agent threads
+	AgentThreadCount *int32 `json:"agent_thread_count,omitempty"`
+
+	// BfActive Backfill scheduler currently running
+	BfActive *bool `json:"bf_active,omitempty"`
+
+	// BfBackfilledHetJobs Number of heterogeneous job components started through backfilling since last Slurm start
+	BfBackfilledHetJobs *int32 `json:"bf_backfilled_het_jobs,omitempty"`
+
+	// BfBackfilledJobs Number of jobs started through backfilling since last slurm start
+	BfBackfilledJobs *int32 `json:"bf_backfilled_jobs,omitempty"`
+
+	// BfCycleCounter Number of backfill scheduling cycles since last reset
+	BfCycleCounter *int32 `json:"bf_cycle_counter,omitempty"`
+
+	// BfCycleLast Execution time in microseconds of last backfill scheduling cycle
+	BfCycleLast *int32 `json:"bf_cycle_last,omitempty"`
+
+	// BfCycleMean Mean time in microseconds of backfilling scheduling cycles since last reset
+	BfCycleMean *int64 `json:"bf_cycle_mean,omitempty"`
+
+	// BfCycleSum Total time in microseconds of backfilling scheduling cycles since last reset
+	BfCycleSum *int64 `json:"bf_cycle_sum,omitempty"`
+
+	// BfDepthMean Mean number of eligible to run jobs processed during all backfilling scheduling cycles since last reset
+	BfDepthMean *int64 `json:"bf_depth_mean,omitempty"`
+
+	// BfDepthMeanTry The subset of Depth Mean that the backfill scheduler attempted to schedule
+	BfDepthMeanTry *int64 `json:"bf_depth_mean_try,omitempty"`
+
+	// BfDepthSum Total number of jobs processed during all backfilling scheduling cycles since last reset
+	BfDepthSum *int32 `json:"bf_depth_sum,omitempty"`
+
+	// BfDepthTrySum Subset of bf_depth_sum that the backfill scheduler attempted to schedule
+	BfDepthTrySum *int32             `json:"bf_depth_try_sum,omitempty"`
+	BfExit        *V0040BfExitFields `json:"bf_exit,omitempty"`
+
+	// BfLastBackfilledJobs Number of jobs started through backfilling since last reset
+	BfLastBackfilledJobs *int32 `json:"bf_last_backfilled_jobs,omitempty"`
+
+	// BfLastDepth Number of processed jobs during last backfilling scheduling cycle
+	BfLastDepth *int32 `json:"bf_last_depth,omitempty"`
+
+	// BfLastDepthTry Number of processed jobs during last backfilling scheduling cycle that had a chance to start using available resources
+	BfLastDepthTry *int32 `json:"bf_last_depth_try,omitempty"`
+
+	// BfQueueLen Number of jobs pending to be processed by backfilling algorithm
+	BfQueueLen *int32 `json:"bf_queue_len,omitempty"`
+
+	// BfQueueLenMean Mean number of jobs pending to be processed by backfilling algorithm
+	BfQueueLenMean *int64 `json:"bf_queue_len_mean,omitempty"`
+
+	// BfQueueLenSum Total number of jobs pending to be processed by backfilling algorithm since last reset
+	BfQueueLenSum *int32 `json:"bf_queue_len_sum,omitempty"`
+
+	// BfTableSize Number of different time slots tested by the backfill scheduler in its last iteration
+	BfTableSize *int32 `json:"bf_table_size,omitempty"`
+
+	// BfTableSizeMean Mean number of different time slots tested by the backfill scheduler
+	BfTableSizeMean *int64 `json:"bf_table_size_mean,omitempty"`
+
+	// BfWhenLastCycle Integer number with flags
+	BfWhenLastCycle *V0040Uint64NoVal `json:"bf_when_last_cycle,omitempty"`
+
+	// DbdAgentQueueSize Number of messages for SlurmDBD that are queued
+	DbdAgentQueueSize *int32 `json:"dbd_agent_queue_size,omitempty"`
+
+	// GettimeofdayLatency Latency of 1000 calls to the gettimeofday() syscall in microseconds, as measured at controller startup
+	GettimeofdayLatency *int32 `json:"gettimeofday_latency,omitempty"`
+
+	// JobStatesTs Integer number with flags
+	JobStatesTs *V0040Uint64NoVal `json:"job_states_ts,omitempty"`
+
+	// JobsCanceled Number of jobs canceled since the last reset
+	JobsCanceled *int32 `json:"jobs_canceled,omitempty"`
+
+	// JobsCompleted Number of jobs completed since last reset
+	JobsCompleted *int32 `json:"jobs_completed,omitempty"`
+
+	// JobsFailed Number of jobs failed due to slurmd or other internal issues since last reset
+	JobsFailed *int32 `json:"jobs_failed,omitempty"`
+
+	// JobsPending Number of jobs pending at the time of listed in job_state_ts
+	JobsPending *int32 `json:"jobs_pending,omitempty"`
+
+	// JobsRunning Number of jobs running at the time of listed in job_state_ts
+	JobsRunning *int32 `json:"jobs_running,omitempty"`
+
+	// JobsStarted Number of jobs started since last reset
+	JobsStarted *int32 `json:"jobs_started,omitempty"`
+
+	// JobsSubmitted Number of jobs submitted since last reset
+	JobsSubmitted *int32 `json:"jobs_submitted,omitempty"`
+
+	// PartsPacked Zero if only RPC statistic included
+	PartsPacked *int32 `json:"parts_packed,omitempty"`
+
+	// ReqTime Integer number with flags
+	ReqTime *V0040Uint64NoVal `json:"req_time,omitempty"`
+
+	// ReqTimeStart Integer number with flags
+	ReqTimeStart *V0040Uint64NoVal `json:"req_time_start,omitempty"`
+
+	// RpcsByMessageType RPCs by message type
+	RpcsByMessageType *V0040StatsMsgRpcsByType `json:"rpcs_by_message_type,omitempty"`
+
+	// RpcsByUser RPCs by user
+	RpcsByUser *V0040StatsMsgRpcsByUser `json:"rpcs_by_user,omitempty"`
+
+	// ScheduleCycleLast Time in microseconds for last scheduling cycle
+	ScheduleCycleLast *int32 `json:"schedule_cycle_last,omitempty"`
+
+	// ScheduleCycleMax Max time of any scheduling cycle in microseconds since last reset
+	ScheduleCycleMax *int32 `json:"schedule_cycle_max,omitempty"`
+
+	// ScheduleCycleMean Mean time in microseconds for all scheduling cycles since last reset
+	ScheduleCycleMean *int64 `json:"schedule_cycle_mean,omitempty"`
+
+	// ScheduleCycleMeanDepth Mean of the number of jobs processed in a scheduling cycle
+	ScheduleCycleMeanDepth *int64 `json:"schedule_cycle_mean_depth,omitempty"`
+
+	// ScheduleCyclePerMinute Number of scheduling executions per minute
+	ScheduleCyclePerMinute *int64 `json:"schedule_cycle_per_minute,omitempty"`
+
+	// ScheduleCycleTotal Number of scheduling cycles since last reset
+	ScheduleCycleTotal *int32                   `json:"schedule_cycle_total,omitempty"`
+	ScheduleExit       *V0040ScheduleExitFields `json:"schedule_exit,omitempty"`
+
+	// ScheduleQueueLength Number of jobs pending in queue
+	ScheduleQueueLength *int32 `json:"schedule_queue_length,omitempty"`
+
+	// ServerThreadCount Number of current active slurmctld threads
+	ServerThreadCount *int32 `json:"server_thread_count,omitempty"`
+}
+
+// V0040StatsMsgRpcsByType RPCs by message type
+type V0040StatsMsgRpcsByType = []struct {
+	// AverageTime Average time spent processing RPC in seconds
+	AverageTime *int64 `json:"average_time,omitempty"`
+
+	// Count Number of RPCs received
+	Count *int64 `json:"count,omitempty"`
+
+	// MessageType Message type as string
+	MessageType *string `json:"message_type,omitempty"`
+
+	// TotalTime Total time spent processing RPC in seconds
+	TotalTime *int64 `json:"total_time,omitempty"`
+
+	// TypeId Message type as integer
+	TypeId *int32 `json:"type_id,omitempty"`
+}
+
+// V0040StatsMsgRpcsByUser RPCs by user
+type V0040StatsMsgRpcsByUser = []struct {
+	// AverageTime Average time spent processing RPC in seconds
+	AverageTime *int64 `json:"average_time,omitempty"`
+
+	// Count Number of RPCs received
+	Count *int64 `json:"count,omitempty"`
+
+	// TotalTime Total time spent processing RPC in seconds
+	TotalTime *int64 `json:"total_time,omitempty"`
+
+	// User user name
+	User *string `json:"user,omitempty"`
+
+	// UserId user id (numeric)
+	UserId *int32 `json:"user_id,omitempty"`
+}
+
+// V0040StatsRec defines model for v0.0.40_stats_rec.
+type V0040StatsRec struct {
+	RPCs *V0040StatsRpcList `json:"RPCs,omitempty"`
+
+	// Rollups list of recorded rollup statistics
+	Rollups *V0040RollupStats `json:"rollups,omitempty"`
+
+	// TimeStart When data collection started (UNIX timestamp)
+	TimeStart *int64              `json:"time_start,omitempty"`
+	Users     *V0040StatsUserList `json:"users,omitempty"`
+}
+
+// V0040StatsRpc defines model for v0.0.40_stats_rpc.
+type V0040StatsRpc struct {
+	// Count Number of RPCs processed
+	Count *int32 `json:"count,omitempty"`
+
+	// Rpc RPC type
+	Rpc  *string `json:"rpc,omitempty"`
+	Time *struct {
+		// Average Average RPC processing time in microseconds
+		Average *int64 `json:"average,omitempty"`
+
+		// Total Total RPC processing time in microseconds
+		Total *int64 `json:"total,omitempty"`
+	} `json:"time,omitempty"`
+}
+
+// V0040StatsRpcList defines model for v0.0.40_stats_rpc_list.
+type V0040StatsRpcList = []V0040StatsRpc
+
+// V0040StatsUser defines model for v0.0.40_stats_user.
+type V0040StatsUser struct {
+	// Count Number of RPCs processed
+	Count *int32 `json:"count,omitempty"`
+	Time  *struct {
+		// Average Average RPC processing time in microseconds
+		Average *int64 `json:"average,omitempty"`
+
+		// Total Total RPC processing time in microseconds
+		Total *int64 `json:"total,omitempty"`
+	} `json:"time,omitempty"`
+
+	// User User ID
+	User *string `json:"user,omitempty"`
+}
+
+// V0040StatsUserList defines model for v0.0.40_stats_user_list.
+type V0040StatsUserList = []V0040StatsUser
+
+// V0040Step defines model for v0.0.40_step.
+type V0040Step struct {
+	CPU *struct {
+		// Governor Requested CPU frequency governor in kHz
+		Governor           *string `json:"governor,omitempty"`
+		RequestedFrequency *struct {
+			// Max Integer number with flags
+			Max *V0040Uint32NoVal `json:"max,omitempty"`
+
+			// Min Integer number with flags
+			Min *V0040Uint32NoVal `json:"min,omitempty"`
+		} `json:"requested_frequency,omitempty"`
+	} `json:"CPU,omitempty"`
+	ExitCode *V0040ProcessExitCodeVerbose `json:"exit_code,omitempty"`
+
+	// KillRequestUser User ID that requested termination of the step
+	KillRequestUser *string `json:"kill_request_user,omitempty"`
+	Nodes           *struct {
+		// Count Number of nodes in the job step
+		Count *int32         `json:"count,omitempty"`
+		List  *V0040Hostlist `json:"list,omitempty"`
+
+		// Range Node(s) allocated to the job step
+		Range *string `json:"range,omitempty"`
+	} `json:"nodes,omitempty"`
+
+	// Pid Process ID
+	Pid        *string        `json:"pid,omitempty"`
+	State      *V0040JobState `json:"state,omitempty"`
+	Statistics *struct {
+		CPU *struct {
+			// ActualFrequency Average weighted CPU frequency of all tasks in kHz
+			ActualFrequency *int64 `json:"actual_frequency,omitempty"`
+		} `json:"CPU,omitempty"`
+		Energy *struct {
+			// Consumed Integer number with flags
+			Consumed *V0040Uint64NoVal `json:"consumed,omitempty"`
+		} `json:"energy,omitempty"`
+	} `json:"statistics,omitempty"`
+	Step *struct {
+		// Id Slurm Job Step ID
+		Id *string `json:"id,omitempty"`
+
+		// Name Step name
+		Name *string `json:"name,omitempty"`
+	} `json:"step,omitempty"`
+	Task *struct {
+		// Distribution The layout of the step was when it was running
+		Distribution *string `json:"distribution,omitempty"`
+	} `json:"task,omitempty"`
+	Tasks *struct {
+		// Count Total number of tasks
+		Count *int32 `json:"count,omitempty"`
+	} `json:"tasks,omitempty"`
+	Time *struct {
+		// Elapsed Elapsed time in seconds
+		Elapsed *int32 `json:"elapsed,omitempty"`
+
+		// End Integer number with flags
+		End *V0040Uint64NoVal `json:"end,omitempty"`
+
+		// Start Integer number with flags
+		Start *V0040Uint64NoVal `json:"start,omitempty"`
+
+		// Suspended Time in suspended state in seconds
+		Suspended *int32 `json:"suspended,omitempty"`
+		System    *struct {
+			// Microseconds System CPU time used by the step in microseconds
+			Microseconds *int32 `json:"microseconds,omitempty"`
+
+			// Seconds System CPU time used by the step in seconds
+			Seconds *int64 `json:"seconds,omitempty"`
+		} `json:"system,omitempty"`
+		Total *struct {
+			// Microseconds Total CPU time used by the step in microseconds
+			Microseconds *int32 `json:"microseconds,omitempty"`
+
+			// Seconds Total CPU time used by the step in seconds
+			Seconds *int64 `json:"seconds,omitempty"`
+		} `json:"total,omitempty"`
+		User *struct {
+			// Microseconds User CPU time used by the step in microseconds
+			Microseconds *int32 `json:"microseconds,omitempty"`
+
+			// Seconds User CPU time used by the step in seconds
+			Seconds *int64 `json:"seconds,omitempty"`
+		} `json:"user,omitempty"`
+	} `json:"time,omitempty"`
+	Tres *struct {
+		Allocated *V0040TresList `json:"allocated,omitempty"`
+		Consumed  *struct {
+			Average *V0040TresList         `json:"average,omitempty"`
+			Max     *V0040StepTresUsageMax `json:"max,omitempty"`
+			Min     *V0040StepTresUsageMin `json:"min,omitempty"`
+			Total   *V0040TresList         `json:"total,omitempty"`
+		} `json:"consumed,omitempty"`
+		Requested *struct {
+			Average *V0040TresList       `json:"average,omitempty"`
+			Max     *V0040StepTresReqMax `json:"max,omitempty"`
+			Min     *V0040StepTresReqMin `json:"min,omitempty"`
+			Total   *V0040TresList       `json:"total,omitempty"`
+		} `json:"requested,omitempty"`
+	} `json:"tres,omitempty"`
+}
+
+// V0040StepList defines model for v0.0.40_step_list.
+type V0040StepList = []V0040Step
+
+// V0040StepTresReqMax defines model for v0.0.40_step_tres_req_max.
+type V0040StepTresReqMax = []V0040Tres
+
+// V0040StepTresReqMin defines model for v0.0.40_step_tres_req_min.
+type V0040StepTresReqMin = []V0040Tres
+
+// V0040StepTresUsageMax defines model for v0.0.40_step_tres_usage_max.
+type V0040StepTresUsageMax = []V0040Tres
+
+// V0040StepTresUsageMin defines model for v0.0.40_step_tres_usage_min.
+type V0040StepTresUsageMin = []V0040Tres
+
+// V0040StringArray defines model for v0.0.40_string_array.
+type V0040StringArray = []string
+
+// V0040StringList defines model for v0.0.40_string_list.
+type V0040StringList = []string
+
+// V0040Tres defines model for v0.0.40_tres.
+type V0040Tres struct {
+	// Count TRES count (0 if listed generically)
+	Count *int64 `json:"count,omitempty"`
+
+	// Id ID used in database
+	Id *int32 `json:"id,omitempty"`
+
+	// Name TRES name (if applicable)
+	Name *string `json:"name,omitempty"`
+
+	// Type TRES type (CPU, MEM, etc)
+	Type string `json:"type"`
+}
+
+// V0040TresList defines model for v0.0.40_tres_list.
+type V0040TresList = []V0040Tres
+
+// V0040Uint16NoVal Integer number with flags
+type V0040Uint16NoVal struct {
+	// Infinite True if number has been set to infinite. "set" and "number" will be ignored.
+	Infinite *bool `json:"infinite,omitempty"`
+
+	// Number If set is True the number will be set with value. Otherwise ignore number contents.
+	Number *int64 `json:"number,omitempty"`
+
+	// Set True if number has been set. False if number is unset
+	Set *bool `json:"set,omitempty"`
+}
+
+// V0040Uint32NoVal Integer number with flags
+type V0040Uint32NoVal struct {
+	// Infinite True if number has been set to infinite. "set" and "number" will be ignored.
+	Infinite *bool `json:"infinite,omitempty"`
+
+	// Number If set is True the number will be set with value. Otherwise ignore number contents.
+	Number *int64 `json:"number,omitempty"`
+
+	// Set True if number has been set. False if number is unset
+	Set *bool `json:"set,omitempty"`
+}
+
+// V0040Uint64NoVal Integer number with flags
+type V0040Uint64NoVal struct {
+	// Infinite True if number has been set to infinite. "set" and "number" will be ignored.
+	Infinite *bool `json:"infinite,omitempty"`
+
+	// Number If set is True the number will be set with value. Otherwise ignore number contents.
+	Number *int64 `json:"number,omitempty"`
+
+	// Set True if number has been set. False if number is unset
+	Set *bool `json:"set,omitempty"`
+}
+
+// V0040UpdateNodeMsg defines model for v0.0.40_update_node_msg.
+type V0040UpdateNodeMsg struct {
+	Address *V0040HostlistString `json:"address,omitempty"`
+
+	// Comment Arbitrary comment
+	Comment *string `json:"comment,omitempty"`
+
+	// CpuBind Default method for binding tasks to allocated CPUs
+	CpuBind *int32 `json:"cpu_bind,omitempty"`
+
+	// Extra Arbitrary string used for node filtering if extra constraints are enabled
+	Extra       *string         `json:"extra,omitempty"`
+	Features    *V0040CsvString `json:"features,omitempty"`
+	FeaturesAct *V0040CsvString `json:"features_act,omitempty"`
+
+	// Gres Generic resources
+	Gres     *string              `json:"gres,omitempty"`
+	Hostname *V0040HostlistString `json:"hostname,omitempty"`
+	Name     *V0040HostlistString `json:"name,omitempty"`
+
+	// Reason Reason for node being DOWN or DRAINING
+	Reason *string `json:"reason,omitempty"`
+
+	// ReasonUid User ID to associate with the reason (needed if user root is sending message)
+	ReasonUid *string `json:"reason_uid,omitempty"`
+
+	// ResumeAfter Integer number with flags
+	ResumeAfter *V0040Uint32NoVal `json:"resume_after,omitempty"`
+	State       *V0040NodeStates  `json:"state,omitempty"`
+
+	// Weight Integer number with flags
+	Weight *V0040Uint32NoVal `json:"weight,omitempty"`
+}
+
+// V0040User defines model for v0.0.40_user.
+type V0040User struct {
+	AdministratorLevel *V0040AdminLvl       `json:"administrator_level,omitempty"`
+	Associations       *V0040AssocShortList `json:"associations,omitempty"`
+	Coordinators       *V0040CoordList      `json:"coordinators,omitempty"`
+	Default            *struct {
+		// Account Default Account
+		Account *string `json:"account,omitempty"`
+
+		// Wckey Default WCKey
+		Wckey *string `json:"wckey,omitempty"`
+	} `json:"default,omitempty"`
+	Flags *V0040UserFlags `json:"flags,omitempty"`
+
+	// Name User name
+	Name string `json:"name"`
+
+	// OldName Previous user name
+	OldName *string         `json:"old_name,omitempty"`
+	Wckeys  *V0040WckeyList `json:"wckeys,omitempty"`
+}
+
+// V0040UserFlags defines model for v0.0.40_user_flags.
+type V0040UserFlags = []string
+
+// V0040UserList defines model for v0.0.40_user_list.
+type V0040UserList = []V0040User
+
+// V0040UserShort defines model for v0.0.40_user_short.
+type V0040UserShort struct {
+	Adminlevel *V0040AdminLvl `json:"adminlevel,omitempty"`
+
+	// Defaultaccount Default account
+	Defaultaccount *string `json:"defaultaccount,omitempty"`
+
+	// Defaultwckey Default WCKey
+	Defaultwckey *string `json:"defaultwckey,omitempty"`
+}
+
+// V0040UsersAddCond defines model for v0.0.40_users_add_cond.
+type V0040UsersAddCond struct {
+	Accounts    *V0040StringList  `json:"accounts,omitempty"`
+	Association *V0040AssocRecSet `json:"association,omitempty"`
+	Clusters    *V0040StringList  `json:"clusters,omitempty"`
+	Partitions  *V0040StringList  `json:"partitions,omitempty"`
+	Users       V0040StringList   `json:"users"`
+	Wckeys      *V0040StringList  `json:"wckeys,omitempty"`
+}
+
+// V0040WarnFlags defines model for v0.0.40_warn_flags.
+type V0040WarnFlags = []string
+
+// V0040Wckey defines model for v0.0.40_wckey.
+type V0040Wckey struct {
+	Accounting *V0040AccountingList `json:"accounting,omitempty"`
+
+	// Cluster Cluster name
+	Cluster string           `json:"cluster"`
+	Flags   *V0040WckeyFlags `json:"flags,omitempty"`
+
+	// Id Unique ID for this user-cluster-wckey combination
+	Id *int32 `json:"id,omitempty"`
+
+	// Name WCKey name
+	Name string `json:"name"`
+
+	// User User name
+	User string `json:"user"`
+}
+
+// V0040WckeyFlags defines model for v0.0.40_wckey_flags.
+type V0040WckeyFlags = []string
+
+// V0040WckeyList defines model for v0.0.40_wckey_list.
+type V0040WckeyList = []V0040Wckey
+
+// V0040WckeyTagFlags defines model for v0.0.40_wckey_tag_flags.
+type V0040WckeyTagFlags = []string
+
+// V0040WckeyTagStruct defines model for v0.0.40_wckey_tag_struct.
+type V0040WckeyTagStruct struct {
+	Flags V0040WckeyTagFlags `json:"flags"`
+
+	// Wckey WCKey name
+	Wckey string `json:"wckey"`
+}
+
+// V0040X11Flags defines model for v0.0.40_x11_flags.
+type V0040X11Flags = []string
+
+// SlurmV0040DeleteJobParams defines parameters for SlurmV0040DeleteJob.
+type SlurmV0040DeleteJobParams struct {
+	// Signal Signal to send to Job
+	Signal *string `form:"signal,omitempty" json:"signal,omitempty"`
+
+	// Flags Signalling flags
+	Flags *SlurmV0040DeleteJobParamsFlags `form:"flags,omitempty" json:"flags,omitempty"`
+}
+
+// SlurmV0040DeleteJobParamsFlags defines parameters for SlurmV0040DeleteJob.
+type SlurmV0040DeleteJobParamsFlags string
+
+// SlurmV0040GetJobParams defines parameters for SlurmV0040GetJob.
+type SlurmV0040GetJobParams struct {
+	// UpdateTime Filter jobs since update timestamp
+	UpdateTime *string `form:"update_time,omitempty" json:"update_time,omitempty"`
+
+	// Flags Query flags
+	Flags *SlurmV0040GetJobParamsFlags `form:"flags,omitempty" json:"flags,omitempty"`
+}
+
+// SlurmV0040GetJobParamsFlags defines parameters for SlurmV0040GetJob.
+type SlurmV0040GetJobParamsFlags string
+
+// SlurmV0040GetJobsParams defines parameters for SlurmV0040GetJobs.
+type SlurmV0040GetJobsParams struct {
+	// UpdateTime Filter jobs since update timestamp
+	UpdateTime *string `form:"update_time,omitempty" json:"update_time,omitempty"`
+
+	// Flags Query flags
+	Flags *SlurmV0040GetJobsParamsFlags `form:"flags,omitempty" json:"flags,omitempty"`
+}
+
+// SlurmV0040GetJobsParamsFlags defines parameters for SlurmV0040GetJobs.
+type SlurmV0040GetJobsParamsFlags string
+
+// SlurmV0040GetJobsStateParams defines parameters for SlurmV0040GetJobsState.
+type SlurmV0040GetJobsStateParams struct {
+	// JobId Search for CSV list of Job IDs
+	JobId *string `form:"job_id,omitempty" json:"job_id,omitempty"`
+}
+
+// SlurmV0040GetNodeParams defines parameters for SlurmV0040GetNode.
+type SlurmV0040GetNodeParams struct {
+	// UpdateTime Filter jobs since update timestamp
+	UpdateTime *string `form:"update_time,omitempty" json:"update_time,omitempty"`
+
+	// Flags Query flags
+	Flags *SlurmV0040GetNodeParamsFlags `form:"flags,omitempty" json:"flags,omitempty"`
+}
+
+// SlurmV0040GetNodeParamsFlags defines parameters for SlurmV0040GetNode.
+type SlurmV0040GetNodeParamsFlags string
+
+// SlurmV0040GetNodesParams defines parameters for SlurmV0040GetNodes.
+type SlurmV0040GetNodesParams struct {
+	// UpdateTime Filter jobs since update timestamp
+	UpdateTime *string `form:"update_time,omitempty" json:"update_time,omitempty"`
+
+	// Flags Query flags
+	Flags *SlurmV0040GetNodesParamsFlags `form:"flags,omitempty" json:"flags,omitempty"`
+}
+
+// SlurmV0040GetNodesParamsFlags defines parameters for SlurmV0040GetNodes.
+type SlurmV0040GetNodesParamsFlags string
+
+// SlurmV0040GetPartitionParams defines parameters for SlurmV0040GetPartition.
+type SlurmV0040GetPartitionParams struct {
+	// UpdateTime Filter partitions since update timestamp
+	UpdateTime *string `form:"update_time,omitempty" json:"update_time,omitempty"`
+
+	// Flags Query flags
+	Flags *SlurmV0040GetPartitionParamsFlags `form:"flags,omitempty" json:"flags,omitempty"`
+}
+
+// SlurmV0040GetPartitionParamsFlags defines parameters for SlurmV0040GetPartition.
+type SlurmV0040GetPartitionParamsFlags string
+
+// SlurmV0040GetPartitionsParams defines parameters for SlurmV0040GetPartitions.
+type SlurmV0040GetPartitionsParams struct {
+	// UpdateTime Filter partitions since update timestamp
+	UpdateTime *string `form:"update_time,omitempty" json:"update_time,omitempty"`
+
+	// Flags Query flags
+	Flags *SlurmV0040GetPartitionsParamsFlags `form:"flags,omitempty" json:"flags,omitempty"`
+}
+
+// SlurmV0040GetPartitionsParamsFlags defines parameters for SlurmV0040GetPartitions.
+type SlurmV0040GetPartitionsParamsFlags string
+
+// SlurmV0040GetReservationParams defines parameters for SlurmV0040GetReservation.
+type SlurmV0040GetReservationParams struct {
+	// UpdateTime Filter reservations since update timestamp
+	UpdateTime *string `form:"update_time,omitempty" json:"update_time,omitempty"`
+}
+
+// SlurmV0040GetReservationsParams defines parameters for SlurmV0040GetReservations.
+type SlurmV0040GetReservationsParams struct {
+	// UpdateTime Filter reservations since update timestamp
+	UpdateTime *string `form:"update_time,omitempty" json:"update_time,omitempty"`
+}
+
+// SlurmV0040GetSharesParams defines parameters for SlurmV0040GetShares.
+type SlurmV0040GetSharesParams struct {
+	// Accounts Accounts to query
+	Accounts *string `form:"accounts,omitempty" json:"accounts,omitempty"`
+
+	// Users Users to query
+	Users *string `form:"users,omitempty" json:"users,omitempty"`
+}
+
+// SlurmdbV0040GetAccountParams defines parameters for SlurmdbV0040GetAccount.
+type SlurmdbV0040GetAccountParams struct {
+	// WithAssocs Include associations
+	WithAssocs *string `form:"with_assocs,omitempty" json:"with_assocs,omitempty"`
+
+	// WithCoords Include coordinators
+	WithCoords *string `form:"with_coords,omitempty" json:"with_coords,omitempty"`
+
+	// WithDeleted Include deleted
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+}
+
+// SlurmdbV0040GetAccountsParams defines parameters for SlurmdbV0040GetAccounts.
+type SlurmdbV0040GetAccountsParams struct {
+	// Description CSV description list
+	Description *string `form:"description,omitempty" json:"description,omitempty"`
+
+	// WithAssocs Include associations
+	WithAssocs *string `form:"with_assocs,omitempty" json:"with_assocs,omitempty"`
+
+	// WithCoords Include coordinators
+	WithCoords *string `form:"with_coords,omitempty" json:"with_coords,omitempty"`
+
+	// WithDeleted Include deleted accounts
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+}
+
+// SlurmdbV0040DeleteAssociationParams defines parameters for SlurmdbV0040DeleteAssociation.
+type SlurmdbV0040DeleteAssociationParams struct {
+	// Account CSV accounts list
+	Account *string `form:"account,omitempty" json:"account,omitempty"`
+
+	// Cluster CSV clusters list
+	Cluster *string `form:"cluster,omitempty" json:"cluster,omitempty"`
+
+	// DefaultQos CSV QOS list
+	DefaultQos *string `form:"default_qos,omitempty" json:"default_qos,omitempty"`
+
+	// Format Ignored; process JSON manually to control output format
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+
+	// Id CSV id list
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+
+	// OnlyDefaults Filter to only defaults
+	OnlyDefaults *string `form:"only_defaults,omitempty" json:"only_defaults,omitempty"`
+
+	// ParentAccount CSV names of parent account
+	ParentAccount *string `form:"parent_account,omitempty" json:"parent_account,omitempty"`
+
+	// Partition CSV partition name list
+	Partition *string `form:"partition,omitempty" json:"partition,omitempty"`
+
+	// Qos CSV QOS list
+	Qos *string `form:"qos,omitempty" json:"qos,omitempty"`
+
+	// UsageEnd Usage end (UNIX timestamp)
+	UsageEnd *string `form:"usage_end,omitempty" json:"usage_end,omitempty"`
+
+	// UsageStart Usage start (UNIX timestamp)
+	UsageStart *string `form:"usage_start,omitempty" json:"usage_start,omitempty"`
+
+	// User CSV user list
+	User *string `form:"user,omitempty" json:"user,omitempty"`
+
+	// WithUsage Include usage
+	WithUsage *string `form:"with_usage,omitempty" json:"with_usage,omitempty"`
+
+	// WithDeleted Include deleted associations
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+
+	// WithRawQos Include a raw qos or delta_qos
+	WithRawQos *string `form:"with_raw_qos,omitempty" json:"with_raw_qos,omitempty"`
+
+	// WithSubAccts Include sub acct information also
+	WithSubAccts *string `form:"with_sub_accts,omitempty" json:"with_sub_accts,omitempty"`
+
+	// WithoutParentInfo Exclude parent id/name
+	WithoutParentInfo *string `form:"without_parent_info,omitempty" json:"without_parent_info,omitempty"`
+
+	// WithoutParentLimits Exclude limits from parents
+	WithoutParentLimits *string `form:"without_parent_limits,omitempty" json:"without_parent_limits,omitempty"`
+}
+
+// SlurmdbV0040GetAssociationParams defines parameters for SlurmdbV0040GetAssociation.
+type SlurmdbV0040GetAssociationParams struct {
+	// Account CSV accounts list
+	Account *string `form:"account,omitempty" json:"account,omitempty"`
+
+	// Cluster CSV clusters list
+	Cluster *string `form:"cluster,omitempty" json:"cluster,omitempty"`
+
+	// DefaultQos CSV QOS list
+	DefaultQos *string `form:"default_qos,omitempty" json:"default_qos,omitempty"`
+
+	// Format Ignored; process JSON manually to control output format
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+
+	// Id CSV id list
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+
+	// OnlyDefaults Filter to only defaults
+	OnlyDefaults *string `form:"only_defaults,omitempty" json:"only_defaults,omitempty"`
+
+	// ParentAccount CSV names of parent account
+	ParentAccount *string `form:"parent_account,omitempty" json:"parent_account,omitempty"`
+
+	// Partition CSV partition name list
+	Partition *string `form:"partition,omitempty" json:"partition,omitempty"`
+
+	// Qos CSV QOS list
+	Qos *string `form:"qos,omitempty" json:"qos,omitempty"`
+
+	// UsageEnd Usage end (UNIX timestamp)
+	UsageEnd *string `form:"usage_end,omitempty" json:"usage_end,omitempty"`
+
+	// UsageStart Usage start (UNIX timestamp)
+	UsageStart *string `form:"usage_start,omitempty" json:"usage_start,omitempty"`
+
+	// User CSV user list
+	User *string `form:"user,omitempty" json:"user,omitempty"`
+
+	// WithUsage Include usage
+	WithUsage *string `form:"with_usage,omitempty" json:"with_usage,omitempty"`
+
+	// WithDeleted Include deleted associations
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+
+	// WithRawQos Include a raw qos or delta_qos
+	WithRawQos *string `form:"with_raw_qos,omitempty" json:"with_raw_qos,omitempty"`
+
+	// WithSubAccts Include sub acct information also
+	WithSubAccts *string `form:"with_sub_accts,omitempty" json:"with_sub_accts,omitempty"`
+
+	// WithoutParentInfo Exclude parent id/name
+	WithoutParentInfo *string `form:"without_parent_info,omitempty" json:"without_parent_info,omitempty"`
+
+	// WithoutParentLimits Exclude limits from parents
+	WithoutParentLimits *string `form:"without_parent_limits,omitempty" json:"without_parent_limits,omitempty"`
+}
+
+// SlurmdbV0040DeleteAssociationsParams defines parameters for SlurmdbV0040DeleteAssociations.
+type SlurmdbV0040DeleteAssociationsParams struct {
+	// Account CSV accounts list
+	Account *string `form:"account,omitempty" json:"account,omitempty"`
+
+	// Cluster CSV clusters list
+	Cluster *string `form:"cluster,omitempty" json:"cluster,omitempty"`
+
+	// DefaultQos CSV QOS list
+	DefaultQos *string `form:"default_qos,omitempty" json:"default_qos,omitempty"`
+
+	// Format Ignored; process JSON manually to control output format
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+
+	// Id CSV id list
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+
+	// OnlyDefaults Filter to only defaults
+	OnlyDefaults *string `form:"only_defaults,omitempty" json:"only_defaults,omitempty"`
+
+	// ParentAccount CSV names of parent account
+	ParentAccount *string `form:"parent_account,omitempty" json:"parent_account,omitempty"`
+
+	// Partition CSV partition name list
+	Partition *string `form:"partition,omitempty" json:"partition,omitempty"`
+
+	// Qos CSV QOS list
+	Qos *string `form:"qos,omitempty" json:"qos,omitempty"`
+
+	// UsageEnd Usage end (UNIX timestamp)
+	UsageEnd *string `form:"usage_end,omitempty" json:"usage_end,omitempty"`
+
+	// UsageStart Usage start (UNIX timestamp)
+	UsageStart *string `form:"usage_start,omitempty" json:"usage_start,omitempty"`
+
+	// User CSV user list
+	User *string `form:"user,omitempty" json:"user,omitempty"`
+
+	// WithUsage Include usage
+	WithUsage *string `form:"with_usage,omitempty" json:"with_usage,omitempty"`
+
+	// WithDeleted Include deleted associations
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+
+	// WithRawQos Include a raw qos or delta_qos
+	WithRawQos *string `form:"with_raw_qos,omitempty" json:"with_raw_qos,omitempty"`
+
+	// WithSubAccts Include sub acct information also
+	WithSubAccts *string `form:"with_sub_accts,omitempty" json:"with_sub_accts,omitempty"`
+
+	// WithoutParentInfo Exclude parent id/name
+	WithoutParentInfo *string `form:"without_parent_info,omitempty" json:"without_parent_info,omitempty"`
+
+	// WithoutParentLimits Exclude limits from parents
+	WithoutParentLimits *string `form:"without_parent_limits,omitempty" json:"without_parent_limits,omitempty"`
+}
+
+// SlurmdbV0040GetAssociationsParams defines parameters for SlurmdbV0040GetAssociations.
+type SlurmdbV0040GetAssociationsParams struct {
+	// Account CSV accounts list
+	Account *string `form:"account,omitempty" json:"account,omitempty"`
+
+	// Cluster CSV clusters list
+	Cluster *string `form:"cluster,omitempty" json:"cluster,omitempty"`
+
+	// DefaultQos CSV QOS list
+	DefaultQos *string `form:"default_qos,omitempty" json:"default_qos,omitempty"`
+
+	// Format Ignored; process JSON manually to control output format
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+
+	// Id CSV id list
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+
+	// OnlyDefaults Filter to only defaults
+	OnlyDefaults *string `form:"only_defaults,omitempty" json:"only_defaults,omitempty"`
+
+	// ParentAccount CSV names of parent account
+	ParentAccount *string `form:"parent_account,omitempty" json:"parent_account,omitempty"`
+
+	// Partition CSV partition name list
+	Partition *string `form:"partition,omitempty" json:"partition,omitempty"`
+
+	// Qos CSV QOS list
+	Qos *string `form:"qos,omitempty" json:"qos,omitempty"`
+
+	// UsageEnd Usage end (UNIX timestamp)
+	UsageEnd *string `form:"usage_end,omitempty" json:"usage_end,omitempty"`
+
+	// UsageStart Usage start (UNIX timestamp)
+	UsageStart *string `form:"usage_start,omitempty" json:"usage_start,omitempty"`
+
+	// User CSV user list
+	User *string `form:"user,omitempty" json:"user,omitempty"`
+
+	// WithUsage Include usage
+	WithUsage *string `form:"with_usage,omitempty" json:"with_usage,omitempty"`
+
+	// WithDeleted Include deleted associations
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+
+	// WithRawQos Include a raw qos or delta_qos
+	WithRawQos *string `form:"with_raw_qos,omitempty" json:"with_raw_qos,omitempty"`
+
+	// WithSubAccts Include sub acct information also
+	WithSubAccts *string `form:"with_sub_accts,omitempty" json:"with_sub_accts,omitempty"`
+
+	// WithoutParentInfo Exclude parent id/name
+	WithoutParentInfo *string `form:"without_parent_info,omitempty" json:"without_parent_info,omitempty"`
+
+	// WithoutParentLimits Exclude limits from parents
+	WithoutParentLimits *string `form:"without_parent_limits,omitempty" json:"without_parent_limits,omitempty"`
+}
+
+// SlurmdbV0040DeleteClusterParams defines parameters for SlurmdbV0040DeleteCluster.
+type SlurmdbV0040DeleteClusterParams struct {
+	// Classification Type of machine
+	Classification *SlurmdbV0040DeleteClusterParamsClassification `form:"classification,omitempty" json:"classification,omitempty"`
+
+	// Cluster CSV cluster list
+	Cluster *string `form:"cluster,omitempty" json:"cluster,omitempty"`
+
+	// Federation CSV federation list
+	Federation *string `form:"federation,omitempty" json:"federation,omitempty"`
+
+	// Flags Query flags
+	Flags *SlurmdbV0040DeleteClusterParamsFlags `form:"flags,omitempty" json:"flags,omitempty"`
+
+	// Format Ignored; process JSON manually to control output format
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+
+	// RpcVersion CSV RPC version list
+	RpcVersion *string `form:"rpc_version,omitempty" json:"rpc_version,omitempty"`
+
+	// UsageEnd Usage end (UNIX timestamp)
+	UsageEnd *string `form:"usage_end,omitempty" json:"usage_end,omitempty"`
+
+	// UsageStart Usage start (UNIX timestamp)
+	UsageStart *string `form:"usage_start,omitempty" json:"usage_start,omitempty"`
+
+	// WithDeleted Include deleted clusters
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+
+	// WithUsage Include usage
+	WithUsage *string `form:"with_usage,omitempty" json:"with_usage,omitempty"`
+}
+
+// SlurmdbV0040DeleteClusterParamsClassification defines parameters for SlurmdbV0040DeleteCluster.
+type SlurmdbV0040DeleteClusterParamsClassification string
+
+// SlurmdbV0040DeleteClusterParamsFlags defines parameters for SlurmdbV0040DeleteCluster.
+type SlurmdbV0040DeleteClusterParamsFlags string
+
+// SlurmdbV0040GetClusterParams defines parameters for SlurmdbV0040GetCluster.
+type SlurmdbV0040GetClusterParams struct {
+	// Classification Type of machine
+	Classification *SlurmdbV0040GetClusterParamsClassification `form:"classification,omitempty" json:"classification,omitempty"`
+
+	// Cluster CSV cluster list
+	Cluster *string `form:"cluster,omitempty" json:"cluster,omitempty"`
+
+	// Federation CSV federation list
+	Federation *string `form:"federation,omitempty" json:"federation,omitempty"`
+
+	// Flags Query flags
+	Flags *SlurmdbV0040GetClusterParamsFlags `form:"flags,omitempty" json:"flags,omitempty"`
+
+	// Format Ignored; process JSON manually to control output format
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+
+	// RpcVersion CSV RPC version list
+	RpcVersion *string `form:"rpc_version,omitempty" json:"rpc_version,omitempty"`
+
+	// UsageEnd Usage end (UNIX timestamp)
+	UsageEnd *string `form:"usage_end,omitempty" json:"usage_end,omitempty"`
+
+	// UsageStart Usage start (UNIX timestamp)
+	UsageStart *string `form:"usage_start,omitempty" json:"usage_start,omitempty"`
+
+	// WithDeleted Include deleted clusters
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+
+	// WithUsage Include usage
+	WithUsage *string `form:"with_usage,omitempty" json:"with_usage,omitempty"`
+}
+
+// SlurmdbV0040GetClusterParamsClassification defines parameters for SlurmdbV0040GetCluster.
+type SlurmdbV0040GetClusterParamsClassification string
+
+// SlurmdbV0040GetClusterParamsFlags defines parameters for SlurmdbV0040GetCluster.
+type SlurmdbV0040GetClusterParamsFlags string
+
+// SlurmdbV0040GetClustersParams defines parameters for SlurmdbV0040GetClusters.
+type SlurmdbV0040GetClustersParams struct {
+	// UpdateTime Filter reservations since update timestamp
+	UpdateTime *string `form:"update_time,omitempty" json:"update_time,omitempty"`
+}
+
+// SlurmdbV0040PostClustersParams defines parameters for SlurmdbV0040PostClusters.
+type SlurmdbV0040PostClustersParams struct {
+	// UpdateTime Filter reservations since update timestamp
+	UpdateTime *string `form:"update_time,omitempty" json:"update_time,omitempty"`
+}
+
+// SlurmdbV0040GetInstanceParams defines parameters for SlurmdbV0040GetInstance.
+type SlurmdbV0040GetInstanceParams struct {
+	// Cluster CSV clusters list
+	Cluster *string `form:"cluster,omitempty" json:"cluster,omitempty"`
+
+	// Extra CSV extra list
+	Extra *string `form:"extra,omitempty" json:"extra,omitempty"`
+
+	// Format Ignored; process JSON manually to control output format
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+
+	// InstanceId CSV instance_id list
+	InstanceId *string `form:"instance_id,omitempty" json:"instance_id,omitempty"`
+
+	// InstanceType CSV instance_type list
+	InstanceType *string `form:"instance_type,omitempty" json:"instance_type,omitempty"`
+
+	// NodeList Ranged node string
+	NodeList *string `form:"node_list,omitempty" json:"node_list,omitempty"`
+
+	// TimeEnd Time end (UNIX timestamp)
+	TimeEnd *string `form:"time_end,omitempty" json:"time_end,omitempty"`
+
+	// TimeStart Time start (UNIX timestamp)
+	TimeStart *string `form:"time_start,omitempty" json:"time_start,omitempty"`
+}
+
+// SlurmdbV0040GetInstancesParams defines parameters for SlurmdbV0040GetInstances.
+type SlurmdbV0040GetInstancesParams struct {
+	// Cluster CSV clusters list
+	Cluster *string `form:"cluster,omitempty" json:"cluster,omitempty"`
+
+	// Extra CSV extra list
+	Extra *string `form:"extra,omitempty" json:"extra,omitempty"`
+
+	// Format Ignored; process JSON manually to control output format
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+
+	// InstanceId CSV instance_id list
+	InstanceId *string `form:"instance_id,omitempty" json:"instance_id,omitempty"`
+
+	// InstanceType CSV instance_type list
+	InstanceType *string `form:"instance_type,omitempty" json:"instance_type,omitempty"`
+
+	// NodeList Ranged node string
+	NodeList *string `form:"node_list,omitempty" json:"node_list,omitempty"`
+
+	// TimeEnd Time end (UNIX timestamp)
+	TimeEnd *string `form:"time_end,omitempty" json:"time_end,omitempty"`
+
+	// TimeStart Time start (UNIX timestamp)
+	TimeStart *string `form:"time_start,omitempty" json:"time_start,omitempty"`
+}
+
+// SlurmdbV0040GetJobsParams defines parameters for SlurmdbV0040GetJobs.
+type SlurmdbV0040GetJobsParams struct {
+	// Account CSV account list
+	Account *string `form:"account,omitempty" json:"account,omitempty"`
+
+	// Association CSV association list
+	Association *string `form:"association,omitempty" json:"association,omitempty"`
+
+	// Cluster CSV cluster list
+	Cluster *string `form:"cluster,omitempty" json:"cluster,omitempty"`
+
+	// Constraints CSV constraint list
+	Constraints *string `form:"constraints,omitempty" json:"constraints,omitempty"`
+
+	// CpusMax Maximum number of cpus
+	CpusMax *string `form:"cpus_max,omitempty" json:"cpus_max,omitempty"`
+
+	// CpusMin Minimum number of cpus
+	CpusMin *string `form:"cpus_min,omitempty" json:"cpus_min,omitempty"`
+
+	// SchedulerUnset Schedule bits not set
+	SchedulerUnset *string `form:"scheduler_unset,omitempty" json:"scheduler_unset,omitempty"`
+
+	// ScheduledOnSubmit Job was started on submit
+	ScheduledOnSubmit *string `form:"scheduled_on_submit,omitempty" json:"scheduled_on_submit,omitempty"`
+
+	// ScheduledByMain Job was started from main scheduler
+	ScheduledByMain *string `form:"scheduled_by_main,omitempty" json:"scheduled_by_main,omitempty"`
+
+	// ScheduledByBackfill Job was started from backfill
+	ScheduledByBackfill *string `form:"scheduled_by_backfill,omitempty" json:"scheduled_by_backfill,omitempty"`
+
+	// JobStarted Job start RPC was received
+	JobStarted *string `form:"job_started,omitempty" json:"job_started,omitempty"`
+
+	// ExitCode Job exit code (numeric)
+	ExitCode *string `form:"exit_code,omitempty" json:"exit_code,omitempty"`
+
+	// ShowDuplicates Include duplicate job entries
+	ShowDuplicates *string `form:"show_duplicates,omitempty" json:"show_duplicates,omitempty"`
+
+	// SkipSteps Exclude job step details
+	SkipSteps *string `form:"skip_steps,omitempty" json:"skip_steps,omitempty"`
+
+	// DisableTruncateUsageTime Do not truncate the time to usage_start and usage_end
+	DisableTruncateUsageTime *string `form:"disable_truncate_usage_time,omitempty" json:"disable_truncate_usage_time,omitempty"`
+
+	// WholeHetjob Include details on all hetjob components
+	WholeHetjob *string `form:"whole_hetjob,omitempty" json:"whole_hetjob,omitempty"`
+
+	// DisableWholeHetjob Only show details on specified hetjob components
+	DisableWholeHetjob *string `form:"disable_whole_hetjob,omitempty" json:"disable_whole_hetjob,omitempty"`
+
+	// DisableWaitForResult Tell dbd not to wait for the result
+	DisableWaitForResult *string `form:"disable_wait_for_result,omitempty" json:"disable_wait_for_result,omitempty"`
+
+	// UsageTimeAsSubmitTime Use usage_time as the submit_time of the job
+	UsageTimeAsSubmitTime *string `form:"usage_time_as_submit_time,omitempty" json:"usage_time_as_submit_time,omitempty"`
+
+	// ShowBatchScript Include job script
+	ShowBatchScript *string `form:"show_batch_script,omitempty" json:"show_batch_script,omitempty"`
+
+	// ShowJobEnvironment Include job environment
+	ShowJobEnvironment *string `form:"show_job_environment,omitempty" json:"show_job_environment,omitempty"`
+
+	// Format Ignored; process JSON manually to control output format
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+
+	// Groups CSV group list
+	Groups *string `form:"groups,omitempty" json:"groups,omitempty"`
+
+	// JobName CSV job name list
+	JobName *string `form:"job_name,omitempty" json:"job_name,omitempty"`
+
+	// NodesMax Maximum number of nodes
+	NodesMax *string `form:"nodes_max,omitempty" json:"nodes_max,omitempty"`
+
+	// NodesMin Minimum number of nodes
+	NodesMin *string `form:"nodes_min,omitempty" json:"nodes_min,omitempty"`
+
+	// Partition CSV partition name list
+	Partition *string `form:"partition,omitempty" json:"partition,omitempty"`
+
+	// Qos CSV QOS name list
+	Qos *string `form:"qos,omitempty" json:"qos,omitempty"`
+
+	// Reason CSV reason list
+	Reason *string `form:"reason,omitempty" json:"reason,omitempty"`
+
+	// Reservation CSV reservation name list
+	Reservation *string `form:"reservation,omitempty" json:"reservation,omitempty"`
+
+	// ReservationId CSV reservation ID list
+	ReservationId *string `form:"reservation_id,omitempty" json:"reservation_id,omitempty"`
+
+	// State CSV state list
+	State *string `form:"state,omitempty" json:"state,omitempty"`
+
+	// Step CSV step id list
+	Step *string `form:"step,omitempty" json:"step,omitempty"`
+
+	// TimelimitMax Maximum timelimit (seconds)
+	TimelimitMax *string `form:"timelimit_max,omitempty" json:"timelimit_max,omitempty"`
+
+	// TimelimitMin Minimum timelimit (seconds)
+	TimelimitMin *string `form:"timelimit_min,omitempty" json:"timelimit_min,omitempty"`
+
+	// EndTime Usage end (UNIX timestamp)
+	EndTime *string `form:"end_time,omitempty" json:"end_time,omitempty"`
+
+	// StartTime Usage start (UNIX timestamp)
+	StartTime *string `form:"start_time,omitempty" json:"start_time,omitempty"`
+
+	// SubmitTime Submit time (UNIX timestamp)
+	SubmitTime *string `form:"submit_time,omitempty" json:"submit_time,omitempty"`
+
+	// Node Ranged node string where jobs ran
+	Node *string `form:"node,omitempty" json:"node,omitempty"`
+
+	// Users CSV user name list
+	Users *string `form:"users,omitempty" json:"users,omitempty"`
+
+	// Wckey CSV wckey list
+	Wckey *string `form:"wckey,omitempty" json:"wckey,omitempty"`
+}
+
+// SlurmdbV0040GetQosParams defines parameters for SlurmdbV0040GetQos.
+type SlurmdbV0040GetQosParams struct {
+	// Description CSV description list
+	Description *string `form:"description,omitempty" json:"description,omitempty"`
+
+	// Id CSV QOS id list
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+
+	// Format Ignored; process JSON manually to control output format
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+
+	// Name CSV QOS name list
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
+
+	// PreemptMode PreemptMode used when jobs in this QOS are preempted
+	PreemptMode *SlurmdbV0040GetQosParamsPreemptMode `form:"preempt_mode,omitempty" json:"preempt_mode,omitempty"`
+
+	// WithDeleted Include deleted QOS
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+}
+
+// SlurmdbV0040GetQosParamsPreemptMode defines parameters for SlurmdbV0040GetQos.
+type SlurmdbV0040GetQosParamsPreemptMode string
+
+// SlurmdbV0040PostQosParams defines parameters for SlurmdbV0040PostQos.
+type SlurmdbV0040PostQosParams struct {
+	// Description CSV description list
+	Description *string `form:"description,omitempty" json:"description,omitempty"`
+
+	// Id CSV QOS id list
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+
+	// Format Ignored; process JSON manually to control output format
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+
+	// Name CSV QOS name list
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
+
+	// PreemptMode PreemptMode used when jobs in this QOS are preempted
+	PreemptMode *SlurmdbV0040PostQosParamsPreemptMode `form:"preempt_mode,omitempty" json:"preempt_mode,omitempty"`
+
+	// WithDeleted Include deleted QOS
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+}
+
+// SlurmdbV0040PostQosParamsPreemptMode defines parameters for SlurmdbV0040PostQos.
+type SlurmdbV0040PostQosParamsPreemptMode string
+
+// SlurmdbV0040GetSingleQosParams defines parameters for SlurmdbV0040GetSingleQos.
+type SlurmdbV0040GetSingleQosParams struct {
+	// WithDeleted Query includes deleted QOS
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+}
+
+// SlurmdbV0040GetUserParams defines parameters for SlurmdbV0040GetUser.
+type SlurmdbV0040GetUserParams struct {
+	// WithDeleted Include deleted users
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+
+	// WithAssocs Include associations
+	WithAssocs *string `form:"with_assocs,omitempty" json:"with_assocs,omitempty"`
+
+	// WithCoords Include coordinators
+	WithCoords *string `form:"with_coords,omitempty" json:"with_coords,omitempty"`
+
+	// WithWckeys Include wckeys
+	WithWckeys *string `form:"with_wckeys,omitempty" json:"with_wckeys,omitempty"`
+}
+
+// SlurmdbV0040GetUsersParams defines parameters for SlurmdbV0040GetUsers.
+type SlurmdbV0040GetUsersParams struct {
+	// AdminLevel Administrator level
+	AdminLevel *SlurmdbV0040GetUsersParamsAdminLevel `form:"admin_level,omitempty" json:"admin_level,omitempty"`
+
+	// DefaultAccount CSV default account list
+	DefaultAccount *string `form:"default_account,omitempty" json:"default_account,omitempty"`
+
+	// DefaultWckey CSV default wckey list
+	DefaultWckey *string `form:"default_wckey,omitempty" json:"default_wckey,omitempty"`
+
+	// WithAssocs With associations
+	WithAssocs *string `form:"with_assocs,omitempty" json:"with_assocs,omitempty"`
+
+	// WithCoords With coordinators
+	WithCoords *string `form:"with_coords,omitempty" json:"with_coords,omitempty"`
+
+	// WithDeleted With deleted
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+
+	// WithWckeys With wckeys
+	WithWckeys *string `form:"with_wckeys,omitempty" json:"with_wckeys,omitempty"`
+
+	// WithoutDefaults Exclude defaults
+	WithoutDefaults *string `form:"without_defaults,omitempty" json:"without_defaults,omitempty"`
+}
+
+// SlurmdbV0040GetUsersParamsAdminLevel defines parameters for SlurmdbV0040GetUsers.
+type SlurmdbV0040GetUsersParamsAdminLevel string
+
+// SlurmdbV0040PostUsersAssociationParams defines parameters for SlurmdbV0040PostUsersAssociation.
+type SlurmdbV0040PostUsersAssociationParams struct {
+	// UpdateTime Filter partitions since update timestamp
+	UpdateTime *string `form:"update_time,omitempty" json:"update_time,omitempty"`
+
+	// Flags Query flags
+	Flags *SlurmdbV0040PostUsersAssociationParamsFlags `form:"flags,omitempty" json:"flags,omitempty"`
+}
+
+// SlurmdbV0040PostUsersAssociationParamsFlags defines parameters for SlurmdbV0040PostUsersAssociation.
+type SlurmdbV0040PostUsersAssociationParamsFlags string
+
+// SlurmdbV0040GetWckeysParams defines parameters for SlurmdbV0040GetWckeys.
+type SlurmdbV0040GetWckeysParams struct {
+	// Cluster CSV cluster name list
+	Cluster *string `form:"cluster,omitempty" json:"cluster,omitempty"`
+
+	// Format Ignored; process JSON manually to control output format
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+
+	// Id CSV id list
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+
+	// Name CSV name list
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
+
+	// OnlyDefaults Only query defaults
+	OnlyDefaults *string `form:"only_defaults,omitempty" json:"only_defaults,omitempty"`
+
+	// UsageEnd Usage end (UNIX timestamp)
+	UsageEnd *string `form:"usage_end,omitempty" json:"usage_end,omitempty"`
+
+	// UsageStart Usage start (UNIX timestamp)
+	UsageStart *string `form:"usage_start,omitempty" json:"usage_start,omitempty"`
+
+	// User CSV user list
+	User *string `form:"user,omitempty" json:"user,omitempty"`
+
+	// WithUsage Include usage
+	WithUsage *string `form:"with_usage,omitempty" json:"with_usage,omitempty"`
+
+	// WithDeleted Include deleted wckeys
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+}
+
+// SlurmdbV0040PostWckeysParams defines parameters for SlurmdbV0040PostWckeys.
+type SlurmdbV0040PostWckeysParams struct {
+	// Cluster CSV cluster name list
+	Cluster *string `form:"cluster,omitempty" json:"cluster,omitempty"`
+
+	// Format Ignored; process JSON manually to control output format
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+
+	// Id CSV id list
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+
+	// Name CSV name list
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
+
+	// OnlyDefaults Only query defaults
+	OnlyDefaults *string `form:"only_defaults,omitempty" json:"only_defaults,omitempty"`
+
+	// UsageEnd Usage end (UNIX timestamp)
+	UsageEnd *string `form:"usage_end,omitempty" json:"usage_end,omitempty"`
+
+	// UsageStart Usage start (UNIX timestamp)
+	UsageStart *string `form:"usage_start,omitempty" json:"usage_start,omitempty"`
+
+	// User CSV user list
+	User *string `form:"user,omitempty" json:"user,omitempty"`
+
+	// WithUsage Include usage
+	WithUsage *string `form:"with_usage,omitempty" json:"with_usage,omitempty"`
+
+	// WithDeleted Include deleted wckeys
+	WithDeleted *string `form:"with_deleted,omitempty" json:"with_deleted,omitempty"`
+}
+
+// SlurmV0040PostJobSubmitJSONRequestBody defines body for SlurmV0040PostJobSubmit for application/json ContentType.
+type SlurmV0040PostJobSubmitJSONRequestBody = V0040JobSubmitReq
+
+// SlurmV0040PostJobJSONRequestBody defines body for SlurmV0040PostJob for application/json ContentType.
+type SlurmV0040PostJobJSONRequestBody = V0040JobDescMsg
+
+// SlurmV0040DeleteJobsJSONRequestBody defines body for SlurmV0040DeleteJobs for application/json ContentType.
+type SlurmV0040DeleteJobsJSONRequestBody = V0040KillJobsMsg
+
+// SlurmV0040PostNodeJSONRequestBody defines body for SlurmV0040PostNode for application/json ContentType.
+type SlurmV0040PostNodeJSONRequestBody = V0040UpdateNodeMsg
+
+// SlurmV0040PostNodesJSONRequestBody defines body for SlurmV0040PostNodes for application/json ContentType.
+type SlurmV0040PostNodesJSONRequestBody = V0040UpdateNodeMsg
+
+// SlurmdbV0040PostAccountsJSONRequestBody defines body for SlurmdbV0040PostAccounts for application/json ContentType.
+type SlurmdbV0040PostAccountsJSONRequestBody = V0040OpenapiAccountsResp
+
+// SlurmdbV0040PostAccountsAssociationJSONRequestBody defines body for SlurmdbV0040PostAccountsAssociation for application/json ContentType.
+type SlurmdbV0040PostAccountsAssociationJSONRequestBody = V0040OpenapiAccountsAddCondResp
+
+// SlurmdbV0040PostAssociationsJSONRequestBody defines body for SlurmdbV0040PostAssociations for application/json ContentType.
+type SlurmdbV0040PostAssociationsJSONRequestBody = V0040OpenapiAssocsResp
+
+// SlurmdbV0040PostClustersJSONRequestBody defines body for SlurmdbV0040PostClusters for application/json ContentType.
+type SlurmdbV0040PostClustersJSONRequestBody = V0040OpenapiClustersResp
+
+// SlurmdbV0040PostConfigJSONRequestBody defines body for SlurmdbV0040PostConfig for application/json ContentType.
+type SlurmdbV0040PostConfigJSONRequestBody = V0040OpenapiSlurmdbdConfigResp
+
+// SlurmdbV0040PostQosJSONRequestBody defines body for SlurmdbV0040PostQos for application/json ContentType.
+type SlurmdbV0040PostQosJSONRequestBody = V0040OpenapiSlurmdbdQosResp
+
+// SlurmdbV0040PostTresJSONRequestBody defines body for SlurmdbV0040PostTres for application/json ContentType.
+type SlurmdbV0040PostTresJSONRequestBody = V0040OpenapiTresResp
+
+// SlurmdbV0040PostUsersJSONRequestBody defines body for SlurmdbV0040PostUsers for application/json ContentType.
+type SlurmdbV0040PostUsersJSONRequestBody = V0040OpenapiUsersResp
+
+// SlurmdbV0040PostUsersAssociationJSONRequestBody defines body for SlurmdbV0040PostUsersAssociation for application/json ContentType.
+type SlurmdbV0040PostUsersAssociationJSONRequestBody = V0040OpenapiUsersAddCondResp
+
+// SlurmdbV0040PostWckeysJSONRequestBody defines body for SlurmdbV0040PostWckeys for application/json ContentType.
+type SlurmdbV0040PostWckeysJSONRequestBody = V0040OpenapiWckeyResp
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -170,29 +4228,213 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// CancelJob request
-	CancelJob(ctx context.Context, jobId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// SlurmV0040GetDiag request
+	SlurmV0040GetDiag(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetJob request
-	GetJob(ctx context.Context, jobId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// SlurmV0040PostJobSubmitWithBody request with any body
+	SlurmV0040PostJobSubmitWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListJobs request
-	ListJobs(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	SlurmV0040PostJobSubmit(ctx context.Context, body SlurmV0040PostJobSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SubmitJobWithBody request with any body
-	SubmitJobWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// SlurmV0040DeleteJob request
+	SlurmV0040DeleteJob(ctx context.Context, jobId string, params *SlurmV0040DeleteJobParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	SubmitJob(ctx context.Context, body SubmitJobJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// SlurmV0040GetJob request
+	SlurmV0040GetJob(ctx context.Context, jobId string, params *SlurmV0040GetJobParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListNodes request
-	ListNodes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// SlurmV0040PostJobWithBody request with any body
+	SlurmV0040PostJobWithBody(ctx context.Context, jobId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListPartitions request
-	ListPartitions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	SlurmV0040PostJob(ctx context.Context, jobId string, body SlurmV0040PostJobJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040DeleteJobsWithBody request with any body
+	SlurmV0040DeleteJobsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SlurmV0040DeleteJobs(ctx context.Context, body SlurmV0040DeleteJobsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040GetJobs request
+	SlurmV0040GetJobs(ctx context.Context, params *SlurmV0040GetJobsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040GetJobsState request
+	SlurmV0040GetJobsState(ctx context.Context, params *SlurmV0040GetJobsStateParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040GetLicenses request
+	SlurmV0040GetLicenses(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040DeleteNode request
+	SlurmV0040DeleteNode(ctx context.Context, nodeName string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040GetNode request
+	SlurmV0040GetNode(ctx context.Context, nodeName string, params *SlurmV0040GetNodeParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040PostNodeWithBody request with any body
+	SlurmV0040PostNodeWithBody(ctx context.Context, nodeName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SlurmV0040PostNode(ctx context.Context, nodeName string, body SlurmV0040PostNodeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040GetNodes request
+	SlurmV0040GetNodes(ctx context.Context, params *SlurmV0040GetNodesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040PostNodesWithBody request with any body
+	SlurmV0040PostNodesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SlurmV0040PostNodes(ctx context.Context, body SlurmV0040PostNodesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040GetPartition request
+	SlurmV0040GetPartition(ctx context.Context, partitionName string, params *SlurmV0040GetPartitionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040GetPartitions request
+	SlurmV0040GetPartitions(ctx context.Context, params *SlurmV0040GetPartitionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040GetPing request
+	SlurmV0040GetPing(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040GetReconfigure request
+	SlurmV0040GetReconfigure(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040DeleteReservation request
+	SlurmV0040DeleteReservation(ctx context.Context, reservationName string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040GetReservation request
+	SlurmV0040GetReservation(ctx context.Context, reservationName string, params *SlurmV0040GetReservationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040GetReservations request
+	SlurmV0040GetReservations(ctx context.Context, params *SlurmV0040GetReservationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmV0040GetShares request
+	SlurmV0040GetShares(ctx context.Context, params *SlurmV0040GetSharesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040DeleteAccount request
+	SlurmdbV0040DeleteAccount(ctx context.Context, accountName string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetAccount request
+	SlurmdbV0040GetAccount(ctx context.Context, accountName string, params *SlurmdbV0040GetAccountParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetAccounts request
+	SlurmdbV0040GetAccounts(ctx context.Context, params *SlurmdbV0040GetAccountsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040PostAccountsWithBody request with any body
+	SlurmdbV0040PostAccountsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SlurmdbV0040PostAccounts(ctx context.Context, body SlurmdbV0040PostAccountsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040PostAccountsAssociationWithBody request with any body
+	SlurmdbV0040PostAccountsAssociationWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SlurmdbV0040PostAccountsAssociation(ctx context.Context, body SlurmdbV0040PostAccountsAssociationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040DeleteAssociation request
+	SlurmdbV0040DeleteAssociation(ctx context.Context, params *SlurmdbV0040DeleteAssociationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetAssociation request
+	SlurmdbV0040GetAssociation(ctx context.Context, params *SlurmdbV0040GetAssociationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040DeleteAssociations request
+	SlurmdbV0040DeleteAssociations(ctx context.Context, params *SlurmdbV0040DeleteAssociationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetAssociations request
+	SlurmdbV0040GetAssociations(ctx context.Context, params *SlurmdbV0040GetAssociationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040PostAssociationsWithBody request with any body
+	SlurmdbV0040PostAssociationsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SlurmdbV0040PostAssociations(ctx context.Context, body SlurmdbV0040PostAssociationsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040DeleteCluster request
+	SlurmdbV0040DeleteCluster(ctx context.Context, clusterName string, params *SlurmdbV0040DeleteClusterParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetCluster request
+	SlurmdbV0040GetCluster(ctx context.Context, clusterName string, params *SlurmdbV0040GetClusterParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetClusters request
+	SlurmdbV0040GetClusters(ctx context.Context, params *SlurmdbV0040GetClustersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040PostClustersWithBody request with any body
+	SlurmdbV0040PostClustersWithBody(ctx context.Context, params *SlurmdbV0040PostClustersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SlurmdbV0040PostClusters(ctx context.Context, params *SlurmdbV0040PostClustersParams, body SlurmdbV0040PostClustersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetConfig request
+	SlurmdbV0040GetConfig(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040PostConfigWithBody request with any body
+	SlurmdbV0040PostConfigWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SlurmdbV0040PostConfig(ctx context.Context, body SlurmdbV0040PostConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetDiag request
+	SlurmdbV0040GetDiag(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetInstance request
+	SlurmdbV0040GetInstance(ctx context.Context, params *SlurmdbV0040GetInstanceParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetInstances request
+	SlurmdbV0040GetInstances(ctx context.Context, params *SlurmdbV0040GetInstancesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetJob request
+	SlurmdbV0040GetJob(ctx context.Context, jobId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetJobs request
+	SlurmdbV0040GetJobs(ctx context.Context, params *SlurmdbV0040GetJobsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetQos request
+	SlurmdbV0040GetQos(ctx context.Context, params *SlurmdbV0040GetQosParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040PostQosWithBody request with any body
+	SlurmdbV0040PostQosWithBody(ctx context.Context, params *SlurmdbV0040PostQosParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SlurmdbV0040PostQos(ctx context.Context, params *SlurmdbV0040PostQosParams, body SlurmdbV0040PostQosJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040DeleteSingleQos request
+	SlurmdbV0040DeleteSingleQos(ctx context.Context, qos string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetSingleQos request
+	SlurmdbV0040GetSingleQos(ctx context.Context, qos string, params *SlurmdbV0040GetSingleQosParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetTres request
+	SlurmdbV0040GetTres(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040PostTresWithBody request with any body
+	SlurmdbV0040PostTresWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SlurmdbV0040PostTres(ctx context.Context, body SlurmdbV0040PostTresJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040DeleteUser request
+	SlurmdbV0040DeleteUser(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetUser request
+	SlurmdbV0040GetUser(ctx context.Context, name string, params *SlurmdbV0040GetUserParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetUsers request
+	SlurmdbV0040GetUsers(ctx context.Context, params *SlurmdbV0040GetUsersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040PostUsersWithBody request with any body
+	SlurmdbV0040PostUsersWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SlurmdbV0040PostUsers(ctx context.Context, body SlurmdbV0040PostUsersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040PostUsersAssociationWithBody request with any body
+	SlurmdbV0040PostUsersAssociationWithBody(ctx context.Context, params *SlurmdbV0040PostUsersAssociationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SlurmdbV0040PostUsersAssociation(ctx context.Context, params *SlurmdbV0040PostUsersAssociationParams, body SlurmdbV0040PostUsersAssociationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040DeleteWckey request
+	SlurmdbV0040DeleteWckey(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetWckey request
+	SlurmdbV0040GetWckey(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040GetWckeys request
+	SlurmdbV0040GetWckeys(ctx context.Context, params *SlurmdbV0040GetWckeysParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SlurmdbV0040PostWckeysWithBody request with any body
+	SlurmdbV0040PostWckeysWithBody(ctx context.Context, params *SlurmdbV0040PostWckeysParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SlurmdbV0040PostWckeys(ctx context.Context, params *SlurmdbV0040PostWckeysParams, body SlurmdbV0040PostWckeysJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) CancelJob(ctx context.Context, jobId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCancelJobRequest(c.Server, jobId)
+func (c *Client) SlurmV0040GetDiag(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040GetDiagRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -203,8 +4445,8 @@ func (c *Client) CancelJob(ctx context.Context, jobId string, reqEditors ...Requ
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetJob(ctx context.Context, jobId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetJobRequest(c.Server, jobId)
+func (c *Client) SlurmV0040PostJobSubmitWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040PostJobSubmitRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -215,8 +4457,8 @@ func (c *Client) GetJob(ctx context.Context, jobId string, reqEditors ...Request
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListJobs(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListJobsRequest(c.Server)
+func (c *Client) SlurmV0040PostJobSubmit(ctx context.Context, body SlurmV0040PostJobSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040PostJobSubmitRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -227,8 +4469,8 @@ func (c *Client) ListJobs(ctx context.Context, reqEditors ...RequestEditorFn) (*
 	return c.Client.Do(req)
 }
 
-func (c *Client) SubmitJobWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSubmitJobRequestWithBody(c.Server, contentType, body)
+func (c *Client) SlurmV0040DeleteJob(ctx context.Context, jobId string, params *SlurmV0040DeleteJobParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040DeleteJobRequest(c.Server, jobId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -239,8 +4481,8 @@ func (c *Client) SubmitJobWithBody(ctx context.Context, contentType string, body
 	return c.Client.Do(req)
 }
 
-func (c *Client) SubmitJob(ctx context.Context, body SubmitJobJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSubmitJobRequest(c.Server, body)
+func (c *Client) SlurmV0040GetJob(ctx context.Context, jobId string, params *SlurmV0040GetJobParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040GetJobRequest(c.Server, jobId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -251,8 +4493,8 @@ func (c *Client) SubmitJob(ctx context.Context, body SubmitJobJSONRequestBody, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListNodes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListNodesRequest(c.Server)
+func (c *Client) SlurmV0040PostJobWithBody(ctx context.Context, jobId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040PostJobRequestWithBody(c.Server, jobId, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -263,8 +4505,8 @@ func (c *Client) ListNodes(ctx context.Context, reqEditors ...RequestEditorFn) (
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListPartitions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListPartitionsRequest(c.Server)
+func (c *Client) SlurmV0040PostJob(ctx context.Context, jobId string, body SlurmV0040PostJobJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040PostJobRequest(c.Server, jobId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -275,57 +4517,808 @@ func (c *Client) ListPartitions(ctx context.Context, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
-// NewCancelJobRequest generates requests for CancelJob
-func NewCancelJobRequest(server string, jobId string) (*http.Request, error) {
+func (c *Client) SlurmV0040DeleteJobsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040DeleteJobsRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040DeleteJobs(ctx context.Context, body SlurmV0040DeleteJobsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040DeleteJobsRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040GetJobs(ctx context.Context, params *SlurmV0040GetJobsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040GetJobsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040GetJobsState(ctx context.Context, params *SlurmV0040GetJobsStateParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040GetJobsStateRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040GetLicenses(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040GetLicensesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040DeleteNode(ctx context.Context, nodeName string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040DeleteNodeRequest(c.Server, nodeName)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040GetNode(ctx context.Context, nodeName string, params *SlurmV0040GetNodeParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040GetNodeRequest(c.Server, nodeName, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040PostNodeWithBody(ctx context.Context, nodeName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040PostNodeRequestWithBody(c.Server, nodeName, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040PostNode(ctx context.Context, nodeName string, body SlurmV0040PostNodeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040PostNodeRequest(c.Server, nodeName, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040GetNodes(ctx context.Context, params *SlurmV0040GetNodesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040GetNodesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040PostNodesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040PostNodesRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040PostNodes(ctx context.Context, body SlurmV0040PostNodesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040PostNodesRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040GetPartition(ctx context.Context, partitionName string, params *SlurmV0040GetPartitionParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040GetPartitionRequest(c.Server, partitionName, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040GetPartitions(ctx context.Context, params *SlurmV0040GetPartitionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040GetPartitionsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040GetPing(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040GetPingRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040GetReconfigure(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040GetReconfigureRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040DeleteReservation(ctx context.Context, reservationName string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040DeleteReservationRequest(c.Server, reservationName)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040GetReservation(ctx context.Context, reservationName string, params *SlurmV0040GetReservationParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040GetReservationRequest(c.Server, reservationName, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040GetReservations(ctx context.Context, params *SlurmV0040GetReservationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040GetReservationsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmV0040GetShares(ctx context.Context, params *SlurmV0040GetSharesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmV0040GetSharesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040DeleteAccount(ctx context.Context, accountName string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040DeleteAccountRequest(c.Server, accountName)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetAccount(ctx context.Context, accountName string, params *SlurmdbV0040GetAccountParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetAccountRequest(c.Server, accountName, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetAccounts(ctx context.Context, params *SlurmdbV0040GetAccountsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetAccountsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostAccountsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostAccountsRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostAccounts(ctx context.Context, body SlurmdbV0040PostAccountsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostAccountsRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostAccountsAssociationWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostAccountsAssociationRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostAccountsAssociation(ctx context.Context, body SlurmdbV0040PostAccountsAssociationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostAccountsAssociationRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040DeleteAssociation(ctx context.Context, params *SlurmdbV0040DeleteAssociationParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040DeleteAssociationRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetAssociation(ctx context.Context, params *SlurmdbV0040GetAssociationParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetAssociationRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040DeleteAssociations(ctx context.Context, params *SlurmdbV0040DeleteAssociationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040DeleteAssociationsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetAssociations(ctx context.Context, params *SlurmdbV0040GetAssociationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetAssociationsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostAssociationsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostAssociationsRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostAssociations(ctx context.Context, body SlurmdbV0040PostAssociationsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostAssociationsRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040DeleteCluster(ctx context.Context, clusterName string, params *SlurmdbV0040DeleteClusterParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040DeleteClusterRequest(c.Server, clusterName, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetCluster(ctx context.Context, clusterName string, params *SlurmdbV0040GetClusterParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetClusterRequest(c.Server, clusterName, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetClusters(ctx context.Context, params *SlurmdbV0040GetClustersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetClustersRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostClustersWithBody(ctx context.Context, params *SlurmdbV0040PostClustersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostClustersRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostClusters(ctx context.Context, params *SlurmdbV0040PostClustersParams, body SlurmdbV0040PostClustersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostClustersRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetConfig(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetConfigRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostConfigWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostConfigRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostConfig(ctx context.Context, body SlurmdbV0040PostConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostConfigRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetDiag(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetDiagRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetInstance(ctx context.Context, params *SlurmdbV0040GetInstanceParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetInstanceRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetInstances(ctx context.Context, params *SlurmdbV0040GetInstancesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetInstancesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetJob(ctx context.Context, jobId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetJobRequest(c.Server, jobId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetJobs(ctx context.Context, params *SlurmdbV0040GetJobsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetJobsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetQos(ctx context.Context, params *SlurmdbV0040GetQosParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetQosRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostQosWithBody(ctx context.Context, params *SlurmdbV0040PostQosParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostQosRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostQos(ctx context.Context, params *SlurmdbV0040PostQosParams, body SlurmdbV0040PostQosJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostQosRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040DeleteSingleQos(ctx context.Context, qos string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040DeleteSingleQosRequest(c.Server, qos)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetSingleQos(ctx context.Context, qos string, params *SlurmdbV0040GetSingleQosParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetSingleQosRequest(c.Server, qos, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetTres(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetTresRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostTresWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostTresRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostTres(ctx context.Context, body SlurmdbV0040PostTresJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostTresRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040DeleteUser(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040DeleteUserRequest(c.Server, name)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetUser(ctx context.Context, name string, params *SlurmdbV0040GetUserParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetUserRequest(c.Server, name, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetUsers(ctx context.Context, params *SlurmdbV0040GetUsersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetUsersRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostUsersWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostUsersRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostUsers(ctx context.Context, body SlurmdbV0040PostUsersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostUsersRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostUsersAssociationWithBody(ctx context.Context, params *SlurmdbV0040PostUsersAssociationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostUsersAssociationRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostUsersAssociation(ctx context.Context, params *SlurmdbV0040PostUsersAssociationParams, body SlurmdbV0040PostUsersAssociationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostUsersAssociationRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040DeleteWckey(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040DeleteWckeyRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetWckey(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetWckeyRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040GetWckeys(ctx context.Context, params *SlurmdbV0040GetWckeysParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040GetWckeysRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostWckeysWithBody(ctx context.Context, params *SlurmdbV0040PostWckeysParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostWckeysRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SlurmdbV0040PostWckeys(ctx context.Context, params *SlurmdbV0040PostWckeysParams, body SlurmdbV0040PostWckeysJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSlurmdbV0040PostWckeysRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// NewSlurmV0040GetDiagRequest generates requests for SlurmV0040GetDiag
+func NewSlurmV0040GetDiagRequest(server string) (*http.Request, error) {
 	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "job_id", runtime.ParamLocationPath, jobId)
-	if err != nil {
-		return nil, err
-	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/job/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetJobRequest generates requests for GetJob
-func NewGetJobRequest(server string, jobId string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "job_id", runtime.ParamLocationPath, jobId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/job/%s", pathParam0)
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/diag/")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -343,46 +5336,19 @@ func NewGetJobRequest(server string, jobId string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewListJobsRequest generates requests for ListJobs
-func NewListJobsRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/jobs")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewSubmitJobRequest calls the generic SubmitJob builder with application/json body
-func NewSubmitJobRequest(server string, body SubmitJobJSONRequestBody) (*http.Request, error) {
+// NewSlurmV0040PostJobSubmitRequest calls the generic SlurmV0040PostJobSubmit builder with application/json body
+func NewSlurmV0040PostJobSubmitRequest(server string, body SlurmV0040PostJobSubmitJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewSubmitJobRequestWithBody(server, "application/json", bodyReader)
+	return NewSlurmV0040PostJobSubmitRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewSubmitJobRequestWithBody generates requests for SubmitJob with any type of body
-func NewSubmitJobRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewSlurmV0040PostJobSubmitRequestWithBody generates requests for SlurmV0040PostJobSubmit with any type of body
+func NewSlurmV0040PostJobSubmitRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -390,7 +5356,7 @@ func NewSubmitJobRequestWithBody(server string, contentType string, body io.Read
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/jobs")
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/job/submit")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -410,8 +5376,210 @@ func NewSubmitJobRequestWithBody(server string, contentType string, body io.Read
 	return req, nil
 }
 
-// NewListNodesRequest generates requests for ListNodes
-func NewListNodesRequest(server string) (*http.Request, error) {
+// NewSlurmV0040DeleteJobRequest generates requests for SlurmV0040DeleteJob
+func NewSlurmV0040DeleteJobRequest(server string, jobId string, params *SlurmV0040DeleteJobParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "job_id", runtime.ParamLocationPath, jobId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/job/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Signal != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "signal", runtime.ParamLocationQuery, *params.Signal); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Flags != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "flags", runtime.ParamLocationQuery, *params.Flags); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmV0040GetJobRequest generates requests for SlurmV0040GetJob
+func NewSlurmV0040GetJobRequest(server string, jobId string, params *SlurmV0040GetJobParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "job_id", runtime.ParamLocationPath, jobId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/job/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "update_time", runtime.ParamLocationQuery, *params.UpdateTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Flags != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "flags", runtime.ParamLocationQuery, *params.Flags); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmV0040PostJobRequest calls the generic SlurmV0040PostJob builder with application/json body
+func NewSlurmV0040PostJobRequest(server string, jobId string, body SlurmV0040PostJobJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSlurmV0040PostJobRequestWithBody(server, jobId, "application/json", bodyReader)
+}
+
+// NewSlurmV0040PostJobRequestWithBody generates requests for SlurmV0040PostJob with any type of body
+func NewSlurmV0040PostJobRequestWithBody(server string, jobId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "job_id", runtime.ParamLocationPath, jobId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/job/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSlurmV0040DeleteJobsRequest calls the generic SlurmV0040DeleteJobs builder with application/json body
+func NewSlurmV0040DeleteJobsRequest(server string, body SlurmV0040DeleteJobsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSlurmV0040DeleteJobsRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewSlurmV0040DeleteJobsRequestWithBody generates requests for SlurmV0040DeleteJobs with any type of body
+func NewSlurmV0040DeleteJobsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -419,7 +5587,150 @@ func NewListNodesRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/nodes")
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/jobs/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSlurmV0040GetJobsRequest generates requests for SlurmV0040GetJobs
+func NewSlurmV0040GetJobsRequest(server string, params *SlurmV0040GetJobsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/jobs/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "update_time", runtime.ParamLocationQuery, *params.UpdateTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Flags != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "flags", runtime.ParamLocationQuery, *params.Flags); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmV0040GetJobsStateRequest generates requests for SlurmV0040GetJobsState
+func NewSlurmV0040GetJobsStateRequest(server string, params *SlurmV0040GetJobsStateParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/jobs/state/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.JobId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "job_id", runtime.ParamLocationQuery, *params.JobId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmV0040GetLicensesRequest generates requests for SlurmV0040GetLicenses
+func NewSlurmV0040GetLicensesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/licenses/")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -437,8 +5748,161 @@ func NewListNodesRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewListPartitionsRequest generates requests for ListPartitions
-func NewListPartitionsRequest(server string) (*http.Request, error) {
+// NewSlurmV0040DeleteNodeRequest generates requests for SlurmV0040DeleteNode
+func NewSlurmV0040DeleteNodeRequest(server string, nodeName string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "node_name", runtime.ParamLocationPath, nodeName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/node/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmV0040GetNodeRequest generates requests for SlurmV0040GetNode
+func NewSlurmV0040GetNodeRequest(server string, nodeName string, params *SlurmV0040GetNodeParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "node_name", runtime.ParamLocationPath, nodeName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/node/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "update_time", runtime.ParamLocationQuery, *params.UpdateTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Flags != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "flags", runtime.ParamLocationQuery, *params.Flags); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmV0040PostNodeRequest calls the generic SlurmV0040PostNode builder with application/json body
+func NewSlurmV0040PostNodeRequest(server string, nodeName string, body SlurmV0040PostNodeJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSlurmV0040PostNodeRequestWithBody(server, nodeName, "application/json", bodyReader)
+}
+
+// NewSlurmV0040PostNodeRequestWithBody generates requests for SlurmV0040PostNode with any type of body
+func NewSlurmV0040PostNodeRequestWithBody(server string, nodeName string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "node_name", runtime.ParamLocationPath, nodeName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/node/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSlurmV0040GetNodesRequest generates requests for SlurmV0040GetNodes
+func NewSlurmV0040GetNodesRequest(server string, params *SlurmV0040GetNodesParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -446,7 +5910,249 @@ func NewListPartitionsRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/partitions")
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/nodes/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "update_time", runtime.ParamLocationQuery, *params.UpdateTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Flags != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "flags", runtime.ParamLocationQuery, *params.Flags); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmV0040PostNodesRequest calls the generic SlurmV0040PostNodes builder with application/json body
+func NewSlurmV0040PostNodesRequest(server string, body SlurmV0040PostNodesJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSlurmV0040PostNodesRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewSlurmV0040PostNodesRequestWithBody generates requests for SlurmV0040PostNodes with any type of body
+func NewSlurmV0040PostNodesRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/nodes/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSlurmV0040GetPartitionRequest generates requests for SlurmV0040GetPartition
+func NewSlurmV0040GetPartitionRequest(server string, partitionName string, params *SlurmV0040GetPartitionParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "partition_name", runtime.ParamLocationPath, partitionName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/partition/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "update_time", runtime.ParamLocationQuery, *params.UpdateTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Flags != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "flags", runtime.ParamLocationQuery, *params.Flags); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmV0040GetPartitionsRequest generates requests for SlurmV0040GetPartitions
+func NewSlurmV0040GetPartitionsRequest(server string, params *SlurmV0040GetPartitionsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/partitions/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "update_time", runtime.ParamLocationQuery, *params.UpdateTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Flags != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "flags", runtime.ParamLocationQuery, *params.Flags); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmV0040GetPingRequest generates requests for SlurmV0040GetPing
+func NewSlurmV0040GetPingRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/ping/")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -460,6 +6166,4822 @@ func NewListPartitionsRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewSlurmV0040GetReconfigureRequest generates requests for SlurmV0040GetReconfigure
+func NewSlurmV0040GetReconfigureRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/reconfigure/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmV0040DeleteReservationRequest generates requests for SlurmV0040DeleteReservation
+func NewSlurmV0040DeleteReservationRequest(server string, reservationName string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "reservation_name", runtime.ParamLocationPath, reservationName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/reservation/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmV0040GetReservationRequest generates requests for SlurmV0040GetReservation
+func NewSlurmV0040GetReservationRequest(server string, reservationName string, params *SlurmV0040GetReservationParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "reservation_name", runtime.ParamLocationPath, reservationName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/reservation/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "update_time", runtime.ParamLocationQuery, *params.UpdateTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmV0040GetReservationsRequest generates requests for SlurmV0040GetReservations
+func NewSlurmV0040GetReservationsRequest(server string, params *SlurmV0040GetReservationsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/reservations/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "update_time", runtime.ParamLocationQuery, *params.UpdateTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmV0040GetSharesRequest generates requests for SlurmV0040GetShares
+func NewSlurmV0040GetSharesRequest(server string, params *SlurmV0040GetSharesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm/v0.0.40/shares")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Accounts != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "accounts", runtime.ParamLocationQuery, *params.Accounts); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Users != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "users", runtime.ParamLocationQuery, *params.Users); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040DeleteAccountRequest generates requests for SlurmdbV0040DeleteAccount
+func NewSlurmdbV0040DeleteAccountRequest(server string, accountName string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "account_name", runtime.ParamLocationPath, accountName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/account/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetAccountRequest generates requests for SlurmdbV0040GetAccount
+func NewSlurmdbV0040GetAccountRequest(server string, accountName string, params *SlurmdbV0040GetAccountParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "account_name", runtime.ParamLocationPath, accountName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/account/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.WithAssocs != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_assocs", runtime.ParamLocationQuery, *params.WithAssocs); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithCoords != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_coords", runtime.ParamLocationQuery, *params.WithCoords); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetAccountsRequest generates requests for SlurmdbV0040GetAccounts
+func NewSlurmdbV0040GetAccountsRequest(server string, params *SlurmdbV0040GetAccountsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/accounts/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Description != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "description", runtime.ParamLocationQuery, *params.Description); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithAssocs != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_assocs", runtime.ParamLocationQuery, *params.WithAssocs); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithCoords != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_coords", runtime.ParamLocationQuery, *params.WithCoords); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040PostAccountsRequest calls the generic SlurmdbV0040PostAccounts builder with application/json body
+func NewSlurmdbV0040PostAccountsRequest(server string, body SlurmdbV0040PostAccountsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSlurmdbV0040PostAccountsRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewSlurmdbV0040PostAccountsRequestWithBody generates requests for SlurmdbV0040PostAccounts with any type of body
+func NewSlurmdbV0040PostAccountsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/accounts/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSlurmdbV0040PostAccountsAssociationRequest calls the generic SlurmdbV0040PostAccountsAssociation builder with application/json body
+func NewSlurmdbV0040PostAccountsAssociationRequest(server string, body SlurmdbV0040PostAccountsAssociationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSlurmdbV0040PostAccountsAssociationRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewSlurmdbV0040PostAccountsAssociationRequestWithBody generates requests for SlurmdbV0040PostAccountsAssociation with any type of body
+func NewSlurmdbV0040PostAccountsAssociationRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/accounts_association/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSlurmdbV0040DeleteAssociationRequest generates requests for SlurmdbV0040DeleteAssociation
+func NewSlurmdbV0040DeleteAssociationRequest(server string, params *SlurmdbV0040DeleteAssociationParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/association/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Account != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "account", runtime.ParamLocationQuery, *params.Account); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cluster != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "cluster", runtime.ParamLocationQuery, *params.Cluster); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DefaultQos != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "default_qos", runtime.ParamLocationQuery, *params.DefaultQos); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "format", runtime.ParamLocationQuery, *params.Format); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Id != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "id", runtime.ParamLocationQuery, *params.Id); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.OnlyDefaults != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "only_defaults", runtime.ParamLocationQuery, *params.OnlyDefaults); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ParentAccount != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "parent_account", runtime.ParamLocationQuery, *params.ParentAccount); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Partition != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "partition", runtime.ParamLocationQuery, *params.Partition); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Qos != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "qos", runtime.ParamLocationQuery, *params.Qos); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageEnd != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_end", runtime.ParamLocationQuery, *params.UsageEnd); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageStart != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_start", runtime.ParamLocationQuery, *params.UsageStart); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.User != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "user", runtime.ParamLocationQuery, *params.User); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithUsage != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_usage", runtime.ParamLocationQuery, *params.WithUsage); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithRawQos != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_raw_qos", runtime.ParamLocationQuery, *params.WithRawQos); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithSubAccts != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_sub_accts", runtime.ParamLocationQuery, *params.WithSubAccts); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithoutParentInfo != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "without_parent_info", runtime.ParamLocationQuery, *params.WithoutParentInfo); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithoutParentLimits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "without_parent_limits", runtime.ParamLocationQuery, *params.WithoutParentLimits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetAssociationRequest generates requests for SlurmdbV0040GetAssociation
+func NewSlurmdbV0040GetAssociationRequest(server string, params *SlurmdbV0040GetAssociationParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/association/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Account != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "account", runtime.ParamLocationQuery, *params.Account); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cluster != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "cluster", runtime.ParamLocationQuery, *params.Cluster); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DefaultQos != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "default_qos", runtime.ParamLocationQuery, *params.DefaultQos); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "format", runtime.ParamLocationQuery, *params.Format); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Id != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "id", runtime.ParamLocationQuery, *params.Id); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.OnlyDefaults != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "only_defaults", runtime.ParamLocationQuery, *params.OnlyDefaults); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ParentAccount != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "parent_account", runtime.ParamLocationQuery, *params.ParentAccount); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Partition != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "partition", runtime.ParamLocationQuery, *params.Partition); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Qos != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "qos", runtime.ParamLocationQuery, *params.Qos); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageEnd != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_end", runtime.ParamLocationQuery, *params.UsageEnd); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageStart != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_start", runtime.ParamLocationQuery, *params.UsageStart); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.User != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "user", runtime.ParamLocationQuery, *params.User); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithUsage != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_usage", runtime.ParamLocationQuery, *params.WithUsage); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithRawQos != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_raw_qos", runtime.ParamLocationQuery, *params.WithRawQos); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithSubAccts != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_sub_accts", runtime.ParamLocationQuery, *params.WithSubAccts); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithoutParentInfo != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "without_parent_info", runtime.ParamLocationQuery, *params.WithoutParentInfo); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithoutParentLimits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "without_parent_limits", runtime.ParamLocationQuery, *params.WithoutParentLimits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040DeleteAssociationsRequest generates requests for SlurmdbV0040DeleteAssociations
+func NewSlurmdbV0040DeleteAssociationsRequest(server string, params *SlurmdbV0040DeleteAssociationsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/associations/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Account != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "account", runtime.ParamLocationQuery, *params.Account); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cluster != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "cluster", runtime.ParamLocationQuery, *params.Cluster); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DefaultQos != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "default_qos", runtime.ParamLocationQuery, *params.DefaultQos); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "format", runtime.ParamLocationQuery, *params.Format); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Id != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "id", runtime.ParamLocationQuery, *params.Id); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.OnlyDefaults != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "only_defaults", runtime.ParamLocationQuery, *params.OnlyDefaults); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ParentAccount != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "parent_account", runtime.ParamLocationQuery, *params.ParentAccount); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Partition != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "partition", runtime.ParamLocationQuery, *params.Partition); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Qos != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "qos", runtime.ParamLocationQuery, *params.Qos); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageEnd != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_end", runtime.ParamLocationQuery, *params.UsageEnd); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageStart != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_start", runtime.ParamLocationQuery, *params.UsageStart); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.User != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "user", runtime.ParamLocationQuery, *params.User); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithUsage != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_usage", runtime.ParamLocationQuery, *params.WithUsage); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithRawQos != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_raw_qos", runtime.ParamLocationQuery, *params.WithRawQos); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithSubAccts != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_sub_accts", runtime.ParamLocationQuery, *params.WithSubAccts); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithoutParentInfo != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "without_parent_info", runtime.ParamLocationQuery, *params.WithoutParentInfo); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithoutParentLimits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "without_parent_limits", runtime.ParamLocationQuery, *params.WithoutParentLimits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetAssociationsRequest generates requests for SlurmdbV0040GetAssociations
+func NewSlurmdbV0040GetAssociationsRequest(server string, params *SlurmdbV0040GetAssociationsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/associations/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Account != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "account", runtime.ParamLocationQuery, *params.Account); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cluster != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "cluster", runtime.ParamLocationQuery, *params.Cluster); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DefaultQos != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "default_qos", runtime.ParamLocationQuery, *params.DefaultQos); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "format", runtime.ParamLocationQuery, *params.Format); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Id != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "id", runtime.ParamLocationQuery, *params.Id); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.OnlyDefaults != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "only_defaults", runtime.ParamLocationQuery, *params.OnlyDefaults); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ParentAccount != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "parent_account", runtime.ParamLocationQuery, *params.ParentAccount); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Partition != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "partition", runtime.ParamLocationQuery, *params.Partition); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Qos != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "qos", runtime.ParamLocationQuery, *params.Qos); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageEnd != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_end", runtime.ParamLocationQuery, *params.UsageEnd); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageStart != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_start", runtime.ParamLocationQuery, *params.UsageStart); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.User != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "user", runtime.ParamLocationQuery, *params.User); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithUsage != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_usage", runtime.ParamLocationQuery, *params.WithUsage); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithRawQos != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_raw_qos", runtime.ParamLocationQuery, *params.WithRawQos); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithSubAccts != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_sub_accts", runtime.ParamLocationQuery, *params.WithSubAccts); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithoutParentInfo != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "without_parent_info", runtime.ParamLocationQuery, *params.WithoutParentInfo); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithoutParentLimits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "without_parent_limits", runtime.ParamLocationQuery, *params.WithoutParentLimits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040PostAssociationsRequest calls the generic SlurmdbV0040PostAssociations builder with application/json body
+func NewSlurmdbV0040PostAssociationsRequest(server string, body SlurmdbV0040PostAssociationsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSlurmdbV0040PostAssociationsRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewSlurmdbV0040PostAssociationsRequestWithBody generates requests for SlurmdbV0040PostAssociations with any type of body
+func NewSlurmdbV0040PostAssociationsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/associations/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSlurmdbV0040DeleteClusterRequest generates requests for SlurmdbV0040DeleteCluster
+func NewSlurmdbV0040DeleteClusterRequest(server string, clusterName string, params *SlurmdbV0040DeleteClusterParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_name", runtime.ParamLocationPath, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/cluster/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Classification != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "classification", runtime.ParamLocationQuery, *params.Classification); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cluster != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "cluster", runtime.ParamLocationQuery, *params.Cluster); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Federation != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "federation", runtime.ParamLocationQuery, *params.Federation); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Flags != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "flags", runtime.ParamLocationQuery, *params.Flags); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "format", runtime.ParamLocationQuery, *params.Format); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.RpcVersion != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "rpc_version", runtime.ParamLocationQuery, *params.RpcVersion); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageEnd != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_end", runtime.ParamLocationQuery, *params.UsageEnd); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageStart != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_start", runtime.ParamLocationQuery, *params.UsageStart); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithUsage != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_usage", runtime.ParamLocationQuery, *params.WithUsage); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetClusterRequest generates requests for SlurmdbV0040GetCluster
+func NewSlurmdbV0040GetClusterRequest(server string, clusterName string, params *SlurmdbV0040GetClusterParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_name", runtime.ParamLocationPath, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/cluster/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Classification != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "classification", runtime.ParamLocationQuery, *params.Classification); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cluster != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "cluster", runtime.ParamLocationQuery, *params.Cluster); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Federation != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "federation", runtime.ParamLocationQuery, *params.Federation); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Flags != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "flags", runtime.ParamLocationQuery, *params.Flags); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "format", runtime.ParamLocationQuery, *params.Format); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.RpcVersion != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "rpc_version", runtime.ParamLocationQuery, *params.RpcVersion); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageEnd != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_end", runtime.ParamLocationQuery, *params.UsageEnd); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageStart != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_start", runtime.ParamLocationQuery, *params.UsageStart); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithUsage != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_usage", runtime.ParamLocationQuery, *params.WithUsage); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetClustersRequest generates requests for SlurmdbV0040GetClusters
+func NewSlurmdbV0040GetClustersRequest(server string, params *SlurmdbV0040GetClustersParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/clusters/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "update_time", runtime.ParamLocationQuery, *params.UpdateTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040PostClustersRequest calls the generic SlurmdbV0040PostClusters builder with application/json body
+func NewSlurmdbV0040PostClustersRequest(server string, params *SlurmdbV0040PostClustersParams, body SlurmdbV0040PostClustersJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSlurmdbV0040PostClustersRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewSlurmdbV0040PostClustersRequestWithBody generates requests for SlurmdbV0040PostClusters with any type of body
+func NewSlurmdbV0040PostClustersRequestWithBody(server string, params *SlurmdbV0040PostClustersParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/clusters/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "update_time", runtime.ParamLocationQuery, *params.UpdateTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetConfigRequest generates requests for SlurmdbV0040GetConfig
+func NewSlurmdbV0040GetConfigRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/config")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040PostConfigRequest calls the generic SlurmdbV0040PostConfig builder with application/json body
+func NewSlurmdbV0040PostConfigRequest(server string, body SlurmdbV0040PostConfigJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSlurmdbV0040PostConfigRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewSlurmdbV0040PostConfigRequestWithBody generates requests for SlurmdbV0040PostConfig with any type of body
+func NewSlurmdbV0040PostConfigRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/config")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetDiagRequest generates requests for SlurmdbV0040GetDiag
+func NewSlurmdbV0040GetDiagRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/diag/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetInstanceRequest generates requests for SlurmdbV0040GetInstance
+func NewSlurmdbV0040GetInstanceRequest(server string, params *SlurmdbV0040GetInstanceParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/instance/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Cluster != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "cluster", runtime.ParamLocationQuery, *params.Cluster); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Extra != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "extra", runtime.ParamLocationQuery, *params.Extra); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "format", runtime.ParamLocationQuery, *params.Format); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.InstanceId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "instance_id", runtime.ParamLocationQuery, *params.InstanceId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.InstanceType != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "instance_type", runtime.ParamLocationQuery, *params.InstanceType); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.NodeList != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "node_list", runtime.ParamLocationQuery, *params.NodeList); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TimeEnd != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "time_end", runtime.ParamLocationQuery, *params.TimeEnd); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TimeStart != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "time_start", runtime.ParamLocationQuery, *params.TimeStart); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetInstancesRequest generates requests for SlurmdbV0040GetInstances
+func NewSlurmdbV0040GetInstancesRequest(server string, params *SlurmdbV0040GetInstancesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/instances/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Cluster != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "cluster", runtime.ParamLocationQuery, *params.Cluster); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Extra != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "extra", runtime.ParamLocationQuery, *params.Extra); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "format", runtime.ParamLocationQuery, *params.Format); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.InstanceId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "instance_id", runtime.ParamLocationQuery, *params.InstanceId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.InstanceType != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "instance_type", runtime.ParamLocationQuery, *params.InstanceType); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.NodeList != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "node_list", runtime.ParamLocationQuery, *params.NodeList); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TimeEnd != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "time_end", runtime.ParamLocationQuery, *params.TimeEnd); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TimeStart != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "time_start", runtime.ParamLocationQuery, *params.TimeStart); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetJobRequest generates requests for SlurmdbV0040GetJob
+func NewSlurmdbV0040GetJobRequest(server string, jobId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "job_id", runtime.ParamLocationPath, jobId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/job/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetJobsRequest generates requests for SlurmdbV0040GetJobs
+func NewSlurmdbV0040GetJobsRequest(server string, params *SlurmdbV0040GetJobsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/jobs/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Account != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "account", runtime.ParamLocationQuery, *params.Account); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Association != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "association", runtime.ParamLocationQuery, *params.Association); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cluster != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "cluster", runtime.ParamLocationQuery, *params.Cluster); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Constraints != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "constraints", runtime.ParamLocationQuery, *params.Constraints); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CpusMax != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "cpus_max", runtime.ParamLocationQuery, *params.CpusMax); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CpusMin != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "cpus_min", runtime.ParamLocationQuery, *params.CpusMin); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.SchedulerUnset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "scheduler_unset", runtime.ParamLocationQuery, *params.SchedulerUnset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ScheduledOnSubmit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "scheduled_on_submit", runtime.ParamLocationQuery, *params.ScheduledOnSubmit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ScheduledByMain != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "scheduled_by_main", runtime.ParamLocationQuery, *params.ScheduledByMain); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ScheduledByBackfill != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "scheduled_by_backfill", runtime.ParamLocationQuery, *params.ScheduledByBackfill); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.JobStarted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "job_started", runtime.ParamLocationQuery, *params.JobStarted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ExitCode != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "exit_code", runtime.ParamLocationQuery, *params.ExitCode); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ShowDuplicates != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "show_duplicates", runtime.ParamLocationQuery, *params.ShowDuplicates); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.SkipSteps != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "skip_steps", runtime.ParamLocationQuery, *params.SkipSteps); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DisableTruncateUsageTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "disable_truncate_usage_time", runtime.ParamLocationQuery, *params.DisableTruncateUsageTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WholeHetjob != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "whole_hetjob", runtime.ParamLocationQuery, *params.WholeHetjob); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DisableWholeHetjob != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "disable_whole_hetjob", runtime.ParamLocationQuery, *params.DisableWholeHetjob); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DisableWaitForResult != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "disable_wait_for_result", runtime.ParamLocationQuery, *params.DisableWaitForResult); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageTimeAsSubmitTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_time_as_submit_time", runtime.ParamLocationQuery, *params.UsageTimeAsSubmitTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ShowBatchScript != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "show_batch_script", runtime.ParamLocationQuery, *params.ShowBatchScript); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ShowJobEnvironment != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "show_job_environment", runtime.ParamLocationQuery, *params.ShowJobEnvironment); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "format", runtime.ParamLocationQuery, *params.Format); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Groups != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "groups", runtime.ParamLocationQuery, *params.Groups); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.JobName != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "job_name", runtime.ParamLocationQuery, *params.JobName); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.NodesMax != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "nodes_max", runtime.ParamLocationQuery, *params.NodesMax); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.NodesMin != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "nodes_min", runtime.ParamLocationQuery, *params.NodesMin); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Partition != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "partition", runtime.ParamLocationQuery, *params.Partition); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Qos != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "qos", runtime.ParamLocationQuery, *params.Qos); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Reason != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "reason", runtime.ParamLocationQuery, *params.Reason); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Reservation != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "reservation", runtime.ParamLocationQuery, *params.Reservation); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ReservationId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "reservation_id", runtime.ParamLocationQuery, *params.ReservationId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.State != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "state", runtime.ParamLocationQuery, *params.State); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Step != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "step", runtime.ParamLocationQuery, *params.Step); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TimelimitMax != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "timelimit_max", runtime.ParamLocationQuery, *params.TimelimitMax); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TimelimitMin != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "timelimit_min", runtime.ParamLocationQuery, *params.TimelimitMin); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.EndTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "end_time", runtime.ParamLocationQuery, *params.EndTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.StartTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "start_time", runtime.ParamLocationQuery, *params.StartTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.SubmitTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "submit_time", runtime.ParamLocationQuery, *params.SubmitTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Node != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "node", runtime.ParamLocationQuery, *params.Node); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Users != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "users", runtime.ParamLocationQuery, *params.Users); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Wckey != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "wckey", runtime.ParamLocationQuery, *params.Wckey); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetQosRequest generates requests for SlurmdbV0040GetQos
+func NewSlurmdbV0040GetQosRequest(server string, params *SlurmdbV0040GetQosParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/qos/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Description != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "description", runtime.ParamLocationQuery, *params.Description); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Id != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "id", runtime.ParamLocationQuery, *params.Id); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "format", runtime.ParamLocationQuery, *params.Format); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Name != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "name", runtime.ParamLocationQuery, *params.Name); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.PreemptMode != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "preempt_mode", runtime.ParamLocationQuery, *params.PreemptMode); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040PostQosRequest calls the generic SlurmdbV0040PostQos builder with application/json body
+func NewSlurmdbV0040PostQosRequest(server string, params *SlurmdbV0040PostQosParams, body SlurmdbV0040PostQosJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSlurmdbV0040PostQosRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewSlurmdbV0040PostQosRequestWithBody generates requests for SlurmdbV0040PostQos with any type of body
+func NewSlurmdbV0040PostQosRequestWithBody(server string, params *SlurmdbV0040PostQosParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/qos/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Description != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "description", runtime.ParamLocationQuery, *params.Description); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Id != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "id", runtime.ParamLocationQuery, *params.Id); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "format", runtime.ParamLocationQuery, *params.Format); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Name != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "name", runtime.ParamLocationQuery, *params.Name); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.PreemptMode != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "preempt_mode", runtime.ParamLocationQuery, *params.PreemptMode); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSlurmdbV0040DeleteSingleQosRequest generates requests for SlurmdbV0040DeleteSingleQos
+func NewSlurmdbV0040DeleteSingleQosRequest(server string, qos string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "qos", runtime.ParamLocationPath, qos)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/qos/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetSingleQosRequest generates requests for SlurmdbV0040GetSingleQos
+func NewSlurmdbV0040GetSingleQosRequest(server string, qos string, params *SlurmdbV0040GetSingleQosParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "qos", runtime.ParamLocationPath, qos)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/qos/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetTresRequest generates requests for SlurmdbV0040GetTres
+func NewSlurmdbV0040GetTresRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/tres/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040PostTresRequest calls the generic SlurmdbV0040PostTres builder with application/json body
+func NewSlurmdbV0040PostTresRequest(server string, body SlurmdbV0040PostTresJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSlurmdbV0040PostTresRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewSlurmdbV0040PostTresRequestWithBody generates requests for SlurmdbV0040PostTres with any type of body
+func NewSlurmdbV0040PostTresRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/tres/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSlurmdbV0040DeleteUserRequest generates requests for SlurmdbV0040DeleteUser
+func NewSlurmdbV0040DeleteUserRequest(server string, name string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/user/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetUserRequest generates requests for SlurmdbV0040GetUser
+func NewSlurmdbV0040GetUserRequest(server string, name string, params *SlurmdbV0040GetUserParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/user/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithAssocs != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_assocs", runtime.ParamLocationQuery, *params.WithAssocs); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithCoords != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_coords", runtime.ParamLocationQuery, *params.WithCoords); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithWckeys != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_wckeys", runtime.ParamLocationQuery, *params.WithWckeys); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetUsersRequest generates requests for SlurmdbV0040GetUsers
+func NewSlurmdbV0040GetUsersRequest(server string, params *SlurmdbV0040GetUsersParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/users/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.AdminLevel != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "admin_level", runtime.ParamLocationQuery, *params.AdminLevel); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DefaultAccount != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "default_account", runtime.ParamLocationQuery, *params.DefaultAccount); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DefaultWckey != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "default_wckey", runtime.ParamLocationQuery, *params.DefaultWckey); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithAssocs != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_assocs", runtime.ParamLocationQuery, *params.WithAssocs); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithCoords != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_coords", runtime.ParamLocationQuery, *params.WithCoords); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithWckeys != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_wckeys", runtime.ParamLocationQuery, *params.WithWckeys); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithoutDefaults != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "without_defaults", runtime.ParamLocationQuery, *params.WithoutDefaults); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040PostUsersRequest calls the generic SlurmdbV0040PostUsers builder with application/json body
+func NewSlurmdbV0040PostUsersRequest(server string, body SlurmdbV0040PostUsersJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSlurmdbV0040PostUsersRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewSlurmdbV0040PostUsersRequestWithBody generates requests for SlurmdbV0040PostUsers with any type of body
+func NewSlurmdbV0040PostUsersRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/users/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSlurmdbV0040PostUsersAssociationRequest calls the generic SlurmdbV0040PostUsersAssociation builder with application/json body
+func NewSlurmdbV0040PostUsersAssociationRequest(server string, params *SlurmdbV0040PostUsersAssociationParams, body SlurmdbV0040PostUsersAssociationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSlurmdbV0040PostUsersAssociationRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewSlurmdbV0040PostUsersAssociationRequestWithBody generates requests for SlurmdbV0040PostUsersAssociation with any type of body
+func NewSlurmdbV0040PostUsersAssociationRequestWithBody(server string, params *SlurmdbV0040PostUsersAssociationParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/users_association/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateTime != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "update_time", runtime.ParamLocationQuery, *params.UpdateTime); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Flags != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "flags", runtime.ParamLocationQuery, *params.Flags); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSlurmdbV0040DeleteWckeyRequest generates requests for SlurmdbV0040DeleteWckey
+func NewSlurmdbV0040DeleteWckeyRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/wckey/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetWckeyRequest generates requests for SlurmdbV0040GetWckey
+func NewSlurmdbV0040GetWckeyRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/wckey/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040GetWckeysRequest generates requests for SlurmdbV0040GetWckeys
+func NewSlurmdbV0040GetWckeysRequest(server string, params *SlurmdbV0040GetWckeysParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/wckeys/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Cluster != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "cluster", runtime.ParamLocationQuery, *params.Cluster); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "format", runtime.ParamLocationQuery, *params.Format); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Id != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "id", runtime.ParamLocationQuery, *params.Id); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Name != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "name", runtime.ParamLocationQuery, *params.Name); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.OnlyDefaults != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "only_defaults", runtime.ParamLocationQuery, *params.OnlyDefaults); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageEnd != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_end", runtime.ParamLocationQuery, *params.UsageEnd); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageStart != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_start", runtime.ParamLocationQuery, *params.UsageStart); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.User != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "user", runtime.ParamLocationQuery, *params.User); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithUsage != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_usage", runtime.ParamLocationQuery, *params.WithUsage); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSlurmdbV0040PostWckeysRequest calls the generic SlurmdbV0040PostWckeys builder with application/json body
+func NewSlurmdbV0040PostWckeysRequest(server string, params *SlurmdbV0040PostWckeysParams, body SlurmdbV0040PostWckeysJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSlurmdbV0040PostWckeysRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewSlurmdbV0040PostWckeysRequestWithBody generates requests for SlurmdbV0040PostWckeys with any type of body
+func NewSlurmdbV0040PostWckeysRequestWithBody(server string, params *SlurmdbV0040PostWckeysParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurmdb/v0.0.40/wckeys/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Cluster != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "cluster", runtime.ParamLocationQuery, *params.Cluster); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "format", runtime.ParamLocationQuery, *params.Format); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Id != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "id", runtime.ParamLocationQuery, *params.Id); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Name != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "name", runtime.ParamLocationQuery, *params.Name); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.OnlyDefaults != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "only_defaults", runtime.ParamLocationQuery, *params.OnlyDefaults); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageEnd != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_end", runtime.ParamLocationQuery, *params.UsageEnd); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UsageStart != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "usage_start", runtime.ParamLocationQuery, *params.UsageStart); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.User != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "user", runtime.ParamLocationQuery, *params.User); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithUsage != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_usage", runtime.ParamLocationQuery, *params.WithUsage); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithDeleted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "with_deleted", runtime.ParamLocationQuery, *params.WithDeleted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -507,34 +11029,220 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// CancelJobWithResponse request
-	CancelJobWithResponse(ctx context.Context, jobId string, reqEditors ...RequestEditorFn) (*CancelJobResponse, error)
+	// SlurmV0040GetDiagWithResponse request
+	SlurmV0040GetDiagWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SlurmV0040GetDiagResponse, error)
 
-	// GetJobWithResponse request
-	GetJobWithResponse(ctx context.Context, jobId string, reqEditors ...RequestEditorFn) (*GetJobResponse, error)
+	// SlurmV0040PostJobSubmitWithBodyWithResponse request with any body
+	SlurmV0040PostJobSubmitWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmV0040PostJobSubmitResponse, error)
 
-	// ListJobsWithResponse request
-	ListJobsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListJobsResponse, error)
+	SlurmV0040PostJobSubmitWithResponse(ctx context.Context, body SlurmV0040PostJobSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmV0040PostJobSubmitResponse, error)
 
-	// SubmitJobWithBodyWithResponse request with any body
-	SubmitJobWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SubmitJobResponse, error)
+	// SlurmV0040DeleteJobWithResponse request
+	SlurmV0040DeleteJobWithResponse(ctx context.Context, jobId string, params *SlurmV0040DeleteJobParams, reqEditors ...RequestEditorFn) (*SlurmV0040DeleteJobResponse, error)
 
-	SubmitJobWithResponse(ctx context.Context, body SubmitJobJSONRequestBody, reqEditors ...RequestEditorFn) (*SubmitJobResponse, error)
+	// SlurmV0040GetJobWithResponse request
+	SlurmV0040GetJobWithResponse(ctx context.Context, jobId string, params *SlurmV0040GetJobParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetJobResponse, error)
 
-	// ListNodesWithResponse request
-	ListNodesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListNodesResponse, error)
+	// SlurmV0040PostJobWithBodyWithResponse request with any body
+	SlurmV0040PostJobWithBodyWithResponse(ctx context.Context, jobId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmV0040PostJobResponse, error)
 
-	// ListPartitionsWithResponse request
-	ListPartitionsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListPartitionsResponse, error)
+	SlurmV0040PostJobWithResponse(ctx context.Context, jobId string, body SlurmV0040PostJobJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmV0040PostJobResponse, error)
+
+	// SlurmV0040DeleteJobsWithBodyWithResponse request with any body
+	SlurmV0040DeleteJobsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmV0040DeleteJobsResponse, error)
+
+	SlurmV0040DeleteJobsWithResponse(ctx context.Context, body SlurmV0040DeleteJobsJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmV0040DeleteJobsResponse, error)
+
+	// SlurmV0040GetJobsWithResponse request
+	SlurmV0040GetJobsWithResponse(ctx context.Context, params *SlurmV0040GetJobsParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetJobsResponse, error)
+
+	// SlurmV0040GetJobsStateWithResponse request
+	SlurmV0040GetJobsStateWithResponse(ctx context.Context, params *SlurmV0040GetJobsStateParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetJobsStateResponse, error)
+
+	// SlurmV0040GetLicensesWithResponse request
+	SlurmV0040GetLicensesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SlurmV0040GetLicensesResponse, error)
+
+	// SlurmV0040DeleteNodeWithResponse request
+	SlurmV0040DeleteNodeWithResponse(ctx context.Context, nodeName string, reqEditors ...RequestEditorFn) (*SlurmV0040DeleteNodeResponse, error)
+
+	// SlurmV0040GetNodeWithResponse request
+	SlurmV0040GetNodeWithResponse(ctx context.Context, nodeName string, params *SlurmV0040GetNodeParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetNodeResponse, error)
+
+	// SlurmV0040PostNodeWithBodyWithResponse request with any body
+	SlurmV0040PostNodeWithBodyWithResponse(ctx context.Context, nodeName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmV0040PostNodeResponse, error)
+
+	SlurmV0040PostNodeWithResponse(ctx context.Context, nodeName string, body SlurmV0040PostNodeJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmV0040PostNodeResponse, error)
+
+	// SlurmV0040GetNodesWithResponse request
+	SlurmV0040GetNodesWithResponse(ctx context.Context, params *SlurmV0040GetNodesParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetNodesResponse, error)
+
+	// SlurmV0040PostNodesWithBodyWithResponse request with any body
+	SlurmV0040PostNodesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmV0040PostNodesResponse, error)
+
+	SlurmV0040PostNodesWithResponse(ctx context.Context, body SlurmV0040PostNodesJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmV0040PostNodesResponse, error)
+
+	// SlurmV0040GetPartitionWithResponse request
+	SlurmV0040GetPartitionWithResponse(ctx context.Context, partitionName string, params *SlurmV0040GetPartitionParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetPartitionResponse, error)
+
+	// SlurmV0040GetPartitionsWithResponse request
+	SlurmV0040GetPartitionsWithResponse(ctx context.Context, params *SlurmV0040GetPartitionsParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetPartitionsResponse, error)
+
+	// SlurmV0040GetPingWithResponse request
+	SlurmV0040GetPingWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SlurmV0040GetPingResponse, error)
+
+	// SlurmV0040GetReconfigureWithResponse request
+	SlurmV0040GetReconfigureWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SlurmV0040GetReconfigureResponse, error)
+
+	// SlurmV0040DeleteReservationWithResponse request
+	SlurmV0040DeleteReservationWithResponse(ctx context.Context, reservationName string, reqEditors ...RequestEditorFn) (*SlurmV0040DeleteReservationResponse, error)
+
+	// SlurmV0040GetReservationWithResponse request
+	SlurmV0040GetReservationWithResponse(ctx context.Context, reservationName string, params *SlurmV0040GetReservationParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetReservationResponse, error)
+
+	// SlurmV0040GetReservationsWithResponse request
+	SlurmV0040GetReservationsWithResponse(ctx context.Context, params *SlurmV0040GetReservationsParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetReservationsResponse, error)
+
+	// SlurmV0040GetSharesWithResponse request
+	SlurmV0040GetSharesWithResponse(ctx context.Context, params *SlurmV0040GetSharesParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetSharesResponse, error)
+
+	// SlurmdbV0040DeleteAccountWithResponse request
+	SlurmdbV0040DeleteAccountWithResponse(ctx context.Context, accountName string, reqEditors ...RequestEditorFn) (*SlurmdbV0040DeleteAccountResponse, error)
+
+	// SlurmdbV0040GetAccountWithResponse request
+	SlurmdbV0040GetAccountWithResponse(ctx context.Context, accountName string, params *SlurmdbV0040GetAccountParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetAccountResponse, error)
+
+	// SlurmdbV0040GetAccountsWithResponse request
+	SlurmdbV0040GetAccountsWithResponse(ctx context.Context, params *SlurmdbV0040GetAccountsParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetAccountsResponse, error)
+
+	// SlurmdbV0040PostAccountsWithBodyWithResponse request with any body
+	SlurmdbV0040PostAccountsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostAccountsResponse, error)
+
+	SlurmdbV0040PostAccountsWithResponse(ctx context.Context, body SlurmdbV0040PostAccountsJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostAccountsResponse, error)
+
+	// SlurmdbV0040PostAccountsAssociationWithBodyWithResponse request with any body
+	SlurmdbV0040PostAccountsAssociationWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostAccountsAssociationResponse, error)
+
+	SlurmdbV0040PostAccountsAssociationWithResponse(ctx context.Context, body SlurmdbV0040PostAccountsAssociationJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostAccountsAssociationResponse, error)
+
+	// SlurmdbV0040DeleteAssociationWithResponse request
+	SlurmdbV0040DeleteAssociationWithResponse(ctx context.Context, params *SlurmdbV0040DeleteAssociationParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040DeleteAssociationResponse, error)
+
+	// SlurmdbV0040GetAssociationWithResponse request
+	SlurmdbV0040GetAssociationWithResponse(ctx context.Context, params *SlurmdbV0040GetAssociationParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetAssociationResponse, error)
+
+	// SlurmdbV0040DeleteAssociationsWithResponse request
+	SlurmdbV0040DeleteAssociationsWithResponse(ctx context.Context, params *SlurmdbV0040DeleteAssociationsParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040DeleteAssociationsResponse, error)
+
+	// SlurmdbV0040GetAssociationsWithResponse request
+	SlurmdbV0040GetAssociationsWithResponse(ctx context.Context, params *SlurmdbV0040GetAssociationsParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetAssociationsResponse, error)
+
+	// SlurmdbV0040PostAssociationsWithBodyWithResponse request with any body
+	SlurmdbV0040PostAssociationsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostAssociationsResponse, error)
+
+	SlurmdbV0040PostAssociationsWithResponse(ctx context.Context, body SlurmdbV0040PostAssociationsJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostAssociationsResponse, error)
+
+	// SlurmdbV0040DeleteClusterWithResponse request
+	SlurmdbV0040DeleteClusterWithResponse(ctx context.Context, clusterName string, params *SlurmdbV0040DeleteClusterParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040DeleteClusterResponse, error)
+
+	// SlurmdbV0040GetClusterWithResponse request
+	SlurmdbV0040GetClusterWithResponse(ctx context.Context, clusterName string, params *SlurmdbV0040GetClusterParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetClusterResponse, error)
+
+	// SlurmdbV0040GetClustersWithResponse request
+	SlurmdbV0040GetClustersWithResponse(ctx context.Context, params *SlurmdbV0040GetClustersParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetClustersResponse, error)
+
+	// SlurmdbV0040PostClustersWithBodyWithResponse request with any body
+	SlurmdbV0040PostClustersWithBodyWithResponse(ctx context.Context, params *SlurmdbV0040PostClustersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostClustersResponse, error)
+
+	SlurmdbV0040PostClustersWithResponse(ctx context.Context, params *SlurmdbV0040PostClustersParams, body SlurmdbV0040PostClustersJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostClustersResponse, error)
+
+	// SlurmdbV0040GetConfigWithResponse request
+	SlurmdbV0040GetConfigWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetConfigResponse, error)
+
+	// SlurmdbV0040PostConfigWithBodyWithResponse request with any body
+	SlurmdbV0040PostConfigWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostConfigResponse, error)
+
+	SlurmdbV0040PostConfigWithResponse(ctx context.Context, body SlurmdbV0040PostConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostConfigResponse, error)
+
+	// SlurmdbV0040GetDiagWithResponse request
+	SlurmdbV0040GetDiagWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetDiagResponse, error)
+
+	// SlurmdbV0040GetInstanceWithResponse request
+	SlurmdbV0040GetInstanceWithResponse(ctx context.Context, params *SlurmdbV0040GetInstanceParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetInstanceResponse, error)
+
+	// SlurmdbV0040GetInstancesWithResponse request
+	SlurmdbV0040GetInstancesWithResponse(ctx context.Context, params *SlurmdbV0040GetInstancesParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetInstancesResponse, error)
+
+	// SlurmdbV0040GetJobWithResponse request
+	SlurmdbV0040GetJobWithResponse(ctx context.Context, jobId string, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetJobResponse, error)
+
+	// SlurmdbV0040GetJobsWithResponse request
+	SlurmdbV0040GetJobsWithResponse(ctx context.Context, params *SlurmdbV0040GetJobsParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetJobsResponse, error)
+
+	// SlurmdbV0040GetQosWithResponse request
+	SlurmdbV0040GetQosWithResponse(ctx context.Context, params *SlurmdbV0040GetQosParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetQosResponse, error)
+
+	// SlurmdbV0040PostQosWithBodyWithResponse request with any body
+	SlurmdbV0040PostQosWithBodyWithResponse(ctx context.Context, params *SlurmdbV0040PostQosParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostQosResponse, error)
+
+	SlurmdbV0040PostQosWithResponse(ctx context.Context, params *SlurmdbV0040PostQosParams, body SlurmdbV0040PostQosJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostQosResponse, error)
+
+	// SlurmdbV0040DeleteSingleQosWithResponse request
+	SlurmdbV0040DeleteSingleQosWithResponse(ctx context.Context, qos string, reqEditors ...RequestEditorFn) (*SlurmdbV0040DeleteSingleQosResponse, error)
+
+	// SlurmdbV0040GetSingleQosWithResponse request
+	SlurmdbV0040GetSingleQosWithResponse(ctx context.Context, qos string, params *SlurmdbV0040GetSingleQosParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetSingleQosResponse, error)
+
+	// SlurmdbV0040GetTresWithResponse request
+	SlurmdbV0040GetTresWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetTresResponse, error)
+
+	// SlurmdbV0040PostTresWithBodyWithResponse request with any body
+	SlurmdbV0040PostTresWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostTresResponse, error)
+
+	SlurmdbV0040PostTresWithResponse(ctx context.Context, body SlurmdbV0040PostTresJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostTresResponse, error)
+
+	// SlurmdbV0040DeleteUserWithResponse request
+	SlurmdbV0040DeleteUserWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*SlurmdbV0040DeleteUserResponse, error)
+
+	// SlurmdbV0040GetUserWithResponse request
+	SlurmdbV0040GetUserWithResponse(ctx context.Context, name string, params *SlurmdbV0040GetUserParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetUserResponse, error)
+
+	// SlurmdbV0040GetUsersWithResponse request
+	SlurmdbV0040GetUsersWithResponse(ctx context.Context, params *SlurmdbV0040GetUsersParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetUsersResponse, error)
+
+	// SlurmdbV0040PostUsersWithBodyWithResponse request with any body
+	SlurmdbV0040PostUsersWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostUsersResponse, error)
+
+	SlurmdbV0040PostUsersWithResponse(ctx context.Context, body SlurmdbV0040PostUsersJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostUsersResponse, error)
+
+	// SlurmdbV0040PostUsersAssociationWithBodyWithResponse request with any body
+	SlurmdbV0040PostUsersAssociationWithBodyWithResponse(ctx context.Context, params *SlurmdbV0040PostUsersAssociationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostUsersAssociationResponse, error)
+
+	SlurmdbV0040PostUsersAssociationWithResponse(ctx context.Context, params *SlurmdbV0040PostUsersAssociationParams, body SlurmdbV0040PostUsersAssociationJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostUsersAssociationResponse, error)
+
+	// SlurmdbV0040DeleteWckeyWithResponse request
+	SlurmdbV0040DeleteWckeyWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*SlurmdbV0040DeleteWckeyResponse, error)
+
+	// SlurmdbV0040GetWckeyWithResponse request
+	SlurmdbV0040GetWckeyWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetWckeyResponse, error)
+
+	// SlurmdbV0040GetWckeysWithResponse request
+	SlurmdbV0040GetWckeysWithResponse(ctx context.Context, params *SlurmdbV0040GetWckeysParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetWckeysResponse, error)
+
+	// SlurmdbV0040PostWckeysWithBodyWithResponse request with any body
+	SlurmdbV0040PostWckeysWithBodyWithResponse(ctx context.Context, params *SlurmdbV0040PostWckeysParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostWckeysResponse, error)
+
+	SlurmdbV0040PostWckeysWithResponse(ctx context.Context, params *SlurmdbV0040PostWckeysParams, body SlurmdbV0040PostWckeysJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostWckeysResponse, error)
 }
 
-type CancelJobResponse struct {
+type SlurmV0040GetDiagResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiDiagResp
+	JSONDefault  *V0040OpenapiDiagResp
 }
 
 // Status returns HTTPResponse.Status
-func (r CancelJobResponse) Status() string {
+func (r SlurmV0040GetDiagResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -542,21 +11250,22 @@ func (r CancelJobResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r CancelJobResponse) StatusCode() int {
+func (r SlurmV0040GetDiagResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetJobResponse struct {
+type SlurmV0040PostJobSubmitResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Job
+	JSON200      *V0040OpenapiJobSubmitResponse
+	JSONDefault  *V0040OpenapiJobSubmitResponse
 }
 
 // Status returns HTTPResponse.Status
-func (r GetJobResponse) Status() string {
+func (r SlurmV0040PostJobSubmitResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -564,23 +11273,22 @@ func (r GetJobResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetJobResponse) StatusCode() int {
+func (r SlurmV0040PostJobSubmitResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ListJobsResponse struct {
+type SlurmV0040DeleteJobResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		Jobs *[]Job `json:"jobs,omitempty"`
-	}
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
-func (r ListJobsResponse) Status() string {
+func (r SlurmV0040DeleteJobResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -588,21 +11296,22 @@ func (r ListJobsResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ListJobsResponse) StatusCode() int {
+func (r SlurmV0040DeleteJobResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type SubmitJobResponse struct {
+type SlurmV0040GetJobResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *JobSubmitResponse
+	JSON200      *V0040OpenapiJobInfoResp
+	JSONDefault  *V0040OpenapiJobInfoResp
 }
 
 // Status returns HTTPResponse.Status
-func (r SubmitJobResponse) Status() string {
+func (r SlurmV0040GetJobResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -610,23 +11319,22 @@ func (r SubmitJobResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r SubmitJobResponse) StatusCode() int {
+func (r SlurmV0040GetJobResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ListNodesResponse struct {
+type SlurmV0040PostJobResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		Nodes *[]Node `json:"nodes,omitempty"`
-	}
+	JSON200      *V0040OpenapiJobPostResponse
+	JSONDefault  *V0040OpenapiJobPostResponse
 }
 
 // Status returns HTTPResponse.Status
-func (r ListNodesResponse) Status() string {
+func (r SlurmV0040PostJobResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -634,23 +11342,22 @@ func (r ListNodesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ListNodesResponse) StatusCode() int {
+func (r SlurmV0040PostJobResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ListPartitionsResponse struct {
+type SlurmV0040DeleteJobsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		Partitions *[]Partition `json:"partitions,omitempty"`
-	}
+	JSON200      *V0040OpenapiKillJobsResp
+	JSONDefault  *V0040OpenapiKillJobsResp
 }
 
 // Status returns HTTPResponse.Status
-func (r ListPartitionsResponse) Status() string {
+func (r SlurmV0040DeleteJobsResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -658,221 +11365,3759 @@ func (r ListPartitionsResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ListPartitionsResponse) StatusCode() int {
+func (r SlurmV0040DeleteJobsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-// CancelJobWithResponse request returning *CancelJobResponse
-func (c *ClientWithResponses) CancelJobWithResponse(ctx context.Context, jobId string, reqEditors ...RequestEditorFn) (*CancelJobResponse, error) {
-	rsp, err := c.CancelJob(ctx, jobId, reqEditors...)
+type SlurmV0040GetJobsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiJobInfoResp
+	JSONDefault  *V0040OpenapiJobInfoResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040GetJobsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040GetJobsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040GetJobsStateResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiJobInfoResp
+	JSONDefault  *V0040OpenapiJobInfoResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040GetJobsStateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040GetJobsStateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040GetLicensesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiLicensesResp
+	JSONDefault  *V0040OpenapiLicensesResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040GetLicensesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040GetLicensesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040DeleteNodeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040DeleteNodeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040DeleteNodeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040GetNodeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiNodesResp
+	JSONDefault  *V0040OpenapiNodesResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040GetNodeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040GetNodeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040PostNodeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040PostNodeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040PostNodeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040GetNodesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiNodesResp
+	JSONDefault  *V0040OpenapiNodesResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040GetNodesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040GetNodesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040PostNodesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040PostNodesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040PostNodesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040GetPartitionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiPartitionResp
+	JSONDefault  *V0040OpenapiPartitionResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040GetPartitionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040GetPartitionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040GetPartitionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiPartitionResp
+	JSONDefault  *V0040OpenapiPartitionResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040GetPartitionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040GetPartitionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040GetPingResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiPingArrayResp
+	JSONDefault  *V0040OpenapiPingArrayResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040GetPingResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040GetPingResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040GetReconfigureResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040GetReconfigureResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040GetReconfigureResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040DeleteReservationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040DeleteReservationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040DeleteReservationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040GetReservationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiReservationResp
+	JSONDefault  *V0040OpenapiReservationResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040GetReservationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040GetReservationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040GetReservationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiReservationResp
+	JSONDefault  *V0040OpenapiReservationResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040GetReservationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040GetReservationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmV0040GetSharesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiSharesResp
+	JSONDefault  *V0040OpenapiSharesResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmV0040GetSharesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmV0040GetSharesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040DeleteAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiAccountsRemovedResp
+	JSONDefault  *V0040OpenapiAccountsRemovedResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040DeleteAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040DeleteAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiAccountsResp
+	JSONDefault  *V0040OpenapiAccountsResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetAccountsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiAccountsResp
+	JSONDefault  *V0040OpenapiAccountsResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetAccountsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetAccountsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040PostAccountsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040PostAccountsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040PostAccountsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040PostAccountsAssociationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiAccountsAddCondRespStr
+	JSONDefault  *V0040OpenapiAccountsAddCondRespStr
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040PostAccountsAssociationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040PostAccountsAssociationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040DeleteAssociationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiAssocsRemovedResp
+	JSONDefault  *V0040OpenapiAssocsRemovedResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040DeleteAssociationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040DeleteAssociationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetAssociationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiAssocsResp
+	JSONDefault  *V0040OpenapiAssocsResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetAssociationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetAssociationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040DeleteAssociationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiAssocsRemovedResp
+	JSONDefault  *V0040OpenapiAssocsRemovedResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040DeleteAssociationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040DeleteAssociationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetAssociationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiAssocsResp
+	JSONDefault  *V0040OpenapiAssocsResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetAssociationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetAssociationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040PostAssociationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040PostAssociationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040PostAssociationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040DeleteClusterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiClustersRemovedResp
+	JSONDefault  *V0040OpenapiClustersRemovedResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040DeleteClusterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040DeleteClusterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetClusterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiClustersResp
+	JSONDefault  *V0040OpenapiClustersResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetClusterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetClusterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetClustersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiClustersResp
+	JSONDefault  *V0040OpenapiClustersResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetClustersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetClustersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040PostClustersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040PostClustersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040PostClustersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetConfigResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiSlurmdbdConfigResp
+	JSONDefault  *V0040OpenapiSlurmdbdConfigResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetConfigResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetConfigResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040PostConfigResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040PostConfigResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040PostConfigResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetDiagResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiSlurmdbdStatsResp
+	JSONDefault  *V0040OpenapiSlurmdbdStatsResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetDiagResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetDiagResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetInstanceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiInstancesResp
+	JSONDefault  *V0040OpenapiInstancesResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetInstanceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetInstanceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetInstancesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiInstancesResp
+	JSONDefault  *V0040OpenapiInstancesResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetInstancesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetInstancesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetJobResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiSlurmdbdJobsResp
+	JSONDefault  *V0040OpenapiSlurmdbdJobsResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetJobResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetJobResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetJobsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiSlurmdbdJobsResp
+	JSONDefault  *V0040OpenapiSlurmdbdJobsResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetJobsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetJobsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetQosResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiSlurmdbdQosResp
+	JSONDefault  *V0040OpenapiSlurmdbdQosResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetQosResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetQosResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040PostQosResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040PostQosResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040PostQosResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040DeleteSingleQosResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiSlurmdbdQosRemovedResp
+	JSONDefault  *V0040OpenapiSlurmdbdQosRemovedResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040DeleteSingleQosResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040DeleteSingleQosResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetSingleQosResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiSlurmdbdQosResp
+	JSONDefault  *V0040OpenapiSlurmdbdQosResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetSingleQosResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetSingleQosResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetTresResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiTresResp
+	JSONDefault  *V0040OpenapiTresResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetTresResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetTresResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040PostTresResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040PostTresResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040PostTresResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040DeleteUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040DeleteUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040DeleteUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiUsersResp
+	JSONDefault  *V0040OpenapiUsersResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetUsersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiUsersResp
+	JSONDefault  *V0040OpenapiUsersResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetUsersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetUsersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040PostUsersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040PostUsersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040PostUsersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040PostUsersAssociationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiUsersAddCondRespStr
+	JSONDefault  *V0040OpenapiUsersAddCondRespStr
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040PostUsersAssociationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040PostUsersAssociationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040DeleteWckeyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiWckeyRemovedResp
+	JSONDefault  *V0040OpenapiWckeyRemovedResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040DeleteWckeyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040DeleteWckeyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetWckeyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiWckeyResp
+	JSONDefault  *V0040OpenapiWckeyResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetWckeyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetWckeyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040GetWckeysResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiWckeyResp
+	JSONDefault  *V0040OpenapiWckeyResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040GetWckeysResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040GetWckeysResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SlurmdbV0040PostWckeysResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *V0040OpenapiResp
+	JSONDefault  *V0040OpenapiResp
+}
+
+// Status returns HTTPResponse.Status
+func (r SlurmdbV0040PostWckeysResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SlurmdbV0040PostWckeysResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// SlurmV0040GetDiagWithResponse request returning *SlurmV0040GetDiagResponse
+func (c *ClientWithResponses) SlurmV0040GetDiagWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SlurmV0040GetDiagResponse, error) {
+	rsp, err := c.SlurmV0040GetDiag(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseCancelJobResponse(rsp)
+	return ParseSlurmV0040GetDiagResponse(rsp)
 }
 
-// GetJobWithResponse request returning *GetJobResponse
-func (c *ClientWithResponses) GetJobWithResponse(ctx context.Context, jobId string, reqEditors ...RequestEditorFn) (*GetJobResponse, error) {
-	rsp, err := c.GetJob(ctx, jobId, reqEditors...)
+// SlurmV0040PostJobSubmitWithBodyWithResponse request with arbitrary body returning *SlurmV0040PostJobSubmitResponse
+func (c *ClientWithResponses) SlurmV0040PostJobSubmitWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmV0040PostJobSubmitResponse, error) {
+	rsp, err := c.SlurmV0040PostJobSubmitWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetJobResponse(rsp)
+	return ParseSlurmV0040PostJobSubmitResponse(rsp)
 }
 
-// ListJobsWithResponse request returning *ListJobsResponse
-func (c *ClientWithResponses) ListJobsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListJobsResponse, error) {
-	rsp, err := c.ListJobs(ctx, reqEditors...)
+func (c *ClientWithResponses) SlurmV0040PostJobSubmitWithResponse(ctx context.Context, body SlurmV0040PostJobSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmV0040PostJobSubmitResponse, error) {
+	rsp, err := c.SlurmV0040PostJobSubmit(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseListJobsResponse(rsp)
+	return ParseSlurmV0040PostJobSubmitResponse(rsp)
 }
 
-// SubmitJobWithBodyWithResponse request with arbitrary body returning *SubmitJobResponse
-func (c *ClientWithResponses) SubmitJobWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SubmitJobResponse, error) {
-	rsp, err := c.SubmitJobWithBody(ctx, contentType, body, reqEditors...)
+// SlurmV0040DeleteJobWithResponse request returning *SlurmV0040DeleteJobResponse
+func (c *ClientWithResponses) SlurmV0040DeleteJobWithResponse(ctx context.Context, jobId string, params *SlurmV0040DeleteJobParams, reqEditors ...RequestEditorFn) (*SlurmV0040DeleteJobResponse, error) {
+	rsp, err := c.SlurmV0040DeleteJob(ctx, jobId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseSubmitJobResponse(rsp)
+	return ParseSlurmV0040DeleteJobResponse(rsp)
 }
 
-func (c *ClientWithResponses) SubmitJobWithResponse(ctx context.Context, body SubmitJobJSONRequestBody, reqEditors ...RequestEditorFn) (*SubmitJobResponse, error) {
-	rsp, err := c.SubmitJob(ctx, body, reqEditors...)
+// SlurmV0040GetJobWithResponse request returning *SlurmV0040GetJobResponse
+func (c *ClientWithResponses) SlurmV0040GetJobWithResponse(ctx context.Context, jobId string, params *SlurmV0040GetJobParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetJobResponse, error) {
+	rsp, err := c.SlurmV0040GetJob(ctx, jobId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseSubmitJobResponse(rsp)
+	return ParseSlurmV0040GetJobResponse(rsp)
 }
 
-// ListNodesWithResponse request returning *ListNodesResponse
-func (c *ClientWithResponses) ListNodesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListNodesResponse, error) {
-	rsp, err := c.ListNodes(ctx, reqEditors...)
+// SlurmV0040PostJobWithBodyWithResponse request with arbitrary body returning *SlurmV0040PostJobResponse
+func (c *ClientWithResponses) SlurmV0040PostJobWithBodyWithResponse(ctx context.Context, jobId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmV0040PostJobResponse, error) {
+	rsp, err := c.SlurmV0040PostJobWithBody(ctx, jobId, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseListNodesResponse(rsp)
+	return ParseSlurmV0040PostJobResponse(rsp)
 }
 
-// ListPartitionsWithResponse request returning *ListPartitionsResponse
-func (c *ClientWithResponses) ListPartitionsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListPartitionsResponse, error) {
-	rsp, err := c.ListPartitions(ctx, reqEditors...)
+func (c *ClientWithResponses) SlurmV0040PostJobWithResponse(ctx context.Context, jobId string, body SlurmV0040PostJobJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmV0040PostJobResponse, error) {
+	rsp, err := c.SlurmV0040PostJob(ctx, jobId, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseListPartitionsResponse(rsp)
+	return ParseSlurmV0040PostJobResponse(rsp)
 }
 
-// ParseCancelJobResponse parses an HTTP response from a CancelJobWithResponse call
-func ParseCancelJobResponse(rsp *http.Response) (*CancelJobResponse, error) {
+// SlurmV0040DeleteJobsWithBodyWithResponse request with arbitrary body returning *SlurmV0040DeleteJobsResponse
+func (c *ClientWithResponses) SlurmV0040DeleteJobsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmV0040DeleteJobsResponse, error) {
+	rsp, err := c.SlurmV0040DeleteJobsWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040DeleteJobsResponse(rsp)
+}
+
+func (c *ClientWithResponses) SlurmV0040DeleteJobsWithResponse(ctx context.Context, body SlurmV0040DeleteJobsJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmV0040DeleteJobsResponse, error) {
+	rsp, err := c.SlurmV0040DeleteJobs(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040DeleteJobsResponse(rsp)
+}
+
+// SlurmV0040GetJobsWithResponse request returning *SlurmV0040GetJobsResponse
+func (c *ClientWithResponses) SlurmV0040GetJobsWithResponse(ctx context.Context, params *SlurmV0040GetJobsParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetJobsResponse, error) {
+	rsp, err := c.SlurmV0040GetJobs(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040GetJobsResponse(rsp)
+}
+
+// SlurmV0040GetJobsStateWithResponse request returning *SlurmV0040GetJobsStateResponse
+func (c *ClientWithResponses) SlurmV0040GetJobsStateWithResponse(ctx context.Context, params *SlurmV0040GetJobsStateParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetJobsStateResponse, error) {
+	rsp, err := c.SlurmV0040GetJobsState(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040GetJobsStateResponse(rsp)
+}
+
+// SlurmV0040GetLicensesWithResponse request returning *SlurmV0040GetLicensesResponse
+func (c *ClientWithResponses) SlurmV0040GetLicensesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SlurmV0040GetLicensesResponse, error) {
+	rsp, err := c.SlurmV0040GetLicenses(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040GetLicensesResponse(rsp)
+}
+
+// SlurmV0040DeleteNodeWithResponse request returning *SlurmV0040DeleteNodeResponse
+func (c *ClientWithResponses) SlurmV0040DeleteNodeWithResponse(ctx context.Context, nodeName string, reqEditors ...RequestEditorFn) (*SlurmV0040DeleteNodeResponse, error) {
+	rsp, err := c.SlurmV0040DeleteNode(ctx, nodeName, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040DeleteNodeResponse(rsp)
+}
+
+// SlurmV0040GetNodeWithResponse request returning *SlurmV0040GetNodeResponse
+func (c *ClientWithResponses) SlurmV0040GetNodeWithResponse(ctx context.Context, nodeName string, params *SlurmV0040GetNodeParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetNodeResponse, error) {
+	rsp, err := c.SlurmV0040GetNode(ctx, nodeName, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040GetNodeResponse(rsp)
+}
+
+// SlurmV0040PostNodeWithBodyWithResponse request with arbitrary body returning *SlurmV0040PostNodeResponse
+func (c *ClientWithResponses) SlurmV0040PostNodeWithBodyWithResponse(ctx context.Context, nodeName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmV0040PostNodeResponse, error) {
+	rsp, err := c.SlurmV0040PostNodeWithBody(ctx, nodeName, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040PostNodeResponse(rsp)
+}
+
+func (c *ClientWithResponses) SlurmV0040PostNodeWithResponse(ctx context.Context, nodeName string, body SlurmV0040PostNodeJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmV0040PostNodeResponse, error) {
+	rsp, err := c.SlurmV0040PostNode(ctx, nodeName, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040PostNodeResponse(rsp)
+}
+
+// SlurmV0040GetNodesWithResponse request returning *SlurmV0040GetNodesResponse
+func (c *ClientWithResponses) SlurmV0040GetNodesWithResponse(ctx context.Context, params *SlurmV0040GetNodesParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetNodesResponse, error) {
+	rsp, err := c.SlurmV0040GetNodes(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040GetNodesResponse(rsp)
+}
+
+// SlurmV0040PostNodesWithBodyWithResponse request with arbitrary body returning *SlurmV0040PostNodesResponse
+func (c *ClientWithResponses) SlurmV0040PostNodesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmV0040PostNodesResponse, error) {
+	rsp, err := c.SlurmV0040PostNodesWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040PostNodesResponse(rsp)
+}
+
+func (c *ClientWithResponses) SlurmV0040PostNodesWithResponse(ctx context.Context, body SlurmV0040PostNodesJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmV0040PostNodesResponse, error) {
+	rsp, err := c.SlurmV0040PostNodes(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040PostNodesResponse(rsp)
+}
+
+// SlurmV0040GetPartitionWithResponse request returning *SlurmV0040GetPartitionResponse
+func (c *ClientWithResponses) SlurmV0040GetPartitionWithResponse(ctx context.Context, partitionName string, params *SlurmV0040GetPartitionParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetPartitionResponse, error) {
+	rsp, err := c.SlurmV0040GetPartition(ctx, partitionName, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040GetPartitionResponse(rsp)
+}
+
+// SlurmV0040GetPartitionsWithResponse request returning *SlurmV0040GetPartitionsResponse
+func (c *ClientWithResponses) SlurmV0040GetPartitionsWithResponse(ctx context.Context, params *SlurmV0040GetPartitionsParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetPartitionsResponse, error) {
+	rsp, err := c.SlurmV0040GetPartitions(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040GetPartitionsResponse(rsp)
+}
+
+// SlurmV0040GetPingWithResponse request returning *SlurmV0040GetPingResponse
+func (c *ClientWithResponses) SlurmV0040GetPingWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SlurmV0040GetPingResponse, error) {
+	rsp, err := c.SlurmV0040GetPing(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040GetPingResponse(rsp)
+}
+
+// SlurmV0040GetReconfigureWithResponse request returning *SlurmV0040GetReconfigureResponse
+func (c *ClientWithResponses) SlurmV0040GetReconfigureWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SlurmV0040GetReconfigureResponse, error) {
+	rsp, err := c.SlurmV0040GetReconfigure(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040GetReconfigureResponse(rsp)
+}
+
+// SlurmV0040DeleteReservationWithResponse request returning *SlurmV0040DeleteReservationResponse
+func (c *ClientWithResponses) SlurmV0040DeleteReservationWithResponse(ctx context.Context, reservationName string, reqEditors ...RequestEditorFn) (*SlurmV0040DeleteReservationResponse, error) {
+	rsp, err := c.SlurmV0040DeleteReservation(ctx, reservationName, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040DeleteReservationResponse(rsp)
+}
+
+// SlurmV0040GetReservationWithResponse request returning *SlurmV0040GetReservationResponse
+func (c *ClientWithResponses) SlurmV0040GetReservationWithResponse(ctx context.Context, reservationName string, params *SlurmV0040GetReservationParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetReservationResponse, error) {
+	rsp, err := c.SlurmV0040GetReservation(ctx, reservationName, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040GetReservationResponse(rsp)
+}
+
+// SlurmV0040GetReservationsWithResponse request returning *SlurmV0040GetReservationsResponse
+func (c *ClientWithResponses) SlurmV0040GetReservationsWithResponse(ctx context.Context, params *SlurmV0040GetReservationsParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetReservationsResponse, error) {
+	rsp, err := c.SlurmV0040GetReservations(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040GetReservationsResponse(rsp)
+}
+
+// SlurmV0040GetSharesWithResponse request returning *SlurmV0040GetSharesResponse
+func (c *ClientWithResponses) SlurmV0040GetSharesWithResponse(ctx context.Context, params *SlurmV0040GetSharesParams, reqEditors ...RequestEditorFn) (*SlurmV0040GetSharesResponse, error) {
+	rsp, err := c.SlurmV0040GetShares(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmV0040GetSharesResponse(rsp)
+}
+
+// SlurmdbV0040DeleteAccountWithResponse request returning *SlurmdbV0040DeleteAccountResponse
+func (c *ClientWithResponses) SlurmdbV0040DeleteAccountWithResponse(ctx context.Context, accountName string, reqEditors ...RequestEditorFn) (*SlurmdbV0040DeleteAccountResponse, error) {
+	rsp, err := c.SlurmdbV0040DeleteAccount(ctx, accountName, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040DeleteAccountResponse(rsp)
+}
+
+// SlurmdbV0040GetAccountWithResponse request returning *SlurmdbV0040GetAccountResponse
+func (c *ClientWithResponses) SlurmdbV0040GetAccountWithResponse(ctx context.Context, accountName string, params *SlurmdbV0040GetAccountParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetAccountResponse, error) {
+	rsp, err := c.SlurmdbV0040GetAccount(ctx, accountName, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetAccountResponse(rsp)
+}
+
+// SlurmdbV0040GetAccountsWithResponse request returning *SlurmdbV0040GetAccountsResponse
+func (c *ClientWithResponses) SlurmdbV0040GetAccountsWithResponse(ctx context.Context, params *SlurmdbV0040GetAccountsParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetAccountsResponse, error) {
+	rsp, err := c.SlurmdbV0040GetAccounts(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetAccountsResponse(rsp)
+}
+
+// SlurmdbV0040PostAccountsWithBodyWithResponse request with arbitrary body returning *SlurmdbV0040PostAccountsResponse
+func (c *ClientWithResponses) SlurmdbV0040PostAccountsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostAccountsResponse, error) {
+	rsp, err := c.SlurmdbV0040PostAccountsWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostAccountsResponse(rsp)
+}
+
+func (c *ClientWithResponses) SlurmdbV0040PostAccountsWithResponse(ctx context.Context, body SlurmdbV0040PostAccountsJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostAccountsResponse, error) {
+	rsp, err := c.SlurmdbV0040PostAccounts(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostAccountsResponse(rsp)
+}
+
+// SlurmdbV0040PostAccountsAssociationWithBodyWithResponse request with arbitrary body returning *SlurmdbV0040PostAccountsAssociationResponse
+func (c *ClientWithResponses) SlurmdbV0040PostAccountsAssociationWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostAccountsAssociationResponse, error) {
+	rsp, err := c.SlurmdbV0040PostAccountsAssociationWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostAccountsAssociationResponse(rsp)
+}
+
+func (c *ClientWithResponses) SlurmdbV0040PostAccountsAssociationWithResponse(ctx context.Context, body SlurmdbV0040PostAccountsAssociationJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostAccountsAssociationResponse, error) {
+	rsp, err := c.SlurmdbV0040PostAccountsAssociation(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostAccountsAssociationResponse(rsp)
+}
+
+// SlurmdbV0040DeleteAssociationWithResponse request returning *SlurmdbV0040DeleteAssociationResponse
+func (c *ClientWithResponses) SlurmdbV0040DeleteAssociationWithResponse(ctx context.Context, params *SlurmdbV0040DeleteAssociationParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040DeleteAssociationResponse, error) {
+	rsp, err := c.SlurmdbV0040DeleteAssociation(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040DeleteAssociationResponse(rsp)
+}
+
+// SlurmdbV0040GetAssociationWithResponse request returning *SlurmdbV0040GetAssociationResponse
+func (c *ClientWithResponses) SlurmdbV0040GetAssociationWithResponse(ctx context.Context, params *SlurmdbV0040GetAssociationParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetAssociationResponse, error) {
+	rsp, err := c.SlurmdbV0040GetAssociation(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetAssociationResponse(rsp)
+}
+
+// SlurmdbV0040DeleteAssociationsWithResponse request returning *SlurmdbV0040DeleteAssociationsResponse
+func (c *ClientWithResponses) SlurmdbV0040DeleteAssociationsWithResponse(ctx context.Context, params *SlurmdbV0040DeleteAssociationsParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040DeleteAssociationsResponse, error) {
+	rsp, err := c.SlurmdbV0040DeleteAssociations(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040DeleteAssociationsResponse(rsp)
+}
+
+// SlurmdbV0040GetAssociationsWithResponse request returning *SlurmdbV0040GetAssociationsResponse
+func (c *ClientWithResponses) SlurmdbV0040GetAssociationsWithResponse(ctx context.Context, params *SlurmdbV0040GetAssociationsParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetAssociationsResponse, error) {
+	rsp, err := c.SlurmdbV0040GetAssociations(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetAssociationsResponse(rsp)
+}
+
+// SlurmdbV0040PostAssociationsWithBodyWithResponse request with arbitrary body returning *SlurmdbV0040PostAssociationsResponse
+func (c *ClientWithResponses) SlurmdbV0040PostAssociationsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostAssociationsResponse, error) {
+	rsp, err := c.SlurmdbV0040PostAssociationsWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostAssociationsResponse(rsp)
+}
+
+func (c *ClientWithResponses) SlurmdbV0040PostAssociationsWithResponse(ctx context.Context, body SlurmdbV0040PostAssociationsJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostAssociationsResponse, error) {
+	rsp, err := c.SlurmdbV0040PostAssociations(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostAssociationsResponse(rsp)
+}
+
+// SlurmdbV0040DeleteClusterWithResponse request returning *SlurmdbV0040DeleteClusterResponse
+func (c *ClientWithResponses) SlurmdbV0040DeleteClusterWithResponse(ctx context.Context, clusterName string, params *SlurmdbV0040DeleteClusterParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040DeleteClusterResponse, error) {
+	rsp, err := c.SlurmdbV0040DeleteCluster(ctx, clusterName, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040DeleteClusterResponse(rsp)
+}
+
+// SlurmdbV0040GetClusterWithResponse request returning *SlurmdbV0040GetClusterResponse
+func (c *ClientWithResponses) SlurmdbV0040GetClusterWithResponse(ctx context.Context, clusterName string, params *SlurmdbV0040GetClusterParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetClusterResponse, error) {
+	rsp, err := c.SlurmdbV0040GetCluster(ctx, clusterName, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetClusterResponse(rsp)
+}
+
+// SlurmdbV0040GetClustersWithResponse request returning *SlurmdbV0040GetClustersResponse
+func (c *ClientWithResponses) SlurmdbV0040GetClustersWithResponse(ctx context.Context, params *SlurmdbV0040GetClustersParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetClustersResponse, error) {
+	rsp, err := c.SlurmdbV0040GetClusters(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetClustersResponse(rsp)
+}
+
+// SlurmdbV0040PostClustersWithBodyWithResponse request with arbitrary body returning *SlurmdbV0040PostClustersResponse
+func (c *ClientWithResponses) SlurmdbV0040PostClustersWithBodyWithResponse(ctx context.Context, params *SlurmdbV0040PostClustersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostClustersResponse, error) {
+	rsp, err := c.SlurmdbV0040PostClustersWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostClustersResponse(rsp)
+}
+
+func (c *ClientWithResponses) SlurmdbV0040PostClustersWithResponse(ctx context.Context, params *SlurmdbV0040PostClustersParams, body SlurmdbV0040PostClustersJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostClustersResponse, error) {
+	rsp, err := c.SlurmdbV0040PostClusters(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostClustersResponse(rsp)
+}
+
+// SlurmdbV0040GetConfigWithResponse request returning *SlurmdbV0040GetConfigResponse
+func (c *ClientWithResponses) SlurmdbV0040GetConfigWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetConfigResponse, error) {
+	rsp, err := c.SlurmdbV0040GetConfig(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetConfigResponse(rsp)
+}
+
+// SlurmdbV0040PostConfigWithBodyWithResponse request with arbitrary body returning *SlurmdbV0040PostConfigResponse
+func (c *ClientWithResponses) SlurmdbV0040PostConfigWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostConfigResponse, error) {
+	rsp, err := c.SlurmdbV0040PostConfigWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostConfigResponse(rsp)
+}
+
+func (c *ClientWithResponses) SlurmdbV0040PostConfigWithResponse(ctx context.Context, body SlurmdbV0040PostConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostConfigResponse, error) {
+	rsp, err := c.SlurmdbV0040PostConfig(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostConfigResponse(rsp)
+}
+
+// SlurmdbV0040GetDiagWithResponse request returning *SlurmdbV0040GetDiagResponse
+func (c *ClientWithResponses) SlurmdbV0040GetDiagWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetDiagResponse, error) {
+	rsp, err := c.SlurmdbV0040GetDiag(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetDiagResponse(rsp)
+}
+
+// SlurmdbV0040GetInstanceWithResponse request returning *SlurmdbV0040GetInstanceResponse
+func (c *ClientWithResponses) SlurmdbV0040GetInstanceWithResponse(ctx context.Context, params *SlurmdbV0040GetInstanceParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetInstanceResponse, error) {
+	rsp, err := c.SlurmdbV0040GetInstance(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetInstanceResponse(rsp)
+}
+
+// SlurmdbV0040GetInstancesWithResponse request returning *SlurmdbV0040GetInstancesResponse
+func (c *ClientWithResponses) SlurmdbV0040GetInstancesWithResponse(ctx context.Context, params *SlurmdbV0040GetInstancesParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetInstancesResponse, error) {
+	rsp, err := c.SlurmdbV0040GetInstances(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetInstancesResponse(rsp)
+}
+
+// SlurmdbV0040GetJobWithResponse request returning *SlurmdbV0040GetJobResponse
+func (c *ClientWithResponses) SlurmdbV0040GetJobWithResponse(ctx context.Context, jobId string, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetJobResponse, error) {
+	rsp, err := c.SlurmdbV0040GetJob(ctx, jobId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetJobResponse(rsp)
+}
+
+// SlurmdbV0040GetJobsWithResponse request returning *SlurmdbV0040GetJobsResponse
+func (c *ClientWithResponses) SlurmdbV0040GetJobsWithResponse(ctx context.Context, params *SlurmdbV0040GetJobsParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetJobsResponse, error) {
+	rsp, err := c.SlurmdbV0040GetJobs(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetJobsResponse(rsp)
+}
+
+// SlurmdbV0040GetQosWithResponse request returning *SlurmdbV0040GetQosResponse
+func (c *ClientWithResponses) SlurmdbV0040GetQosWithResponse(ctx context.Context, params *SlurmdbV0040GetQosParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetQosResponse, error) {
+	rsp, err := c.SlurmdbV0040GetQos(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetQosResponse(rsp)
+}
+
+// SlurmdbV0040PostQosWithBodyWithResponse request with arbitrary body returning *SlurmdbV0040PostQosResponse
+func (c *ClientWithResponses) SlurmdbV0040PostQosWithBodyWithResponse(ctx context.Context, params *SlurmdbV0040PostQosParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostQosResponse, error) {
+	rsp, err := c.SlurmdbV0040PostQosWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostQosResponse(rsp)
+}
+
+func (c *ClientWithResponses) SlurmdbV0040PostQosWithResponse(ctx context.Context, params *SlurmdbV0040PostQosParams, body SlurmdbV0040PostQosJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostQosResponse, error) {
+	rsp, err := c.SlurmdbV0040PostQos(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostQosResponse(rsp)
+}
+
+// SlurmdbV0040DeleteSingleQosWithResponse request returning *SlurmdbV0040DeleteSingleQosResponse
+func (c *ClientWithResponses) SlurmdbV0040DeleteSingleQosWithResponse(ctx context.Context, qos string, reqEditors ...RequestEditorFn) (*SlurmdbV0040DeleteSingleQosResponse, error) {
+	rsp, err := c.SlurmdbV0040DeleteSingleQos(ctx, qos, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040DeleteSingleQosResponse(rsp)
+}
+
+// SlurmdbV0040GetSingleQosWithResponse request returning *SlurmdbV0040GetSingleQosResponse
+func (c *ClientWithResponses) SlurmdbV0040GetSingleQosWithResponse(ctx context.Context, qos string, params *SlurmdbV0040GetSingleQosParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetSingleQosResponse, error) {
+	rsp, err := c.SlurmdbV0040GetSingleQos(ctx, qos, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetSingleQosResponse(rsp)
+}
+
+// SlurmdbV0040GetTresWithResponse request returning *SlurmdbV0040GetTresResponse
+func (c *ClientWithResponses) SlurmdbV0040GetTresWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetTresResponse, error) {
+	rsp, err := c.SlurmdbV0040GetTres(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetTresResponse(rsp)
+}
+
+// SlurmdbV0040PostTresWithBodyWithResponse request with arbitrary body returning *SlurmdbV0040PostTresResponse
+func (c *ClientWithResponses) SlurmdbV0040PostTresWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostTresResponse, error) {
+	rsp, err := c.SlurmdbV0040PostTresWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostTresResponse(rsp)
+}
+
+func (c *ClientWithResponses) SlurmdbV0040PostTresWithResponse(ctx context.Context, body SlurmdbV0040PostTresJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostTresResponse, error) {
+	rsp, err := c.SlurmdbV0040PostTres(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostTresResponse(rsp)
+}
+
+// SlurmdbV0040DeleteUserWithResponse request returning *SlurmdbV0040DeleteUserResponse
+func (c *ClientWithResponses) SlurmdbV0040DeleteUserWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*SlurmdbV0040DeleteUserResponse, error) {
+	rsp, err := c.SlurmdbV0040DeleteUser(ctx, name, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040DeleteUserResponse(rsp)
+}
+
+// SlurmdbV0040GetUserWithResponse request returning *SlurmdbV0040GetUserResponse
+func (c *ClientWithResponses) SlurmdbV0040GetUserWithResponse(ctx context.Context, name string, params *SlurmdbV0040GetUserParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetUserResponse, error) {
+	rsp, err := c.SlurmdbV0040GetUser(ctx, name, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetUserResponse(rsp)
+}
+
+// SlurmdbV0040GetUsersWithResponse request returning *SlurmdbV0040GetUsersResponse
+func (c *ClientWithResponses) SlurmdbV0040GetUsersWithResponse(ctx context.Context, params *SlurmdbV0040GetUsersParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetUsersResponse, error) {
+	rsp, err := c.SlurmdbV0040GetUsers(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetUsersResponse(rsp)
+}
+
+// SlurmdbV0040PostUsersWithBodyWithResponse request with arbitrary body returning *SlurmdbV0040PostUsersResponse
+func (c *ClientWithResponses) SlurmdbV0040PostUsersWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostUsersResponse, error) {
+	rsp, err := c.SlurmdbV0040PostUsersWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostUsersResponse(rsp)
+}
+
+func (c *ClientWithResponses) SlurmdbV0040PostUsersWithResponse(ctx context.Context, body SlurmdbV0040PostUsersJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostUsersResponse, error) {
+	rsp, err := c.SlurmdbV0040PostUsers(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostUsersResponse(rsp)
+}
+
+// SlurmdbV0040PostUsersAssociationWithBodyWithResponse request with arbitrary body returning *SlurmdbV0040PostUsersAssociationResponse
+func (c *ClientWithResponses) SlurmdbV0040PostUsersAssociationWithBodyWithResponse(ctx context.Context, params *SlurmdbV0040PostUsersAssociationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostUsersAssociationResponse, error) {
+	rsp, err := c.SlurmdbV0040PostUsersAssociationWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostUsersAssociationResponse(rsp)
+}
+
+func (c *ClientWithResponses) SlurmdbV0040PostUsersAssociationWithResponse(ctx context.Context, params *SlurmdbV0040PostUsersAssociationParams, body SlurmdbV0040PostUsersAssociationJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostUsersAssociationResponse, error) {
+	rsp, err := c.SlurmdbV0040PostUsersAssociation(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostUsersAssociationResponse(rsp)
+}
+
+// SlurmdbV0040DeleteWckeyWithResponse request returning *SlurmdbV0040DeleteWckeyResponse
+func (c *ClientWithResponses) SlurmdbV0040DeleteWckeyWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*SlurmdbV0040DeleteWckeyResponse, error) {
+	rsp, err := c.SlurmdbV0040DeleteWckey(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040DeleteWckeyResponse(rsp)
+}
+
+// SlurmdbV0040GetWckeyWithResponse request returning *SlurmdbV0040GetWckeyResponse
+func (c *ClientWithResponses) SlurmdbV0040GetWckeyWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetWckeyResponse, error) {
+	rsp, err := c.SlurmdbV0040GetWckey(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetWckeyResponse(rsp)
+}
+
+// SlurmdbV0040GetWckeysWithResponse request returning *SlurmdbV0040GetWckeysResponse
+func (c *ClientWithResponses) SlurmdbV0040GetWckeysWithResponse(ctx context.Context, params *SlurmdbV0040GetWckeysParams, reqEditors ...RequestEditorFn) (*SlurmdbV0040GetWckeysResponse, error) {
+	rsp, err := c.SlurmdbV0040GetWckeys(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040GetWckeysResponse(rsp)
+}
+
+// SlurmdbV0040PostWckeysWithBodyWithResponse request with arbitrary body returning *SlurmdbV0040PostWckeysResponse
+func (c *ClientWithResponses) SlurmdbV0040PostWckeysWithBodyWithResponse(ctx context.Context, params *SlurmdbV0040PostWckeysParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostWckeysResponse, error) {
+	rsp, err := c.SlurmdbV0040PostWckeysWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostWckeysResponse(rsp)
+}
+
+func (c *ClientWithResponses) SlurmdbV0040PostWckeysWithResponse(ctx context.Context, params *SlurmdbV0040PostWckeysParams, body SlurmdbV0040PostWckeysJSONRequestBody, reqEditors ...RequestEditorFn) (*SlurmdbV0040PostWckeysResponse, error) {
+	rsp, err := c.SlurmdbV0040PostWckeys(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSlurmdbV0040PostWckeysResponse(rsp)
+}
+
+// ParseSlurmV0040GetDiagResponse parses an HTTP response from a SlurmV0040GetDiagWithResponse call
+func ParseSlurmV0040GetDiagResponse(rsp *http.Response) (*SlurmV0040GetDiagResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &CancelJobResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetJobResponse parses an HTTP response from a GetJobWithResponse call
-func ParseGetJobResponse(rsp *http.Response) (*GetJobResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetJobResponse{
+	response := &SlurmV0040GetDiagResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Job
+		var dest V0040OpenapiDiagResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiDiagResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
 
 	}
 
 	return response, nil
 }
 
-// ParseListJobsResponse parses an HTTP response from a ListJobsWithResponse call
-func ParseListJobsResponse(rsp *http.Response) (*ListJobsResponse, error) {
+// ParseSlurmV0040PostJobSubmitResponse parses an HTTP response from a SlurmV0040PostJobSubmitWithResponse call
+func ParseSlurmV0040PostJobSubmitResponse(rsp *http.Response) (*SlurmV0040PostJobSubmitResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ListJobsResponse{
+	response := &SlurmV0040PostJobSubmitResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Jobs *[]Job `json:"jobs,omitempty"`
-		}
+		var dest V0040OpenapiJobSubmitResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiJobSubmitResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
 
 	}
 
 	return response, nil
 }
 
-// ParseSubmitJobResponse parses an HTTP response from a SubmitJobWithResponse call
-func ParseSubmitJobResponse(rsp *http.Response) (*SubmitJobResponse, error) {
+// ParseSlurmV0040DeleteJobResponse parses an HTTP response from a SlurmV0040DeleteJobWithResponse call
+func ParseSlurmV0040DeleteJobResponse(rsp *http.Response) (*SlurmV0040DeleteJobResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &SubmitJobResponse{
+	response := &SlurmV0040DeleteJobResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest JobSubmitResponse
+		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
 
 	}
 
 	return response, nil
 }
 
-// ParseListNodesResponse parses an HTTP response from a ListNodesWithResponse call
-func ParseListNodesResponse(rsp *http.Response) (*ListNodesResponse, error) {
+// ParseSlurmV0040GetJobResponse parses an HTTP response from a SlurmV0040GetJobWithResponse call
+func ParseSlurmV0040GetJobResponse(rsp *http.Response) (*SlurmV0040GetJobResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ListNodesResponse{
+	response := &SlurmV0040GetJobResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Nodes *[]Node `json:"nodes,omitempty"`
-		}
+		var dest V0040OpenapiJobInfoResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiJobInfoResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
 
 	}
 
 	return response, nil
 }
 
-// ParseListPartitionsResponse parses an HTTP response from a ListPartitionsWithResponse call
-func ParseListPartitionsResponse(rsp *http.Response) (*ListPartitionsResponse, error) {
+// ParseSlurmV0040PostJobResponse parses an HTTP response from a SlurmV0040PostJobWithResponse call
+func ParseSlurmV0040PostJobResponse(rsp *http.Response) (*SlurmV0040PostJobResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ListPartitionsResponse{
+	response := &SlurmV0040PostJobResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Partitions *[]Partition `json:"partitions,omitempty"`
-		}
+		var dest V0040OpenapiJobPostResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiJobPostResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040DeleteJobsResponse parses an HTTP response from a SlurmV0040DeleteJobsWithResponse call
+func ParseSlurmV0040DeleteJobsResponse(rsp *http.Response) (*SlurmV0040DeleteJobsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040DeleteJobsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiKillJobsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiKillJobsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040GetJobsResponse parses an HTTP response from a SlurmV0040GetJobsWithResponse call
+func ParseSlurmV0040GetJobsResponse(rsp *http.Response) (*SlurmV0040GetJobsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040GetJobsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiJobInfoResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiJobInfoResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040GetJobsStateResponse parses an HTTP response from a SlurmV0040GetJobsStateWithResponse call
+func ParseSlurmV0040GetJobsStateResponse(rsp *http.Response) (*SlurmV0040GetJobsStateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040GetJobsStateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiJobInfoResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiJobInfoResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040GetLicensesResponse parses an HTTP response from a SlurmV0040GetLicensesWithResponse call
+func ParseSlurmV0040GetLicensesResponse(rsp *http.Response) (*SlurmV0040GetLicensesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040GetLicensesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiLicensesResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiLicensesResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040DeleteNodeResponse parses an HTTP response from a SlurmV0040DeleteNodeWithResponse call
+func ParseSlurmV0040DeleteNodeResponse(rsp *http.Response) (*SlurmV0040DeleteNodeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040DeleteNodeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040GetNodeResponse parses an HTTP response from a SlurmV0040GetNodeWithResponse call
+func ParseSlurmV0040GetNodeResponse(rsp *http.Response) (*SlurmV0040GetNodeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040GetNodeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiNodesResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiNodesResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040PostNodeResponse parses an HTTP response from a SlurmV0040PostNodeWithResponse call
+func ParseSlurmV0040PostNodeResponse(rsp *http.Response) (*SlurmV0040PostNodeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040PostNodeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040GetNodesResponse parses an HTTP response from a SlurmV0040GetNodesWithResponse call
+func ParseSlurmV0040GetNodesResponse(rsp *http.Response) (*SlurmV0040GetNodesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040GetNodesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiNodesResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiNodesResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040PostNodesResponse parses an HTTP response from a SlurmV0040PostNodesWithResponse call
+func ParseSlurmV0040PostNodesResponse(rsp *http.Response) (*SlurmV0040PostNodesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040PostNodesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040GetPartitionResponse parses an HTTP response from a SlurmV0040GetPartitionWithResponse call
+func ParseSlurmV0040GetPartitionResponse(rsp *http.Response) (*SlurmV0040GetPartitionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040GetPartitionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiPartitionResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiPartitionResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040GetPartitionsResponse parses an HTTP response from a SlurmV0040GetPartitionsWithResponse call
+func ParseSlurmV0040GetPartitionsResponse(rsp *http.Response) (*SlurmV0040GetPartitionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040GetPartitionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiPartitionResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiPartitionResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040GetPingResponse parses an HTTP response from a SlurmV0040GetPingWithResponse call
+func ParseSlurmV0040GetPingResponse(rsp *http.Response) (*SlurmV0040GetPingResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040GetPingResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiPingArrayResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiPingArrayResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040GetReconfigureResponse parses an HTTP response from a SlurmV0040GetReconfigureWithResponse call
+func ParseSlurmV0040GetReconfigureResponse(rsp *http.Response) (*SlurmV0040GetReconfigureResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040GetReconfigureResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040DeleteReservationResponse parses an HTTP response from a SlurmV0040DeleteReservationWithResponse call
+func ParseSlurmV0040DeleteReservationResponse(rsp *http.Response) (*SlurmV0040DeleteReservationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040DeleteReservationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040GetReservationResponse parses an HTTP response from a SlurmV0040GetReservationWithResponse call
+func ParseSlurmV0040GetReservationResponse(rsp *http.Response) (*SlurmV0040GetReservationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040GetReservationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiReservationResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiReservationResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040GetReservationsResponse parses an HTTP response from a SlurmV0040GetReservationsWithResponse call
+func ParseSlurmV0040GetReservationsResponse(rsp *http.Response) (*SlurmV0040GetReservationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040GetReservationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiReservationResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiReservationResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmV0040GetSharesResponse parses an HTTP response from a SlurmV0040GetSharesWithResponse call
+func ParseSlurmV0040GetSharesResponse(rsp *http.Response) (*SlurmV0040GetSharesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmV0040GetSharesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiSharesResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiSharesResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040DeleteAccountResponse parses an HTTP response from a SlurmdbV0040DeleteAccountWithResponse call
+func ParseSlurmdbV0040DeleteAccountResponse(rsp *http.Response) (*SlurmdbV0040DeleteAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040DeleteAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiAccountsRemovedResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiAccountsRemovedResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetAccountResponse parses an HTTP response from a SlurmdbV0040GetAccountWithResponse call
+func ParseSlurmdbV0040GetAccountResponse(rsp *http.Response) (*SlurmdbV0040GetAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiAccountsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiAccountsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetAccountsResponse parses an HTTP response from a SlurmdbV0040GetAccountsWithResponse call
+func ParseSlurmdbV0040GetAccountsResponse(rsp *http.Response) (*SlurmdbV0040GetAccountsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetAccountsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiAccountsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiAccountsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040PostAccountsResponse parses an HTTP response from a SlurmdbV0040PostAccountsWithResponse call
+func ParseSlurmdbV0040PostAccountsResponse(rsp *http.Response) (*SlurmdbV0040PostAccountsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040PostAccountsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040PostAccountsAssociationResponse parses an HTTP response from a SlurmdbV0040PostAccountsAssociationWithResponse call
+func ParseSlurmdbV0040PostAccountsAssociationResponse(rsp *http.Response) (*SlurmdbV0040PostAccountsAssociationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040PostAccountsAssociationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiAccountsAddCondRespStr
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiAccountsAddCondRespStr
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040DeleteAssociationResponse parses an HTTP response from a SlurmdbV0040DeleteAssociationWithResponse call
+func ParseSlurmdbV0040DeleteAssociationResponse(rsp *http.Response) (*SlurmdbV0040DeleteAssociationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040DeleteAssociationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiAssocsRemovedResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiAssocsRemovedResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetAssociationResponse parses an HTTP response from a SlurmdbV0040GetAssociationWithResponse call
+func ParseSlurmdbV0040GetAssociationResponse(rsp *http.Response) (*SlurmdbV0040GetAssociationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetAssociationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiAssocsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiAssocsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040DeleteAssociationsResponse parses an HTTP response from a SlurmdbV0040DeleteAssociationsWithResponse call
+func ParseSlurmdbV0040DeleteAssociationsResponse(rsp *http.Response) (*SlurmdbV0040DeleteAssociationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040DeleteAssociationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiAssocsRemovedResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiAssocsRemovedResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetAssociationsResponse parses an HTTP response from a SlurmdbV0040GetAssociationsWithResponse call
+func ParseSlurmdbV0040GetAssociationsResponse(rsp *http.Response) (*SlurmdbV0040GetAssociationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetAssociationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiAssocsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiAssocsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040PostAssociationsResponse parses an HTTP response from a SlurmdbV0040PostAssociationsWithResponse call
+func ParseSlurmdbV0040PostAssociationsResponse(rsp *http.Response) (*SlurmdbV0040PostAssociationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040PostAssociationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040DeleteClusterResponse parses an HTTP response from a SlurmdbV0040DeleteClusterWithResponse call
+func ParseSlurmdbV0040DeleteClusterResponse(rsp *http.Response) (*SlurmdbV0040DeleteClusterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040DeleteClusterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiClustersRemovedResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiClustersRemovedResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetClusterResponse parses an HTTP response from a SlurmdbV0040GetClusterWithResponse call
+func ParseSlurmdbV0040GetClusterResponse(rsp *http.Response) (*SlurmdbV0040GetClusterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetClusterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiClustersResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiClustersResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetClustersResponse parses an HTTP response from a SlurmdbV0040GetClustersWithResponse call
+func ParseSlurmdbV0040GetClustersResponse(rsp *http.Response) (*SlurmdbV0040GetClustersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetClustersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiClustersResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiClustersResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040PostClustersResponse parses an HTTP response from a SlurmdbV0040PostClustersWithResponse call
+func ParseSlurmdbV0040PostClustersResponse(rsp *http.Response) (*SlurmdbV0040PostClustersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040PostClustersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetConfigResponse parses an HTTP response from a SlurmdbV0040GetConfigWithResponse call
+func ParseSlurmdbV0040GetConfigResponse(rsp *http.Response) (*SlurmdbV0040GetConfigResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetConfigResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiSlurmdbdConfigResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiSlurmdbdConfigResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040PostConfigResponse parses an HTTP response from a SlurmdbV0040PostConfigWithResponse call
+func ParseSlurmdbV0040PostConfigResponse(rsp *http.Response) (*SlurmdbV0040PostConfigResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040PostConfigResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetDiagResponse parses an HTTP response from a SlurmdbV0040GetDiagWithResponse call
+func ParseSlurmdbV0040GetDiagResponse(rsp *http.Response) (*SlurmdbV0040GetDiagResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetDiagResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiSlurmdbdStatsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiSlurmdbdStatsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetInstanceResponse parses an HTTP response from a SlurmdbV0040GetInstanceWithResponse call
+func ParseSlurmdbV0040GetInstanceResponse(rsp *http.Response) (*SlurmdbV0040GetInstanceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetInstanceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiInstancesResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiInstancesResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetInstancesResponse parses an HTTP response from a SlurmdbV0040GetInstancesWithResponse call
+func ParseSlurmdbV0040GetInstancesResponse(rsp *http.Response) (*SlurmdbV0040GetInstancesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetInstancesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiInstancesResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiInstancesResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetJobResponse parses an HTTP response from a SlurmdbV0040GetJobWithResponse call
+func ParseSlurmdbV0040GetJobResponse(rsp *http.Response) (*SlurmdbV0040GetJobResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetJobResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiSlurmdbdJobsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiSlurmdbdJobsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetJobsResponse parses an HTTP response from a SlurmdbV0040GetJobsWithResponse call
+func ParseSlurmdbV0040GetJobsResponse(rsp *http.Response) (*SlurmdbV0040GetJobsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetJobsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiSlurmdbdJobsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiSlurmdbdJobsResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetQosResponse parses an HTTP response from a SlurmdbV0040GetQosWithResponse call
+func ParseSlurmdbV0040GetQosResponse(rsp *http.Response) (*SlurmdbV0040GetQosResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetQosResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiSlurmdbdQosResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiSlurmdbdQosResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040PostQosResponse parses an HTTP response from a SlurmdbV0040PostQosWithResponse call
+func ParseSlurmdbV0040PostQosResponse(rsp *http.Response) (*SlurmdbV0040PostQosResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040PostQosResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040DeleteSingleQosResponse parses an HTTP response from a SlurmdbV0040DeleteSingleQosWithResponse call
+func ParseSlurmdbV0040DeleteSingleQosResponse(rsp *http.Response) (*SlurmdbV0040DeleteSingleQosResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040DeleteSingleQosResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiSlurmdbdQosRemovedResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiSlurmdbdQosRemovedResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetSingleQosResponse parses an HTTP response from a SlurmdbV0040GetSingleQosWithResponse call
+func ParseSlurmdbV0040GetSingleQosResponse(rsp *http.Response) (*SlurmdbV0040GetSingleQosResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetSingleQosResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiSlurmdbdQosResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiSlurmdbdQosResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetTresResponse parses an HTTP response from a SlurmdbV0040GetTresWithResponse call
+func ParseSlurmdbV0040GetTresResponse(rsp *http.Response) (*SlurmdbV0040GetTresResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetTresResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiTresResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiTresResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040PostTresResponse parses an HTTP response from a SlurmdbV0040PostTresWithResponse call
+func ParseSlurmdbV0040PostTresResponse(rsp *http.Response) (*SlurmdbV0040PostTresResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040PostTresResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040DeleteUserResponse parses an HTTP response from a SlurmdbV0040DeleteUserWithResponse call
+func ParseSlurmdbV0040DeleteUserResponse(rsp *http.Response) (*SlurmdbV0040DeleteUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040DeleteUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetUserResponse parses an HTTP response from a SlurmdbV0040GetUserWithResponse call
+func ParseSlurmdbV0040GetUserResponse(rsp *http.Response) (*SlurmdbV0040GetUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiUsersResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiUsersResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetUsersResponse parses an HTTP response from a SlurmdbV0040GetUsersWithResponse call
+func ParseSlurmdbV0040GetUsersResponse(rsp *http.Response) (*SlurmdbV0040GetUsersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetUsersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiUsersResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiUsersResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040PostUsersResponse parses an HTTP response from a SlurmdbV0040PostUsersWithResponse call
+func ParseSlurmdbV0040PostUsersResponse(rsp *http.Response) (*SlurmdbV0040PostUsersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040PostUsersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040PostUsersAssociationResponse parses an HTTP response from a SlurmdbV0040PostUsersAssociationWithResponse call
+func ParseSlurmdbV0040PostUsersAssociationResponse(rsp *http.Response) (*SlurmdbV0040PostUsersAssociationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040PostUsersAssociationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiUsersAddCondRespStr
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiUsersAddCondRespStr
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040DeleteWckeyResponse parses an HTTP response from a SlurmdbV0040DeleteWckeyWithResponse call
+func ParseSlurmdbV0040DeleteWckeyResponse(rsp *http.Response) (*SlurmdbV0040DeleteWckeyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040DeleteWckeyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiWckeyRemovedResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiWckeyRemovedResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetWckeyResponse parses an HTTP response from a SlurmdbV0040GetWckeyWithResponse call
+func ParseSlurmdbV0040GetWckeyResponse(rsp *http.Response) (*SlurmdbV0040GetWckeyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetWckeyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiWckeyResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiWckeyResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040GetWckeysResponse parses an HTTP response from a SlurmdbV0040GetWckeysWithResponse call
+func ParseSlurmdbV0040GetWckeysResponse(rsp *http.Response) (*SlurmdbV0040GetWckeysResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040GetWckeysResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiWckeyResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiWckeyResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSlurmdbV0040PostWckeysResponse parses an HTTP response from a SlurmdbV0040PostWckeysWithResponse call
+func ParseSlurmdbV0040PostWckeysResponse(rsp *http.Response) (*SlurmdbV0040PostWckeysResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SlurmdbV0040PostWckeysResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest V0040OpenapiResp
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
 
 	}
 
@@ -882,20 +15127,346 @@ func ParseListPartitionsResponse(rsp *http.Response) (*ListPartitionsResponse, e
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/7RW32/CNhD+V6LbHjOCuj3ljQGrUtGAKNUmVQg5ydEaJXZqX6ohlP99sg0USNJfa59i",
-	"2Xe++z5/d5cdpLIopUBBGsId6PQJC2aXNzIxn1LJEhVxtJtpWdkvbUuEELggfEQFtQ8oshXxAs3pWqqC",
-	"EYSQMcLf7K5/cNGkuHg0HhuZrHh2ctv5kSZG9jYUVQHhA8zG8SiKr8GH+X0cu9VwejubjBfjkVkP4uF4",
-	"MrHrvwaRWyyi2/H0fgHLlgQKLKTatsMRzEFpOJVMEScuReupJqbokzzoKin4Z50qjaqdvfpoLZMNpmSs",
-	"b2RyZ6JovU/8o6/6ExSlipfUemTArnJecGqLWPug8LniCjMjBxt++QZYmqMupdDYBNwpvTbyYpnhZzhb",
-	"I6NKOStOWOh2rG6DKcW2X2a6USPRaDIGHwaTyXQ4cGUxmg+i2Hynf5vPbfRPSzG04Z6dPuM5+AzXrMqd",
-	"ZrsfzIeC/fuuzfvgmtxJYvmq+wXceTejTbRmi4u1dOCcRC1ymOUsxSeZZ6g8XWLK1zxl5sxbS+Xd5ZUq",
-	"vPn4buENZpH30u/1e3/0TcFyyk2AcwPw4QWVK0I4GNc+yBIFKzmE8Huv37sCU0P0ZNEFG5kEOyfY2qWX",
-	"o+PFvIhNJcoghCETKeama5s6ccq3N1z1+01YNzLxUuuRY2YZ0VVRMMPX/iZvIxOT2yNSM9g1UnekVApC",
-	"Yb1YWeZ7voKNdlJyM8asflW4hhB+CV6HULCfQIG53j5LM+8MifFcX2R9jXRIuWSKFUioNIQPO+DG0RAK",
-	"B7UdGsBpRyFVoX+S3GWFLGvfPoZF2krKhGvDiv6/tDR61XkreZe1y+bSLvcmrznXdEGqgeTZDAytUreg",
-	"dr32oIbnCjX9KbPtdwrhZHbVtZsDP6e6i9nRwZUb2tSoHefthGgEI2SGbysmthbfKplj0A9pxs63L4nG",
-	"eHaqxiVhSTj+ELzNxOzV7FvpOA//IU5eZ9+XiDm6d7JzkpP116heDv2qUjmEEGgzOoLjlFjW/wUAAP//",
-	"sMuY9K0LAAA=",
+	"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",
+	"AAD//0EnM7LEiwIA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

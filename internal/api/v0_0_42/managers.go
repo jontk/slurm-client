@@ -9,47 +9,160 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/jontk/slurm-client"
 )
 
-// JobManager implements slurm.JobManager for API version v0.0.42
+// Local type definitions to avoid import cycles
+type JobState string
+type NodeState string
+
+type Job struct {
+	ID          string
+	Name        string
+	UserID      string
+	State       JobState
+	Partition   string
+	SubmitTime  time.Time
+	StartTime   *time.Time
+	EndTime     *time.Time
+	CPUs        int
+	Memory      int
+	Metadata    map[string]interface{}
+}
+
+type JobList struct {
+	Jobs  []Job
+	Total int
+}
+
+type JobSubmission struct {
+	Name      string
+	Script    string
+	Partition string
+	CPUs      int
+	Memory    int
+	TimeLimit int
+}
+
+type JobSubmitResponse struct {
+	JobID string
+}
+
+type JobUpdate struct {
+	TimeLimit *int
+	Priority  *int
+}
+
+type ListJobsOptions struct {
+	UserID    string
+	State     JobState
+	Partition string
+	Limit     int
+	Offset    int
+}
+
+type JobStepList struct {
+	Steps []JobStep
+}
+
+type JobStep struct {
+	ID    string
+	JobID string
+	Name  string
+	State string
+}
+
+type WatchJobsOptions struct {
+	UserID string
+	State  JobState
+}
+
+type JobEvent struct {
+	Type     string
+	JobID    string
+	NewState JobState
+}
+
+type Node struct {
+	Name     string
+	State    NodeState
+	CPUs     int
+	Memory   int
+	Features string
+	Metadata map[string]interface{}
+}
+
+type NodeList struct {
+	Nodes []Node
+	Total int
+}
+
+type NodeUpdate struct {
+	State  *NodeState
+	Reason *string
+}
+
+type ListNodesOptions struct {
+	State     NodeState
+	Partition string
+	Features  []string
+}
+
+type Partition struct {
+	Name               string
+	State              string
+	TotalCPUs          int
+	TotalMemory        int
+	MaxTimeLimit       int
+	DefaultTimeLimit   int
+	Metadata           map[string]interface{}
+}
+
+type PartitionList struct {
+	Partitions []Partition
+	Total      int
+}
+
+type PartitionUpdate struct {
+	State *string
+}
+
+type VersionInfo struct {
+	Version    string
+	Release    string
+	APIVersion string
+}
+
+type ClusterConfig struct {
+	ClusterName string
+}
+
+type ClusterStats struct {
+	JobsRunning int
+}
+
+// JobManager implements JobManager interface for API version v0.0.42
 type JobManager struct {
-	client *Client
+	client *WrapperClient
 }
 
 // NewJobManager creates a new JobManager
-func NewJobManager(client *Client) *JobManager {
+func NewJobManager(client *WrapperClient) *JobManager {
 	return &JobManager{client: client}
 }
 
 // List lists jobs with optional filtering
-func (j *JobManager) List(ctx context.Context, opts *slurm.ListJobsOptions) (*slurm.JobList, error) {
+func (j *JobManager) List(ctx context.Context, opts *ListJobsOptions) (*JobList, error) {
 	// Convert options to API parameters
-	params := &ListJobsParams{}
+	params := &SlurmV0042GetJobsParams{}
 	
+	// v0.0.42 API has limited filtering options
 	if opts != nil {
-		if opts.UserID != "" {
-			params.UserId = &opts.UserID
-		}
-		if opts.State != "" {
-			state := string(opts.State)
-			params.State = &state
-		}
-		if opts.Partition != "" {
-			params.Partition = &opts.Partition
-		}
-		if opts.Limit > 0 {
-			limit := int32(opts.Limit)
-			params.Limit = &limit
-		}
-		if opts.Offset > 0 {
-			offset := int32(opts.Offset)
-			params.Offset = &offset
-		}
+		// Set flags for detailed job information
+		flags := SlurmV0042GetJobsParamsFlagsDETAIL
+		params.Flags = &flags
 	}
 	
-	resp, err := j.client.apiClient.ListJobsWithResponse(ctx, params)
+	resp, err := j.client.apiClient.SlurmV0042GetJobsWithResponse(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list jobs: %w", err)
 	}
@@ -59,7 +172,7 @@ func (j *JobManager) List(ctx context.Context, opts *slurm.ListJobsOptions) (*sl
 	}
 	
 	// Convert API response to common format
-	jobs := make([]slurm.Job, 0)
+	jobs := make([]Job, 0)
 	if resp.JSON200 != nil && resp.JSON200.Jobs != nil {
 		for _, apiJob := range *resp.JSON200.Jobs {
 			job := convertJobFromAPI(apiJob)
@@ -67,14 +180,14 @@ func (j *JobManager) List(ctx context.Context, opts *slurm.ListJobsOptions) (*sl
 		}
 	}
 	
-	return &slurm.JobList{
+	return &JobList{
 		Jobs:  jobs,
 		Total: len(jobs),
 	}, nil
 }
 
 // Get retrieves a specific job by ID
-func (j *JobManager) Get(ctx context.Context, jobID string) (*slurm.Job, error) {
+func (j *JobManager) Get(ctx context.Context, jobID string) (*Job, error) {
 	resp, err := j.client.apiClient.GetJobWithResponse(ctx, jobID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get job %s: %w", jobID, err)
@@ -93,7 +206,7 @@ func (j *JobManager) Get(ctx context.Context, jobID string) (*slurm.Job, error) 
 }
 
 // Submit submits a new job
-func (j *JobManager) Submit(ctx context.Context, job *slurm.JobSubmission) (*slurm.JobSubmitResponse, error) {
+func (j *JobManager) Submit(ctx context.Context, job *JobSubmission) (*JobSubmitResponse, error) {
 	// Convert submission to API format
 	apiSubmission := convertJobSubmissionToAPI(job)
 	
@@ -110,7 +223,7 @@ func (j *JobManager) Submit(ctx context.Context, job *slurm.JobSubmission) (*slu
 		return nil, fmt.Errorf("no job ID returned")
 	}
 	
-	return &slurm.JobSubmitResponse{
+	return &JobSubmitResponse{
 		JobID: *resp.JSON200.JobId,
 	}, nil
 }
@@ -130,37 +243,37 @@ func (j *JobManager) Cancel(ctx context.Context, jobID string) error {
 }
 
 // Update updates job properties (if supported by version)
-func (j *JobManager) Update(ctx context.Context, jobID string, update *slurm.JobUpdate) error {
+func (j *JobManager) Update(ctx context.Context, jobID string, update *JobUpdate) error {
 	// v0.0.42 may not support job updates - return appropriate error
 	return fmt.Errorf("job updates not supported in API version v0.0.42")
 }
 
 // Steps retrieves job steps for a job
-func (j *JobManager) Steps(ctx context.Context, jobID string) (*slurm.JobStepList, error) {
+func (j *JobManager) Steps(ctx context.Context, jobID string) (*JobStepList, error) {
 	// This would be implemented if the API supports job steps
-	return &slurm.JobStepList{
-		Steps: []slurm.JobStep{},
+	return &JobStepList{
+		Steps: []JobStep{},
 	}, nil
 }
 
 // Watch provides real-time job updates (if supported by version)
-func (j *JobManager) Watch(ctx context.Context, opts *slurm.WatchJobsOptions) (<-chan slurm.JobEvent, error) {
+func (j *JobManager) Watch(ctx context.Context, opts *WatchJobsOptions) (<-chan JobEvent, error) {
 	// v0.0.42 doesn't support real-time updates
 	return nil, fmt.Errorf("real-time job watching not supported in API version v0.0.42")
 }
 
-// NodeManager implements slurm.NodeManager for API version v0.0.42
+// NodeManager implements NodeManager for API version v0.0.42
 type NodeManager struct {
-	client *Client
+	client *WrapperClient
 }
 
 // NewNodeManager creates a new NodeManager
-func NewNodeManager(client *Client) *NodeManager {
+func NewNodeManager(client *WrapperClient) *NodeManager {
 	return &NodeManager{client: client}
 }
 
 // List lists nodes with optional filtering
-func (n *NodeManager) List(ctx context.Context, opts *slurm.ListNodesOptions) (*slurm.NodeList, error) {
+func (n *NodeManager) List(ctx context.Context, opts *ListNodesOptions) (*NodeList, error) {
 	params := &ListNodesParams{}
 	
 	if opts != nil {
@@ -187,7 +300,7 @@ func (n *NodeManager) List(ctx context.Context, opts *slurm.ListNodesOptions) (*
 	}
 	
 	// Convert API response to common format
-	nodes := make([]slurm.Node, 0)
+	nodes := make([]Node, 0)
 	if resp.JSON200 != nil && resp.JSON200.Nodes != nil {
 		for _, apiNode := range *resp.JSON200.Nodes {
 			node := convertNodeFromAPI(apiNode)
@@ -195,20 +308,20 @@ func (n *NodeManager) List(ctx context.Context, opts *slurm.ListNodesOptions) (*
 		}
 	}
 	
-	return &slurm.NodeList{
+	return &NodeList{
 		Nodes: nodes,
 		Total: len(nodes),
 	}, nil
 }
 
 // Get retrieves a specific node by name
-func (n *NodeManager) Get(ctx context.Context, nodeName string) (*slurm.Node, error) {
+func (n *NodeManager) Get(ctx context.Context, nodeName string) (*Node, error) {
 	// This would need to be implemented based on the actual API
 	return nil, fmt.Errorf("get single node not implemented for v0.0.42")
 }
 
 // Update updates node properties
-func (n *NodeManager) Update(ctx context.Context, nodeName string, update *slurm.NodeUpdate) error {
+func (n *NodeManager) Update(ctx context.Context, nodeName string, update *NodeUpdate) error {
 	// This would need to be implemented based on the actual API
 	return fmt.Errorf("node updates not implemented for v0.0.42")
 }
@@ -225,18 +338,18 @@ func (n *NodeManager) Resume(ctx context.Context, nodeName string) error {
 	return fmt.Errorf("node resume not implemented for v0.0.42")
 }
 
-// PartitionManager implements slurm.PartitionManager for API version v0.0.42
+// PartitionManager implements PartitionManager for API version v0.0.42
 type PartitionManager struct {
-	client *Client
+	client *WrapperClient
 }
 
 // NewPartitionManager creates a new PartitionManager
-func NewPartitionManager(client *Client) *PartitionManager {
+func NewPartitionManager(client *WrapperClient) *PartitionManager {
 	return &PartitionManager{client: client}
 }
 
 // List lists partitions
-func (p *PartitionManager) List(ctx context.Context) (*slurm.PartitionList, error) {
+func (p *PartitionManager) List(ctx context.Context) (*PartitionList, error) {
 	resp, err := p.client.apiClient.ListPartitionsWithResponse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list partitions: %w", err)
@@ -247,7 +360,7 @@ func (p *PartitionManager) List(ctx context.Context) (*slurm.PartitionList, erro
 	}
 	
 	// Convert API response to common format
-	partitions := make([]slurm.Partition, 0)
+	partitions := make([]Partition, 0)
 	if resp.JSON200 != nil && resp.JSON200.Partitions != nil {
 		for _, apiPartition := range *resp.JSON200.Partitions {
 			partition := convertPartitionFromAPI(apiPartition)
@@ -255,30 +368,30 @@ func (p *PartitionManager) List(ctx context.Context) (*slurm.PartitionList, erro
 		}
 	}
 	
-	return &slurm.PartitionList{
+	return &PartitionList{
 		Partitions: partitions,
 		Total:      len(partitions),
 	}, nil
 }
 
 // Get retrieves a specific partition by name
-func (p *PartitionManager) Get(ctx context.Context, partitionName string) (*slurm.Partition, error) {
+func (p *PartitionManager) Get(ctx context.Context, partitionName string) (*Partition, error) {
 	// This would need to be implemented based on the actual API
 	return nil, fmt.Errorf("get single partition not implemented for v0.0.42")
 }
 
 // Update updates partition properties (if supported by version)
-func (p *PartitionManager) Update(ctx context.Context, partitionName string, update *slurm.PartitionUpdate) error {
+func (p *PartitionManager) Update(ctx context.Context, partitionName string, update *PartitionUpdate) error {
 	return fmt.Errorf("partition updates not supported in API version v0.0.42")
 }
 
-// InfoManager implements slurm.InfoManager for API version v0.0.42
+// InfoManager implements InfoManager for API version v0.0.42
 type InfoManager struct {
-	client *Client
+	client *WrapperClient
 }
 
 // NewInfoManager creates a new InfoManager
-func NewInfoManager(client *Client) *InfoManager {
+func NewInfoManager(client *WrapperClient) *InfoManager {
 	return &InfoManager{client: client}
 }
 
@@ -293,8 +406,8 @@ func (i *InfoManager) Ping(ctx context.Context) error {
 }
 
 // Version retrieves Slurm version information
-func (i *InfoManager) Version(ctx context.Context) (*slurm.VersionInfo, error) {
-	return &slurm.VersionInfo{
+func (i *InfoManager) Version(ctx context.Context) (*VersionInfo, error) {
+	return &VersionInfo{
 		Version:    "Unknown",
 		Release:    "Unknown", 
 		APIVersion: "v0.0.42",
@@ -302,21 +415,21 @@ func (i *InfoManager) Version(ctx context.Context) (*slurm.VersionInfo, error) {
 }
 
 // Configuration retrieves cluster configuration
-func (i *InfoManager) Configuration(ctx context.Context) (*slurm.ClusterConfig, error) {
-	return &slurm.ClusterConfig{
+func (i *InfoManager) Configuration(ctx context.Context) (*ClusterConfig, error) {
+	return &ClusterConfig{
 		ClusterName: "Unknown",
 	}, nil
 }
 
 // Statistics retrieves cluster statistics
-func (i *InfoManager) Statistics(ctx context.Context) (*slurm.ClusterStats, error) {
-	return &slurm.ClusterStats{}, nil
+func (i *InfoManager) Statistics(ctx context.Context) (*ClusterStats, error) {
+	return &ClusterStats{}, nil
 }
 
 // Conversion functions between API types and common types
 
-func convertJobFromAPI(apiJob Job) slurm.Job {
-	job := slurm.Job{
+func convertJobFromAPI(apiJob Job) Job {
+	job := Job{
 		Metadata: make(map[string]interface{}),
 	}
 	
@@ -330,7 +443,7 @@ func convertJobFromAPI(apiJob Job) slurm.Job {
 		job.UserID = *apiJob.UserId
 	}
 	if apiJob.JobState != nil {
-		job.State = slurm.JobState(*apiJob.JobState)
+		job.State = JobState(*apiJob.JobState)
 	}
 	if apiJob.Partition != nil {
 		job.Partition = *apiJob.Partition
@@ -362,7 +475,7 @@ func convertJobFromAPI(apiJob Job) slurm.Job {
 	return job
 }
 
-func convertJobSubmissionToAPI(submission *slurm.JobSubmission) JobSubmission {
+func convertJobSubmissionToAPI(submission *JobSubmission) JobSubmission {
 	apiSubmission := JobSubmission{}
 	
 	if submission.Name != "" {
@@ -390,8 +503,8 @@ func convertJobSubmissionToAPI(submission *slurm.JobSubmission) JobSubmission {
 	return apiSubmission
 }
 
-func convertNodeFromAPI(apiNode Node) slurm.Node {
-	node := slurm.Node{
+func convertNodeFromAPI(apiNode Node) Node {
+	node := Node{
 		Metadata: make(map[string]interface{}),
 	}
 	
@@ -399,7 +512,7 @@ func convertNodeFromAPI(apiNode Node) slurm.Node {
 		node.Name = *apiNode.Name
 	}
 	if apiNode.State != nil {
-		node.State = slurm.NodeState(*apiNode.State)
+		node.State = NodeState(*apiNode.State)
 	}
 	if apiNode.Cpus != nil {
 		node.CPUs = int(*apiNode.Cpus)
@@ -414,8 +527,8 @@ func convertNodeFromAPI(apiNode Node) slurm.Node {
 	return node
 }
 
-func convertPartitionFromAPI(apiPartition Partition) slurm.Partition {
-	partition := slurm.Partition{
+func convertPartitionFromAPI(apiPartition Partition) Partition {
+	partition := Partition{
 		Metadata: make(map[string]interface{}),
 	}
 	

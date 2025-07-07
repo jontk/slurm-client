@@ -3,31 +3,27 @@
 package v0_0_42
 
 import (
+	"context"
 	"net/http"
-	
-	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/pkg/auth"
-	"github.com/jontk/slurm-client/pkg/config"
-	"github.com/jontk/slurm-client/pkg/retry"
+	"time"
 )
 
-// ClientConfig represents configuration for the v0.0.42 client
+// ClientConfig holds configuration for the API client
 type ClientConfig struct {
 	BaseURL     string
 	HTTPClient  *http.Client
-	Auth        auth.Provider
-	RetryPolicy retry.Policy
-	Config      *config.Config
+	APIKey      string
+	Debug       bool
 }
 
-// Client implements the SlurmClient interface for API version v0.0.42
-type Client struct {
+// WrapperClient wraps the generated client for version v0.0.42
+type WrapperClient struct {
 	apiClient *ClientWithResponses
 	config    *ClientConfig
 }
 
-// NewClient creates a new v0.0.42 client
-func NewClient(config *ClientConfig) (*Client, error) {
+// NewWrapperClient creates a new v0.0.42 wrapper client
+func NewWrapperClient(config *ClientConfig) (*WrapperClient, error) {
 	// Create HTTP client with authentication
 	httpClient := config.HTTPClient
 	if httpClient == nil {
@@ -40,39 +36,39 @@ func NewClient(config *ClientConfig) (*Client, error) {
 		return nil, err
 	}
 	
-	return &Client{
+	return &WrapperClient{
 		apiClient: apiClient,
 		config:    config,
 	}, nil
 }
 
 // Version returns the API version
-func (c *Client) Version() string {
+func (c *WrapperClient) Version() string {
 	return "v0.0.42"
 }
 
 // Jobs returns the JobManager
-func (c *Client) Jobs() slurm.JobManager {
-	return NewJobManager(c)
+func (c *WrapperClient) Jobs() *JobManager {
+	return &JobManager{client: c}
 }
 
 // Nodes returns the NodeManager  
-func (c *Client) Nodes() slurm.NodeManager {
-	return NewNodeManager(c)
+func (c *WrapperClient) Nodes() *NodeManager {
+	return &NodeManager{client: c}
 }
 
 // Partitions returns the PartitionManager
-func (c *Client) Partitions() slurm.PartitionManager {
-	return NewPartitionManager(c)
+func (c *WrapperClient) Partitions() *PartitionManager {
+	return &PartitionManager{client: c}
 }
 
 // Info returns the InfoManager
-func (c *Client) Info() slurm.InfoManager {
-	return NewInfoManager(c)
+func (c *WrapperClient) Info() *InfoManager {
+	return &InfoManager{client: c}
 }
 
 // Close closes the client
-func (c *Client) Close() error {
+func (c *WrapperClient) Close() error {
 	// No resources to close for HTTP client
 	return nil
 }

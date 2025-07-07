@@ -22,7 +22,7 @@ func main() {
 	if len(os.Args) >= 3 {
 		specFile = os.Args[2]
 	} else {
-		specFile = filepath.Join("openapi-specs", fmt.Sprintf("slurm-%s.yaml", version))
+		specFile = filepath.Join("openapi-specs", fmt.Sprintf("slurm-%s.json", version))
 	}
 	
 	if err := generateClient(version, specFile); err != nil {
