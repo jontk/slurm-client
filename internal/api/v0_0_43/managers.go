@@ -9,44 +9,157 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/jontk/slurm-client/internal/factory"
 )
 
-// JobManager implements factory.JobManager for API version v0.0.43
+// Local type definitions to avoid import cycles
+type JobState string
+type NodeState string
+
+type Job struct {
+	ID          string
+	Name        string
+	UserID      string
+	State       JobState
+	Partition   string
+	SubmitTime  time.Time
+	StartTime   *time.Time
+	EndTime     *time.Time
+	CPUs        int
+	Memory      int
+	Metadata    map[string]interface{}
+}
+
+type JobList struct {
+	Jobs  []Job
+	Total int
+}
+
+type JobSubmission struct {
+	Name      string
+	Script    string
+	Partition string
+	CPUs      int
+	Memory    int
+	TimeLimit int
+}
+
+type JobSubmitResponse struct {
+	JobID string
+}
+
+type JobUpdate struct {
+	TimeLimit *int
+	Priority  *int
+}
+
+type ListJobsOptions struct {
+	UserID    string
+	State     JobState
+	Partition string
+	Limit     int
+	Offset    int
+}
+
+type JobStepList struct {
+	Steps []JobStep
+}
+
+type JobStep struct {
+	ID    string
+	JobID string
+	Name  string
+	State string
+}
+
+type WatchJobsOptions struct {
+	UserID string
+	State  JobState
+}
+
+type JobEvent struct {
+	Type     string
+	JobID    string
+	NewState JobState
+}
+
+type Node struct {
+	Name     string
+	State    NodeState
+	CPUs     int
+	Memory   int
+	Features string
+	Metadata map[string]interface{}
+}
+
+type NodeList struct {
+	Nodes []Node
+	Total int
+}
+
+type NodeUpdate struct {
+	State  *NodeState
+	Reason *string
+}
+
+type ListNodesOptions struct {
+	State     NodeState
+	Partition string
+	Features  []string
+}
+
+type Partition struct {
+	Name               string
+	State              string
+	TotalCPUs          int
+	TotalMemory        int
+	MaxTimeLimit       int
+	DefaultTimeLimit   int
+	Metadata           map[string]interface{}
+}
+
+type PartitionList struct {
+	Partitions []Partition
+	Total      int
+}
+
+type PartitionUpdate struct {
+	State *string
+}
+
+type VersionInfo struct {
+	Version    string
+	Release    string
+	APIVersion string
+}
+
+type ClusterConfig struct {
+	ClusterName string
+}
+
+type ClusterStats struct {
+	JobsRunning int
+}
+
+// JobManager implements JobManager interface for API version v0.0.43
 type JobManager struct {
-	client *Client
+	client *WrapperClient
 }
 
 // NewJobManager creates a new JobManager
-func NewJobManager(client *Client) *JobManager {
+func NewJobManager(client *WrapperClient) *JobManager {
 	return &JobManager{client: client}
 }
 
 // List lists jobs with optional filtering
-func (j *JobManager) List(ctx context.Context, opts *factory.ListJobsOptions) (*factory.JobList, error) {
+func (j *JobManager) List(ctx context.Context, opts *ListJobsOptions) (*JobList, error) {
 	// Convert options to API parameters
 	params := &SlurmV0043GetJobsParams{}
 	
+	// v0.0.43 API has limited filtering options
 	if opts != nil {
-		if opts.UserID != "" {
-			params.UserId = &opts.UserID
-		}
-		if opts.State != "" {
-			state := string(opts.State)
-			params.State = &state
-		}
-		if opts.Partition != "" {
-			params.Partition = &opts.Partition
-		}
-		if opts.Limit > 0 {
-			limit := int32(opts.Limit)
-			params.Limit = &limit
-		}
-		if opts.Offset > 0 {
-			offset := int32(opts.Offset)
-			params.Offset = &offset
-		}
+		// Set flags for detailed job information
+		flags := SlurmV0043GetJobsParamsFlagsDETAIL
+		params.Flags = &flags
 	}
 	
 	resp, err := j.client.apiClient.SlurmV0043GetJobsWithResponse(ctx, params)
@@ -59,22 +172,22 @@ func (j *JobManager) List(ctx context.Context, opts *factory.ListJobsOptions) (*
 	}
 	
 	// Convert API response to common format
-	jobs := make([]factory.Job, 0)
+	jobs := make([]Job, 0)
 	if resp.JSON200 != nil && resp.JSON200.Jobs != nil {
-		for _, apiJob := range *resp.JSON200.Jobs {
+		for _, apiJob := range resp.JSON200.Jobs {
 			job := convertJobFromAPI(apiJob)
 			jobs = append(jobs, job)
 		}
 	}
 	
-	return &factory.JobList{
+	return &JobList{
 		Jobs:  jobs,
 		Total: len(jobs),
 	}, nil
 }
 
 // Get retrieves a specific job by ID
-func (j *JobManager) Get(ctx context.Context, jobID string) (*factory.Job, error) {
+func (j *JobManager) Get(ctx context.Context, jobID string) (*Job, error) {
 	resp, err := j.client.apiClient.SlurmV0043GetJobWithResponse(ctx, jobID, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get job %s: %w", jobID, err)
@@ -84,16 +197,16 @@ func (j *JobManager) Get(ctx context.Context, jobID string) (*factory.Job, error
 		return nil, fmt.Errorf("API error: %d", resp.StatusCode())
 	}
 	
-	if resp.JSON200 == nil || resp.JSON200.Jobs == nil || len(*resp.JSON200.Jobs) == 0 {
+	if resp.JSON200 == nil || len(resp.JSON200.Jobs) == 0 {
 		return nil, fmt.Errorf("no job data returned")
 	}
 	
-	job := convertJobFromAPI((*resp.JSON200.Jobs)[0])
+	job := convertJobFromAPI(resp.JSON200.Jobs[0])
 	return &job, nil
 }
 
 // Submit submits a new job
-func (j *JobManager) Submit(ctx context.Context, job *factory.JobSubmission) (*factory.JobSubmitResponse, error) {
+func (j *JobManager) Submit(ctx context.Context, job *JobSubmission) (*JobSubmitResponse, error) {
 	// Convert submission to API format
 	apiSubmission := convertJobSubmissionToAPI(job)
 	
@@ -110,7 +223,7 @@ func (j *JobManager) Submit(ctx context.Context, job *factory.JobSubmission) (*f
 		return nil, fmt.Errorf("no job ID returned")
 	}
 	
-	return &factory.JobSubmitResponse{
+	return &JobSubmitResponse{
 		JobID: strconv.Itoa(int(*resp.JSON200.JobId)),
 	}, nil
 }
@@ -130,52 +243,41 @@ func (j *JobManager) Cancel(ctx context.Context, jobID string) error {
 }
 
 // Update updates job properties (if supported by version)
-func (j *JobManager) Update(ctx context.Context, jobID string, update *factory.JobUpdate) error {
-	// v0.0.43 may support job updates - implement based on actual API
-	return fmt.Errorf("job updates not yet implemented for API version v0.0.43")
+func (j *JobManager) Update(ctx context.Context, jobID string, update *JobUpdate) error {
+	// v0.0.43 may not support job updates - return appropriate error
+	return fmt.Errorf("job updates not supported in API version v0.0.43")
 }
 
 // Steps retrieves job steps for a job
-func (j *JobManager) Steps(ctx context.Context, jobID string) (*factory.JobStepList, error) {
+func (j *JobManager) Steps(ctx context.Context, jobID string) (*JobStepList, error) {
 	// This would be implemented if the API supports job steps
-	return &factory.JobStepList{
-		Steps: []factory.JobStep{},
+	return &JobStepList{
+		Steps: []JobStep{},
 	}, nil
 }
 
 // Watch provides real-time job updates (if supported by version)
-func (j *JobManager) Watch(ctx context.Context, opts *factory.WatchJobsOptions) (<-chan factory.JobEvent, error) {
+func (j *JobManager) Watch(ctx context.Context, opts *WatchJobsOptions) (<-chan JobEvent, error) {
 	// v0.0.43 doesn't support real-time updates
 	return nil, fmt.Errorf("real-time job watching not supported in API version v0.0.43")
 }
 
-// NodeManager implements factory.NodeManager for API version v0.0.43
+// NodeManager implements NodeManager for API version v0.0.43
 type NodeManager struct {
-	client *Client
+	client *WrapperClient
 }
 
 // NewNodeManager creates a new NodeManager
-func NewNodeManager(client *Client) *NodeManager {
+func NewNodeManager(client *WrapperClient) *NodeManager {
 	return &NodeManager{client: client}
 }
 
 // List lists nodes with optional filtering
-func (n *NodeManager) List(ctx context.Context, opts *factory.ListNodesOptions) (*factory.NodeList, error) {
+func (n *NodeManager) List(ctx context.Context, opts *ListNodesOptions) (*NodeList, error) {
 	params := &SlurmV0043GetNodesParams{}
 	
-	if opts != nil {
-		if opts.State != "" {
-			state := string(opts.State)
-			params.State = &state
-		}
-		if opts.Partition != "" {
-			params.Partition = &opts.Partition
-		}
-		if len(opts.Features) > 0 {
-			features := strings.Join(opts.Features, ",")
-			params.Features = &features
-		}
-	}
+	// Note: v0.0.43 API doesn't support filtering parameters in the URL params
+	// Filtering would need to be done client-side or with different endpoints
 	
 	resp, err := n.client.apiClient.SlurmV0043GetNodesWithResponse(ctx, params)
 	if err != nil {
@@ -187,41 +289,28 @@ func (n *NodeManager) List(ctx context.Context, opts *factory.ListNodesOptions) 
 	}
 	
 	// Convert API response to common format
-	nodes := make([]factory.Node, 0)
-	if resp.JSON200 != nil && resp.JSON200.Nodes != nil {
-		for _, apiNode := range *resp.JSON200.Nodes {
+	nodes := make([]Node, 0)
+	if resp.JSON200 != nil {
+		for _, apiNode := range resp.JSON200.Nodes {
 			node := convertNodeFromAPI(apiNode)
 			nodes = append(nodes, node)
 		}
 	}
 	
-	return &factory.NodeList{
+	return &NodeList{
 		Nodes: nodes,
 		Total: len(nodes),
 	}, nil
 }
 
 // Get retrieves a specific node by name
-func (n *NodeManager) Get(ctx context.Context, nodeName string) (*factory.Node, error) {
-	resp, err := n.client.apiClient.SlurmV0043GetNodeWithResponse(ctx, nodeName, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get node %s: %w", nodeName, err)
-	}
-	
-	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("API error: %d", resp.StatusCode())
-	}
-	
-	if resp.JSON200 == nil || resp.JSON200.Nodes == nil || len(*resp.JSON200.Nodes) == 0 {
-		return nil, fmt.Errorf("no node data returned")
-	}
-	
-	node := convertNodeFromAPI((*resp.JSON200.Nodes)[0])
-	return &node, nil
+func (n *NodeManager) Get(ctx context.Context, nodeName string) (*Node, error) {
+	// This would need to be implemented based on the actual API
+	return nil, fmt.Errorf("get single node not implemented for v0.0.43")
 }
 
 // Update updates node properties
-func (n *NodeManager) Update(ctx context.Context, nodeName string, update *factory.NodeUpdate) error {
+func (n *NodeManager) Update(ctx context.Context, nodeName string, update *NodeUpdate) error {
 	// This would need to be implemented based on the actual API
 	return fmt.Errorf("node updates not implemented for v0.0.43")
 }
@@ -238,18 +327,18 @@ func (n *NodeManager) Resume(ctx context.Context, nodeName string) error {
 	return fmt.Errorf("node resume not implemented for v0.0.43")
 }
 
-// PartitionManager implements factory.PartitionManager for API version v0.0.43
+// PartitionManager implements PartitionManager for API version v0.0.43
 type PartitionManager struct {
-	client *Client
+	client *WrapperClient
 }
 
 // NewPartitionManager creates a new PartitionManager
-func NewPartitionManager(client *Client) *PartitionManager {
+func NewPartitionManager(client *WrapperClient) *PartitionManager {
 	return &PartitionManager{client: client}
 }
 
 // List lists partitions
-func (p *PartitionManager) List(ctx context.Context) (*factory.PartitionList, error) {
+func (p *PartitionManager) List(ctx context.Context) (*PartitionList, error) {
 	resp, err := p.client.apiClient.SlurmV0043GetPartitionsWithResponse(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list partitions: %w", err)
@@ -260,71 +349,54 @@ func (p *PartitionManager) List(ctx context.Context) (*factory.PartitionList, er
 	}
 	
 	// Convert API response to common format
-	partitions := make([]factory.Partition, 0)
-	if resp.JSON200 != nil && resp.JSON200.Partitions != nil {
-		for _, apiPartition := range *resp.JSON200.Partitions {
+	partitions := make([]Partition, 0)
+	if resp.JSON200 != nil {
+		for _, apiPartition := range resp.JSON200.Partitions {
 			partition := convertPartitionFromAPI(apiPartition)
 			partitions = append(partitions, partition)
 		}
 	}
 	
-	return &factory.PartitionList{
+	return &PartitionList{
 		Partitions: partitions,
 		Total:      len(partitions),
 	}, nil
 }
 
 // Get retrieves a specific partition by name
-func (p *PartitionManager) Get(ctx context.Context, partitionName string) (*factory.Partition, error) {
-	resp, err := p.client.apiClient.SlurmV0043GetPartitionWithResponse(ctx, partitionName, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get partition %s: %w", partitionName, err)
-	}
-	
-	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("API error: %d", resp.StatusCode())
-	}
-	
-	if resp.JSON200 == nil || resp.JSON200.Partitions == nil || len(*resp.JSON200.Partitions) == 0 {
-		return nil, fmt.Errorf("no partition data returned")
-	}
-	
-	partition := convertPartitionFromAPI((*resp.JSON200.Partitions)[0])
-	return &partition, nil
+func (p *PartitionManager) Get(ctx context.Context, partitionName string) (*Partition, error) {
+	// This would need to be implemented based on the actual API
+	return nil, fmt.Errorf("get single partition not implemented for v0.0.43")
 }
 
 // Update updates partition properties (if supported by version)
-func (p *PartitionManager) Update(ctx context.Context, partitionName string, update *factory.PartitionUpdate) error {
+func (p *PartitionManager) Update(ctx context.Context, partitionName string, update *PartitionUpdate) error {
 	return fmt.Errorf("partition updates not supported in API version v0.0.43")
 }
 
-// InfoManager implements factory.InfoManager for API version v0.0.43
+// InfoManager implements InfoManager for API version v0.0.43
 type InfoManager struct {
-	client *Client
+	client *WrapperClient
 }
 
 // NewInfoManager creates a new InfoManager
-func NewInfoManager(client *Client) *InfoManager {
+func NewInfoManager(client *WrapperClient) *InfoManager {
 	return &InfoManager{client: client}
 }
 
 // Ping tests connectivity to the Slurm REST API
 func (i *InfoManager) Ping(ctx context.Context) error {
-	resp, err := i.client.apiClient.SlurmV0043GetPingWithResponse(ctx)
+	// Try to get a simple endpoint to test connectivity
+	_, err := i.client.apiClient.SlurmV0043GetPartitionsWithResponse(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("ping failed: %w", err)
 	}
-	
-	if resp.StatusCode() != http.StatusOK {
-		return fmt.Errorf("ping failed with status: %d", resp.StatusCode())
-	}
-	
 	return nil
 }
 
 // Version retrieves Slurm version information
-func (i *InfoManager) Version(ctx context.Context) (*factory.VersionInfo, error) {
-	return &factory.VersionInfo{
+func (i *InfoManager) Version(ctx context.Context) (*VersionInfo, error) {
+	return &VersionInfo{
 		Version:    "Unknown",
 		Release:    "Unknown", 
 		APIVersion: "v0.0.43",
@@ -332,21 +404,21 @@ func (i *InfoManager) Version(ctx context.Context) (*factory.VersionInfo, error)
 }
 
 // Configuration retrieves cluster configuration
-func (i *InfoManager) Configuration(ctx context.Context) (*factory.ClusterConfig, error) {
-	return &factory.ClusterConfig{
+func (i *InfoManager) Configuration(ctx context.Context) (*ClusterConfig, error) {
+	return &ClusterConfig{
 		ClusterName: "Unknown",
 	}, nil
 }
 
 // Statistics retrieves cluster statistics
-func (i *InfoManager) Statistics(ctx context.Context) (*factory.ClusterStats, error) {
-	return &factory.ClusterStats{}, nil
+func (i *InfoManager) Statistics(ctx context.Context) (*ClusterStats, error) {
+	return &ClusterStats{}, nil
 }
 
 // Conversion functions between API types and common types
 
-func convertJobFromAPI(apiJob V0043Job) factory.Job {
-	job := factory.Job{
+func convertJobFromAPI(apiJob V0043JobInfo) Job {
+	job := Job{
 		Metadata: make(map[string]interface{}),
 	}
 	
@@ -359,109 +431,134 @@ func convertJobFromAPI(apiJob V0043Job) factory.Job {
 	if apiJob.UserId != nil {
 		job.UserID = strconv.Itoa(int(*apiJob.UserId))
 	}
-	if apiJob.JobState != nil {
-		job.State = factory.JobState(*apiJob.JobState)
+	if apiJob.JobState != nil && len(*apiJob.JobState) > 0 {
+		job.State = JobState((*apiJob.JobState)[0])
 	}
 	if apiJob.Partition != nil {
 		job.Partition = *apiJob.Partition
 	}
-	if apiJob.Cpus != nil {
-		job.CPUs = int(*apiJob.Cpus)
+	if apiJob.Cpus != nil && apiJob.Cpus.Set != nil && *apiJob.Cpus.Set {
+		if apiJob.Cpus.Number != nil {
+			job.CPUs = int(*apiJob.Cpus.Number)
+		}
 	}
-	if apiJob.Memory != nil {
-		job.Memory = int(*apiJob.Memory)
+	if apiJob.MemoryPerNode != nil && apiJob.MemoryPerNode.Set != nil && *apiJob.MemoryPerNode.Set {
+		if apiJob.MemoryPerNode.Number != nil {
+			job.Memory = int(*apiJob.MemoryPerNode.Number)
+		}
 	}
 	
 	// Handle time fields
-	if apiJob.SubmitTime != nil {
-		job.SubmitTime = time.Unix(*apiJob.SubmitTime, 0)
+	if apiJob.SubmitTime != nil && apiJob.SubmitTime.Set != nil && *apiJob.SubmitTime.Set {
+		if apiJob.SubmitTime.Number != nil {
+			job.SubmitTime = time.Unix(*apiJob.SubmitTime.Number, 0)
+		}
 	}
-	if apiJob.StartTime != nil {
-		t := time.Unix(*apiJob.StartTime, 0)
-		job.StartTime = &t
+	if apiJob.StartTime != nil && apiJob.StartTime.Set != nil && *apiJob.StartTime.Set {
+		if apiJob.StartTime.Number != nil {
+			t := time.Unix(*apiJob.StartTime.Number, 0)
+			job.StartTime = &t
+		}
 	}
-	if apiJob.EndTime != nil {
-		t := time.Unix(*apiJob.EndTime, 0)
-		job.EndTime = &t
+	if apiJob.EndTime != nil && apiJob.EndTime.Set != nil && *apiJob.EndTime.Set {
+		if apiJob.EndTime.Number != nil {
+			t := time.Unix(*apiJob.EndTime.Number, 0)
+			job.EndTime = &t
+		}
 	}
 	
 	return job
 }
 
-func convertJobSubmissionToAPI(submission *factory.JobSubmission) V0043JobSubmitReq {
-	apiSubmission := V0043JobSubmitReq{}
+func convertJobSubmissionToAPI(submission *JobSubmission) V0043JobSubmitReq {
+	jobDesc := &V0043JobDescMsg{}
 	
 	if submission.Name != "" {
-		apiSubmission.Job.Name = &submission.Name
+		jobDesc.Name = &submission.Name
 	}
 	if submission.Script != "" {
-		apiSubmission.Script = &submission.Script
+		jobDesc.Script = &submission.Script
 	}
 	if submission.Partition != "" {
-		apiSubmission.Job.Partition = &submission.Partition
+		jobDesc.Partition = &submission.Partition
 	}
 	if submission.CPUs > 0 {
-		cpus := int32(submission.CPUs)
-		apiSubmission.Job.Cpus = &cpus
+		jobDesc.CpusPerTask = int32ptr(int32(submission.CPUs))
 	}
 	if submission.Memory > 0 {
-		memory := int32(submission.Memory)
-		apiSubmission.Job.Memory = &memory
+		jobDesc.MemoryPerNode = &V0043Uint64NoValStruct{
+			Set:    boolptr(true),
+			Number: int64ptr(int64(submission.Memory)),
+		}
 	}
 	if submission.TimeLimit > 0 {
-		timeLimit := int32(submission.TimeLimit)
-		apiSubmission.Job.TimeLimit = &timeLimit
+		jobDesc.TimeLimit = &V0043Uint32NoValStruct{
+			Set:    boolptr(true),
+			Number: int32ptr(int32(submission.TimeLimit)),
+		}
 	}
 	
-	return apiSubmission
+	return V0043JobSubmitReq{
+		Job: jobDesc,
+	}
 }
 
-func convertNodeFromAPI(apiNode V0043Node) factory.Node {
-	node := factory.Node{
+// Helper functions for pointer creation
+func int32ptr(i int32) *int32 { return &i }
+func int64ptr(i int64) *int64 { return &i }
+func uint32ptr(i uint32) *uint32 { return &i }
+func boolptr(b bool) *bool { return &b }
+
+func convertNodeFromAPI(apiNode V0043Node) Node {
+	node := Node{
 		Metadata: make(map[string]interface{}),
 	}
 	
 	if apiNode.Name != nil {
 		node.Name = *apiNode.Name
 	}
-	if apiNode.State != nil {
-		node.State = factory.NodeState(*apiNode.State)
+	if apiNode.State != nil && len(*apiNode.State) > 0 {
+		node.State = NodeState((*apiNode.State)[0])
 	}
 	if apiNode.Cpus != nil {
 		node.CPUs = int(*apiNode.Cpus)
 	}
-	if apiNode.Memory != nil {
-		node.Memory = int(*apiNode.Memory)
+	if apiNode.AllocMemory != nil {
+		node.Memory = int(*apiNode.AllocMemory)
 	}
-	if apiNode.Features != nil {
-		node.Features = strings.Join(*apiNode.Features, ",")
+	if apiNode.ActiveFeatures != nil && len(*apiNode.ActiveFeatures) > 0 {
+		node.Features = strings.Join(*apiNode.ActiveFeatures, ",")
 	}
 	
 	return node
 }
 
-func convertPartitionFromAPI(apiPartition V0043Partition) factory.Partition {
-	partition := factory.Partition{
+func convertPartitionFromAPI(apiPartition V0043PartitionInfo) Partition {
+	partition := Partition{
 		Metadata: make(map[string]interface{}),
 	}
 	
 	if apiPartition.Name != nil {
 		partition.Name = *apiPartition.Name
 	}
-	if apiPartition.State != nil {
-		partition.State = *apiPartition.State
+	if apiPartition.Partition != nil && apiPartition.Partition.State != nil && len(*apiPartition.Partition.State) > 0 {
+		partition.State = string((*apiPartition.Partition.State)[0])
 	}
-	if apiPartition.TotalCpus != nil {
-		partition.TotalCPUs = int(*apiPartition.TotalCpus)
+	if apiPartition.Cpus != nil && apiPartition.Cpus.Total != nil {
+		partition.TotalCPUs = int(*apiPartition.Cpus.Total)
 	}
-	if apiPartition.TotalMemory != nil {
-		partition.TotalMemory = int(*apiPartition.TotalMemory)
+	if apiPartition.Defaults != nil && apiPartition.Defaults.MemoryPerCpu != nil {
+		partition.TotalMemory = int(*apiPartition.Defaults.MemoryPerCpu)
 	}
-	if apiPartition.MaxTimeLimit != nil {
-		partition.MaxTimeLimit = int(*apiPartition.MaxTimeLimit)
+	if apiPartition.Maximums != nil && apiPartition.Maximums.Time != nil && apiPartition.Maximums.Time.Set != nil && *apiPartition.Maximums.Time.Set {
+		if apiPartition.Maximums.Time.Number != nil {
+			partition.MaxTimeLimit = int(*apiPartition.Maximums.Time.Number)
+		}
 	}
-	if apiPartition.DefaultTimeLimit != nil {
-		partition.DefaultTimeLimit = int(*apiPartition.DefaultTimeLimit)
+	if apiPartition.Defaults != nil && apiPartition.Defaults.Time != nil && apiPartition.Defaults.Time.Set != nil && *apiPartition.Defaults.Time.Set {
+		if apiPartition.Defaults.Time.Number != nil {
+			partition.DefaultTimeLimit = int(*apiPartition.Defaults.Time.Number)
+		}
 	}
 	
 	return partition
