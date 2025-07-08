@@ -9,7 +9,7 @@ import (
 type Provider interface {
 	// Authenticate adds authentication to the HTTP request
 	Authenticate(ctx context.Context, req *http.Request) error
-	
+
 	// Type returns the authentication type
 	Type() string
 }

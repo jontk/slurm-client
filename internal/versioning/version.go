@@ -19,27 +19,27 @@ type APIVersion struct {
 func ParseVersion(version string) (*APIVersion, error) {
 	// Remove 'v' prefix if present
 	version = strings.TrimPrefix(version, "v")
-	
+
 	parts := strings.Split(version, ".")
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("invalid version format: %s (expected x.y.z)", version)
 	}
-	
+
 	major, err := strconv.Atoi(parts[0])
 	if err != nil {
 		return nil, fmt.Errorf("invalid major version: %s", parts[0])
 	}
-	
+
 	minor, err := strconv.Atoi(parts[1])
 	if err != nil {
 		return nil, fmt.Errorf("invalid minor version: %s", parts[1])
 	}
-	
+
 	patch, err := strconv.Atoi(parts[2])
 	if err != nil {
 		return nil, fmt.Errorf("invalid patch version: %s", parts[2])
 	}
-	
+
 	return &APIVersion{
 		Major: major,
 		Minor: minor,
@@ -55,8 +55,9 @@ func (v *APIVersion) String() string {
 
 // Compare compares two versions. Returns:
 // -1 if v < other
-//  0 if v == other
-//  1 if v > other
+//
+//	0 if v == other
+//	1 if v > other
 func (v *APIVersion) Compare(other *APIVersion) int {
 	if v.Major != other.Major {
 		if v.Major < other.Major {
@@ -64,21 +65,21 @@ func (v *APIVersion) Compare(other *APIVersion) int {
 		}
 		return 1
 	}
-	
+
 	if v.Minor != other.Minor {
 		if v.Minor < other.Minor {
 			return -1
 		}
 		return 1
 	}
-	
+
 	if v.Patch != other.Patch {
 		if v.Patch < other.Patch {
 			return -1
 		}
 		return 1
 	}
-	
+
 	return 0
 }
 
@@ -89,17 +90,17 @@ func (v *APIVersion) IsCompatibleWith(other *APIVersion) bool {
 	if v.Compare(other) == 0 {
 		return true
 	}
-	
+
 	// Major version must match
 	if v.Major != other.Major {
 		return false
 	}
-	
+
 	// Minor version must match
 	if v.Minor != other.Minor {
 		return false
 	}
-	
+
 	// Patch versions are generally compatible within same minor version
 	return true
 }
@@ -117,14 +118,14 @@ func LatestVersion() *APIVersion {
 	if len(SupportedVersions) == 0 {
 		return nil
 	}
-	
+
 	latest := SupportedVersions[0]
 	for _, v := range SupportedVersions[1:] {
 		if v.Compare(latest) > 0 {
 			latest = v
 		}
 	}
-	
+
 	return latest
 }
 
@@ -139,24 +140,24 @@ func FindBestVersion(constraint string) (*APIVersion, error) {
 	if constraint == "" || constraint == "latest" {
 		return LatestVersion(), nil
 	}
-	
+
 	if constraint == "stable" {
 		return StableVersion(), nil
 	}
-	
+
 	// Try to parse as exact version
 	requested, err := ParseVersion(constraint)
 	if err != nil {
 		return nil, fmt.Errorf("invalid version constraint: %s", constraint)
 	}
-	
+
 	// Check if we support this exact version
 	for _, supported := range SupportedVersions {
 		if supported.Compare(requested) == 0 {
 			return supported, nil
 		}
 	}
-	
+
 	// Find compatible version
 	var compatible []*APIVersion
 	for _, supported := range SupportedVersions {
@@ -164,16 +165,16 @@ func FindBestVersion(constraint string) (*APIVersion, error) {
 			compatible = append(compatible, supported)
 		}
 	}
-	
+
 	if len(compatible) == 0 {
 		return nil, fmt.Errorf("no compatible version found for %s", constraint)
 	}
-	
+
 	// Return the latest compatible version
 	sort.Slice(compatible, func(i, j int) bool {
 		return compatible[i].Compare(compatible[j]) > 0
 	})
-	
+
 	return compatible[0], nil
 }
 
@@ -182,14 +183,14 @@ func FindBestVersion(constraint string) (*APIVersion, error) {
 type VersionCompatibilityMatrix struct {
 	// SlurmVersions maps API versions to compatible Slurm versions
 	SlurmVersions map[string][]string
-	
+
 	// BreakingChanges maps version transitions to breaking changes
 	BreakingChanges map[string][]BreakingChange
 }
 
 // BreakingChange represents a breaking change between versions
 type BreakingChange struct {
-	Type        string `json:"type"`        // "field_rename", "field_removed", "endpoint_changed"
+	Type        string `json:"type"` // "field_rename", "field_removed", "endpoint_changed"
 	Description string `json:"description"`
 	OldValue    string `json:"old_value,omitempty"`
 	NewValue    string `json:"new_value,omitempty"`
@@ -256,12 +257,12 @@ func (m *VersionCompatibilityMatrix) IsSlurmVersionSupported(apiVersion, slurmVe
 	if !exists {
 		return false
 	}
-	
+
 	for _, version := range supported {
 		if strings.HasPrefix(slurmVersion, version) {
 			return true
 		}
 	}
-	
+
 	return false
 }
