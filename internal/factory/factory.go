@@ -248,11 +248,13 @@ func (f *ClientFactory) createClient(version *versioning.APIVersion) (SlurmClien
 	case "v0.0.40":
 		return f.createV0_0_40Client()
 	case "v0.0.41":
-		return f.createV0_0_41Client()
+		// TODO: Complete bridge implementation for v0.0.41
+		return nil, fmt.Errorf("v0.0.41 client bridge implementation in progress")
 	case "v0.0.42":
 		return f.createV0_0_42Client()
 	case "v0.0.43":
-		return f.createV0_0_43Client()
+		// TODO: Complete bridge implementation for v0.0.43
+		return nil, fmt.Errorf("v0.0.43 client bridge implementation in progress")
 	default:
 		return nil, fmt.Errorf("unsupported API version: %s", version.String())
 	}
@@ -278,7 +280,7 @@ func (f *ClientFactory) createV0_0_40Client() (SlurmClient, error) {
 }
 
 func (f *ClientFactory) createV0_0_41Client() (SlurmClient, error) {
-	// TODO: Implement with generated v0.0.41 client
+	// TODO: Implement v0.0.41 bridge
 	return nil, fmt.Errorf("v0.0.41 client not yet implemented")
 }
 
@@ -300,7 +302,7 @@ func (f *ClientFactory) createV0_0_42Client() (SlurmClient, error) {
 }
 
 func (f *ClientFactory) createV0_0_43Client() (SlurmClient, error) {
-	// TODO: Implement with generated v0.0.43 client
+	// TODO: Implement v0.0.43 bridge
 	return nil, fmt.Errorf("v0.0.43 client not yet implemented")
 }
 
@@ -913,3 +915,250 @@ func (b *v040InfoManagerBridge) Statistics(ctx context.Context) (*ClusterStats, 
 		JobsRunning: result.JobsRunning,
 	}, nil
 }
+
+// TODO: v041Bridge adapts the v0.0.41 WrapperClient to implement the factory.SlurmClient interface
+// Currently commented out while bridge implementation is being completed
+/*
+type v041Bridge struct {
+	client *v041.WrapperClient
+}
+
+func (b *v041Bridge) Version() string {
+	return b.client.Version()
+}
+
+func (b *v041Bridge) Jobs() JobManager {
+	return &v041JobManagerBridge{mgr: b.client.Jobs()}
+}
+
+func (b *v041Bridge) Nodes() NodeManager {
+	return &v041NodeManagerBridge{mgr: b.client.Nodes()}
+}
+
+func (b *v041Bridge) Partitions() PartitionManager {
+	return &v041PartitionManagerBridge{mgr: b.client.Partitions()}
+}
+
+func (b *v041Bridge) Info() InfoManager {
+	return &v041InfoManagerBridge{mgr: b.client.Info()}
+}
+
+func (b *v041Bridge) Close() error {
+	return b.client.Close()
+}
+
+// Bridge adapters for v0.0.41 managers
+type v041JobManagerBridge struct {
+	mgr *v041.JobManager
+}
+
+func (b *v041JobManagerBridge) List(ctx context.Context, opts *ListJobsOptions) (*JobList, error) {
+	return b.mgr.List(ctx, opts)
+}
+
+func (b *v041JobManagerBridge) Get(ctx context.Context, jobID string) (*Job, error) {
+	return b.mgr.Get(ctx, jobID)
+}
+
+func (b *v041JobManagerBridge) Submit(ctx context.Context, job *JobSubmission) (*JobSubmitResponse, error) {
+	return b.mgr.Submit(ctx, job)
+}
+
+func (b *v041JobManagerBridge) Cancel(ctx context.Context, jobID string) error {
+	return b.mgr.Cancel(ctx, jobID)
+}
+
+func (b *v041JobManagerBridge) Update(ctx context.Context, jobID string, update *JobUpdate) error {
+	return b.mgr.Update(ctx, jobID, update)
+}
+
+func (b *v041JobManagerBridge) Steps(ctx context.Context, jobID string) (*JobStepList, error) {
+	return b.mgr.Steps(ctx, jobID)
+}
+
+func (b *v041JobManagerBridge) Watch(ctx context.Context, opts *WatchJobsOptions) (<-chan JobEvent, error) {
+	return b.mgr.Watch(ctx, opts)
+}
+
+type v041NodeManagerBridge struct {
+	mgr *v041.NodeManager
+}
+
+func (b *v041NodeManagerBridge) List(ctx context.Context, opts *ListNodesOptions) (*NodeList, error) {
+	return b.mgr.List(ctx, opts)
+}
+
+func (b *v041NodeManagerBridge) Get(ctx context.Context, nodeName string) (*Node, error) {
+	return b.mgr.Get(ctx, nodeName)
+}
+
+func (b *v041NodeManagerBridge) Update(ctx context.Context, nodeName string, update *NodeUpdate) error {
+	return b.mgr.Update(ctx, nodeName, update)
+}
+
+func (b *v041NodeManagerBridge) Drain(ctx context.Context, nodeName string, reason string) error {
+	return b.mgr.Drain(ctx, nodeName, reason)
+}
+
+func (b *v041NodeManagerBridge) Resume(ctx context.Context, nodeName string) error {
+	return b.mgr.Resume(ctx, nodeName)
+}
+
+type v041PartitionManagerBridge struct {
+	mgr *v041.PartitionManager
+}
+
+func (b *v041PartitionManagerBridge) List(ctx context.Context) (*PartitionList, error) {
+	return b.mgr.List(ctx)
+}
+
+func (b *v041PartitionManagerBridge) Get(ctx context.Context, partitionName string) (*Partition, error) {
+	return b.mgr.Get(ctx, partitionName)
+}
+
+func (b *v041PartitionManagerBridge) Update(ctx context.Context, partitionName string, update *PartitionUpdate) error {
+	return b.mgr.Update(ctx, partitionName, update)
+}
+
+type v041InfoManagerBridge struct {
+	mgr *v041.InfoManager
+}
+
+func (b *v041InfoManagerBridge) Ping(ctx context.Context) error {
+	return b.mgr.Ping(ctx)
+}
+
+func (b *v041InfoManagerBridge) Version(ctx context.Context) (*VersionInfo, error) {
+	return b.mgr.Version(ctx)
+}
+
+func (b *v041InfoManagerBridge) Configuration(ctx context.Context) (*ClusterConfig, error) {
+	return b.mgr.Configuration(ctx)
+}
+
+func (b *v041InfoManagerBridge) Statistics(ctx context.Context) (*ClusterStats, error) {
+	return b.mgr.Statistics(ctx)
+}
+
+// v043Bridge adapts the v0.0.43 WrapperClient to implement the factory.SlurmClient interface
+type v043Bridge struct {
+	client *v043.WrapperClient
+}
+
+func (b *v043Bridge) Version() string {
+	return b.client.Version()
+}
+
+func (b *v043Bridge) Jobs() JobManager {
+	return &v043JobManagerBridge{mgr: b.client.Jobs()}
+}
+
+func (b *v043Bridge) Nodes() NodeManager {
+	return &v043NodeManagerBridge{mgr: b.client.Nodes()}
+}
+
+func (b *v043Bridge) Partitions() PartitionManager {
+	return &v043PartitionManagerBridge{mgr: b.client.Partitions()}
+}
+
+func (b *v043Bridge) Info() InfoManager {
+	return &v043InfoManagerBridge{mgr: b.client.Info()}
+}
+
+func (b *v043Bridge) Close() error {
+	return b.client.Close()
+}
+
+// Bridge adapters for v0.0.43 managers
+type v043JobManagerBridge struct {
+	mgr *v043.JobManager
+}
+
+func (b *v043JobManagerBridge) List(ctx context.Context, opts *ListJobsOptions) (*JobList, error) {
+	return b.mgr.List(ctx, opts)
+}
+
+func (b *v043JobManagerBridge) Get(ctx context.Context, jobID string) (*Job, error) {
+	return b.mgr.Get(ctx, jobID)
+}
+
+func (b *v043JobManagerBridge) Submit(ctx context.Context, job *JobSubmission) (*JobSubmitResponse, error) {
+	return b.mgr.Submit(ctx, job)
+}
+
+func (b *v043JobManagerBridge) Cancel(ctx context.Context, jobID string) error {
+	return b.mgr.Cancel(ctx, jobID)
+}
+
+func (b *v043JobManagerBridge) Update(ctx context.Context, jobID string, update *JobUpdate) error {
+	return b.mgr.Update(ctx, jobID, update)
+}
+
+func (b *v043JobManagerBridge) Steps(ctx context.Context, jobID string) (*JobStepList, error) {
+	return b.mgr.Steps(ctx, jobID)
+}
+
+func (b *v043JobManagerBridge) Watch(ctx context.Context, opts *WatchJobsOptions) (<-chan JobEvent, error) {
+	return b.mgr.Watch(ctx, opts)
+}
+
+type v043NodeManagerBridge struct {
+	mgr *v043.NodeManager
+}
+
+func (b *v043NodeManagerBridge) List(ctx context.Context, opts *ListNodesOptions) (*NodeList, error) {
+	return b.mgr.List(ctx, opts)
+}
+
+func (b *v043NodeManagerBridge) Get(ctx context.Context, nodeName string) (*Node, error) {
+	return b.mgr.Get(ctx, nodeName)
+}
+
+func (b *v043NodeManagerBridge) Update(ctx context.Context, nodeName string, update *NodeUpdate) error {
+	return b.mgr.Update(ctx, nodeName, update)
+}
+
+func (b *v043NodeManagerBridge) Drain(ctx context.Context, nodeName string, reason string) error {
+	return b.mgr.Drain(ctx, nodeName, reason)
+}
+
+func (b *v043NodeManagerBridge) Resume(ctx context.Context, nodeName string) error {
+	return b.mgr.Resume(ctx, nodeName)
+}
+
+type v043PartitionManagerBridge struct {
+	mgr *v043.PartitionManager
+}
+
+func (b *v043PartitionManagerBridge) List(ctx context.Context) (*PartitionList, error) {
+	return b.mgr.List(ctx)
+}
+
+func (b *v043PartitionManagerBridge) Get(ctx context.Context, partitionName string) (*Partition, error) {
+	return b.mgr.Get(ctx, partitionName)
+}
+
+func (b *v043PartitionManagerBridge) Update(ctx context.Context, partitionName string, update *PartitionUpdate) error {
+	return b.mgr.Update(ctx, partitionName, update)
+}
+
+type v043InfoManagerBridge struct {
+	mgr *v043.InfoManager
+}
+
+func (b *v043InfoManagerBridge) Ping(ctx context.Context) error {
+	return b.mgr.Ping(ctx)
+}
+
+func (b *v043InfoManagerBridge) Version(ctx context.Context) (*VersionInfo, error) {
+	return b.mgr.Version(ctx)
+}
+
+func (b *v043InfoManagerBridge) Configuration(ctx context.Context) (*ClusterConfig, error) {
+	return b.mgr.Configuration(ctx)
+}
+
+func (b *v043InfoManagerBridge) Statistics(ctx context.Context) (*ClusterStats, error) {
+	return b.mgr.Statistics(ctx)
+}
+*/
