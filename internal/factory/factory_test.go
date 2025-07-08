@@ -39,7 +39,7 @@ func TestNewClientFactory(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			factory, err := NewClientFactory(tt.options...)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, factory)
@@ -53,12 +53,12 @@ func TestNewClientFactory(t *testing.T) {
 
 func TestClientFactory_NewClientWithVersion(t *testing.T) {
 	ctx := helpers.TestContext(t)
-	
+
 	factory, err := NewClientFactory(
 		WithBaseURL("https://example.com"),
 	)
 	helpers.RequireNoError(t, err)
-	
+
 	tests := []struct {
 		name        string
 		version     string
@@ -72,7 +72,7 @@ func TestClientFactory_NewClientWithVersion(t *testing.T) {
 		{
 			name:        "create client with v0.0.41",
 			version:     "v0.0.41",
-			expectError: true, // Bridge not implemented yet
+			expectError: false,
 		},
 		{
 			name:        "create client with v0.0.42",
@@ -82,12 +82,12 @@ func TestClientFactory_NewClientWithVersion(t *testing.T) {
 		{
 			name:        "create client with v0.0.43",
 			version:     "v0.0.43",
-			expectError: true, // Bridge not implemented yet
+			expectError: false,
 		},
 		{
 			name:        "create client with latest",
 			version:     "latest",
-			expectError: true, // Latest is v0.0.43, not implemented
+			expectError: false, // Latest is v0.0.43, now implemented
 		},
 		{
 			name:        "create client with stable",
@@ -97,7 +97,7 @@ func TestClientFactory_NewClientWithVersion(t *testing.T) {
 		{
 			name:        "create client with unsupported version",
 			version:     "v0.0.39",
-			expectError: true, // Compatible version (v0.0.43) not implemented
+			expectError: false, // Compatible version (v0.0.43) now implemented
 		},
 		{
 			name:        "create client with invalid version",
@@ -109,14 +109,14 @@ func TestClientFactory_NewClientWithVersion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client, err := factory.NewClientWithVersion(ctx, tt.version)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, client)
 			} else {
 				helpers.AssertNoError(t, err)
 				helpers.AssertNotNil(t, client)
-				
+
 				// Verify client has expected interface methods
 				assert.NotNil(t, client.Jobs())
 				assert.NotNil(t, client.Nodes())
@@ -129,15 +129,15 @@ func TestClientFactory_NewClientWithVersion(t *testing.T) {
 
 func TestClientFactory_NewClient(t *testing.T) {
 	ctx := helpers.TestContext(t)
-	
+
 	factory, err := NewClientFactory(
 		WithBaseURL("https://example.com"),
 	)
 	helpers.RequireNoError(t, err)
-	
+
 	// Test with empty version (should auto-detect, fallback to stable)
 	client, err := factory.NewClient(ctx)
-	
+
 	// Should succeed with stable version since we can't actually detect
 	helpers.AssertNoError(t, err)
 	helpers.AssertNotNil(t, client)
@@ -145,12 +145,12 @@ func TestClientFactory_NewClient(t *testing.T) {
 
 func TestClientFactory_NewClientForSlurmVersion(t *testing.T) {
 	ctx := helpers.TestContext(t)
-	
+
 	factory, err := NewClientFactory(
 		WithBaseURL("https://example.com"),
 	)
 	helpers.RequireNoError(t, err)
-	
+
 	tests := []struct {
 		name         string
 		slurmVersion string
@@ -164,7 +164,7 @@ func TestClientFactory_NewClientForSlurmVersion(t *testing.T) {
 		{
 			name:         "Slurm 25.05",
 			slurmVersion: "25.05",
-			expectError:  true, // Would use v0.0.43 (latest), but not implemented
+			expectError:  false, // Would use v0.0.43 (latest), now implemented
 		},
 		{
 			name:         "unsupported Slurm version",
@@ -181,7 +181,7 @@ func TestClientFactory_NewClientForSlurmVersion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client, err := factory.NewClientForSlurmVersion(ctx, tt.slurmVersion)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, client)
@@ -198,14 +198,14 @@ func TestClientFactory_ListSupportedVersions(t *testing.T) {
 		WithBaseURL("https://example.com"),
 	)
 	helpers.RequireNoError(t, err)
-	
+
 	versions := factory.ListSupportedVersions()
-	
+
 	// Verify we have the expected versions
 	expectedVersions := []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43"}
-	
+
 	helpers.AssertEqual(t, len(expectedVersions), len(versions))
-	
+
 	for i, version := range versions {
 		helpers.AssertEqual(t, expectedVersions[i], version.String())
 	}
@@ -216,13 +216,13 @@ func TestClientFactory_GetVersionCompatibility(t *testing.T) {
 		WithBaseURL("https://example.com"),
 	)
 	helpers.RequireNoError(t, err)
-	
+
 	matrix := factory.GetVersionCompatibility()
-	
+
 	helpers.AssertNotNil(t, matrix)
 	helpers.AssertNotNil(t, matrix.SlurmVersions)
 	helpers.AssertNotNil(t, matrix.BreakingChanges)
-	
+
 	// Verify all supported versions have Slurm version mappings
 	for _, version := range []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43"} {
 		slurmVersions, exists := matrix.SlurmVersions[version]
@@ -233,27 +233,27 @@ func TestClientFactory_GetVersionCompatibility(t *testing.T) {
 
 func TestClientInterfaces(t *testing.T) {
 	ctx := helpers.TestContext(t)
-	
+
 	factory, err := NewClientFactory(
 		WithBaseURL("https://example.com"),
 	)
 	helpers.RequireNoError(t, err)
-	
+
 	client, err := factory.NewClientWithVersion(ctx, "v0.0.42")
 	helpers.AssertNoError(t, err)
 	helpers.AssertNotNil(t, client)
-	
+
 	// Test that all manager interfaces are available
 	jobManager := client.Jobs()
 	nodeManager := client.Nodes()
 	partitionManager := client.Partitions()
 	infoManager := client.Info()
-	
+
 	helpers.AssertNotNil(t, jobManager)
 	helpers.AssertNotNil(t, nodeManager)
 	helpers.AssertNotNil(t, partitionManager)
 	helpers.AssertNotNil(t, infoManager)
-	
+
 	// Test client version
 	version := client.Version()
 	helpers.AssertEqual(t, "v0.0.42", version)
