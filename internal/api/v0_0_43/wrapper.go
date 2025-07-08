@@ -4,36 +4,30 @@ package v0_0_43
 
 import (
 	"net/http"
-)
 
-// ClientConfig holds configuration for the API client
-type ClientConfig struct {
-	BaseURL     string
-	HTTPClient  *http.Client
-	APIKey      string
-	Debug       bool
-}
+	"github.com/jontk/slurm-client/internal/interfaces"
+)
 
 // WrapperClient implements the SlurmClient interface for API version v0.0.43
 type WrapperClient struct {
 	apiClient *ClientWithResponses
-	config    *ClientConfig
+	config    *interfaces.ClientConfig
 }
 
 // NewWrapperClient creates a new v0.0.43 client
-func NewWrapperClient(config *ClientConfig) (*WrapperClient, error) {
+func NewWrapperClient(config *interfaces.ClientConfig) (*WrapperClient, error) {
 	// Create HTTP client with authentication
 	httpClient := config.HTTPClient
 	if httpClient == nil {
 		httpClient = &http.Client{}
 	}
-	
+
 	// Create oapi-codegen client
 	apiClient, err := NewClientWithResponses(config.BaseURL, WithHTTPClient(httpClient))
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &WrapperClient{
 		apiClient: apiClient,
 		config:    config,
@@ -46,22 +40,22 @@ func (c *WrapperClient) Version() string {
 }
 
 // Jobs returns the JobManager
-func (c *WrapperClient) Jobs() *JobManager {
+func (c *WrapperClient) Jobs() interfaces.JobManager {
 	return &JobManager{client: c}
 }
 
-// Nodes returns the NodeManager  
-func (c *WrapperClient) Nodes() *NodeManager {
+// Nodes returns the NodeManager
+func (c *WrapperClient) Nodes() interfaces.NodeManager {
 	return &NodeManager{client: c}
 }
 
 // Partitions returns the PartitionManager
-func (c *WrapperClient) Partitions() *PartitionManager {
+func (c *WrapperClient) Partitions() interfaces.PartitionManager {
 	return &PartitionManager{client: c}
 }
 
 // Info returns the InfoManager
-func (c *WrapperClient) Info() *InfoManager {
+func (c *WrapperClient) Info() interfaces.InfoManager {
 	return &InfoManager{client: c}
 }
 

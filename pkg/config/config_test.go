@@ -11,15 +11,15 @@ import (
 
 func TestNewDefault(t *testing.T) {
 	config := NewDefault()
-	
+
 	helpers.AssertNotNil(t, config)
-	
+
 	// Check default values
 	helpers.AssertEqual(t, false, config.Debug)
 	helpers.AssertEqual(t, false, config.InsecureSkipVerify)
 	helpers.AssertEqual(t, "slurm-client/1.0", config.UserAgent)
 	helpers.AssertEqual(t, "v0.0.39", config.APIVersion)
-	
+
 	// Verify defaults are reasonable
 	assert.Greater(t, config.Timeout, time.Duration(0))
 	assert.Greater(t, config.MaxRetries, 0)
@@ -39,11 +39,11 @@ func TestConfigLoad(t *testing.T) {
 		"SLURM_DEBUG",
 		"SLURM_INSECURE_SKIP_VERIFY",
 	}
-	
+
 	for _, envVar := range testEnvVars {
 		originalEnv[envVar] = os.Getenv(envVar)
 	}
-	
+
 	// Clean up after test
 	defer func() {
 		for _, envVar := range testEnvVars {
@@ -54,7 +54,7 @@ func TestConfigLoad(t *testing.T) {
 			}
 		}
 	}()
-	
+
 	tests := []struct {
 		name     string
 		envVars  map[string]string
@@ -151,13 +151,13 @@ func TestConfigLoad(t *testing.T) {
 			for key, value := range tt.envVars {
 				os.Setenv(key, value)
 			}
-			
+
 			config := NewDefault()
 			config.Load()
-			
+
 			helpers.AssertNotNil(t, config)
 			tt.expected(config)
-			
+
 			// Clean up environment variables for this test
 			for key := range tt.envVars {
 				os.Unsetenv(key)
@@ -245,7 +245,7 @@ func TestConfigValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				if tt.expectedErr != nil {
@@ -260,26 +260,26 @@ func TestConfigValidation(t *testing.T) {
 
 func TestConfigMutation(t *testing.T) {
 	config := NewDefault()
-	
+
 	// Test that we can modify config fields directly
 	config.BaseURL = "https://example.com"
 	helpers.AssertEqual(t, "https://example.com", config.BaseURL)
-	
+
 	config.Timeout = 60 * time.Second
 	helpers.AssertEqual(t, 60*time.Second, config.Timeout)
-	
+
 	config.MaxRetries = 5
 	helpers.AssertEqual(t, 5, config.MaxRetries)
-	
+
 	config.Debug = true
 	helpers.AssertEqual(t, true, config.Debug)
-	
+
 	config.InsecureSkipVerify = true
 	helpers.AssertEqual(t, true, config.InsecureSkipVerify)
-	
+
 	config.UserAgent = "test-client/1.0"
 	helpers.AssertEqual(t, "test-client/1.0", config.UserAgent)
-	
+
 	config.APIVersion = "v0.0.42"
 	helpers.AssertEqual(t, "v0.0.42", config.APIVersion)
 }
@@ -287,22 +287,22 @@ func TestConfigMutation(t *testing.T) {
 func TestConfigDefaults(t *testing.T) {
 	// Test that NewDefault returns expected defaults
 	config := NewDefault()
-	
+
 	// Should have default localhost URL
 	helpers.AssertEqual(t, "http://localhost:6820", config.BaseURL)
-	
+
 	// Should have reasonable timeout
 	helpers.AssertEqual(t, 30*time.Second, config.Timeout)
-	
+
 	// Should have default user agent
 	helpers.AssertEqual(t, "slurm-client/1.0", config.UserAgent)
-	
+
 	// Should have default max retries
 	helpers.AssertEqual(t, 3, config.MaxRetries)
-	
+
 	// Should have default API version
 	helpers.AssertEqual(t, "v0.0.39", config.APIVersion)
-	
+
 	// Should have default boolean values
 	helpers.AssertEqual(t, false, config.Debug)
 	helpers.AssertEqual(t, false, config.InsecureSkipVerify)

@@ -1,172 +1,52 @@
 package factory
 
 import (
-	"context"
-	"time"
+	"github.com/jontk/slurm-client/internal/interfaces"
 )
 
 // SlurmClient represents a version-agnostic Slurm REST API client interface
-// This is a copy of the interface from the main package to avoid import cycles
-type SlurmClient interface {
-	Version() string
-	Jobs() JobManager
-	Nodes() NodeManager
-	Partitions() PartitionManager
-	Info() InfoManager
-	Close() error
-}
+// This is a type alias to the internal interface to avoid import cycles
+type SlurmClient = interfaces.SlurmClient
 
-// Supporting interfaces (copied to avoid import cycles)
+// Type aliases for all interfaces and data structures
+type JobManager = interfaces.JobManager
+type NodeManager = interfaces.NodeManager
+type PartitionManager = interfaces.PartitionManager
+type InfoManager = interfaces.InfoManager
 
-type JobManager interface {
-	List(ctx context.Context, opts *ListJobsOptions) (*JobList, error)
-	Get(ctx context.Context, jobID string) (*Job, error)
-	Submit(ctx context.Context, job *JobSubmission) (*JobSubmitResponse, error)
-	Cancel(ctx context.Context, jobID string) error
-	Update(ctx context.Context, jobID string, update *JobUpdate) error
-	Steps(ctx context.Context, jobID string) (*JobStepList, error)
-	Watch(ctx context.Context, opts *WatchJobsOptions) (<-chan JobEvent, error)
-}
+// Data structure type aliases
+type Job = interfaces.Job
+type JobList = interfaces.JobList
+type JobSubmission = interfaces.JobSubmission
+type JobSubmitResponse = interfaces.JobSubmitResponse
+type JobUpdate = interfaces.JobUpdate
+type JobStep = interfaces.JobStep
+type JobStepList = interfaces.JobStepList
+type JobEvent = interfaces.JobEvent
 
-type NodeManager interface {
-	List(ctx context.Context, opts *ListNodesOptions) (*NodeList, error)
-	Get(ctx context.Context, nodeName string) (*Node, error)
-	Update(ctx context.Context, nodeName string, update *NodeUpdate) error
-	Drain(ctx context.Context, nodeName string, reason string) error
-	Resume(ctx context.Context, nodeName string) error
-}
+type Node = interfaces.Node
+type NodeList = interfaces.NodeList
+type NodeUpdate = interfaces.NodeUpdate
+type NodeEvent = interfaces.NodeEvent
 
-type PartitionManager interface {
-	List(ctx context.Context) (*PartitionList, error)
-	Get(ctx context.Context, partitionName string) (*Partition, error)
-	Update(ctx context.Context, partitionName string, update *PartitionUpdate) error
-}
+type Partition = interfaces.Partition
+type PartitionList = interfaces.PartitionList
+type PartitionUpdate = interfaces.PartitionUpdate
+type PartitionEvent = interfaces.PartitionEvent
 
-type InfoManager interface {
-	Ping(ctx context.Context) error
-	Version(ctx context.Context) (*VersionInfo, error)
-	Configuration(ctx context.Context) (*ClusterConfig, error)
-	Statistics(ctx context.Context) (*ClusterStats, error)
-}
+type ClusterInfo = interfaces.ClusterInfo
+type ClusterStats = interfaces.ClusterStats
+type APIVersion = interfaces.APIVersion
 
-// Data types (simplified versions to avoid import cycles)
+// List options
+type ListJobsOptions = interfaces.ListJobsOptions
+type ListNodesOptions = interfaces.ListNodesOptions
+type ListPartitionsOptions = interfaces.ListPartitionsOptions
 
-type JobState string
-type NodeState string
+// Watch options
+type WatchJobsOptions = interfaces.WatchJobsOptions
+type WatchNodesOptions = interfaces.WatchNodesOptions
+type WatchPartitionsOptions = interfaces.WatchPartitionsOptions
 
-type Job struct {
-	ID          string
-	Name        string
-	UserID      string
-	State       JobState
-	Partition   string
-	SubmitTime  time.Time
-	StartTime   *time.Time
-	EndTime     *time.Time
-	CPUs        int
-	Memory      int
-}
-
-type JobList struct {
-	Jobs  []Job
-	Total int
-}
-
-type JobSubmission struct {
-	Name      string
-	Script    string
-	Partition string
-	CPUs      int
-	Memory    int
-	TimeLimit int
-}
-
-type JobSubmitResponse struct {
-	JobID string
-}
-
-type JobUpdate struct {
-	TimeLimit *int
-	Priority  *int
-}
-
-type ListJobsOptions struct {
-	UserID    string
-	State     JobState
-	Partition string
-	Limit     int
-	Offset    int
-}
-
-type JobStepList struct {
-	Steps []JobStep
-}
-
-type JobStep struct {
-	ID    string
-	JobID string
-	Name  string
-	State string
-}
-
-type WatchJobsOptions struct {
-	UserID string
-	State  JobState
-}
-
-type JobEvent struct {
-	Type     string
-	JobID    string
-	NewState JobState
-}
-
-type Node struct {
-	Name  string
-	State NodeState
-	CPUs  int
-}
-
-type NodeList struct {
-	Nodes []Node
-	Total int
-}
-
-type NodeUpdate struct {
-	State  *NodeState
-	Reason *string
-}
-
-type ListNodesOptions struct {
-	State     NodeState
-	Partition string
-	Features  []string
-}
-
-type Partition struct {
-	Name        string
-	State       string
-	TotalCPUs   int
-	TotalMemory int
-}
-
-type PartitionList struct {
-	Partitions []Partition
-	Total      int
-}
-
-type PartitionUpdate struct {
-	State *string
-}
-
-type VersionInfo struct {
-	Version    string
-	APIVersion string
-}
-
-type ClusterConfig struct {
-	ClusterName string
-}
-
-type ClusterStats struct {
-	JobsRunning int
-}
+// ClientConfig for API client configuration
+type ClientConfig = interfaces.ClientConfig

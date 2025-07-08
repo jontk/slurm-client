@@ -17,61 +17,61 @@ type ClientOption func(*factory.ClientFactory) error
 // NewClient creates a new Slurm REST API client with automatic version detection
 func NewClient(ctx context.Context, options ...ClientOption) (SlurmClient, error) {
 	factoryOptions := make([]factory.FactoryOption, 0, len(options))
-	
+
 	for _, option := range options {
 		factoryOptions = append(factoryOptions, factory.FactoryOption(option))
 	}
-	
+
 	clientFactory, err := factory.NewClientFactory(factoryOptions...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client factory: %w", err)
 	}
-	
+
 	factoryClient, err := clientFactory.NewClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return newClientBridge(factoryClient), nil
+	return factoryClient, nil
 }
 
 // NewClientWithVersion creates a new Slurm REST API client for a specific version
 func NewClientWithVersion(ctx context.Context, version string, options ...ClientOption) (SlurmClient, error) {
 	factoryOptions := make([]factory.FactoryOption, 0, len(options))
-	
+
 	for _, option := range options {
 		factoryOptions = append(factoryOptions, factory.FactoryOption(option))
 	}
-	
+
 	clientFactory, err := factory.NewClientFactory(factoryOptions...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client factory: %w", err)
 	}
-	
+
 	factoryClient, err := clientFactory.NewClientWithVersion(ctx, version)
 	if err != nil {
 		return nil, err
 	}
-	return newClientBridge(factoryClient), nil
+	return factoryClient, nil
 }
 
 // NewClientForSlurmVersion creates a client compatible with a specific Slurm version
 func NewClientForSlurmVersion(ctx context.Context, slurmVersion string, options ...ClientOption) (SlurmClient, error) {
 	factoryOptions := make([]factory.FactoryOption, 0, len(options))
-	
+
 	for _, option := range options {
 		factoryOptions = append(factoryOptions, factory.FactoryOption(option))
 	}
-	
+
 	clientFactory, err := factory.NewClientFactory(factoryOptions...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client factory: %w", err)
 	}
-	
+
 	factoryClient, err := clientFactory.NewClientForSlurmVersion(ctx, slurmVersion)
 	if err != nil {
 		return nil, err
 	}
-	return newClientBridge(factoryClient), nil
+	return factoryClient, nil
 }
 
 // Convenience option functions
@@ -155,13 +155,13 @@ func (e *SlurmError) Error() string {
 
 // VersionError represents a version-related error
 type VersionError struct {
-	RequestedVersion string
+	RequestedVersion  string
 	SupportedVersions []string
-	Message          string
+	Message           string
 }
 
 func (e *VersionError) Error() string {
-	return fmt.Sprintf("version error: %s (requested: %s, supported: %v)", 
+	return fmt.Sprintf("version error: %s (requested: %s, supported: %v)",
 		e.Message, e.RequestedVersion, e.SupportedVersions)
 }
 
@@ -173,6 +173,6 @@ type CompatibilityError struct {
 }
 
 func (e *CompatibilityError) Error() string {
-	return fmt.Sprintf("compatibility error: %s (client: %s, server: %s)", 
+	return fmt.Sprintf("compatibility error: %s (client: %s, server: %s)",
 		e.Message, e.ClientVersion, e.ServerVersion)
 }
