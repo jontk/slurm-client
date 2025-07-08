@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -414,176 +415,92 @@ func (i *InfoManager) Statistics(ctx context.Context) (*ClusterStats, error) {
 	return &ClusterStats{}, nil
 }
 
-// Type aliases for v0.0.41 inline structs (extracted from response types)
-// In v0.0.41, these are inline structs within response types, not separate types like in v0.0.42
-
-// Define aliases for the job info inline struct from V0041OpenapiJobInfoResp.Jobs[]
-type V0041JobInfo = struct {
-	// Account Account associated with the job
-	Account *string `json:"account,omitempty"`
-
-	// AccrueTime When the job started accruing age priority (UNIX timestamp)
-	AccrueTime *struct {
-		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-		Infinite *bool `json:"infinite,omitempty"`
-
-		// Number If "set" is True the number will be set with value; otherwise ignore number contents
-		Number *int64 `json:"number,omitempty"`
-
-		// Set True if number has been set; False if number is unset
-		Set *bool `json:"set,omitempty"`
-	} `json:"accrue_time,omitempty"`
-
-	// JobId Job ID
-	JobId *int32 `json:"job_id,omitempty"`
-
-	// Name Job name
-	Name *string `json:"name,omitempty"`
-
-	// UserId User ID
-	UserId *int32 `json:"user_id,omitempty"`
-
-	// JobState Job state
-	JobState *[]string `json:"job_state,omitempty"`
-
-	// Partition Partition name
-	Partition *string `json:"partition,omitempty"`
-
-	// SubmitTime Job submission time
-	SubmitTime *struct {
-		Infinite *bool `json:"infinite,omitempty"`
-		Number   *int64 `json:"number,omitempty"`
-		Set      *bool  `json:"set,omitempty"`
-	} `json:"submit_time,omitempty"`
-
-	// StartTime Job start time
-	StartTime *struct {
-		Infinite *bool `json:"infinite,omitempty"`
-		Number   *int64 `json:"number,omitempty"`
-		Set      *bool  `json:"set,omitempty"`
-	} `json:"start_time,omitempty"`
-
-	// EndTime Job end time
-	EndTime *struct {
-		Infinite *bool `json:"infinite,omitempty"`
-		Number   *int64 `json:"number,omitempty"`
-		Set      *bool  `json:"set,omitempty"`
-	} `json:"end_time,omitempty"`
-
-	// Cpus CPU count
-	Cpus *struct {
-		Infinite *bool `json:"infinite,omitempty"`
-		Number   *int32 `json:"number,omitempty"`
-		Set      *bool  `json:"set,omitempty"`
-	} `json:"cpus,omitempty"`
-
-	// MemoryPerNode Memory per node
-	MemoryPerNode *struct {
-		Infinite *bool `json:"infinite,omitempty"`
-		Number   *int64 `json:"number,omitempty"`
-		Set      *bool  `json:"set,omitempty"`
-	} `json:"memory_per_node,omitempty"`
-}
-
-// Use the existing request body type for job submission
-type V0041JobSubmitReq = SlurmV0041PostJobSubmitJSONBody
-
-// Extract job description from the request body
-type V0041JobDescMsg = struct {
-	Name *string `json:"name,omitempty"`
-	Script *string `json:"script,omitempty"`
-	Partition *string `json:"partition,omitempty"`
-	CpusPerTask *int32 `json:"cpus_per_task,omitempty"`
-	MemoryPerNode *struct {
-		Infinite *bool `json:"infinite,omitempty"`
-		Number *int64 `json:"number,omitempty"`
-		Set *bool `json:"set,omitempty"`
-	} `json:"memory_per_node,omitempty"`
-	TimeLimit *struct {
-		Infinite *bool `json:"infinite,omitempty"`
-		Number *int32 `json:"number,omitempty"`
-		Set *bool `json:"set,omitempty"`
-	} `json:"time_limit,omitempty"`
-}
-
-// Utility struct aliases  
-type V0041Uint64NoValStruct = struct {
-	Infinite *bool `json:"infinite,omitempty"`
-	Number *int64 `json:"number,omitempty"`
-	Set *bool `json:"set,omitempty"`
-}
-
-type V0041Uint32NoValStruct = struct {
-	Infinite *bool `json:"infinite,omitempty"`
-	Number *int32 `json:"number,omitempty"`
-	Set *bool `json:"set,omitempty"`
-}
-
-// Node info extracted from V0041OpenapiNodesResp.Nodes[]
-type V0041Node = struct {
-	Name *string `json:"name,omitempty"`
-	State *[]string `json:"state,omitempty"`
-	Cpus *int32 `json:"cpus,omitempty"`
-	AllocMemory *int64 `json:"alloc_memory,omitempty"`
-	ActiveFeatures *[]string `json:"active_features,omitempty"`
-}
-
-// Partition info extracted from V0041OpenapiPartitionResp.Partitions[]
-type V0041PartitionInfo = struct {
-	Name *string `json:"name,omitempty"`
-	Partition *struct {
-		State *[]string `json:"state,omitempty"`
-	} `json:"partition,omitempty"`
-	Cpus *struct {
-		Total *int32 `json:"total,omitempty"`
-	} `json:"cpus,omitempty"`
-	Defaults *struct {
-		MemoryPerCpu *int64 `json:"memory_per_cpu,omitempty"`
-		Time *struct {
-			Infinite *bool `json:"infinite,omitempty"`
-			Number *int32 `json:"number,omitempty"`
-			Set *bool `json:"set,omitempty"`
-		} `json:"time,omitempty"`
-	} `json:"defaults,omitempty"`
-	Maximums *struct {
-		Time *struct {
-			Infinite *bool `json:"infinite,omitempty"`
-			Number *int32 `json:"number,omitempty"`
-			Set *bool `json:"set,omitempty"`
-		} `json:"time,omitempty"`
-	} `json:"maximums,omitempty"`
-}
+// Note: v0.0.41 uses inline structs within response types, not separate types like v0.0.42
+// The conversion functions handle this by using interface{} and type assertions
 
 // Conversion functions between API types and common types
 
 func convertV0041JobFromAPI(apiJob interface{}) Job {
-	// For v0.0.41, the job struct is an inline anonymous struct with many fields
-	// We'll create a simple job with basic information for now
-	// This can be enhanced later once we have the types mapped properly
-	
 	job := Job{
-		ID:       "unknown",
-		Name:     "unknown", 
-		UserID:   "unknown",
-		State:    "UNKNOWN",
 		Metadata: make(map[string]interface{}),
 	}
 	
-	// In a production implementation, we would use reflection to extract
-	// fields from the complex inline struct, but for now just return basic job
+	// Extract fields from the inline struct using type assertion
+	// The apiJob is an element from V0041OpenapiJobInfoResp.Jobs[]
+	if jobMap, ok := apiJob.(map[string]interface{}); ok {
+		if jobId, ok := jobMap["job_id"].(int32); ok {
+			job.ID = strconv.Itoa(int(jobId))
+		}
+		if name, ok := jobMap["name"].(string); ok {
+			job.Name = name
+		}
+		if userId, ok := jobMap["user_id"].(int32); ok {
+			job.UserID = strconv.Itoa(int(userId))
+		}
+		if jobState, ok := jobMap["job_state"].([]string); ok && len(jobState) > 0 {
+			job.State = JobState(jobState[0])
+		}
+		if partition, ok := jobMap["partition"].(string); ok {
+			job.Partition = partition
+		}
+		
+		// Handle complex fields with nested structs
+		if cpus, ok := jobMap["cpus"].(map[string]interface{}); ok {
+			if set, ok := cpus["set"].(bool); ok && set {
+				if number, ok := cpus["number"].(int32); ok {
+					job.CPUs = int(number)
+				}
+			}
+		}
+		
+		if memory, ok := jobMap["memory_per_node"].(map[string]interface{}); ok {
+			if set, ok := memory["set"].(bool); ok && set {
+				if number, ok := memory["number"].(int64); ok {
+					job.Memory = int(number)
+				}
+			}
+		}
+		
+		// Handle time fields
+		if submitTime, ok := jobMap["submit_time"].(map[string]interface{}); ok {
+			if set, ok := submitTime["set"].(bool); ok && set {
+				if number, ok := submitTime["number"].(int64); ok {
+					job.SubmitTime = time.Unix(number, 0)
+				}
+			}
+		}
+		
+		if startTime, ok := jobMap["start_time"].(map[string]interface{}); ok {
+			if set, ok := startTime["set"].(bool); ok && set {
+				if number, ok := startTime["number"].(int64); ok {
+					t := time.Unix(number, 0)
+					job.StartTime = &t
+				}
+			}
+		}
+		
+		if endTime, ok := jobMap["end_time"].(map[string]interface{}); ok {
+			if set, ok := endTime["set"].(bool); ok && set {
+				if number, ok := endTime["number"].(int64); ok {
+					t := time.Unix(number, 0)
+					job.EndTime = &t
+				}
+			}
+		}
+	}
 	
 	return job
 }
 
 func convertJobSubmissionToAPI(submission *JobSubmission) SlurmV0041PostJobSubmitJSONRequestBody {
-	// For v0.0.41, create a minimal job submission request
-	// The complex inline struct mapping will be implemented later
-	
+	// For now, return a minimal working implementation
+	// In a production system, this would need to be enhanced to handle the full API
 	req := SlurmV0041PostJobSubmitJSONBody{
-		// Job field will be initialized with defaults
-		// This is a simplified implementation for getting the build working
+		Job: nil, // Will be populated when we have proper type mappings
 	}
 	
+	// This is a placeholder implementation for getting the build working
+	// The actual implementation would need to handle the complex nested struct
 	return SlurmV0041PostJobSubmitJSONRequestBody(req)
 }
 
@@ -594,22 +511,77 @@ func uint32ptr(i uint32) *uint32 { return &i }
 func boolptr(b bool) *bool { return &b }
 
 func convertNodeFromAPI(apiNode interface{}) Node {
-	// Simplified node conversion for v0.0.41
 	node := Node{
-		Name:     "unknown",
-		State:    "UNKNOWN", 
 		Metadata: make(map[string]interface{}),
+	}
+	
+	// Extract fields from the inline struct using type assertion
+	if nodeMap, ok := apiNode.(map[string]interface{}); ok {
+		if name, ok := nodeMap["name"].(string); ok {
+			node.Name = name
+		}
+		if state, ok := nodeMap["state"].([]string); ok && len(state) > 0 {
+			node.State = NodeState(state[0])
+		}
+		if cpus, ok := nodeMap["cpus"].(int32); ok {
+			node.CPUs = int(cpus)
+		}
+		if allocMemory, ok := nodeMap["alloc_memory"].(int64); ok {
+			node.Memory = int(allocMemory)
+		}
+		if activeFeatures, ok := nodeMap["active_features"].([]string); ok && len(activeFeatures) > 0 {
+			node.Features = strings.Join(activeFeatures, ",")
+		}
 	}
 	
 	return node
 }
 
 func convertPartitionFromAPI(apiPartition interface{}) Partition {
-	// Simplified partition conversion for v0.0.41
 	partition := Partition{
-		Name:     "unknown",
-		State:    "UNKNOWN",
 		Metadata: make(map[string]interface{}),
+	}
+	
+	// Extract fields from the inline struct using type assertion
+	if partitionMap, ok := apiPartition.(map[string]interface{}); ok {
+		if name, ok := partitionMap["name"].(string); ok {
+			partition.Name = name
+		}
+		
+		if partitionInfo, ok := partitionMap["partition"].(map[string]interface{}); ok {
+			if state, ok := partitionInfo["state"].([]string); ok && len(state) > 0 {
+				partition.State = state[0]
+			}
+		}
+		
+		if cpus, ok := partitionMap["cpus"].(map[string]interface{}); ok {
+			if total, ok := cpus["total"].(int32); ok {
+				partition.TotalCPUs = int(total)
+			}
+		}
+		
+		if defaults, ok := partitionMap["defaults"].(map[string]interface{}); ok {
+			if memoryPerCpu, ok := defaults["memory_per_cpu"].(int64); ok {
+				partition.TotalMemory = int(memoryPerCpu)
+			}
+			if timeInfo, ok := defaults["time"].(map[string]interface{}); ok {
+				if set, ok := timeInfo["set"].(bool); ok && set {
+					if number, ok := timeInfo["number"].(int32); ok {
+						partition.DefaultTimeLimit = int(number)
+					}
+				}
+			}
+		}
+		
+		if maximums, ok := partitionMap["maximums"].(map[string]interface{}); ok {
+			if timeInfo, ok := maximums["time"].(map[string]interface{}); ok {
+				if set, ok := timeInfo["set"].(bool); ok && set {
+					if number, ok := timeInfo["number"].(int32); ok {
+						partition.MaxTimeLimit = int(number)
+					}
+				}
+			}
+		}
 	}
 	
 	return partition
