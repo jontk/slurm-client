@@ -80,3 +80,107 @@ func TestFilterJobs(t *testing.T) {
 	assert.Len(t, filtered, 1)
 	assert.Equal(t, "2", filtered[0].ID)
 }
+
+func TestJobManager_Get_Structure(t *testing.T) {
+	// Test that Get method properly delegates to implementation
+	jobManager := &JobManager{
+		client: &WrapperClient{},
+	}
+	
+	_, err := jobManager.Get(context.Background(), "12345")
+	
+	// We expect an error since there's no real API client
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "API client not initialized")
+	// The impl should now be created
+	assert.NotNil(t, jobManager.impl)
+}
+
+func TestJobManager_Submit_Structure(t *testing.T) {
+	// Test that Submit method properly delegates to implementation
+	jobManager := &JobManager{
+		client: &WrapperClient{},
+	}
+	
+	jobSub := &interfaces.JobSubmission{
+		Name:    "test-job",
+		Command: "echo hello",
+		CPUs:    2,
+	}
+	
+	_, err := jobManager.Submit(context.Background(), jobSub)
+	
+	// We expect an error since there's no real API client
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "API client not initialized")
+	// The impl should now be created
+	assert.NotNil(t, jobManager.impl)
+}
+
+func TestJobManager_Cancel_Structure(t *testing.T) {
+	// Test that Cancel method properly delegates to implementation
+	jobManager := &JobManager{
+		client: &WrapperClient{},
+	}
+	
+	err := jobManager.Cancel(context.Background(), "12345")
+	
+	// We expect an error since there's no real API client
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "API client not initialized")
+	// The impl should now be created
+	assert.NotNil(t, jobManager.impl)
+}
+
+func TestConvertJobSubmissionToAPI(t *testing.T) {
+	// Test the conversion from interface to API types
+	jobSub := &interfaces.JobSubmission{
+		Name:        "test-job",
+		Script:      "#!/bin/bash\necho hello",
+		Partition:   "gpu",
+		CPUs:        4,
+		Memory:      8 * 1024 * 1024 * 1024, // 8GB in bytes
+		TimeLimit:   60,                      // 60 minutes
+		Nodes:       2,
+		Priority:    100,
+		WorkingDir:  "/tmp",
+		Environment: map[string]string{"KEY": "value"},
+		Args:        []string{"arg1", "arg2"},
+	}
+	
+	apiJob, err := convertJobSubmissionToAPI(jobSub)
+	
+	assert.NoError(t, err)
+	assert.NotNil(t, apiJob)
+	assert.Equal(t, "test-job", *apiJob.Name)
+	assert.Equal(t, "#!/bin/bash\necho hello", *apiJob.Script)
+	assert.Equal(t, "gpu", *apiJob.Partition)
+	assert.Equal(t, int32(4), *apiJob.MinimumCpus)
+	assert.Equal(t, int64(8*1024), *apiJob.MemoryPerNode.Number) // 8GB in MB
+	assert.Equal(t, true, *apiJob.MemoryPerNode.Set)
+	assert.Equal(t, int32(60), *apiJob.TimeLimit.Number)
+	assert.Equal(t, true, *apiJob.TimeLimit.Set)
+	assert.Equal(t, int32(2), *apiJob.MinimumNodes)
+	assert.Equal(t, int32(100), *apiJob.Priority.Number)
+	assert.Equal(t, true, *apiJob.Priority.Set)
+	assert.Equal(t, "/tmp", *apiJob.CurrentWorkingDirectory)
+	assert.Contains(t, *apiJob.Environment, "KEY=value")
+	assert.Equal(t, []string{"arg1", "arg2"}, *apiJob.Argv)
+}
+
+func TestConvertJobSubmissionToAPI_NilHandling(t *testing.T) {
+	// Test handling of nil job submission
+	_, err := convertJobSubmissionToAPI(nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "job submission cannot be nil")
+	
+	// Test handling of empty job submission
+	emptyJob := &interfaces.JobSubmission{}
+	apiJob, err := convertJobSubmissionToAPI(emptyJob)
+	assert.NoError(t, err)
+	assert.NotNil(t, apiJob)
+	// Should have default values (nil pointers)
+	assert.Nil(t, apiJob.Name)
+	assert.Nil(t, apiJob.Script)
+	assert.Nil(t, apiJob.MinimumCpus)
+}
