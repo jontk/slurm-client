@@ -239,3 +239,219 @@ func filterJobs(jobs []interfaces.Job, opts *interfaces.ListJobsOptions) []inter
 	
 	return filtered
 }
+
+// Get retrieves a specific job by ID
+func (m *JobManagerImpl) Get(ctx context.Context, jobID string) (*interfaces.Job, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, fmt.Errorf("API client not initialized")
+	}
+	
+	// Prepare parameters for the API call
+	params := &SlurmV0042GetJobParams{}
+	
+	// Set flags to get detailed job information
+	flags := SlurmV0042GetJobParamsFlagsDETAIL
+	params.Flags = &flags
+	
+	// Call the generated OpenAPI client
+	resp, err := m.client.apiClient.SlurmV0042GetJobWithResponse(ctx, jobID, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get job %s: %w", jobID, err)
+	}
+	
+	// Check HTTP status
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("API returned status %d for job %s: %s", resp.StatusCode(), jobID, resp.Status())
+	}
+	
+	// Check for API errors
+	if resp.JSON200 == nil {
+		return nil, fmt.Errorf("unexpected response format for job %s", jobID)
+	}
+	
+	if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
+		return nil, fmt.Errorf("API error for job %s: %v", jobID, (*resp.JSON200.Errors)[0])
+	}
+	
+	// Convert the response to our interface types
+	if len(resp.JSON200.Jobs) == 0 {
+		return nil, fmt.Errorf("job %s not found", jobID)
+	}
+	
+	if len(resp.JSON200.Jobs) > 1 {
+		return nil, fmt.Errorf("unexpected: multiple jobs returned for ID %s", jobID)
+	}
+	
+	job, err := convertAPIJobToInterface(resp.JSON200.Jobs[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert job %s data: %w", jobID, err)
+	}
+	
+	return job, nil
+}
+
+// Submit submits a new job
+func (m *JobManagerImpl) Submit(ctx context.Context, job *interfaces.JobSubmission) (*interfaces.JobSubmitResponse, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, fmt.Errorf("API client not initialized")
+	}
+	
+	// Convert interface JobSubmission to API JobDescMsg
+	jobDesc, err := convertJobSubmissionToAPI(job)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert job submission: %w", err)
+	}
+	
+	// Create the request body
+	requestBody := SlurmV0042PostJobSubmitJSONRequestBody{
+		Job: jobDesc,
+	}
+	
+	// Call the generated OpenAPI client
+	resp, err := m.client.apiClient.SlurmV0042PostJobSubmitWithResponse(ctx, requestBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit job: %w", err)
+	}
+	
+	// Check HTTP status (201 for creation is success)
+	if resp.StatusCode() != 200 && resp.StatusCode() != 201 {
+		return nil, fmt.Errorf("API returned status %d: %s", resp.StatusCode(), resp.Status())
+	}
+	
+	// Check for API errors
+	if resp.JSON200 == nil {
+		return nil, fmt.Errorf("unexpected response format")
+	}
+	
+	if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
+		return nil, fmt.Errorf("API error: %v", (*resp.JSON200.Errors)[0])
+	}
+	
+	// Convert response to interface type
+	result := &interfaces.JobSubmitResponse{}
+	if resp.JSON200.JobId != nil {
+		result.JobID = strconv.FormatInt(int64(*resp.JSON200.JobId), 10)
+	}
+	
+	return result, nil
+}
+
+// convertJobSubmissionToAPI converts interfaces.JobSubmission to V0042JobDescMsg
+func convertJobSubmissionToAPI(job *interfaces.JobSubmission) (*V0042JobDescMsg, error) {
+	if job == nil {
+		return nil, fmt.Errorf("job submission cannot be nil")
+	}
+	
+	jobDesc := &V0042JobDescMsg{}
+	
+	// Basic fields
+	if job.Name != "" {
+		jobDesc.Name = &job.Name
+	}
+	
+	if job.Script != "" {
+		jobDesc.Script = &job.Script
+	}
+	
+	if job.Partition != "" {
+		jobDesc.Partition = &job.Partition
+	}
+	
+	if job.WorkingDir != "" {
+		jobDesc.CurrentWorkingDirectory = &job.WorkingDir
+	}
+	
+	// Resource requirements
+	if job.CPUs > 0 {
+		cpus := int32(job.CPUs)
+		jobDesc.MinimumCpus = &cpus
+	}
+	
+	if job.Memory > 0 {
+		// Convert bytes to MB (Slurm expects MB)
+		memoryMB := int64(job.Memory / (1024 * 1024))
+		set := true
+		jobDesc.MemoryPerNode = &V0042Uint64NoValStruct{
+			Number: &memoryMB,
+			Set:    &set,
+		}
+	}
+	
+	if job.TimeLimit > 0 {
+		timeLimit := int32(job.TimeLimit)
+		set := true
+		jobDesc.TimeLimit = &V0042Uint32NoValStruct{
+			Number: &timeLimit,
+			Set:    &set,
+		}
+	}
+	
+	if job.Nodes > 0 {
+		nodes := int32(job.Nodes)
+		jobDesc.MinimumNodes = &nodes
+	}
+	
+	if job.Priority > 0 {
+		priority := int32(job.Priority)
+		set := true
+		jobDesc.Priority = &V0042Uint32NoValStruct{
+			Number: &priority,
+			Set:    &set,
+		}
+	}
+	
+	// Environment variables
+	if len(job.Environment) > 0 {
+		envVars := make([]string, 0, len(job.Environment))
+		for key, value := range job.Environment {
+			envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
+		}
+		jobDesc.Environment = &envVars
+	}
+	
+	// Args
+	if len(job.Args) > 0 {
+		jobDesc.Argv = &job.Args
+	}
+	
+	return jobDesc, nil
+}
+
+// Cancel cancels a job
+func (m *JobManagerImpl) Cancel(ctx context.Context, jobID string) error {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return fmt.Errorf("API client not initialized")
+	}
+	
+	// Prepare parameters for the API call
+	params := &SlurmV0042DeleteJobParams{}
+	
+	// Send SIGTERM signal by default (can be made configurable later)
+	signal := "SIGTERM"
+	params.Signal = &signal
+	
+	// Call the generated OpenAPI client
+	resp, err := m.client.apiClient.SlurmV0042DeleteJobWithResponse(ctx, jobID, params)
+	if err != nil {
+		return fmt.Errorf("failed to cancel job %s: %w", jobID, err)
+	}
+	
+	// Check HTTP status
+	if resp.StatusCode() != 200 {
+		return fmt.Errorf("API returned status %d for canceling job %s: %s", resp.StatusCode(), jobID, resp.Status())
+	}
+	
+	// Check for API errors
+	if resp.JSON200 == nil {
+		return fmt.Errorf("unexpected response format for job %s cancellation", jobID)
+	}
+	
+	if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
+		return fmt.Errorf("API error canceling job %s: %v", jobID, (*resp.JSON200.Errors)[0])
+	}
+	
+	return nil
+}

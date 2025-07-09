@@ -24,20 +24,26 @@ func (m *JobManager) List(ctx context.Context, opts *interfaces.ListJobsOptions)
 
 // Get retrieves a specific job by ID
 func (m *JobManager) Get(ctx context.Context, jobID string) (*interfaces.Job, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, jobID)
 }
 
 // Submit submits a new job
 func (m *JobManager) Submit(ctx context.Context, job *interfaces.JobSubmission) (*interfaces.JobSubmitResponse, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.Submit(ctx, job)
 }
 
 // Cancel cancels a job
 func (m *JobManager) Cancel(ctx context.Context, jobID string) error {
-	// Implementation will be added by developers
-	return nil
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.Cancel(ctx, jobID)
 }
 
 // Update updates job properties
