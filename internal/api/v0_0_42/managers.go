@@ -67,18 +67,23 @@ func (m *JobManager) Watch(ctx context.Context, opts *interfaces.WatchJobsOption
 // NodeManager implements the NodeManager interface for API version v0.0.42
 type NodeManager struct {
 	client *WrapperClient
+	impl   *NodeManagerImpl
 }
 
 // List nodes with optional filtering
 func (m *NodeManager) List(ctx context.Context, opts *interfaces.ListNodesOptions) (*interfaces.NodeList, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewNodeManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
 }
 
 // Get retrieves a specific node by name
 func (m *NodeManager) Get(ctx context.Context, nodeName string) (*interfaces.Node, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewNodeManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, nodeName)
 }
 
 // Update updates node properties
@@ -96,18 +101,23 @@ func (m *NodeManager) Watch(ctx context.Context, opts *interfaces.WatchNodesOpti
 // PartitionManager implements the PartitionManager interface for API version v0.0.42
 type PartitionManager struct {
 	client *WrapperClient
+	impl   *PartitionManagerImpl
 }
 
 // List partitions with optional filtering
 func (m *PartitionManager) List(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewPartitionManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
 }
 
 // Get retrieves a specific partition by name
 func (m *PartitionManager) Get(ctx context.Context, partitionName string) (*interfaces.Partition, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewPartitionManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, partitionName)
 }
 
 // Update updates partition properties
@@ -125,28 +135,37 @@ func (m *PartitionManager) Watch(ctx context.Context, opts *interfaces.WatchPart
 // InfoManager implements the InfoManager interface for API version v0.0.42
 type InfoManager struct {
 	client *WrapperClient
+	impl   *InfoManagerImpl
 }
 
 // Get retrieves cluster information
 func (m *InfoManager) Get(ctx context.Context) (*interfaces.ClusterInfo, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewInfoManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx)
 }
 
 // Ping tests connectivity to the cluster
 func (m *InfoManager) Ping(ctx context.Context) error {
-	// Implementation will be added by developers
-	return nil
+	if m.impl == nil {
+		m.impl = NewInfoManagerImpl(m.client)
+	}
+	return m.impl.Ping(ctx)
 }
 
 // Stats retrieves cluster statistics
 func (m *InfoManager) Stats(ctx context.Context) (*interfaces.ClusterStats, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewInfoManagerImpl(m.client)
+	}
+	return m.impl.Stats(ctx)
 }
 
 // Version retrieves API version information
 func (m *InfoManager) Version(ctx context.Context) (*interfaces.APIVersion, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewInfoManagerImpl(m.client)
+	}
+	return m.impl.Version(ctx)
 }
