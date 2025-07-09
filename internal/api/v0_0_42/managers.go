@@ -11,12 +11,15 @@ import (
 // JobManager implements the JobManager interface for API version v0.0.42
 type JobManager struct {
 	client *WrapperClient
+	impl   *JobManagerImpl
 }
 
 // List jobs with optional filtering
 func (m *JobManager) List(ctx context.Context, opts *interfaces.ListJobsOptions) (*interfaces.JobList, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
 }
 
 // Get retrieves a specific job by ID
