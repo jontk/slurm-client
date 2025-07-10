@@ -363,7 +363,7 @@ func (m *PartitionManagerImpl) Update(ctx context.Context, partitionName string,
 
 	// Return appropriate error indicating that partition updates are not supported in this API version
 	return errors.NewClientError(
-		errors.ErrorCodeUnsupportedOperation, 
+		errors.ErrorCodeUnsupportedOperation,
 		"Partition updates not supported",
 		"The v0.0.42 Slurm REST API does not support partition update operations. Partition configuration changes must be made through slurmctld configuration files and require admin privileges.",
 	)
@@ -383,17 +383,17 @@ func (m *PartitionManagerImpl) Watch(ctx context.Context, opts *interfaces.Watch
 	// Start polling goroutine
 	go func() {
 		defer close(eventChan)
-		
+
 		// Note: This is a simplified polling implementation
 		// Real-time partition monitoring through polling would require:
 		// 1. Periodic partition state polling
 		// 2. State comparison between polls
 		// 3. Event generation for state changes
 		// 4. Proper error handling and reconnection logic
-		
+
 		// For now, return immediately as v0.0.42 doesn't have native streaming support
 		// A complete implementation would poll partition states and generate events
-		
+
 		select {
 		case <-ctx.Done():
 			return

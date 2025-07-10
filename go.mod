@@ -6,6 +6,7 @@ toolchain go1.24.4
 
 require (
 	github.com/getkin/kin-openapi v0.125.0
+	github.com/gorilla/mux v1.8.1
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/stretchr/testify v1.8.4
 )

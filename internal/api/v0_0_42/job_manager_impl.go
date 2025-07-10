@@ -818,17 +818,17 @@ func (m *JobManagerImpl) Watch(ctx context.Context, opts *interfaces.WatchJobsOp
 	// Start polling goroutine
 	go func() {
 		defer close(eventChan)
-		
+
 		// Note: This is a simplified polling implementation
 		// Real-time job monitoring through polling would require:
 		// 1. Periodic job state polling
 		// 2. State comparison between polls
 		// 3. Event generation for state changes
 		// 4. Proper error handling and reconnection logic
-		
+
 		// For now, return immediately as v0.0.42 doesn't have native streaming support
 		// A complete implementation would poll job states and generate events
-		
+
 		select {
 		case <-ctx.Done():
 			return

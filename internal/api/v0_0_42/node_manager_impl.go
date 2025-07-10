@@ -495,17 +495,17 @@ func (m *NodeManagerImpl) Watch(ctx context.Context, opts *interfaces.WatchNodes
 	// Start polling goroutine
 	go func() {
 		defer close(eventChan)
-		
+
 		// Note: This is a simplified polling implementation
 		// Real-time node monitoring through polling would require:
 		// 1. Periodic node state polling
 		// 2. State comparison between polls
 		// 3. Event generation for state changes
 		// 4. Proper error handling and reconnection logic
-		
+
 		// For now, return immediately as v0.0.42 doesn't have native streaming support
 		// A complete implementation would poll node states and generate events
-		
+
 		select {
 		case <-ctx.Done():
 			return
