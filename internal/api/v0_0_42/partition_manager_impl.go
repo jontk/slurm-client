@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // PartitionManagerImpl provides the actual implementation for PartitionManager methods
@@ -22,7 +23,7 @@ func NewPartitionManagerImpl(client *WrapperClient) *PartitionManagerImpl {
 func (m *PartitionManagerImpl) List(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error) {
 	// Check if API client is available
 	if m.client.apiClient == nil {
-		return nil, fmt.Errorf("API client not initialized")
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 	
 	// Prepare parameters for the API call
@@ -35,21 +36,55 @@ func (m *PartitionManagerImpl) List(ctx context.Context, opts *interfaces.ListPa
 	// Call the generated OpenAPI client
 	resp, err := m.client.apiClient.SlurmV0042GetPartitionsWithResponse(ctx, params)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list partitions: %w", err)
+		wrappedErr := errors.WrapError(err)
+		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.42")
 	}
 	
-	// Check HTTP status
+	// Check HTTP status and handle API errors
 	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("API returned status %d: %s", resp.StatusCode(), resp.Status())
+		var responseBody []byte
+		if resp.JSON200 != nil {
+			// Try to extract error details from response
+			if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
+				apiErrors := make([]errors.SlurmAPIErrorDetail, len(*resp.JSON200.Errors))
+				for i, apiErr := range *resp.JSON200.Errors {
+					var errorNumber int
+					if apiErr.ErrorNumber != nil {
+						errorNumber = int(*apiErr.ErrorNumber)
+					}
+					var errorCode string
+					if apiErr.Error != nil {
+						errorCode = *apiErr.Error
+					}
+					var source string
+					if apiErr.Source != nil {
+						source = *apiErr.Source
+					}
+					var description string
+					if apiErr.Description != nil {
+						description = *apiErr.Description
+					}
+					
+					apiErrors[i] = errors.SlurmAPIErrorDetail{
+						ErrorNumber: errorNumber,
+						ErrorCode:   errorCode,
+						Source:      source,
+						Description: description,
+					}
+				}
+				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.42", apiErrors)
+				return nil, apiError.SlurmError
+			}
+		}
+		
+		// Fall back to HTTP error handling
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.42")
+		return nil, httpErr
 	}
 	
-	// Check for API errors
+	// Check for unexpected response format
 	if resp.JSON200 == nil {
-		return nil, fmt.Errorf("unexpected response format")
-	}
-	
-	if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
-		return nil, fmt.Errorf("API error: %v", (*resp.JSON200.Errors)[0])
+		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected response format", "Expected JSON response but got nil")
 	}
 	
 	// Convert the response to our interface types
@@ -57,7 +92,10 @@ func (m *PartitionManagerImpl) List(ctx context.Context, opts *interfaces.ListPa
 	for _, apiPartition := range resp.JSON200.Partitions {
 		partition, err := convertAPIPartitionToInterface(apiPartition)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert partition data: %w", err)
+			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert partition data")
+			conversionErr.Cause = err
+			conversionErr.Details = fmt.Sprintf("Error converting partition %v", apiPartition.Name)
+			return nil, conversionErr
 		}
 		partitions = append(partitions, *partition)
 	}
@@ -231,7 +269,7 @@ func filterPartitions(partitions []interfaces.Partition, opts *interfaces.ListPa
 func (m *PartitionManagerImpl) Get(ctx context.Context, partitionName string) (*interfaces.Partition, error) {
 	// Check if API client is available
 	if m.client.apiClient == nil {
-		return nil, fmt.Errorf("API client not initialized")
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 	
 	// Prepare parameters for the API call
@@ -244,35 +282,72 @@ func (m *PartitionManagerImpl) Get(ctx context.Context, partitionName string) (*
 	// Call the generated OpenAPI client
 	resp, err := m.client.apiClient.SlurmV0042GetPartitionWithResponse(ctx, partitionName, params)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get partition %s: %w", partitionName, err)
+		wrappedErr := errors.WrapError(err)
+		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.42")
 	}
 	
-	// Check HTTP status
+	// Check HTTP status and handle API errors
 	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("API returned status %d for partition %s: %s", resp.StatusCode(), partitionName, resp.Status())
+		var responseBody []byte
+		if resp.JSON200 != nil {
+			// Try to extract error details from response
+			if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
+				apiErrors := make([]errors.SlurmAPIErrorDetail, len(*resp.JSON200.Errors))
+				for i, apiErr := range *resp.JSON200.Errors {
+					var errorNumber int
+					if apiErr.ErrorNumber != nil {
+						errorNumber = int(*apiErr.ErrorNumber)
+					}
+					var errorCode string
+					if apiErr.Error != nil {
+						errorCode = *apiErr.Error
+					}
+					var source string
+					if apiErr.Source != nil {
+						source = *apiErr.Source
+					}
+					var description string
+					if apiErr.Description != nil {
+						description = *apiErr.Description
+					}
+					
+					apiErrors[i] = errors.SlurmAPIErrorDetail{
+						ErrorNumber: errorNumber,
+						ErrorCode:   errorCode,
+						Source:      source,
+						Description: description,
+					}
+				}
+				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.42", apiErrors)
+				return nil, apiError.SlurmError
+			}
+		}
+		
+		// Fall back to HTTP error handling
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.42")
+		return nil, httpErr
 	}
 	
-	// Check for API errors
+	// Check for unexpected response format
 	if resp.JSON200 == nil {
-		return nil, fmt.Errorf("unexpected response format for partition %s", partitionName)
-	}
-	
-	if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
-		return nil, fmt.Errorf("API error for partition %s: %v", partitionName, (*resp.JSON200.Errors)[0])
+		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected response format", "Expected JSON response but got nil")
 	}
 	
 	// Convert the response to our interface types
 	if len(resp.JSON200.Partitions) == 0 {
-		return nil, fmt.Errorf("partition %s not found", partitionName)
+		return nil, errors.NewPartitionError(partitionName, "get", fmt.Errorf("partition not found"))
 	}
 	
 	if len(resp.JSON200.Partitions) > 1 {
-		return nil, fmt.Errorf("unexpected: multiple partitions returned for name %s", partitionName)
+		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected multiple partitions returned", fmt.Sprintf("Expected 1 partition but got %d for name %s", len(resp.JSON200.Partitions), partitionName))
 	}
 	
 	partition, err := convertAPIPartitionToInterface(resp.JSON200.Partitions[0])
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert partition %s data: %w", partitionName, err)
+		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert partition data")
+		conversionErr.Cause = err
+		conversionErr.Details = fmt.Sprintf("Error converting partition %s", partitionName)
+		return nil, conversionErr
 	}
 	
 	return partition, nil

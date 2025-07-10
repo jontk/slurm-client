@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // JobManagerImpl provides the actual implementation for JobManager methods
@@ -24,7 +25,7 @@ func NewJobManagerImpl(client *WrapperClient) *JobManagerImpl {
 func (m *JobManagerImpl) List(ctx context.Context, opts *interfaces.ListJobsOptions) (*interfaces.JobList, error) {
 	// Check if API client is available
 	if m.client.apiClient == nil {
-		return nil, fmt.Errorf("API client not initialized")
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 	
 	// Prepare parameters for the API call
@@ -37,21 +38,55 @@ func (m *JobManagerImpl) List(ctx context.Context, opts *interfaces.ListJobsOpti
 	// Call the generated OpenAPI client
 	resp, err := m.client.apiClient.SlurmV0042GetJobsWithResponse(ctx, params)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list jobs: %w", err)
+		wrappedErr := errors.WrapError(err)
+		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.42")
 	}
 	
-	// Check HTTP status
+	// Check HTTP status and handle API errors
 	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("API returned status %d: %s", resp.StatusCode(), resp.Status())
+		var responseBody []byte
+		if resp.JSON200 != nil {
+			// Try to extract error details from response
+			if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
+				apiErrors := make([]errors.SlurmAPIErrorDetail, len(*resp.JSON200.Errors))
+				for i, apiErr := range *resp.JSON200.Errors {
+					var errorNumber int
+					if apiErr.ErrorNumber != nil {
+						errorNumber = int(*apiErr.ErrorNumber)
+					}
+					var errorCode string
+					if apiErr.Error != nil {
+						errorCode = *apiErr.Error
+					}
+					var source string
+					if apiErr.Source != nil {
+						source = *apiErr.Source
+					}
+					var description string
+					if apiErr.Description != nil {
+						description = *apiErr.Description
+					}
+					
+					apiErrors[i] = errors.SlurmAPIErrorDetail{
+						ErrorNumber: errorNumber,
+						ErrorCode:   errorCode,
+						Source:      source,
+						Description: description,
+					}
+				}
+				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.42", apiErrors)
+				return nil, apiError.SlurmError
+			}
+		}
+		
+		// Fall back to HTTP error handling
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.42")
+		return nil, httpErr
 	}
 	
-	// Check for API errors
+	// Check for unexpected response format
 	if resp.JSON200 == nil {
-		return nil, fmt.Errorf("unexpected response format")
-	}
-	
-	if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
-		return nil, fmt.Errorf("API error: %v", (*resp.JSON200.Errors)[0])
+		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected response format", "Expected JSON response but got nil")
 	}
 	
 	// Convert the response to our interface types
@@ -59,7 +94,10 @@ func (m *JobManagerImpl) List(ctx context.Context, opts *interfaces.ListJobsOpti
 	for _, apiJob := range resp.JSON200.Jobs {
 		job, err := convertAPIJobToInterface(apiJob)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert job data: %w", err)
+			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert job data")
+			conversionErr.Cause = err
+			conversionErr.Details = fmt.Sprintf("Error converting job ID %v", apiJob.JobId)
+			return nil, conversionErr
 		}
 		jobs = append(jobs, *job)
 	}
