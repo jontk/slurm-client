@@ -11,43 +11,43 @@ type ErrorCode string
 
 const (
 	// Network and connectivity errors
-	ErrorCodeNetworkTimeout     ErrorCode = "NETWORK_TIMEOUT"
-	ErrorCodeConnectionRefused  ErrorCode = "CONNECTION_REFUSED"
-	ErrorCodeDNSResolution      ErrorCode = "DNS_RESOLUTION"
-	ErrorCodeTLSHandshake       ErrorCode = "TLS_HANDSHAKE"
-	
+	ErrorCodeNetworkTimeout    ErrorCode = "NETWORK_TIMEOUT"
+	ErrorCodeConnectionRefused ErrorCode = "CONNECTION_REFUSED"
+	ErrorCodeDNSResolution     ErrorCode = "DNS_RESOLUTION"
+	ErrorCodeTLSHandshake      ErrorCode = "TLS_HANDSHAKE"
+
 	// Authentication and authorization errors
 	ErrorCodeInvalidCredentials ErrorCode = "INVALID_CREDENTIALS"
 	ErrorCodeTokenExpired       ErrorCode = "TOKEN_EXPIRED"
 	ErrorCodePermissionDenied   ErrorCode = "PERMISSION_DENIED"
 	ErrorCodeUnauthorized       ErrorCode = "UNAUTHORIZED"
-	
+
 	// API and request errors
-	ErrorCodeInvalidRequest     ErrorCode = "INVALID_REQUEST"
-	ErrorCodeValidationFailed   ErrorCode = "VALIDATION_FAILED"
-	ErrorCodeResourceNotFound   ErrorCode = "RESOURCE_NOT_FOUND"
-	ErrorCodeConflict          ErrorCode = "CONFLICT"
-	ErrorCodeRateLimited       ErrorCode = "RATE_LIMITED"
-	
+	ErrorCodeInvalidRequest   ErrorCode = "INVALID_REQUEST"
+	ErrorCodeValidationFailed ErrorCode = "VALIDATION_FAILED"
+	ErrorCodeResourceNotFound ErrorCode = "RESOURCE_NOT_FOUND"
+	ErrorCodeConflict         ErrorCode = "CONFLICT"
+	ErrorCodeRateLimited      ErrorCode = "RATE_LIMITED"
+
 	// Server and Slurm errors
-	ErrorCodeServerInternal     ErrorCode = "SERVER_INTERNAL"
-	ErrorCodeSlurmDaemonDown    ErrorCode = "SLURM_DAEMON_DOWN"
-	ErrorCodeResourceExhausted  ErrorCode = "RESOURCE_EXHAUSTED"
-	ErrorCodeJobQueueFull       ErrorCode = "JOB_QUEUE_FULL"
+	ErrorCodeServerInternal       ErrorCode = "SERVER_INTERNAL"
+	ErrorCodeSlurmDaemonDown      ErrorCode = "SLURM_DAEMON_DOWN"
+	ErrorCodeResourceExhausted    ErrorCode = "RESOURCE_EXHAUSTED"
+	ErrorCodeJobQueueFull         ErrorCode = "JOB_QUEUE_FULL"
 	ErrorCodePartitionUnavailable ErrorCode = "PARTITION_UNAVAILABLE"
-	
+
 	// Client and configuration errors
 	ErrorCodeClientNotInitialized ErrorCode = "CLIENT_NOT_INITIALIZED"
 	ErrorCodeInvalidConfiguration ErrorCode = "INVALID_CONFIGURATION"
 	ErrorCodeVersionMismatch      ErrorCode = "VERSION_MISMATCH"
 	ErrorCodeUnsupportedOperation ErrorCode = "UNSUPPORTED_OPERATION"
-	
+
 	// Context and cancellation errors
-	ErrorCodeContextCanceled    ErrorCode = "CONTEXT_CANCELED"
-	ErrorCodeDeadlineExceeded   ErrorCode = "DEADLINE_EXCEEDED"
-	
+	ErrorCodeContextCanceled  ErrorCode = "CONTEXT_CANCELED"
+	ErrorCodeDeadlineExceeded ErrorCode = "DEADLINE_EXCEEDED"
+
 	// Unknown or unclassified errors
-	ErrorCodeUnknown           ErrorCode = "UNKNOWN"
+	ErrorCodeUnknown ErrorCode = "UNKNOWN"
 )
 
 // ErrorCategory groups related error codes for easier handling
@@ -106,10 +106,10 @@ func (e *SlurmError) IsRetryable() bool {
 
 // IsTemporary returns true if the error is likely temporary
 func (e *SlurmError) IsTemporary() bool {
-	return e.Category == CategoryNetwork || 
-		   e.Code == ErrorCodeServerInternal ||
-		   e.Code == ErrorCodeResourceExhausted ||
-		   e.Code == ErrorCodeRateLimited
+	return e.Category == CategoryNetwork ||
+		e.Code == ErrorCodeServerInternal ||
+		e.Code == ErrorCodeResourceExhausted ||
+		e.Code == ErrorCodeRateLimited
 }
 
 // NetworkError represents network-related errors
@@ -136,10 +136,10 @@ type ValidationError struct {
 // SlurmAPIError represents errors returned by the Slurm REST API
 type SlurmAPIError struct {
 	*SlurmError
-	ErrorNumber int                    `json:"error_number,omitempty"`
-	ErrorCode   string                 `json:"error_code,omitempty"`
-	Source      string                 `json:"source,omitempty"`
-	Errors      []SlurmAPIErrorDetail  `json:"errors,omitempty"`
+	ErrorNumber int                   `json:"error_number,omitempty"`
+	ErrorCode   string                `json:"error_code,omitempty"`
+	Source      string                `json:"source,omitempty"`
+	Errors      []SlurmAPIErrorDetail `json:"errors,omitempty"`
 }
 
 // SlurmAPIErrorDetail represents detailed error information from Slurm API responses
@@ -255,8 +255,8 @@ func getErrorCategory(code ErrorCode) ErrorCategory {
 func isRetryable(code ErrorCode) bool {
 	switch code {
 	case ErrorCodeNetworkTimeout, ErrorCodeConnectionRefused, ErrorCodeDNSResolution,
-		 ErrorCodeServerInternal, ErrorCodeSlurmDaemonDown, ErrorCodeResourceExhausted,
-		 ErrorCodeRateLimited:
+		ErrorCodeServerInternal, ErrorCodeSlurmDaemonDown, ErrorCodeResourceExhausted,
+		ErrorCodeRateLimited:
 		return true
 	default:
 		return false

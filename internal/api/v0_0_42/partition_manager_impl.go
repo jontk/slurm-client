@@ -25,21 +25,21 @@ func (m *PartitionManagerImpl) List(ctx context.Context, opts *interfaces.ListPa
 	if m.client.apiClient == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
-	
+
 	// Prepare parameters for the API call
 	params := &SlurmV0042GetPartitionsParams{}
-	
+
 	// Set flags to get detailed partition information
 	flags := SlurmV0042GetPartitionsParamsFlagsDETAIL
 	params.Flags = &flags
-	
+
 	// Call the generated OpenAPI client
 	resp, err := m.client.apiClient.SlurmV0042GetPartitionsWithResponse(ctx, params)
 	if err != nil {
 		wrappedErr := errors.WrapError(err)
 		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.42")
 	}
-	
+
 	// Check HTTP status and handle API errors
 	if resp.StatusCode() != 200 {
 		var responseBody []byte
@@ -64,7 +64,7 @@ func (m *PartitionManagerImpl) List(ctx context.Context, opts *interfaces.ListPa
 					if apiErr.Description != nil {
 						description = *apiErr.Description
 					}
-					
+
 					apiErrors[i] = errors.SlurmAPIErrorDetail{
 						ErrorNumber: errorNumber,
 						ErrorCode:   errorCode,
@@ -76,17 +76,17 @@ func (m *PartitionManagerImpl) List(ctx context.Context, opts *interfaces.ListPa
 				return nil, apiError.SlurmError
 			}
 		}
-		
+
 		// Fall back to HTTP error handling
 		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.42")
 		return nil, httpErr
 	}
-	
+
 	// Check for unexpected response format
 	if resp.JSON200 == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected response format", "Expected JSON response but got nil")
 	}
-	
+
 	// Convert the response to our interface types
 	partitions := make([]interfaces.Partition, 0, len(resp.JSON200.Partitions))
 	for _, apiPartition := range resp.JSON200.Partitions {
@@ -99,12 +99,12 @@ func (m *PartitionManagerImpl) List(ctx context.Context, opts *interfaces.ListPa
 		}
 		partitions = append(partitions, *partition)
 	}
-	
+
 	// Apply client-side filtering if options are provided
 	if opts != nil {
 		partitions = filterPartitions(partitions, opts)
 	}
-	
+
 	return &interfaces.PartitionList{
 		Partitions: partitions,
 		Total:      len(partitions),
@@ -114,58 +114,58 @@ func (m *PartitionManagerImpl) List(ctx context.Context, opts *interfaces.ListPa
 // convertAPIPartitionToInterface converts a V0042PartitionInfo to interfaces.Partition
 func convertAPIPartitionToInterface(apiPartition V0042PartitionInfo) (*interfaces.Partition, error) {
 	partition := &interfaces.Partition{}
-	
+
 	// Partition name - simple string
 	if apiPartition.Name != nil {
 		partition.Name = *apiPartition.Name
 	}
-	
+
 	// Partition state - nested under Partition.State
 	if apiPartition.Partition != nil && apiPartition.Partition.State != nil && len(*apiPartition.Partition.State) > 0 {
 		partition.State = (*apiPartition.Partition.State)[0]
 	}
-	
+
 	// Node counts - nested under Nodes
 	if apiPartition.Nodes != nil && apiPartition.Nodes.Total != nil {
 		partition.TotalNodes = int(*apiPartition.Nodes.Total)
 	}
-	
+
 	// Available nodes calculation - we don't have allocated nodes directly
 	// For now, we'll assume all nodes are available (this could be enhanced)
 	partition.AvailableNodes = partition.TotalNodes
-	
+
 	// CPU counts - nested under Cpus.Total
 	if apiPartition.Cpus != nil && apiPartition.Cpus.Total != nil {
 		partition.TotalCPUs = int(*apiPartition.Cpus.Total)
 	}
-	
+
 	// Idle CPUs - without allocated CPUs data, assume all are idle
 	// This is a simplification; real implementation might query job data
 	partition.IdleCPUs = partition.TotalCPUs
-	
+
 	// Time limits (in minutes) - nested under Maximums.Time and Defaults.Time
-	if apiPartition.Maximums != nil && apiPartition.Maximums.Time != nil && 
-		apiPartition.Maximums.Time.Set != nil && *apiPartition.Maximums.Time.Set && 
+	if apiPartition.Maximums != nil && apiPartition.Maximums.Time != nil &&
+		apiPartition.Maximums.Time.Set != nil && *apiPartition.Maximums.Time.Set &&
 		apiPartition.Maximums.Time.Number != nil {
 		partition.MaxTime = int(*apiPartition.Maximums.Time.Number)
 	}
-	
-	if apiPartition.Defaults != nil && apiPartition.Defaults.Time != nil && 
-		apiPartition.Defaults.Time.Set != nil && *apiPartition.Defaults.Time.Set && 
+
+	if apiPartition.Defaults != nil && apiPartition.Defaults.Time != nil &&
+		apiPartition.Defaults.Time.Set != nil && *apiPartition.Defaults.Time.Set &&
 		apiPartition.Defaults.Time.Number != nil {
 		partition.DefaultTime = int(*apiPartition.Defaults.Time.Number)
 	}
-	
+
 	// Memory limits (convert MB to bytes for consistency) - nested under Maximums
 	if apiPartition.Maximums != nil && apiPartition.Maximums.MemoryPerCpu != nil {
 		partition.MaxMemory = int(*apiPartition.Maximums.MemoryPerCpu) * 1024 * 1024
 	}
-	
+
 	// Default memory - nested under Defaults
 	if apiPartition.Defaults != nil && apiPartition.Defaults.MemoryPerCpu != nil {
 		partition.DefaultMemory = int(*apiPartition.Defaults.MemoryPerCpu) * 1024 * 1024
 	}
-	
+
 	// User and group access lists - nested under Accounts and Groups
 	if apiPartition.Accounts != nil && apiPartition.Accounts.Allowed != nil {
 		// Parse comma-separated string into slice
@@ -177,7 +177,7 @@ func convertAPIPartitionToInterface(apiPartition V0042PartitionInfo) (*interface
 	} else {
 		partition.AllowedUsers = []string{}
 	}
-	
+
 	if apiPartition.Accounts != nil && apiPartition.Accounts.Deny != nil {
 		// Parse comma-separated string into slice
 		if *apiPartition.Accounts.Deny != "" {
@@ -188,7 +188,7 @@ func convertAPIPartitionToInterface(apiPartition V0042PartitionInfo) (*interface
 	} else {
 		partition.DeniedUsers = []string{}
 	}
-	
+
 	if apiPartition.Groups != nil && apiPartition.Groups.Allowed != nil {
 		// Parse comma-separated string into slice
 		if *apiPartition.Groups.Allowed != "" {
@@ -199,15 +199,15 @@ func convertAPIPartitionToInterface(apiPartition V0042PartitionInfo) (*interface
 	} else {
 		partition.AllowedGroups = []string{}
 	}
-	
+
 	// No denied groups field in V0042PartitionInfo
 	partition.DeniedGroups = []string{}
-	
+
 	// Priority - nested under Priority.Tier
 	if apiPartition.Priority != nil && apiPartition.Priority.Tier != nil {
 		partition.Priority = int(*apiPartition.Priority.Tier)
 	}
-	
+
 	// Node list - nested under Nodes.Configured
 	if apiPartition.Nodes != nil && apiPartition.Nodes.Configured != nil {
 		// Parse node list string into slice (simplified - real parsing might be more complex)
@@ -219,19 +219,19 @@ func convertAPIPartitionToInterface(apiPartition V0042PartitionInfo) (*interface
 	} else {
 		partition.Nodes = []string{}
 	}
-	
+
 	return partition, nil
 }
 
 // filterPartitions applies client-side filtering to partition list
 func filterPartitions(partitions []interfaces.Partition, opts *interfaces.ListPartitionsOptions) []interfaces.Partition {
 	var filtered []interfaces.Partition
-	
+
 	// If no options provided, return all partitions
 	if opts == nil {
 		return partitions
 	}
-	
+
 	for _, partition := range partitions {
 		// Filter by states
 		if len(opts.States) > 0 {
@@ -246,10 +246,10 @@ func filterPartitions(partitions []interfaces.Partition, opts *interfaces.ListPa
 				continue
 			}
 		}
-		
+
 		filtered = append(filtered, partition)
 	}
-	
+
 	// Apply limit and offset
 	if opts.Offset > 0 {
 		if opts.Offset >= len(filtered) {
@@ -257,11 +257,11 @@ func filterPartitions(partitions []interfaces.Partition, opts *interfaces.ListPa
 		}
 		filtered = filtered[opts.Offset:]
 	}
-	
+
 	if opts.Limit > 0 && len(filtered) > opts.Limit {
 		filtered = filtered[:opts.Limit]
 	}
-	
+
 	return filtered
 }
 
@@ -271,21 +271,21 @@ func (m *PartitionManagerImpl) Get(ctx context.Context, partitionName string) (*
 	if m.client.apiClient == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
-	
+
 	// Prepare parameters for the API call
 	params := &SlurmV0042GetPartitionParams{}
-	
+
 	// Set flags to get detailed partition information
 	flags := SlurmV0042GetPartitionParamsFlagsDETAIL
 	params.Flags = &flags
-	
+
 	// Call the generated OpenAPI client
 	resp, err := m.client.apiClient.SlurmV0042GetPartitionWithResponse(ctx, partitionName, params)
 	if err != nil {
 		wrappedErr := errors.WrapError(err)
 		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.42")
 	}
-	
+
 	// Check HTTP status and handle API errors
 	if resp.StatusCode() != 200 {
 		var responseBody []byte
@@ -310,7 +310,7 @@ func (m *PartitionManagerImpl) Get(ctx context.Context, partitionName string) (*
 					if apiErr.Description != nil {
 						description = *apiErr.Description
 					}
-					
+
 					apiErrors[i] = errors.SlurmAPIErrorDetail{
 						ErrorNumber: errorNumber,
 						ErrorCode:   errorCode,
@@ -322,26 +322,26 @@ func (m *PartitionManagerImpl) Get(ctx context.Context, partitionName string) (*
 				return nil, apiError.SlurmError
 			}
 		}
-		
+
 		// Fall back to HTTP error handling
 		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.42")
 		return nil, httpErr
 	}
-	
+
 	// Check for unexpected response format
 	if resp.JSON200 == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected response format", "Expected JSON response but got nil")
 	}
-	
+
 	// Convert the response to our interface types
 	if len(resp.JSON200.Partitions) == 0 {
 		return nil, errors.NewPartitionError(partitionName, "get", fmt.Errorf("partition not found"))
 	}
-	
+
 	if len(resp.JSON200.Partitions) > 1 {
 		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected multiple partitions returned", fmt.Sprintf("Expected 1 partition but got %d for name %s", len(resp.JSON200.Partitions), partitionName))
 	}
-	
+
 	partition, err := convertAPIPartitionToInterface(resp.JSON200.Partitions[0])
 	if err != nil {
 		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert partition data")
@@ -349,6 +349,6 @@ func (m *PartitionManagerImpl) Get(ctx context.Context, partitionName string) (*
 		conversionErr.Details = fmt.Sprintf("Error converting partition %s", partitionName)
 		return nil, conversionErr
 	}
-	
+
 	return partition, nil
 }

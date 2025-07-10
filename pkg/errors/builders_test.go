@@ -41,7 +41,7 @@ func TestWrapError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := WrapError(tt.err)
-			
+
 			if tt.err == nil {
 				if result != nil {
 					t.Errorf("Expected nil for nil error, got %v", result)

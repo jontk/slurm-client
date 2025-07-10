@@ -21,7 +21,7 @@ func TestGetVersionMapping(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.version, func(t *testing.T) {
 			mapping := GetVersionMapping(tt.version)
-			
+
 			if mapping == nil {
 				t.Fatal("Expected non-nil mapping")
 			}
@@ -96,11 +96,11 @@ func TestVersionSpecificMappings(t *testing.T) {
 
 func TestMapSlurmErrorForVersion(t *testing.T) {
 	tests := []struct {
-		name            string
-		slurmErrorCode  string
-		apiVersion      string
-		httpStatusCode  int
-		expectedCode    ErrorCode
+		name           string
+		slurmErrorCode string
+		apiVersion     string
+		httpStatusCode int
+		expectedCode   ErrorCode
 	}{
 		{
 			name:           "known slurm error",
@@ -144,9 +144,9 @@ func TestMapSlurmErrorForVersion(t *testing.T) {
 
 func TestIsFeatureSupportedInVersion(t *testing.T) {
 	tests := []struct {
-		feature    string
-		version    string
-		supported  bool
+		feature   string
+		version   string
+		supported bool
 	}{
 		{"frontend_mode", "v0.0.40", true},
 		{"frontend_mode", "v0.0.43", false},
@@ -163,7 +163,7 @@ func TestIsFeatureSupportedInVersion(t *testing.T) {
 		t.Run(tt.feature+"_"+tt.version, func(t *testing.T) {
 			result := IsFeatureSupportedInVersion(tt.feature, tt.version)
 			if result != tt.supported {
-				t.Errorf("Expected feature %s in version %s to be %v, got %v", 
+				t.Errorf("Expected feature %s in version %s to be %v, got %v",
 					tt.feature, tt.version, tt.supported, result)
 			}
 		})
@@ -212,11 +212,11 @@ func TestGetBreakingChanges(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			changes := GetBreakingChanges(tt.fromVersion, tt.toVersion)
-			
+
 			if tt.expectEmpty && len(changes) > 0 {
 				t.Errorf("Expected no breaking changes, got %v", changes)
 			}
-			
+
 			if !tt.expectEmpty && len(changes) == 0 {
 				t.Error("Expected breaking changes, got none")
 			}
@@ -297,15 +297,15 @@ func TestValidateVersionCompatibility(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateVersionCompatibility(tt.clientVersion, tt.serverVersion)
-			
+
 			if tt.expectError && err == nil {
 				t.Error("Expected compatibility error, got nil")
 			}
-			
+
 			if !tt.expectError && err != nil {
 				t.Errorf("Expected no compatibility error, got %v", err)
 			}
-			
+
 			if err != nil {
 				// Verify it's a SlurmError with appropriate code
 				if slurmErr, ok := err.(*SlurmError); ok {
@@ -365,24 +365,24 @@ func TestEnhanceErrorWithVersion(t *testing.T) {
 			if tt.err != nil {
 				originalDetails = tt.err.Details
 			}
-			
+
 			result := EnhanceErrorWithVersion(tt.err, tt.apiVersion)
-			
+
 			if tt.err == nil {
 				if result != nil {
 					t.Error("Expected nil result for nil error")
 				}
 				return
 			}
-			
+
 			if result == nil {
 				t.Fatal("Expected non-nil result")
 			}
-			
+
 			if result.APIVersion != tt.apiVersion {
 				t.Errorf("Expected API version %s, got %s", tt.apiVersion, result.APIVersion)
 			}
-			
+
 			if tt.expectMore {
 				if result.Details == originalDetails {
 					t.Error("Expected enhanced details, but details unchanged")
@@ -394,7 +394,7 @@ func TestEnhanceErrorWithVersion(t *testing.T) {
 
 func TestCommonHTTPMappings(t *testing.T) {
 	mappings := getCommonHTTPMappings()
-	
+
 	expectedMappings := map[int]ErrorCode{
 		200: ErrorCodeUnknown,
 		400: ErrorCodeInvalidRequest,
@@ -409,7 +409,7 @@ func TestCommonHTTPMappings(t *testing.T) {
 		503: ErrorCodeSlurmDaemonDown,
 		504: ErrorCodeNetworkTimeout,
 	}
-	
+
 	if !reflect.DeepEqual(mappings, expectedMappings) {
 		t.Errorf("HTTP mappings mismatch.\nExpected: %v\nGot: %v", expectedMappings, mappings)
 	}
@@ -419,15 +419,15 @@ func TestVersionSpecificErrorMappings(t *testing.T) {
 	// Test that newer versions include mappings from older versions
 	v040 := GetVersionMapping("v0.0.40")
 	v043 := GetVersionMapping("v0.0.43")
-	
+
 	// Check that common errors exist in both
 	commonErrors := []string{
 		"SLURM_AUTHENTICATION_ERROR",
-		"SLURM_ACCESS_DENIED", 
+		"SLURM_ACCESS_DENIED",
 		"SLURM_INVALID_JOB_ID",
 		"SLURM_INVALID_PARTITION_NAME",
 	}
-	
+
 	for _, errorCode := range commonErrors {
 		if _, exists := v040.SlurmErrorMappings[errorCode]; !exists {
 			t.Errorf("Expected error code %s in v0.0.40", errorCode)
@@ -436,14 +436,14 @@ func TestVersionSpecificErrorMappings(t *testing.T) {
 			t.Errorf("Expected error code %s in v0.0.43", errorCode)
 		}
 	}
-	
+
 	// Check that v0.0.43 has additional errors not in v0.0.40
 	v043SpecificErrors := []string{
 		"SLURM_ADVANCED_RESERVATION_ERROR",
 		"SLURM_MULTI_CLUSTER_ERROR",
 		"SLURM_FEDERATION_ERROR",
 	}
-	
+
 	for _, errorCode := range v043SpecificErrors {
 		if _, exists := v040.SlurmErrorMappings[errorCode]; exists {
 			t.Errorf("Did not expect error code %s in v0.0.40", errorCode)
