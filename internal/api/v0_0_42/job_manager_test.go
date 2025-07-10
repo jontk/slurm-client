@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -172,7 +173,12 @@ func TestConvertJobSubmissionToAPI_NilHandling(t *testing.T) {
 	// Test handling of nil job submission
 	_, err := convertJobSubmissionToAPI(nil)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "job submission cannot be nil")
+	
+	// Check that it returns a structured error
+	var slurmErr *errors.SlurmError
+	assert.ErrorAs(t, err, &slurmErr)
+	assert.Equal(t, errors.ErrorCodeInvalidRequest, slurmErr.Code)
+	assert.Contains(t, slurmErr.Message, "Job submission cannot be nil")
 	
 	// Test handling of empty job submission
 	emptyJob := &interfaces.JobSubmission{}
@@ -183,4 +189,81 @@ func TestConvertJobSubmissionToAPI_NilHandling(t *testing.T) {
 	assert.Nil(t, apiJob.Name)
 	assert.Nil(t, apiJob.Script)
 	assert.Nil(t, apiJob.MinimumCpus)
+}
+
+// TestJobManager_ErrorHandling_Get tests structured error handling for Get method
+func TestJobManager_ErrorHandling_Get(t *testing.T) {
+	jobManager := &JobManager{
+		client: &WrapperClient{}, // No API client initialized
+	}
+	
+	_, err := jobManager.Get(context.Background(), "12345")
+	
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "API client not initialized")
+	
+	// Check that it returns a structured error
+	var slurmErr *errors.SlurmError
+	assert.ErrorAs(t, err, &slurmErr)
+	assert.Equal(t, errors.ErrorCodeClientNotInitialized, slurmErr.Code)
+}
+
+// TestJobManager_ErrorHandling_Submit tests structured error handling for Submit method
+func TestJobManager_ErrorHandling_Submit(t *testing.T) {
+	jobManager := &JobManager{
+		client: &WrapperClient{}, // No API client initialized
+	}
+	
+	_, err := jobManager.Submit(context.Background(), &interfaces.JobSubmission{Name: "test"})
+	
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "API client not initialized")
+	
+	// Check that it returns a structured error
+	var slurmErr *errors.SlurmError
+	assert.ErrorAs(t, err, &slurmErr)
+	assert.Equal(t, errors.ErrorCodeClientNotInitialized, slurmErr.Code)
+}
+
+// TestJobManager_ErrorHandling_Cancel tests structured error handling for Cancel method
+func TestJobManager_ErrorHandling_Cancel(t *testing.T) {
+	jobManager := &JobManager{
+		client: &WrapperClient{}, // No API client initialized
+	}
+	
+	err := jobManager.Cancel(context.Background(), "12345")
+	
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "API client not initialized")
+	
+	// Check that it returns a structured error
+	var slurmErr *errors.SlurmError
+	assert.ErrorAs(t, err, &slurmErr)
+	assert.Equal(t, errors.ErrorCodeClientNotInitialized, slurmErr.Code)
+}
+
+// TestJobManager_StructuredErrorTypes tests that methods return proper structured error types
+func TestJobManager_StructuredErrorTypes(t *testing.T) {
+	jobManager := &JobManager{
+		client: &WrapperClient{}, // No API client initialized
+	}
+	
+	// Test Get method returns SlurmError
+	_, err := jobManager.Get(context.Background(), "12345")
+	assert.Error(t, err)
+	var slurmErr *errors.SlurmError
+	assert.ErrorAs(t, err, &slurmErr)
+	assert.Equal(t, errors.ErrorCodeClientNotInitialized, slurmErr.Code)
+	
+	// Test Submit method returns SlurmError
+	_, err = jobManager.Submit(context.Background(), &interfaces.JobSubmission{Name: "test"})
+	assert.Error(t, err)
+	assert.ErrorAs(t, err, &slurmErr)
+	assert.Equal(t, errors.ErrorCodeClientNotInitialized, slurmErr.Code)
+	
+	// Test Cancel method returns SlurmError
+	err = jobManager.Cancel(context.Background(), "12345")
+	assert.Error(t, err)
+	assert.ErrorAs(t, err, &slurmErr)
+	assert.Equal(t, errors.ErrorCodeClientNotInitialized, slurmErr.Code)
 }
