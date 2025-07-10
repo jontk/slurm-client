@@ -4,7 +4,7 @@ package v0_0_42
 
 import (
 	"context"
-
+	
 	"github.com/jontk/slurm-client/internal/interfaces"
 )
 
@@ -48,20 +48,26 @@ func (m *JobManager) Cancel(ctx context.Context, jobID string) error {
 
 // Update updates job properties
 func (m *JobManager) Update(ctx context.Context, jobID string, update *interfaces.JobUpdate) error {
-	// Implementation will be added by developers
-	return nil
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, jobID, update)
 }
 
 // Steps retrieves job steps for a job
 func (m *JobManager) Steps(ctx context.Context, jobID string) (*interfaces.JobStepList, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.Steps(ctx, jobID)
 }
 
 // Watch provides real-time job updates
 func (m *JobManager) Watch(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.Watch(ctx, opts)
 }
 
 // NodeManager implements the NodeManager interface for API version v0.0.42
@@ -88,14 +94,18 @@ func (m *NodeManager) Get(ctx context.Context, nodeName string) (*interfaces.Nod
 
 // Update updates node properties
 func (m *NodeManager) Update(ctx context.Context, nodeName string, update *interfaces.NodeUpdate) error {
-	// Implementation will be added by developers
-	return nil
+	if m.impl == nil {
+		m.impl = NewNodeManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, nodeName, update)
 }
 
 // Watch provides real-time node updates
 func (m *NodeManager) Watch(ctx context.Context, opts *interfaces.WatchNodesOptions) (<-chan interfaces.NodeEvent, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewNodeManagerImpl(m.client)
+	}
+	return m.impl.Watch(ctx, opts)
 }
 
 // PartitionManager implements the PartitionManager interface for API version v0.0.42
@@ -122,14 +132,18 @@ func (m *PartitionManager) Get(ctx context.Context, partitionName string) (*inte
 
 // Update updates partition properties
 func (m *PartitionManager) Update(ctx context.Context, partitionName string, update *interfaces.PartitionUpdate) error {
-	// Implementation will be added by developers
-	return nil
+	if m.impl == nil {
+		m.impl = NewPartitionManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, partitionName, update)
 }
 
 // Watch provides real-time partition updates
 func (m *PartitionManager) Watch(ctx context.Context, opts *interfaces.WatchPartitionsOptions) (<-chan interfaces.PartitionEvent, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewPartitionManagerImpl(m.client)
+	}
+	return m.impl.Watch(ctx, opts)
 }
 
 // InfoManager implements the InfoManager interface for API version v0.0.42
