@@ -4,7 +4,7 @@ package v0_0_42
 
 import (
 	"context"
-	
+
 	"github.com/jontk/slurm-client/internal/interfaces"
 )
 

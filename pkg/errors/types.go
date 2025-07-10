@@ -32,6 +32,7 @@ const (
 	// Server and Slurm errors
 	ErrorCodeServerInternal       ErrorCode = "SERVER_INTERNAL"
 	ErrorCodeSlurmDaemonDown      ErrorCode = "SLURM_DAEMON_DOWN"
+	ErrorCodeServiceUnavailable   ErrorCode = "SERVICE_UNAVAILABLE"
 	ErrorCodeResourceExhausted    ErrorCode = "RESOURCE_EXHAUSTED"
 	ErrorCodeJobQueueFull         ErrorCode = "JOB_QUEUE_FULL"
 	ErrorCodePartitionUnavailable ErrorCode = "PARTITION_UNAVAILABLE"

@@ -474,7 +474,7 @@ func TestJobManager_Steps_EmptyList(t *testing.T) {
 	// This is a basic test since the current v0.0.42 API implementation
 	// returns empty steps list as V0042JobInfo doesn't contain step details
 	// In a real implementation, this would need to be tested with mock responses
-	
+
 	// For now, we're just testing that the method structure is correct
 	// More comprehensive testing would require mocking the API client
 	jobManager := &JobManager{

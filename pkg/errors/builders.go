@@ -335,3 +335,77 @@ func GetErrorCategory(err error) ErrorCategory {
 	}
 	return CategoryUnknown
 }
+
+// IsNetworkError checks if an error is a network-related error
+func IsNetworkError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Check if it's a SlurmError with network category
+	if slurmErr, ok := err.(*SlurmError); ok {
+		return slurmErr.Category == CategoryNetwork
+	}
+
+	// Check if it's a direct network error
+	if _, ok := err.(net.Error); ok {
+		return true
+	}
+
+	// Check for URL errors
+	if _, ok := err.(*url.Error); ok {
+		return true
+	}
+
+	// Check for specific network error patterns
+	errMsg := strings.ToLower(err.Error())
+	networkPatterns := []string{
+		"connection refused",
+		"connection reset",
+		"no such host",
+		"network unreachable",
+		"timeout",
+		"tls handshake",
+		"dns",
+	}
+
+	for _, pattern := range networkPatterns {
+		if strings.Contains(errMsg, pattern) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// IsAuthenticationError checks if an error is an authentication-related error
+func IsAuthenticationError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Check if it's a SlurmError with authentication category
+	if slurmErr, ok := err.(*SlurmError); ok {
+		return slurmErr.Category == CategoryAuthentication
+	}
+
+	// Check for specific authentication error patterns
+	errMsg := strings.ToLower(err.Error())
+	authPatterns := []string{
+		"unauthorized",
+		"authentication failed",
+		"invalid token",
+		"expired token",
+		"permission denied",
+		"access denied",
+		"forbidden",
+	}
+
+	for _, pattern := range authPatterns {
+		if strings.Contains(errMsg, pattern) {
+			return true
+		}
+	}
+
+	return false
+}
