@@ -16,16 +16,10 @@ func main() {
 	
 	ctx := context.Background()
 	
-	// Create a client factory
-	factory, err := slurm.NewClientFactory(
+	// Create a v0.0.42 client (stable version)
+	client, err := slurm.NewClientWithVersion(ctx, "v0.0.42",
 		slurm.WithBaseURL("https://your-slurm-server:6820"), // Replace with real URL
 	)
-	if err != nil {
-		log.Fatalf("Failed to create client factory: %v", err)
-	}
-	
-	// Create a v0.0.42 client (stable version)
-	client, err := factory.NewClientWithVersion(ctx, "v0.0.42")
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
