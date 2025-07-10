@@ -53,15 +53,15 @@ func WrapHTTPError(statusCode int, body []byte, apiVersion string) *SlurmError {
 	// Fall back to HTTP status code mapping
 	code := mapHTTPStatusToErrorCode(statusCode)
 	message := fmt.Sprintf("HTTP %d: %s", statusCode, http.StatusText(statusCode))
-	
+
 	slurmErr := NewSlurmError(code, message)
 	slurmErr.StatusCode = statusCode
 	slurmErr.APIVersion = apiVersion
-	
+
 	if len(body) > 0 && len(body) < 1000 { // Include response body if reasonable size
 		slurmErr.Details = string(body)
 	}
-	
+
 	return slurmErr
 }
 
@@ -78,7 +78,13 @@ func classifyNetworkError(err error) *SlurmError {
 		if netErr.Timeout() {
 			return NewSlurmErrorWithCause(ErrorCodeNetworkTimeout, "Network operation timed out", err)
 		}
-		if netErr.Temporary() {
+		// Note: netErr.Temporary() is deprecated since Go 1.18
+		// We classify common temporary network errors by error string patterns
+		errorStr := err.Error()
+		if strings.Contains(errorStr, "connection reset") ||
+			strings.Contains(errorStr, "broken pipe") ||
+			strings.Contains(errorStr, "network is unreachable") ||
+			strings.Contains(errorStr, "temporary") {
 			return NewSlurmErrorWithCause(ErrorCodeConnectionRefused, "Temporary network failure", err)
 		}
 	}
@@ -125,7 +131,7 @@ func classifyURLError(urlErr *url.Error) *SlurmError {
 	if u, err := url.Parse(urlErr.URL); err == nil {
 		host = u.Hostname()
 		if u.Port() != "" {
-			fmt.Sscanf(u.Port(), "%d", &port)
+			_, _ = fmt.Sscanf(u.Port(), "%d", &port) // Ignore error, port parsing is best-effort
 		}
 	}
 
@@ -165,7 +171,7 @@ func NewAuthError(authMethod, tokenType string, cause error) *AuthenticationErro
 		code = ErrorCodeInvalidCredentials
 		message = "Invalid credentials provided"
 	case strings.Contains(cause.Error(), "403"):
-		code = ErrorCodePermissionDenied  
+		code = ErrorCodePermissionDenied
 		message = "Access denied"
 	case strings.Contains(cause.Error(), "expired"):
 		code = ErrorCodeTokenExpired
@@ -270,30 +276,47 @@ func IsRetryableError(err error) bool {
 	if slurmErr, ok := err.(*SlurmError); ok {
 		return slurmErr.IsRetryable()
 	}
-	
+
 	// Check for known retryable error patterns
 	if err != nil {
 		errStr := err.Error()
 		return strings.Contains(errStr, "timeout") ||
-			   strings.Contains(errStr, "connection refused") ||
-			   strings.Contains(errStr, "temporary failure") ||
-			   strings.Contains(errStr, "service unavailable")
+			strings.Contains(errStr, "connection refused") ||
+			strings.Contains(errStr, "temporary failure") ||
+			strings.Contains(errStr, "service unavailable")
 	}
-	
+
 	return false
 }
 
 // IsTemporaryError checks if an error is temporary
 func IsTemporaryError(err error) bool {
+	if err == nil {
+		return false
+	}
+
 	if slurmErr, ok := err.(*SlurmError); ok {
 		return slurmErr.IsTemporary()
 	}
-	
+
 	// Check for net.Error interface
+	// Note: netErr.Temporary() is deprecated since Go 1.18
+	// We classify common temporary errors by timeout or error string patterns
 	if netErr, ok := err.(net.Error); ok {
-		return netErr.Temporary()
+		if netErr.Timeout() {
+			return true
+		}
 	}
-	
+
+	// Check for common temporary error patterns
+	errorStr := err.Error()
+	if strings.Contains(errorStr, "connection reset") ||
+		strings.Contains(errorStr, "broken pipe") ||
+		strings.Contains(errorStr, "network is unreachable") ||
+		strings.Contains(errorStr, "temporary") {
+		return true
+	}
+
 	return false
 }
 

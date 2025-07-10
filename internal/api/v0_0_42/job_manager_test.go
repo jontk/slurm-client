@@ -14,13 +14,13 @@ func TestJobManager_List_Structure(t *testing.T) {
 	jobManager := &JobManager{
 		client: &WrapperClient{},
 	}
-	
+
 	// Test that impl is created lazily
 	assert.Nil(t, jobManager.impl)
-	
+
 	// After attempting to call List (even with nil client), impl should be created
 	_, err := jobManager.List(context.Background(), nil)
-	
+
 	// We expect an error since there's no real API client
 	assert.Error(t, err)
 	// The impl should now be created
@@ -32,15 +32,15 @@ func TestConvertAPIJobToInterface(t *testing.T) {
 	jobId := int32(12345)
 	name := "test-job"
 	userId := int32(1000)
-	
+
 	apiJob := V0042JobInfo{
 		JobId:  &jobId,
 		Name:   &name,
 		UserId: &userId,
 	}
-	
+
 	interfaceJob, err := convertAPIJobToInterface(apiJob)
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, interfaceJob)
 	assert.Equal(t, "12345", interfaceJob.ID)
@@ -56,25 +56,25 @@ func TestFilterJobs(t *testing.T) {
 		{ID: "2", UserID: "1001", State: "PENDING", Partition: "cpu"},
 		{ID: "3", UserID: "1000", State: "COMPLETED", Partition: "gpu"},
 	}
-	
+
 	// Test filter by user ID
 	opts := &interfaces.ListJobsOptions{UserID: "1000"}
 	filtered := filterJobs(jobs, opts)
 	assert.Len(t, filtered, 2)
 	assert.Equal(t, "1", filtered[0].ID)
 	assert.Equal(t, "3", filtered[1].ID)
-	
+
 	// Test filter by state
 	opts = &interfaces.ListJobsOptions{States: []string{"RUNNING"}}
 	filtered = filterJobs(jobs, opts)
 	assert.Len(t, filtered, 1)
 	assert.Equal(t, "1", filtered[0].ID)
-	
+
 	// Test filter by partition
 	opts = &interfaces.ListJobsOptions{Partition: "gpu"}
 	filtered = filterJobs(jobs, opts)
 	assert.Len(t, filtered, 2)
-	
+
 	// Test limit and offset
 	opts = &interfaces.ListJobsOptions{Limit: 1, Offset: 1}
 	filtered = filterJobs(jobs, opts)
@@ -87,9 +87,9 @@ func TestJobManager_Get_Structure(t *testing.T) {
 	jobManager := &JobManager{
 		client: &WrapperClient{},
 	}
-	
+
 	_, err := jobManager.Get(context.Background(), "12345")
-	
+
 	// We expect an error since there's no real API client
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "API client not initialized")
@@ -102,15 +102,15 @@ func TestJobManager_Submit_Structure(t *testing.T) {
 	jobManager := &JobManager{
 		client: &WrapperClient{},
 	}
-	
+
 	jobSub := &interfaces.JobSubmission{
 		Name:    "test-job",
 		Command: "echo hello",
 		CPUs:    2,
 	}
-	
+
 	_, err := jobManager.Submit(context.Background(), jobSub)
-	
+
 	// We expect an error since there's no real API client
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "API client not initialized")
@@ -123,9 +123,9 @@ func TestJobManager_Cancel_Structure(t *testing.T) {
 	jobManager := &JobManager{
 		client: &WrapperClient{},
 	}
-	
+
 	err := jobManager.Cancel(context.Background(), "12345")
-	
+
 	// We expect an error since there's no real API client
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "API client not initialized")
@@ -141,16 +141,16 @@ func TestConvertJobSubmissionToAPI(t *testing.T) {
 		Partition:   "gpu",
 		CPUs:        4,
 		Memory:      8 * 1024 * 1024 * 1024, // 8GB in bytes
-		TimeLimit:   60,                      // 60 minutes
+		TimeLimit:   60,                     // 60 minutes
 		Nodes:       2,
 		Priority:    100,
 		WorkingDir:  "/tmp",
 		Environment: map[string]string{"KEY": "value"},
 		Args:        []string{"arg1", "arg2"},
 	}
-	
+
 	apiJob, err := convertJobSubmissionToAPI(jobSub)
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, apiJob)
 	assert.Equal(t, "test-job", *apiJob.Name)
@@ -173,13 +173,13 @@ func TestConvertJobSubmissionToAPI_NilHandling(t *testing.T) {
 	// Test handling of nil job submission
 	_, err := convertJobSubmissionToAPI(nil)
 	assert.Error(t, err)
-	
+
 	// Check that it returns a structured error
 	var slurmErr *errors.SlurmError
 	assert.ErrorAs(t, err, &slurmErr)
 	assert.Equal(t, errors.ErrorCodeInvalidRequest, slurmErr.Code)
 	assert.Contains(t, slurmErr.Message, "Job submission cannot be nil")
-	
+
 	// Test handling of empty job submission
 	emptyJob := &interfaces.JobSubmission{}
 	apiJob, err := convertJobSubmissionToAPI(emptyJob)
@@ -196,12 +196,12 @@ func TestJobManager_ErrorHandling_Get(t *testing.T) {
 	jobManager := &JobManager{
 		client: &WrapperClient{}, // No API client initialized
 	}
-	
+
 	_, err := jobManager.Get(context.Background(), "12345")
-	
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "API client not initialized")
-	
+
 	// Check that it returns a structured error
 	var slurmErr *errors.SlurmError
 	assert.ErrorAs(t, err, &slurmErr)
@@ -213,12 +213,12 @@ func TestJobManager_ErrorHandling_Submit(t *testing.T) {
 	jobManager := &JobManager{
 		client: &WrapperClient{}, // No API client initialized
 	}
-	
+
 	_, err := jobManager.Submit(context.Background(), &interfaces.JobSubmission{Name: "test"})
-	
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "API client not initialized")
-	
+
 	// Check that it returns a structured error
 	var slurmErr *errors.SlurmError
 	assert.ErrorAs(t, err, &slurmErr)
@@ -230,12 +230,12 @@ func TestJobManager_ErrorHandling_Cancel(t *testing.T) {
 	jobManager := &JobManager{
 		client: &WrapperClient{}, // No API client initialized
 	}
-	
+
 	err := jobManager.Cancel(context.Background(), "12345")
-	
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "API client not initialized")
-	
+
 	// Check that it returns a structured error
 	var slurmErr *errors.SlurmError
 	assert.ErrorAs(t, err, &slurmErr)
@@ -247,20 +247,20 @@ func TestJobManager_StructuredErrorTypes(t *testing.T) {
 	jobManager := &JobManager{
 		client: &WrapperClient{}, // No API client initialized
 	}
-	
+
 	// Test Get method returns SlurmError
 	_, err := jobManager.Get(context.Background(), "12345")
 	assert.Error(t, err)
 	var slurmErr *errors.SlurmError
 	assert.ErrorAs(t, err, &slurmErr)
 	assert.Equal(t, errors.ErrorCodeClientNotInitialized, slurmErr.Code)
-	
+
 	// Test Submit method returns SlurmError
 	_, err = jobManager.Submit(context.Background(), &interfaces.JobSubmission{Name: "test"})
 	assert.Error(t, err)
 	assert.ErrorAs(t, err, &slurmErr)
 	assert.Equal(t, errors.ErrorCodeClientNotInitialized, slurmErr.Code)
-	
+
 	// Test Cancel method returns SlurmError
 	err = jobManager.Cancel(context.Background(), "12345")
 	assert.Error(t, err)

@@ -8,21 +8,21 @@ import (
 
 // SlurmAPIResponse represents the structure of Slurm REST API error responses
 type SlurmAPIResponse struct {
-	Meta   *SlurmAPIMeta     `json:"meta,omitempty"`
+	Meta   *SlurmAPIMeta         `json:"meta,omitempty"`
 	Errors []SlurmAPIErrorDetail `json:"errors,omitempty"`
-	Data   interface{}       `json:"data,omitempty"`
+	Data   interface{}           `json:"data,omitempty"`
 }
 
 // SlurmAPIMeta contains metadata about the API response
 type SlurmAPIMeta struct {
-	Plugin      *SlurmPlugin `json:"plugin,omitempty"`
+	Plugin       *SlurmPlugin  `json:"plugin,omitempty"`
 	SlurmVersion *SlurmVersion `json:"Slurm,omitempty"`
 }
 
 // SlurmPlugin contains information about the Slurm plugin
 type SlurmPlugin struct {
-	Type    string `json:"type,omitempty"`
-	Name    string `json:"name,omitempty"`
+	Type       string `json:"type,omitempty"`
+	Name       string `json:"name,omitempty"`
 	DataParser string `json:"data_parser,omitempty"`
 }
 
@@ -71,15 +71,15 @@ func parseSlurmAPIError(statusCode int, body []byte, apiVersion string) *SlurmAP
 // parsePlainTextError handles non-JSON error responses
 func parsePlainTextError(statusCode int, body []byte, apiVersion string) *SlurmAPIError {
 	bodyStr := string(body)
-	
+
 	// Only process if it looks like a Slurm error message
 	hasKnownSlurmError := strings.Contains(bodyStr, "SLURM_")
-	
+
 	if !hasKnownSlurmError {
 		// Return nil so that the caller can handle as generic HTTP error
 		return nil
 	}
-	
+
 	// Look for common Slurm error patterns in plain text
 	var errorCode string
 	var description string
@@ -138,7 +138,7 @@ func ExtractRequestID(headers map[string][]string, body []byte) string {
 	// Check common request ID headers
 	requestIDHeaders := []string{
 		"X-Request-ID",
-		"X-Request-Id", 
+		"X-Request-Id",
 		"Request-ID",
 		"Request-Id",
 		"X-Correlation-ID",
@@ -217,7 +217,7 @@ func ExtractJobIDFromError(err error) (uint32, bool) {
 	}
 
 	errStr := err.Error()
-	
+
 	// Look for patterns like "job 12345" or "job_id: 12345"
 	patterns := []string{
 		"job ",
@@ -231,12 +231,12 @@ func ExtractJobIDFromError(err error) (uint32, bool) {
 		if idx := strings.Index(strings.ToLower(errStr), pattern); idx != -1 {
 			start := idx + len(pattern)
 			end := start
-			
+
 			// Find the end of the number
 			for end < len(errStr) && errStr[end] >= '0' && errStr[end] <= '9' {
 				end++
 			}
-			
+
 			if end > start {
 				var jobID uint32
 				if n, err := fmt.Sscanf(errStr[start:end], "%d", &jobID); n == 1 && err == nil {
@@ -256,7 +256,7 @@ func ExtractNodeNamesFromError(err error) ([]string, bool) {
 	}
 
 	errStr := err.Error()
-	
+
 	// Look for patterns like "node compute-01" or "nodes: compute-[01-03]"
 	patterns := []string{
 		"node ",
@@ -269,13 +269,13 @@ func ExtractNodeNamesFromError(err error) ([]string, bool) {
 	for _, pattern := range patterns {
 		if idx := strings.Index(strings.ToLower(errStr), pattern); idx != -1 {
 			start := idx + len(pattern)
-			
+
 			// Find the end of the node specification
 			end := start
 			for end < len(errStr) && errStr[end] != ' ' && errStr[end] != ',' && errStr[end] != '\n' {
 				end++
 			}
-			
+
 			if end > start {
 				nodeSpec := strings.TrimSpace(errStr[start:end])
 				if nodeSpec != "" {
@@ -296,7 +296,7 @@ func ExtractPartitionFromError(err error) (string, bool) {
 	}
 
 	errStr := err.Error()
-	
+
 	// Look for patterns like "partition debug" or "partition: compute"
 	patterns := []string{
 		"partition ",
@@ -306,13 +306,13 @@ func ExtractPartitionFromError(err error) (string, bool) {
 	for _, pattern := range patterns {
 		if idx := strings.Index(strings.ToLower(errStr), pattern); idx != -1 {
 			start := idx + len(pattern)
-			
+
 			// Find the end of the partition name
 			end := start
 			for end < len(errStr) && errStr[end] != ' ' && errStr[end] != ',' && errStr[end] != '\n' {
 				end++
 			}
-			
+
 			if end > start {
 				partition := strings.TrimSpace(errStr[start:end])
 				if partition != "" {

@@ -13,13 +13,13 @@ func TestPartitionManager_List_Structure(t *testing.T) {
 	partitionManager := &PartitionManager{
 		client: &WrapperClient{},
 	}
-	
+
 	// Test that impl is created lazily
 	assert.Nil(t, partitionManager.impl)
-	
+
 	// After attempting to call List (even with nil client), impl should be created
 	_, err := partitionManager.List(context.Background(), nil)
-	
+
 	// We expect an error since there's no real API client
 	assert.Error(t, err)
 	// The impl should now be created
@@ -31,13 +31,13 @@ func TestPartitionManager_Get_Structure(t *testing.T) {
 	partitionManager := &PartitionManager{
 		client: &WrapperClient{},
 	}
-	
+
 	// Test that impl is created lazily
 	assert.Nil(t, partitionManager.impl)
-	
+
 	// After attempting to call Get (even with nil client), impl should be created
 	_, err := partitionManager.Get(context.Background(), "test-partition")
-	
+
 	// We expect an error since there's no real API client
 	assert.Error(t, err)
 	// The impl should now be created
@@ -49,16 +49,16 @@ func TestConvertAPIPartitionToInterface(t *testing.T) {
 	name := "gpu-partition"
 	totalNodes := int32(10)
 	totalCPUs := int32(480)
-	maxTime := int32(720) // 12 hours
-	defaultTime := int32(60) // 1 hour
-	maxMemory := int64(128000) // 128GB in MB
+	maxTime := int32(720)         // 12 hours
+	defaultTime := int32(60)      // 1 hour
+	maxMemory := int64(128000)    // 128GB in MB
 	defaultMemory := int64(32000) // 32GB in MB
 	priorityTier := int32(100)
 	allowedAccounts := "group1,group2"
 	allowedGroups := "users,admins"
 	nodeList := "gpu-[001-010]"
 	partitionState := V0042PartitionStates{"UP"}
-	
+
 	apiPartition := V0042PartitionInfo{
 		Name: &name,
 		Nodes: &struct {
@@ -76,12 +76,12 @@ func TestConvertAPIPartitionToInterface(t *testing.T) {
 			Total: &totalCPUs,
 		},
 		Maximums: &struct {
-			CpusPerNode            *V0042Uint32NoValStruct `json:"cpus_per_node,omitempty"`
-			CpusPerSocket          *V0042Uint32NoValStruct `json:"cpus_per_socket,omitempty"`
-			MemoryPerCpu           *int64                  `json:"memory_per_cpu,omitempty"`
-			Nodes                  *V0042Uint32NoValStruct `json:"nodes,omitempty"`
-			OverTimeLimit          *V0042Uint16NoValStruct `json:"over_time_limit,omitempty"`
-			Oversubscribe          *struct {
+			CpusPerNode   *V0042Uint32NoValStruct `json:"cpus_per_node,omitempty"`
+			CpusPerSocket *V0042Uint32NoValStruct `json:"cpus_per_socket,omitempty"`
+			MemoryPerCpu  *int64                  `json:"memory_per_cpu,omitempty"`
+			Nodes         *V0042Uint32NoValStruct `json:"nodes,omitempty"`
+			OverTimeLimit *V0042Uint16NoValStruct `json:"over_time_limit,omitempty"`
+			Oversubscribe *struct {
 				Flags *V0042OversubscribeFlags `json:"flags,omitempty"`
 				Jobs  *int32                   `json:"jobs,omitempty"`
 			} `json:"oversubscribe,omitempty"`
@@ -132,9 +132,9 @@ func TestConvertAPIPartitionToInterface(t *testing.T) {
 			State: &partitionState,
 		},
 	}
-	
+
 	interfacePartition, err := convertAPIPartitionToInterface(apiPartition)
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, interfacePartition)
 	assert.Equal(t, "gpu-partition", interfacePartition.Name)
@@ -145,7 +145,7 @@ func TestConvertAPIPartitionToInterface(t *testing.T) {
 	assert.Equal(t, 480, interfacePartition.IdleCPUs) // Simplified: all CPUs idle
 	assert.Equal(t, 720, interfacePartition.MaxTime)
 	assert.Equal(t, 60, interfacePartition.DefaultTime)
-	assert.Equal(t, 128000*1024*1024, interfacePartition.MaxMemory) // Converted to bytes
+	assert.Equal(t, 128000*1024*1024, interfacePartition.MaxMemory)    // Converted to bytes
 	assert.Equal(t, 32000*1024*1024, interfacePartition.DefaultMemory) // Converted to bytes
 	assert.Equal(t, []string{"group1", "group2"}, interfacePartition.AllowedUsers)
 	assert.Equal(t, []string{"users", "admins"}, interfacePartition.AllowedGroups)
@@ -158,9 +158,9 @@ func TestConvertAPIPartitionToInterface(t *testing.T) {
 func TestConvertAPIPartitionToInterface_EmptyFields(t *testing.T) {
 	// Test with empty/nil fields
 	apiPartition := V0042PartitionInfo{}
-	
+
 	interfacePartition, err := convertAPIPartitionToInterface(apiPartition)
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, interfacePartition)
 	assert.Equal(t, "", interfacePartition.Name)
@@ -187,25 +187,25 @@ func TestFilterPartitions(t *testing.T) {
 		{Name: "cpu", State: "DOWN", TotalNodes: 20, TotalCPUs: 960},
 		{Name: "debug", State: "UP", TotalNodes: 2, TotalCPUs: 96},
 	}
-	
+
 	// Test filter by state
 	opts := &interfaces.ListPartitionsOptions{States: []string{"UP"}}
 	filtered := filterPartitions(partitions, opts)
 	assert.Len(t, filtered, 2)
 	assert.Equal(t, "gpu", filtered[0].Name)
 	assert.Equal(t, "debug", filtered[1].Name)
-	
+
 	// Test filter by multiple states
 	opts = &interfaces.ListPartitionsOptions{States: []string{"UP", "DOWN"}}
 	filtered = filterPartitions(partitions, opts)
 	assert.Len(t, filtered, 3) // All partitions match
-	
+
 	// Test limit and offset
 	opts = &interfaces.ListPartitionsOptions{Limit: 1, Offset: 1}
 	filtered = filterPartitions(partitions, opts)
 	assert.Len(t, filtered, 1)
 	assert.Equal(t, "cpu", filtered[0].Name)
-	
+
 	// Test offset beyond available partitions
 	opts = &interfaces.ListPartitionsOptions{Offset: 10}
 	filtered = filterPartitions(partitions, opts)
@@ -217,11 +217,11 @@ func TestFilterPartitions_EmptyFilter(t *testing.T) {
 		{Name: "gpu", State: "UP"},
 		{Name: "cpu", State: "DOWN"},
 	}
-	
+
 	// Test with nil options (should return all partitions)
 	filtered := filterPartitions(partitions, nil)
 	assert.Len(t, filtered, 2)
-	
+
 	// Test with empty options (should return all partitions)
 	opts := &interfaces.ListPartitionsOptions{}
 	filtered = filterPartitions(partitions, opts)
@@ -231,7 +231,7 @@ func TestFilterPartitions_EmptyFilter(t *testing.T) {
 func TestNewPartitionManagerImpl(t *testing.T) {
 	client := &WrapperClient{}
 	impl := NewPartitionManagerImpl(client)
-	
+
 	assert.NotNil(t, impl)
 	assert.Equal(t, client, impl.client)
 }
