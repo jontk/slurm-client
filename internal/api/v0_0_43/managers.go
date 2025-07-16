@@ -11,133 +11,175 @@ import (
 // JobManager implements the JobManager interface for API version v0.0.43
 type JobManager struct {
 	client *WrapperClient
+	impl   *JobManagerImpl
 }
 
 // List jobs with optional filtering
 func (m *JobManager) List(ctx context.Context, opts *interfaces.ListJobsOptions) (*interfaces.JobList, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
 }
 
 // Get retrieves a specific job by ID
 func (m *JobManager) Get(ctx context.Context, jobID string) (*interfaces.Job, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, jobID)
 }
 
 // Submit submits a new job
 func (m *JobManager) Submit(ctx context.Context, job *interfaces.JobSubmission) (*interfaces.JobSubmitResponse, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.Submit(ctx, job)
 }
 
 // Cancel cancels a job
 func (m *JobManager) Cancel(ctx context.Context, jobID string) error {
-	// Implementation will be added by developers
-	return nil
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.Cancel(ctx, jobID)
 }
 
 // Update updates job properties
 func (m *JobManager) Update(ctx context.Context, jobID string, update *interfaces.JobUpdate) error {
-	// Implementation will be added by developers
-	return nil
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, jobID, update)
 }
 
 // Steps retrieves job steps for a job
 func (m *JobManager) Steps(ctx context.Context, jobID string) (*interfaces.JobStepList, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.Steps(ctx, jobID)
 }
 
 // Watch provides real-time job updates
 func (m *JobManager) Watch(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.Watch(ctx, opts)
 }
 
 // NodeManager implements the NodeManager interface for API version v0.0.43
 type NodeManager struct {
 	client *WrapperClient
+	impl   *NodeManagerImpl
 }
 
 // List nodes with optional filtering
 func (m *NodeManager) List(ctx context.Context, opts *interfaces.ListNodesOptions) (*interfaces.NodeList, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewNodeManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
 }
 
 // Get retrieves a specific node by name
 func (m *NodeManager) Get(ctx context.Context, nodeName string) (*interfaces.Node, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewNodeManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, nodeName)
 }
 
 // Update updates node properties
 func (m *NodeManager) Update(ctx context.Context, nodeName string, update *interfaces.NodeUpdate) error {
-	// Implementation will be added by developers
-	return nil
+	if m.impl == nil {
+		m.impl = NewNodeManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, nodeName, update)
 }
 
 // Watch provides real-time node updates
 func (m *NodeManager) Watch(ctx context.Context, opts *interfaces.WatchNodesOptions) (<-chan interfaces.NodeEvent, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewNodeManagerImpl(m.client)
+	}
+	return m.impl.Watch(ctx, opts)
 }
 
 // PartitionManager implements the PartitionManager interface for API version v0.0.43
 type PartitionManager struct {
 	client *WrapperClient
+	impl   *PartitionManagerImpl
 }
 
 // List partitions with optional filtering
 func (m *PartitionManager) List(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewPartitionManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
 }
 
 // Get retrieves a specific partition by name
 func (m *PartitionManager) Get(ctx context.Context, partitionName string) (*interfaces.Partition, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewPartitionManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, partitionName)
 }
 
 // Update updates partition properties
 func (m *PartitionManager) Update(ctx context.Context, partitionName string, update *interfaces.PartitionUpdate) error {
-	// Implementation will be added by developers
-	return nil
+	if m.impl == nil {
+		m.impl = NewPartitionManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, partitionName, update)
 }
 
 // Watch provides real-time partition updates
 func (m *PartitionManager) Watch(ctx context.Context, opts *interfaces.WatchPartitionsOptions) (<-chan interfaces.PartitionEvent, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewPartitionManagerImpl(m.client)
+	}
+	return m.impl.Watch(ctx, opts)
 }
 
 // InfoManager implements the InfoManager interface for API version v0.0.43
 type InfoManager struct {
 	client *WrapperClient
+	impl   *InfoManagerImpl
 }
 
 // Get retrieves cluster information
 func (m *InfoManager) Get(ctx context.Context) (*interfaces.ClusterInfo, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewInfoManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx)
 }
 
 // Ping tests connectivity to the cluster
 func (m *InfoManager) Ping(ctx context.Context) error {
-	// Implementation will be added by developers
-	return nil
+	if m.impl == nil {
+		m.impl = NewInfoManagerImpl(m.client)
+	}
+	return m.impl.Ping(ctx)
 }
 
 // Stats retrieves cluster statistics
 func (m *InfoManager) Stats(ctx context.Context) (*interfaces.ClusterStats, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewInfoManagerImpl(m.client)
+	}
+	return m.impl.Stats(ctx)
 }
 
 // Version retrieves API version information
 func (m *InfoManager) Version(ctx context.Context) (*interfaces.APIVersion, error) {
-	// Implementation will be added by developers
-	return nil, nil
+	if m.impl == nil {
+		m.impl = NewInfoManagerImpl(m.client)
+	}
+	return m.impl.Version(ctx)
 }

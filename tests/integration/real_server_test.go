@@ -2,6 +2,7 @@ package integration
 
 import (
 	"context"
+	goerrors "errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -16,6 +17,7 @@ import (
 	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
+	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // RealServerTestSuite tests against a real slurmrestd server
@@ -174,7 +176,7 @@ func (suite *RealServerTestSuite) TestJobSubmission() {
 	submission := &interfaces.JobSubmission{
 		Name:      "go-client-test-" + time.Now().Format("20060102-150405"),
 		Script:    "#!/bin/bash\necho 'Hello from Go SLURM client test'\nhostname\ndate\nsleep 30",
-		Partition: "compute", // This may need to be adjusted based on your cluster
+		Partition: "debug", // Using debug partition which exists on the test server
 		Nodes:     1,
 		CPUs:      1,
 		TimeLimit: 5, // 5 minutes
@@ -182,6 +184,32 @@ func (suite *RealServerTestSuite) TestJobSubmission() {
 	
 	suite.T().Logf("Submitting job: %s", submission.Name)
 	response, err := suite.client.Jobs().Submit(ctx, submission)
+	if err != nil {
+		suite.T().Logf("Job submission error: %v", err)
+		// Import the errors package if not already imported
+		var slurmErr *errors.SlurmError
+		if goerrors.As(err, &slurmErr) {
+			suite.T().Logf("Error Code: %s", slurmErr.Code)
+			suite.T().Logf("Error Category: %s", slurmErr.Category)
+			suite.T().Logf("Error Message: %s", slurmErr.Message)
+			suite.T().Logf("Error Details: %s", slurmErr.Details)
+			suite.T().Logf("Status Code: %d", slurmErr.StatusCode)
+		}
+		
+		// Check if it's a SlurmAPIError with more details
+		var apiErr *errors.SlurmAPIError
+		if goerrors.As(err, &apiErr) {
+			suite.T().Logf("API Error Number: %d", apiErr.ErrorNumber)
+			suite.T().Logf("API Error Code: %s", apiErr.ErrorCode)
+			suite.T().Logf("API Error Source: %s", apiErr.Source)
+			if len(apiErr.Errors) > 0 {
+				for i, detail := range apiErr.Errors {
+					suite.T().Logf("API Error Detail %d: [%d] %s - %s (source: %s)", 
+						i+1, detail.ErrorNumber, detail.ErrorCode, detail.Description, detail.Source)
+				}
+			}
+		}
+	}
 	suite.Require().NoError(err)
 	suite.NotEmpty(response.JobID)
 	
