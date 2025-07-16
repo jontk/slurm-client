@@ -235,9 +235,19 @@ func (suite *RealServerTestSuite) TestGetStats() {
 	suite.Require().NoError(err)
 	
 	suite.T().Logf("Cluster Statistics:")
-	suite.T().Logf("  Total Nodes: %d", stats.TotalNodes)
-	suite.T().Logf("  Total CPUs: %d", stats.TotalCPUs)
-	suite.T().Logf("  Total Jobs: %d", stats.TotalJobs)
+	suite.T().Logf("  Node Statistics:")
+	suite.T().Logf("    Total Nodes: %d", stats.TotalNodes)
+	suite.T().Logf("    Idle Nodes: %d", stats.IdleNodes)
+	suite.T().Logf("    Allocated Nodes: %d", stats.AllocatedNodes)
+	suite.T().Logf("  CPU Statistics:")
+	suite.T().Logf("    Total CPUs: %d", stats.TotalCPUs)
+	suite.T().Logf("    Idle CPUs: %d", stats.IdleCPUs)
+	suite.T().Logf("    Allocated CPUs: %d", stats.AllocatedCPUs)
+	suite.T().Logf("  Job Statistics:")
+	suite.T().Logf("    Total Jobs: %d", stats.TotalJobs)
+	suite.T().Logf("    Running Jobs: %d", stats.RunningJobs)
+	suite.T().Logf("    Pending Jobs: %d", stats.PendingJobs)
+	suite.T().Logf("    Completed Jobs: %d", stats.CompletedJobs)
 }
 
 // fetchJWTTokenViaSSH fetches a JWT token from the server via SSH

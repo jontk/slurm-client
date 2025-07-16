@@ -297,6 +297,40 @@ type APIVersion struct {
 	Deprecated  bool   `json:"deprecated"`
 }
 
+// ExtendedDiagnostics represents detailed diagnostic information from the cluster
+type ExtendedDiagnostics struct {
+	// Basic statistics (same as ClusterStats)
+	ClusterStats
+	
+	// Additional job statistics
+	JobsFailed    int `json:"jobs_failed"`
+	JobsCanceled  int `json:"jobs_canceled"`
+	JobsTimeout   int `json:"jobs_timeout"`
+	
+	// Backfill scheduler statistics
+	BackfillActive         bool  `json:"backfill_active"`
+	BackfillJobsTotal      int   `json:"backfill_jobs_total"`
+	BackfillJobsRecent     int   `json:"backfill_jobs_recent"`
+	BackfillCycleCount     int   `json:"backfill_cycle_count"`
+	BackfillCycleMeanTime  int64 `json:"backfill_cycle_mean_time"`
+	
+	// Server performance statistics
+	ServerThreadCount      int   `json:"server_thread_count"`
+	AgentQueueSize         int   `json:"agent_queue_size"`
+	ScheduleCycleMax       int   `json:"schedule_cycle_max"`
+	ScheduleCycleLast      int   `json:"schedule_cycle_last"`
+	ScheduleCycleMean      int64 `json:"schedule_cycle_mean"`
+	
+	// RPC statistics
+	RPCsTotal              int   `json:"rpcs_total"`
+	RPCsPending            int   `json:"rpcs_pending"`
+	RPCsCompleted          int   `json:"rpcs_completed"`
+	
+	// Additional metadata
+	DiagTime               time.Time              `json:"diag_time"`
+	RawData                map[string]interface{} `json:"raw_data,omitempty"`
+}
+
 // List options for filtering
 
 // ListJobsOptions provides options for listing jobs

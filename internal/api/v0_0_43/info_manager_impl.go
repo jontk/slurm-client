@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
@@ -266,12 +267,55 @@ func (m *InfoManagerImpl) Stats(ctx context.Context) (*interfaces.ClusterStats, 
 		stats.CompletedJobs = int(*resp.JSON200.Statistics.JobsCompleted)
 	}
 
-	// Server thread count and other metrics can provide additional insights
-	// but aren't directly mappable to our interface. We'll use what we have.
+	// Get node statistics by querying the nodes endpoint
+	nodesResp, err := m.client.apiClient.SlurmV0043GetNodesWithResponse(ctx, nil)
+	if err == nil && nodesResp.StatusCode() == 200 && nodesResp.JSON200 != nil {
+		// Count nodes and CPUs by state
+		for _, node := range nodesResp.JSON200.Nodes {
+			stats.TotalNodes++
+			
+			// Count CPUs
+			if node.Cpus != nil {
+				stats.TotalCPUs += int(*node.Cpus)
+			}
+			
+			// Check node state
+			if node.State != nil && len(*node.State) > 0 {
+				state := string((*node.State)[0])
+				switch {
+				case strings.Contains(strings.ToLower(state), "idle"):
+					stats.IdleNodes++
+					if node.Cpus != nil {
+						stats.IdleCPUs += int(*node.Cpus)
+					}
+				case strings.Contains(strings.ToLower(state), "alloc") || 
+				     strings.Contains(strings.ToLower(state), "mixed"):
+					stats.AllocatedNodes++
+					// For allocated/mixed nodes, we'd need more info to get exact CPU allocation
+					// This is a simplified approach
+					if node.Cpus != nil && strings.Contains(strings.ToLower(state), "alloc") {
+						stats.AllocatedCPUs += int(*node.Cpus)
+					}
+				}
+			}
+		}
+		
+		// Calculate idle CPUs if not fully allocated
+		if stats.IdleCPUs == 0 && stats.TotalCPUs > 0 {
+			stats.IdleCPUs = stats.TotalCPUs - stats.AllocatedCPUs
+		}
+	}
 
-	// Note: Node and CPU statistics aren't directly available in the diag endpoint
-	// These would typically require separate calls to the nodes endpoint
-	// For now, we'll leave them as 0 or implement them as separate calls if needed
+	// Add more diagnostic statistics if available
+	if resp.JSON200.Statistics.JobsFailed != nil {
+		// We can track failed jobs separately if needed
+		// stats.FailedJobs = int(*resp.JSON200.Statistics.JobsFailed)
+	}
+	
+	if resp.JSON200.Statistics.JobsCanceled != nil {
+		// We can track canceled jobs separately if needed
+		// stats.CanceledJobs = int(*resp.JSON200.Statistics.JobsCanceled)
+	}
 
 	return stats, nil
 }
