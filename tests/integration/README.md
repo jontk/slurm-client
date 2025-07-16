@@ -1,6 +1,6 @@
 # Integration Test Framework
 
-This directory contains comprehensive integration tests for the slurm-client library.
+This directory contains comprehensive integration tests for the slurm-client library, including both mock server tests and real SLURM server tests.
 
 ## Test Structure
 
@@ -14,6 +14,7 @@ This directory contains comprehensive integration tests for the slurm-client lib
 - **`multi_version_test.go`** - Cross-version compatibility and migration testing
 - **`auth_test.go`** - Authentication provider validation across versions
 - **`error_handling_test.go`** - Structured error handling and classification testing
+- **`real_server_test.go`** - Tests against real SLURM REST API servers
 
 ## Mock Server Features
 
@@ -60,9 +61,11 @@ The test framework is complete and ready to validate client implementations. Cur
 
 ## Running Tests
 
+### Mock Server Tests
+
 ```bash
-# Run all integration tests (will fail until client implementation is complete)
-go test -v ./tests/integration/...
+# Run all mock server integration tests
+go test -v ./tests/integration/... -run "^Test[^R][^e][^a][^l]"
 
 # Run specific test suites
 go test -v ./tests/integration/job_lifecycle_test.go
@@ -73,6 +76,22 @@ go test -v ./tests/integration/error_handling_test.go
 # Test with timeout for network scenarios
 go test -v ./tests/integration/... -timeout 60s
 ```
+
+### Real Server Tests
+
+```bash
+# Use the test script (recommended)
+export SLURM_REAL_SERVER_TEST=true
+./scripts/test-real-server.sh
+
+# Or run directly with configuration
+export SLURM_REAL_SERVER_TEST=true
+export SLURM_SERVER_URL="http://rocky9:6820"
+export SLURM_API_VERSION="v0.0.42"
+go test -v ./tests/integration -run TestRealServer
+```
+
+See the [Real Server Testing](#real-server-testing) section below for detailed configuration.
 
 ## Test Coverage
 
@@ -115,3 +134,79 @@ This integration test framework provides:
 5. **Development Velocity** - Fast feedback during implementation
 
 The framework is production-ready and will provide excellent validation once the client implementation is completed.
+
+## Real Server Testing
+
+The `real_server_test.go` provides comprehensive testing against real SLURM REST API servers.
+
+### Current Status
+⚠️ **Note**: As of now, only the Ping test will pass against a real server because most client manager methods are not yet implemented (they return `nil, nil`). Only `JobManager.List()` is fully implemented. This test suite will validate the implementations as they are completed.
+
+### Prerequisites
+
+1. Access to a SLURM REST API server (e.g., `rocky9:6820`)
+2. SSH access to the server for JWT token generation
+3. Network connectivity to the API endpoint
+
+### Configuration
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `SLURM_REAL_SERVER_TEST` | `false` | Must be `true` to enable real server tests |
+| `SLURM_SERVER_URL` | `http://rocky9:6820` | SLURM REST API endpoint |
+| `SLURM_API_VERSION` | `v0.0.43` | API version (v0.0.43 is latest for SLURM 25.05) |
+| `SLURM_SSH_HOST` | `rocky9` | SSH host for token generation |
+| `SLURM_SSH_USER` | `root` | SSH user for token generation |
+| `SLURM_JWT_TOKEN` | (auto-fetched) | JWT token (optional, fetched via SSH if not provided) |
+
+### Running Real Server Tests
+
+```bash
+# Quick start with defaults
+export SLURM_REAL_SERVER_TEST=true
+./scripts/test-real-server.sh
+
+# Custom configuration
+export SLURM_REAL_SERVER_TEST=true
+export SLURM_SERVER_URL="http://your-slurm-server:6820"
+export SLURM_API_VERSION="v0.0.40"
+export SLURM_SSH_HOST="your-slurm-server"
+export SLURM_SSH_USER="slurm-admin"
+./scripts/test-real-server.sh
+
+# Provide token directly (skip SSH)
+export SLURM_REAL_SERVER_TEST=true
+export SLURM_JWT_TOKEN="your-jwt-token-here"
+go test -v ./tests/integration -run TestRealServer
+```
+
+### Test Coverage
+
+Real server tests validate:
+- **Authentication**: JWT token validation
+- **Connectivity**: Ping and version endpoints
+- **Job Operations**: Submit, list, get, cancel real jobs
+- **Node Operations**: List and inspect cluster nodes
+- **Partition Operations**: List and inspect partitions
+- **Statistics**: Cluster utilization and metrics
+
+### Security Considerations
+
+1. **SSH Keys**: Use key-based authentication for automated testing
+2. **Token Security**: Never commit JWT tokens to version control
+3. **Test Isolation**: Use dedicated test partitions to avoid disrupting production
+4. **Resource Cleanup**: Tests attempt to cancel submitted jobs
+
+### Troubleshooting
+
+```bash
+# Test SSH connectivity
+ssh -v root@rocky9 echo "OK"
+
+# Manually fetch a token
+TOKEN=$(ssh root@rocky9 'unset SLURM_JWT; /opt/slurm/current/bin/scontrol token' | grep SLURM_JWT | cut -d= -f2)
+echo "Token: ${TOKEN:0:50}..."
+
+# Test API with curl
+curl -H X-SLURM-USER-TOKEN:$TOKEN -X GET 'http://rocky9:6820/slurm/v0.0.42/ping'
+```
