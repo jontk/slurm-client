@@ -263,11 +263,17 @@ func (f *ClientFactory) createClient(version *versioning.APIVersion) (SlurmClien
 // Version-specific client creation methods (to be implemented with generated code)
 
 func (f *ClientFactory) createV0_0_40Client() (SlurmClient, error) {
+	// Create authenticated HTTP client
+	httpClient := f.httpClient
+	if f.auth != nil {
+		httpClient = createAuthenticatedHTTPClient(f.httpClient, f.auth)
+	}
+
 	config := &ClientConfig{
 		BaseURL:    f.baseURL,
-		HTTPClient: f.httpClient,
-		APIKey:     "",    // TODO: Extract from f.auth if needed
-		Debug:      false, // TODO: Extract from f.config if needed
+		HTTPClient: httpClient,
+		APIKey:     "",    // Not used when we have auth provider
+		Debug:      f.config.Debug,
 	}
 
 	wrapperClient, err := v040.NewWrapperClient(config)
@@ -279,11 +285,17 @@ func (f *ClientFactory) createV0_0_40Client() (SlurmClient, error) {
 }
 
 func (f *ClientFactory) createV0_0_41Client() (SlurmClient, error) {
+	// Create authenticated HTTP client
+	httpClient := f.httpClient
+	if f.auth != nil {
+		httpClient = createAuthenticatedHTTPClient(f.httpClient, f.auth)
+	}
+
 	config := &ClientConfig{
 		BaseURL:    f.baseURL,
-		HTTPClient: f.httpClient,
-		APIKey:     "",    // TODO: Extract from f.auth if needed
-		Debug:      false, // TODO: Extract from f.config if needed
+		HTTPClient: httpClient,
+		APIKey:     "",    // Not used when we have auth provider
+		Debug:      f.config.Debug,
 	}
 
 	wrapperClient, err := v041.NewWrapperClient(config)
@@ -295,11 +307,17 @@ func (f *ClientFactory) createV0_0_41Client() (SlurmClient, error) {
 }
 
 func (f *ClientFactory) createV0_0_42Client() (SlurmClient, error) {
+	// Create authenticated HTTP client
+	httpClient := f.httpClient
+	if f.auth != nil {
+		httpClient = createAuthenticatedHTTPClient(f.httpClient, f.auth)
+	}
+
 	config := &ClientConfig{
 		BaseURL:    f.baseURL,
-		HTTPClient: f.httpClient,
-		APIKey:     "",    // TODO: Extract from f.auth if needed
-		Debug:      false, // TODO: Extract from f.config if needed
+		HTTPClient: httpClient,
+		APIKey:     "",    // Not used when we have auth provider
+		Debug:      f.config.Debug,
 	}
 
 	wrapperClient, err := v042.NewWrapperClient(config)
@@ -311,11 +329,17 @@ func (f *ClientFactory) createV0_0_42Client() (SlurmClient, error) {
 }
 
 func (f *ClientFactory) createV0_0_43Client() (SlurmClient, error) {
+	// Create authenticated HTTP client
+	httpClient := f.httpClient
+	if f.auth != nil {
+		httpClient = createAuthenticatedHTTPClient(f.httpClient, f.auth)
+	}
+
 	config := &ClientConfig{
 		BaseURL:    f.baseURL,
-		HTTPClient: f.httpClient,
-		APIKey:     "",    // TODO: Extract from f.auth if needed
-		Debug:      false, // TODO: Extract from f.config if needed
+		HTTPClient: httpClient,
+		APIKey:     "",    // Not used when we have auth provider
+		Debug:      f.config.Debug,
 	}
 
 	wrapperClient, err := v043.NewWrapperClient(config)
