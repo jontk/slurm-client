@@ -229,3 +229,49 @@ func (m *ReservationManager) Delete(ctx context.Context, reservationName string)
 	}
 	return m.impl.Delete(ctx, reservationName)
 }
+
+// QoSManager implements the QoSManager interface for API version v0.0.43
+type QoSManager struct {
+	client *WrapperClient
+	impl   *QoSManagerImpl
+}
+
+// List QoS with optional filtering
+func (m *QoSManager) List(ctx context.Context, opts *interfaces.ListQoSOptions) (*interfaces.QoSList, error) {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
+
+// Get retrieves a specific QoS by name
+func (m *QoSManager) Get(ctx context.Context, qosName string) (*interfaces.QoS, error) {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, qosName)
+}
+
+// Create creates a new QoS
+func (m *QoSManager) Create(ctx context.Context, qos *interfaces.QoSCreate) (*interfaces.QoSCreateResponse, error) {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Create(ctx, qos)
+}
+
+// Update updates an existing QoS
+func (m *QoSManager) Update(ctx context.Context, qosName string, update *interfaces.QoSUpdate) error {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, qosName, update)
+}
+
+// Delete deletes a QoS
+func (m *QoSManager) Delete(ctx context.Context, qosName string) error {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Delete(ctx, qosName)
+}

@@ -26,6 +26,9 @@ type SlurmClient interface {
 	// Reservations returns the ReservationManager for this version (v0.0.43+)
 	Reservations() ReservationManager
 
+	// QoS returns the QoSManager for this version (v0.0.43+)
+	QoS() QoSManager
+
 	// Close closes the client and any resources
 	Close() error
 }
@@ -115,6 +118,24 @@ type ReservationManager interface {
 
 	// Delete deletes a reservation
 	Delete(ctx context.Context, reservationName string) error
+}
+
+// QoSManager provides version-agnostic QoS (Quality of Service) operations
+type QoSManager interface {
+	// List QoS with optional filtering
+	List(ctx context.Context, opts *ListQoSOptions) (*QoSList, error)
+
+	// Get retrieves a specific QoS by name
+	Get(ctx context.Context, qosName string) (*QoS, error)
+
+	// Create creates a new QoS
+	Create(ctx context.Context, qos *QoSCreate) (*QoSCreateResponse, error)
+
+	// Update updates an existing QoS
+	Update(ctx context.Context, qosName string, update *QoSUpdate) error
+
+	// Delete deletes a QoS
+	Delete(ctx context.Context, qosName string) error
 }
 
 // Common data structures (version-agnostic)
@@ -420,6 +441,95 @@ type ReservationUpdate struct {
 	Features     []string          `json:"features,omitempty"`
 }
 
+// QoS represents a Quality of Service configuration
+type QoS struct {
+	Name               string                 `json:"name"`
+	Description        string                 `json:"description"`
+	Priority           int                    `json:"priority"`
+	PreemptMode        string                 `json:"preempt_mode"`
+	GraceTime          int                    `json:"grace_time"`
+	MaxJobs            int                    `json:"max_jobs"`
+	MaxJobsPerUser     int                    `json:"max_jobs_per_user"`
+	MaxJobsPerAccount  int                    `json:"max_jobs_per_account"`
+	MaxSubmitJobs      int                    `json:"max_submit_jobs"`
+	MaxCPUs            int                    `json:"max_cpus"`
+	MaxCPUsPerUser     int                    `json:"max_cpus_per_user"`
+	MaxNodes           int                    `json:"max_nodes"`
+	MaxWallTime        int                    `json:"max_wall_time"`
+	MinCPUs            int                    `json:"min_cpus"`
+	MinNodes           int                    `json:"min_nodes"`
+	UsageFactor        float64                `json:"usage_factor"`
+	UsageThreshold     float64                `json:"usage_threshold"`
+	Flags              []string               `json:"flags"`
+	AllowedAccounts    []string               `json:"allowed_accounts"`
+	DeniedAccounts     []string               `json:"denied_accounts"`
+	AllowedUsers       []string               `json:"allowed_users"`
+	DeniedUsers        []string               `json:"denied_users"`
+	Metadata           map[string]interface{} `json:"metadata"`
+}
+
+// QoSList represents a list of QoS configurations
+type QoSList struct {
+	QoS   []QoS `json:"qos"`
+	Total int   `json:"total"`
+}
+
+// QoSCreate represents a QoS creation request
+type QoSCreate struct {
+	Name               string   `json:"name"`
+	Description        string   `json:"description,omitempty"`
+	Priority           int      `json:"priority,omitempty"`
+	PreemptMode        string   `json:"preempt_mode,omitempty"`
+	GraceTime          int      `json:"grace_time,omitempty"`
+	MaxJobs            int      `json:"max_jobs,omitempty"`
+	MaxJobsPerUser     int      `json:"max_jobs_per_user,omitempty"`
+	MaxJobsPerAccount  int      `json:"max_jobs_per_account,omitempty"`
+	MaxSubmitJobs      int      `json:"max_submit_jobs,omitempty"`
+	MaxCPUs            int      `json:"max_cpus,omitempty"`
+	MaxCPUsPerUser     int      `json:"max_cpus_per_user,omitempty"`
+	MaxNodes           int      `json:"max_nodes,omitempty"`
+	MaxWallTime        int      `json:"max_wall_time,omitempty"`
+	MinCPUs            int      `json:"min_cpus,omitempty"`
+	MinNodes           int      `json:"min_nodes,omitempty"`
+	UsageFactor        float64  `json:"usage_factor,omitempty"`
+	UsageThreshold     float64  `json:"usage_threshold,omitempty"`
+	Flags              []string `json:"flags,omitempty"`
+	AllowedAccounts    []string `json:"allowed_accounts,omitempty"`
+	DeniedAccounts     []string `json:"denied_accounts,omitempty"`
+	AllowedUsers       []string `json:"allowed_users,omitempty"`
+	DeniedUsers        []string `json:"denied_users,omitempty"`
+}
+
+// QoSCreateResponse represents the response from QoS creation
+type QoSCreateResponse struct {
+	QoSName string `json:"qos_name"`
+}
+
+// QoSUpdate represents a QoS update request
+type QoSUpdate struct {
+	Description        *string   `json:"description,omitempty"`
+	Priority           *int      `json:"priority,omitempty"`
+	PreemptMode        *string   `json:"preempt_mode,omitempty"`
+	GraceTime          *int      `json:"grace_time,omitempty"`
+	MaxJobs            *int      `json:"max_jobs,omitempty"`
+	MaxJobsPerUser     *int      `json:"max_jobs_per_user,omitempty"`
+	MaxJobsPerAccount  *int      `json:"max_jobs_per_account,omitempty"`
+	MaxSubmitJobs      *int      `json:"max_submit_jobs,omitempty"`
+	MaxCPUs            *int      `json:"max_cpus,omitempty"`
+	MaxCPUsPerUser     *int      `json:"max_cpus_per_user,omitempty"`
+	MaxNodes           *int      `json:"max_nodes,omitempty"`
+	MaxWallTime        *int      `json:"max_wall_time,omitempty"`
+	MinCPUs            *int      `json:"min_cpus,omitempty"`
+	MinNodes           *int      `json:"min_nodes,omitempty"`
+	UsageFactor        *float64  `json:"usage_factor,omitempty"`
+	UsageThreshold     *float64  `json:"usage_threshold,omitempty"`
+	Flags              []string  `json:"flags,omitempty"`
+	AllowedAccounts    []string  `json:"allowed_accounts,omitempty"`
+	DeniedAccounts     []string  `json:"denied_accounts,omitempty"`
+	AllowedUsers       []string  `json:"allowed_users,omitempty"`
+	DeniedUsers        []string  `json:"denied_users,omitempty"`
+}
+
 // List options for filtering
 
 // ListJobsOptions provides options for listing jobs
@@ -453,6 +563,15 @@ type ListReservationsOptions struct {
 	Users    []string `json:"users,omitempty"`
 	Accounts []string `json:"accounts,omitempty"`
 	States   []string `json:"states,omitempty"`
+	Limit    int      `json:"limit,omitempty"`
+	Offset   int      `json:"offset,omitempty"`
+}
+
+// ListQoSOptions provides options for listing QoS
+type ListQoSOptions struct {
+	Names    []string `json:"names,omitempty"`
+	Accounts []string `json:"accounts,omitempty"`
+	Users    []string `json:"users,omitempty"`
 	Limit    int      `json:"limit,omitempty"`
 	Offset   int      `json:"offset,omitempty"`
 }

@@ -64,6 +64,11 @@ func (c *WrapperClient) Reservations() interfaces.ReservationManager {
 	return &ReservationManager{client: c}
 }
 
+// QoS returns the QoSManager
+func (c *WrapperClient) QoS() interfaces.QoSManager {
+	return &QoSManager{client: c}
+}
+
 // Close closes the client
 func (c *WrapperClient) Close() error {
 	// No resources to close for HTTP client

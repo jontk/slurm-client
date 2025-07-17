@@ -139,12 +139,17 @@ func (c *WrapperClient) Reservations() interfaces.ReservationManager {
 	%s
 }
 
+// QoS returns the QoSManager
+func (c *WrapperClient) QoS() interfaces.QoSManager {
+	%s
+}
+
 // Close closes the client
 func (c *WrapperClient) Close() error {
 	// No resources to close for HTTP client
 	return nil
 }
-`, normalizeVersion(version), version, version, version, getReservationsImplementation(version))
+`, normalizeVersion(version), version, version, version, getReservationsImplementation(version), getQoSImplementation(version))
 	
 	return os.WriteFile(wrapperFile, []byte(content), 0644)
 }
@@ -171,6 +176,15 @@ func getReservationsImplementation(version string) string {
 	// Only v0.0.43 and later support reservations
 	if version == "v0.0.43" {
 		return "return &ReservationManager{client: c}"
+	}
+	// Earlier versions return nil
+	return "return nil"
+}
+
+func getQoSImplementation(version string) string {
+	// Only v0.0.43 and later support QoS
+	if version == "v0.0.43" {
+		return "return &QoSManager{client: c}"
 	}
 	// Earlier versions return nil
 	return "return nil"

@@ -64,6 +64,11 @@ func (c *WrapperClient) Reservations() interfaces.ReservationManager {
 	return nil
 }
 
+// QoS returns nil as QoS is not supported in v0.0.41
+func (c *WrapperClient) QoS() interfaces.QoSManager {
+	return nil
+}
+
 // Close closes the client
 func (c *WrapperClient) Close() error {
 	// No resources to close for HTTP client
