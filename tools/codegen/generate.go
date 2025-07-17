@@ -134,12 +134,17 @@ func (c *WrapperClient) Info() interfaces.InfoManager {
 	return &InfoManager{client: c}
 }
 
+// Reservations returns the ReservationManager
+func (c *WrapperClient) Reservations() interfaces.ReservationManager {
+	%s
+}
+
 // Close closes the client
 func (c *WrapperClient) Close() error {
 	// No resources to close for HTTP client
 	return nil
 }
-`, normalizeVersion(version), version, version, version)
+`, normalizeVersion(version), version, version, version, getReservationsImplementation(version))
 	
 	return os.WriteFile(wrapperFile, []byte(content), 0644)
 }
@@ -160,6 +165,15 @@ func normalizeVersion(version string) string {
 	}
 	
 	return result
+}
+
+func getReservationsImplementation(version string) string {
+	// Only v0.0.43 and later support reservations
+	if version == "v0.0.43" {
+		return "return &ReservationManager{client: c}"
+	}
+	// Earlier versions return nil
+	return "return nil"
 }
 
 func generateManagers(version, outputDir string) error {
