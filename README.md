@@ -315,6 +315,62 @@ if err == nil {
 }
 ```
 
+### Reservation Management (v0.0.43+)
+
+```go
+// Check if reservations are supported
+if client.Reservations() == nil {
+    log.Println("Reservations not supported in this API version")
+    return
+}
+
+// List all reservations
+reservations, err := client.Reservations().List(ctx, nil)
+if err != nil {
+    log.Printf("Failed to list reservations: %v", err)
+    return
+}
+
+for _, res := range reservations.Reservations {
+    fmt.Printf("Reservation %s: %s to %s\\n", 
+               res.Name, res.StartTime, res.EndTime)
+}
+
+// Create a reservation
+newReservation := &interfaces.ReservationCreate{
+    Name:      "maintenance-window",
+    StartTime: time.Now().Add(24 * time.Hour),
+    Duration:  4 * 3600, // 4 hours
+    Nodes:     []string{"node001", "node002"},
+    Users:     []string{"admin"},
+    Flags:     []string{"MAINT", "IGNORE_JOBS"},
+}
+
+resp, err := client.Reservations().Create(ctx, newReservation)
+if err != nil {
+    log.Printf("Failed to create reservation: %v", err)
+} else {
+    fmt.Printf("Created reservation: %s\\n", resp.ReservationName)
+}
+
+// Update a reservation
+update := &interfaces.ReservationUpdate{
+    EndTime: &newEndTime,
+    Users:   []string{"admin", "operator"},
+}
+
+err = client.Reservations().Update(ctx, "maintenance-window", update)
+if err != nil {
+    log.Printf("Failed to update reservation: %v", err)
+}
+
+// Delete a reservation
+err = client.Reservations().Delete(ctx, "maintenance-window")
+if err != nil {
+    log.Printf("Failed to delete reservation: %v", err)
+}
+```
+
 ## 🛡️ Structured Error Handling
 
 The library provides comprehensive structured error handling with specific error types and codes:
@@ -487,6 +543,7 @@ Complete compatibility across all active SLURM REST API versions:
 | Node Management | ✅ | ✅ | ✅ | ✅ | Complete |
 | Partition Management | ✅ | ✅ | ✅ | ✅ | Complete |
 | Cluster Info | ✅ | ✅ | ✅ | ✅ | Complete |
+| Reservation Management | ❌ | ❌ | ❌ | ✅ | v0.0.43+ |
 | Structured Errors | ✅ | ✅ | ✅ | ✅ | Complete |
 | Auto Version Detection | ✅ | ✅ | ✅ | ✅ | Complete |
 
@@ -496,6 +553,41 @@ The library automatically handles breaking changes between versions:
 - **Removed Fields**: `exclusive`, `oversubscribe` from job outputs (v0.0.41→v0.0.42)  
 - **New Features**: Reservation management in v0.0.43
 - **Deprecations**: FrontEnd mode removal in v0.0.43
+
+## 🔧 CLI Tool
+
+A command-line interface is available for easy interaction with SLURM clusters:
+
+### Installation
+
+```bash
+go install github.com/jontk/slurm-client/cmd/slurm-cli@latest
+```
+
+### Quick Start
+
+```bash
+# Set environment variables
+export SLURM_REST_URL="https://cluster.example.com:6820"
+export SLURM_JWT="your-jwt-token"
+
+# List jobs
+slurm-cli jobs list
+
+# Submit a job
+slurm-cli submit --command "python train.py" --cpus 4 --memory 8192
+
+# Get job details
+slurm-cli jobs get 12345
+
+# List nodes
+slurm-cli nodes list --states IDLE
+
+# Show cluster info
+slurm-cli info
+```
+
+See the [CLI documentation](cmd/slurm-cli/README.md) for complete usage information.
 
 ## 🤝 Contributing
 
