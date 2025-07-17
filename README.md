@@ -661,6 +661,7 @@ All core functionality implemented with comprehensive testing:
 - ✅ **Enterprise-grade patterns** with proper connection management
 - ✅ **Comprehensive test coverage** across critical packages
 - ✅ **Quality assurance** with linting, formatting, and build validation
+- ✅ **Real-time streaming** via WebSocket and Server-Sent Events
 
 ### Building
 
@@ -715,6 +716,51 @@ The library automatically handles breaking changes between versions:
 - **Removed Fields**: `exclusive`, `oversubscribe` from job outputs (v0.0.41→v0.0.42)  
 - **New Features**: Reservation management in v0.0.43
 - **Deprecations**: FrontEnd mode removal in v0.0.43
+
+## 🌊 Real-time Streaming
+
+The library provides WebSocket and Server-Sent Events interfaces for real-time monitoring:
+
+### WebSocket Streaming
+
+```go
+import "github.com/jontk/slurm-client/pkg/streaming"
+
+// Create streaming server
+wsServer := streaming.NewWebSocketServer(client)
+http.HandleFunc("/ws", wsServer.HandleWebSocket)
+
+// JavaScript client
+const ws = new WebSocket('ws://localhost:8080/ws');
+ws.send(JSON.stringify({
+    stream: 'jobs',
+    options: { states: ['RUNNING', 'PENDING'] }
+}));
+```
+
+### Server-Sent Events
+
+```go
+// Create SSE server
+sseServer := streaming.NewSSEServer(client)
+http.HandleFunc("/events", sseServer.HandleSSE)
+
+// JavaScript client
+const eventSource = new EventSource('/events?stream=jobs&states=RUNNING');
+eventSource.onmessage = (event) => {
+    const jobEvent = JSON.parse(event.data);
+    console.log('Job update:', jobEvent);
+};
+```
+
+### Real-time Monitoring
+
+Stream different resource types:
+- **Jobs**: State changes, completion, failures
+- **Nodes**: Availability, allocation changes
+- **Partitions**: Configuration updates
+
+See the [streaming example](examples/streaming-server/) for a complete web interface.
 
 ## 🔧 CLI Tool
 
