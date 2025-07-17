@@ -4,7 +4,7 @@ package v0_0_43
 
 import (
 	"net/http"
-
+	
 	"github.com/jontk/slurm-client/internal/interfaces"
 )
 
@@ -21,13 +21,13 @@ func NewWrapperClient(config *interfaces.ClientConfig) (*WrapperClient, error) {
 	if httpClient == nil {
 		httpClient = &http.Client{}
 	}
-
+	
 	// Create oapi-codegen client
 	apiClient, err := NewClientWithResponses(config.BaseURL, WithHTTPClient(httpClient))
 	if err != nil {
 		return nil, err
 	}
-
+	
 	return &WrapperClient{
 		apiClient: apiClient,
 		config:    config,
@@ -44,7 +44,7 @@ func (c *WrapperClient) Jobs() interfaces.JobManager {
 	return &JobManager{client: c}
 }
 
-// Nodes returns the NodeManager
+// Nodes returns the NodeManager  
 func (c *WrapperClient) Nodes() interfaces.NodeManager {
 	return &NodeManager{client: c}
 }
@@ -67,6 +67,11 @@ func (c *WrapperClient) Reservations() interfaces.ReservationManager {
 // QoS returns the QoSManager
 func (c *WrapperClient) QoS() interfaces.QoSManager {
 	return &QoSManager{client: c}
+}
+
+// Accounts returns the AccountManager
+func (c *WrapperClient) Accounts() interfaces.AccountManager {
+	return &AccountManager{client: c}
 }
 
 // Close closes the client
