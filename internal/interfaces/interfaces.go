@@ -540,6 +540,15 @@ type AccountManager interface {
 	Create(ctx context.Context, account *AccountCreate) (*AccountCreateResponse, error)
 	Update(ctx context.Context, accountName string, update *AccountUpdate) error
 	Delete(ctx context.Context, accountName string) error
+	
+	// Enhanced account hierarchy methods
+	GetAccountHierarchy(ctx context.Context, rootAccount string) (*AccountHierarchy, error)
+	GetParentAccounts(ctx context.Context, accountName string) ([]*Account, error)
+	GetChildAccounts(ctx context.Context, accountName string, depth int) ([]*Account, error)
+	
+	// Quota-related methods
+	GetAccountQuotas(ctx context.Context, accountName string) (*AccountQuota, error)
+	GetAccountQuotaUsage(ctx context.Context, accountName string, timeframe string) (*AccountUsage, error)
 }
 
 // Account represents a SLURM account
@@ -569,6 +578,14 @@ type Account struct {
 	Flags              []string `json:"flags,omitempty"`
 	CreateTime         string   `json:"create_time,omitempty"`
 	UpdateTime         string   `json:"update_time,omitempty"`
+	
+	// Enhanced fields for extended account management
+	Quota              *AccountQuota     `json:"quota,omitempty"`
+	Usage              *AccountUsage     `json:"usage,omitempty"`
+	HierarchyLevel     int               `json:"hierarchy_level,omitempty"`
+	HierarchyPath      []string          `json:"hierarchy_path,omitempty"`
+	TotalSubAccounts   int               `json:"total_sub_accounts,omitempty"`
+	ActiveUserCount    int               `json:"active_user_count,omitempty"`
 }
 
 // AccountList represents a list of accounts
@@ -684,8 +701,64 @@ type ListAccountsOptions struct {
 	WithAssociations bool     `json:"with_associations,omitempty"`
 	WithCoordinators bool     `json:"with_coordinators,omitempty"`
 	WithDeleted      bool     `json:"with_deleted,omitempty"`
+	WithUsers        bool     `json:"with_users,omitempty"`
+	WithQuotas       bool     `json:"with_quotas,omitempty"`
+	WithUsage        bool     `json:"with_usage,omitempty"`
 	Limit            int      `json:"limit,omitempty"`
 	Offset           int      `json:"offset,omitempty"`
+}
+
+// AccountQuota represents quota information for an account
+type AccountQuota struct {
+	CPULimit           int                `json:"cpu_limit,omitempty"`
+	CPUUsed            int                `json:"cpu_used,omitempty"`
+	MaxJobs            int                `json:"max_jobs,omitempty"`
+	JobsUsed           int                `json:"jobs_used,omitempty"`
+	MaxJobsPerUser     int                `json:"max_jobs_per_user,omitempty"`
+	MaxNodes           int                `json:"max_nodes,omitempty"`
+	NodesUsed          int                `json:"nodes_used,omitempty"`
+	MaxWallTime        int                `json:"max_wall_time,omitempty"`
+	GrpTRES            map[string]int     `json:"grp_tres,omitempty"`
+	GrpTRESUsed        map[string]int     `json:"grp_tres_used,omitempty"`
+	GrpTRESMinutes     map[string]int     `json:"grp_tres_minutes,omitempty"`
+	GrpTRESMinutesUsed map[string]int     `json:"grp_tres_minutes_used,omitempty"`
+	MaxTRES            map[string]int     `json:"max_tres,omitempty"`
+	MaxTRESUsed        map[string]int     `json:"max_tres_used,omitempty"`
+	MaxTRESPerUser     map[string]int     `json:"max_tres_per_user,omitempty"`
+	QuotaPeriod        string             `json:"quota_period,omitempty"`
+	LastUpdated        time.Time          `json:"last_updated,omitempty"`
+}
+
+// AccountUsage represents usage statistics for an account
+type AccountUsage struct {
+	AccountName        string             `json:"account_name"`
+	CPUHours           float64            `json:"cpu_hours"`
+	JobCount           int                `json:"job_count"`
+	JobsCompleted      int                `json:"jobs_completed"`
+	JobsFailed         int                `json:"jobs_failed"`
+	JobsCanceled       int                `json:"jobs_canceled"`
+	TotalWallTime      float64            `json:"total_wall_time"`
+	AverageWallTime    float64            `json:"average_wall_time"`
+	TRESUsage          map[string]float64 `json:"tres_usage,omitempty"`
+	UserCount          int                `json:"user_count"`
+	ActiveUsers        []string           `json:"active_users,omitempty"`
+	Period             string             `json:"period,omitempty"`
+	StartTime          time.Time          `json:"start_time"`
+	EndTime            time.Time          `json:"end_time"`
+	EfficiencyRatio    float64            `json:"efficiency_ratio,omitempty"`
+}
+
+// AccountHierarchy represents the hierarchical structure of accounts
+type AccountHierarchy struct {
+	Account         *Account               `json:"account"`
+	ParentAccount   *AccountHierarchy      `json:"parent_account,omitempty"`
+	ChildAccounts   []*AccountHierarchy    `json:"child_accounts,omitempty"`
+	Level           int                    `json:"level"`
+	Path            []string               `json:"path"`
+	TotalUsers      int                    `json:"total_users"`
+	TotalSubAccounts int                   `json:"total_sub_accounts"`
+	AggregateQuota  *AccountQuota          `json:"aggregate_quota,omitempty"`
+	AggregateUsage  *AccountUsage          `json:"aggregate_usage,omitempty"`
 }
 
 // Watch options for real-time updates

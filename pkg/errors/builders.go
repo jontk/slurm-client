@@ -409,3 +409,41 @@ func IsAuthenticationError(err error) bool {
 
 	return false
 }
+
+// NewNotImplementedError creates errors for operations not yet implemented
+func NewNotImplementedError(operation, version string) *SlurmError {
+	message := fmt.Sprintf("Operation '%s' not implemented in version %s", operation, version)
+	err := NewSlurmError(ErrorCodeUnsupportedOperation, message)
+	err.Details = fmt.Sprintf("Version: %s", version)
+	return err
+}
+
+// IsNotImplementedError checks if an error is a not implemented error
+func IsNotImplementedError(err error) bool {
+	if slurmErr, ok := err.(*SlurmError); ok {
+		return slurmErr.Code == ErrorCodeUnsupportedOperation
+	}
+	return false
+}
+
+// IsClientError checks if an error is a client-side error
+func IsClientError(err error) bool {
+	// Check if it's a SlurmError with client category
+	if slurmErr, ok := err.(*SlurmError); ok {
+		return slurmErr.Category == CategoryClient
+	}
+	return false
+}
+
+// IsValidationError checks if an error is a validation error
+func IsValidationError(err error) bool {
+	// Check if it's directly a ValidationError
+	if _, ok := err.(*ValidationError); ok {
+		return true
+	}
+	// Check if it's a SlurmError with validation category
+	if slurmErr, ok := err.(*SlurmError); ok {
+		return slurmErr.Category == CategoryValidation
+	}
+	return false
+}
