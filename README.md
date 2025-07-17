@@ -371,6 +371,68 @@ if err != nil {
 }
 ```
 
+### Quality of Service (QoS) Management (v0.0.43+)
+
+```go
+// Check if QoS is supported
+if client.QoS() == nil {
+    log.Println("QoS not supported in this API version")
+    return
+}
+
+// List all QoS configurations
+qosList, err := client.QoS().List(ctx, nil)
+if err != nil {
+    log.Printf("Failed to list QoS: %v", err)
+    return
+}
+
+for _, qos := range qosList.QoS {
+    fmt.Printf("QoS %s: Priority=%d, MaxCPUs=%d\\n", 
+               qos.Name, qos.Priority, qos.MaxCPUs)
+}
+
+// Create a new QoS
+newQoS := &interfaces.QoSCreate{
+    Name:               "high-priority",
+    Description:        "High priority for critical jobs",
+    Priority:           10000,
+    PreemptMode:        "requeue",
+    MaxJobs:            50,
+    MaxJobsPerUser:     10,
+    MaxCPUs:            500,
+    MaxWallTime:        86400, // 24 hours
+    UsageFactor:        2.0,   // Double charge
+    Flags:              []string{"DenyOnLimit", "RequireAssoc"},
+    AllowedAccounts:    []string{"research", "production"},
+}
+
+resp, err := client.QoS().Create(ctx, newQoS)
+if err != nil {
+    log.Printf("Failed to create QoS: %v", err)
+} else {
+    fmt.Printf("Created QoS: %s\\n", resp.QoSName)
+}
+
+// Update a QoS
+newPriority := 15000
+update := &interfaces.QoSUpdate{
+    Priority:    &newPriority,
+    Description: &"Updated high priority QoS",
+}
+
+err = client.QoS().Update(ctx, "high-priority", update)
+if err != nil {
+    log.Printf("Failed to update QoS: %v", err)
+}
+
+// Delete a QoS
+err = client.QoS().Delete(ctx, "high-priority")
+if err != nil {
+    log.Printf("Failed to delete QoS: %v", err)
+}
+```
+
 ## 🛡️ Structured Error Handling
 
 The library provides comprehensive structured error handling with specific error types and codes:
@@ -445,6 +507,104 @@ if slurmErr, ok := err.(*errors.SlurmError); ok {
     if cause := slurmErr.Unwrap(); cause != nil {
         fmt.Printf("Underlying cause: %v\\n", cause)
     }
+}
+```
+
+### Account Management (v0.0.43+)
+
+```go
+// Check if account management is supported
+if client.Accounts() == nil {
+    log.Println("Account management not supported in this API version")
+    return
+}
+
+// List all accounts with hierarchy
+accountList, err := client.Accounts().List(ctx, &interfaces.ListAccountsOptions{
+    WithAssociations: true,
+    WithCoordinators: true,
+})
+if err != nil {
+    log.Printf("Failed to list accounts: %v", err)
+    return
+}
+
+for _, account := range accountList.Accounts {
+    fmt.Printf("Account %s: Org=%s, Parent=%s\n", 
+               account.Name, account.Organization, account.ParentAccount)
+}
+
+// Create an account hierarchy
+rootAccount := &interfaces.AccountCreate{
+    Name:               "research-dept",
+    Description:        "Research Department",
+    Organization:       "ACME Corp",
+    CoordinatorUsers:   []string{"dept-head", "admin"},
+    AllowedPartitions:  []string{"compute", "gpu"},
+    MaxJobs:            500,
+    MaxNodes:           100,
+    SharesPriority:     200,
+    // Set TRES (Trackable Resource) limits
+    MaxTRES: map[string]int{
+        "cpu":    2000,
+        "mem":    8192000, // 8TB in MB
+        "gpu":    20,
+    },
+    GrpTRES: map[string]int{
+        "cpu":    1000,
+        "mem":    4096000, // 4TB in MB
+        "gpu":    10,
+    },
+    Flags: []string{"AllowSubmit"},
+}
+
+resp, err := client.Accounts().Create(ctx, rootAccount)
+if err != nil {
+    log.Printf("Failed to create account: %v", err)
+} else {
+    fmt.Printf("Created account: %s\n", resp.AccountName)
+}
+
+// Create a sub-account
+subAccount := &interfaces.AccountCreate{
+    Name:               "ml-project",
+    Description:        "Machine Learning Project",
+    ParentAccount:      "research-dept",
+    AllowedQoS:         []string{"normal", "high-priority"},
+    MaxJobs:            100,
+    MaxJobsPerUser:     20,
+    DefaultPartition:   "gpu",
+    DefaultQoS:         "normal",
+}
+
+resp2, err := client.Accounts().Create(ctx, subAccount)
+if err != nil {
+    log.Printf("Failed to create sub-account: %v", err)
+}
+
+// Update account limits
+newMaxJobs := 200
+update := &interfaces.AccountUpdate{
+    MaxJobs:     &newMaxJobs,
+    Description: stringPtr("ML Project - Expanded Resources"),
+    MaxTRES: map[string]int{
+        "cpu": 4000,
+        "gpu": 40,
+    },
+}
+
+err = client.Accounts().Update(ctx, "ml-project", update)
+if err != nil {
+    log.Printf("Failed to update account: %v", err)
+}
+
+// Get account details
+account, err := client.Accounts().Get(ctx, "ml-project")
+if err != nil {
+    log.Printf("Failed to get account: %v", err)
+} else {
+    fmt.Printf("Account: %s, Max Jobs: %d, Parent: %s\n",
+               account.Name, account.MaxJobs, account.ParentAccount)
 }
 ```
 
@@ -544,6 +704,8 @@ Complete compatibility across all active SLURM REST API versions:
 | Partition Management | ✅ | ✅ | ✅ | ✅ | Complete |
 | Cluster Info | ✅ | ✅ | ✅ | ✅ | Complete |
 | Reservation Management | ❌ | ❌ | ❌ | ✅ | v0.0.43+ |
+| QoS Management | ❌ | ❌ | ❌ | ✅ | v0.0.43+ |
+| Account Management | ❌ | ❌ | ❌ | ✅ | v0.0.43+ |
 | Structured Errors | ✅ | ✅ | ✅ | ✅ | Complete |
 | Auto Version Detection | ✅ | ✅ | ✅ | ✅ | Complete |
 

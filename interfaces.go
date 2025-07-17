@@ -26,6 +26,9 @@ type ReservationManager = interfaces.ReservationManager
 // QoSManager provides version-agnostic QoS operations
 type QoSManager = interfaces.QoSManager
 
+// AccountManager provides version-agnostic account operations
+type AccountManager = interfaces.AccountManager
+
 // Type aliases for data structures
 type Job = interfaces.Job
 type JobList = interfaces.JobList
@@ -62,12 +65,19 @@ type QoSCreate = interfaces.QoSCreate
 type QoSCreateResponse = interfaces.QoSCreateResponse
 type QoSUpdate = interfaces.QoSUpdate
 
+type Account = interfaces.Account
+type AccountList = interfaces.AccountList
+type AccountCreate = interfaces.AccountCreate
+type AccountCreateResponse = interfaces.AccountCreateResponse
+type AccountUpdate = interfaces.AccountUpdate
+
 // List options
 type ListJobsOptions = interfaces.ListJobsOptions
 type ListNodesOptions = interfaces.ListNodesOptions
 type ListPartitionsOptions = interfaces.ListPartitionsOptions
 type ListReservationsOptions = interfaces.ListReservationsOptions
 type ListQoSOptions = interfaces.ListQoSOptions
+type ListAccountsOptions = interfaces.ListAccountsOptions
 
 // Watch options
 type WatchJobsOptions = interfaces.WatchJobsOptions
