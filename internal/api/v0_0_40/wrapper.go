@@ -59,6 +59,11 @@ func (c *WrapperClient) Info() interfaces.InfoManager {
 	return &InfoManager{client: c}
 }
 
+// Reservations returns nil as reservations are not supported in v0.0.40
+func (c *WrapperClient) Reservations() interfaces.ReservationManager {
+	return nil
+}
+
 // Close closes the client
 func (c *WrapperClient) Close() error {
 	// No resources to close for HTTP client
