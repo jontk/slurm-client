@@ -74,6 +74,11 @@ func (c *WrapperClient) Accounts() interfaces.AccountManager {
 	return nil
 }
 
+// Users returns the UserManager
+func (c *WrapperClient) Users() interfaces.UserManager {
+	return nil
+}
+
 // Close closes the client
 func (c *WrapperClient) Close() error {
 	// No resources to close for HTTP client
