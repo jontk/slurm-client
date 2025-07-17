@@ -1,14 +1,13 @@
-package v0_0_43
+package v0_0_41
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
-// AccountManagerImpl implements the AccountManager interface for v0.0.43
+// AccountManagerImpl implements the AccountManager interface for v0.0.41
 type AccountManagerImpl struct {
 	client *WrapperClient
 }
@@ -26,10 +25,9 @@ func (a *AccountManagerImpl) List(ctx context.Context, opts *interfaces.ListAcco
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
-	// TODO: Implement actual API call when account endpoints are available in OpenAPI spec
-	// For now, return NotImplementedError as the actual implementation requires
-	// the generated client to have account-related methods
-	return nil, errors.NewNotImplementedError("account listing", "v0.0.43")
+	// v0.0.41 has very limited account support
+	// Most enhanced features are not available
+	return nil, errors.NewNotImplementedError("account listing not supported", "v0.0.41")
 }
 
 // Get retrieves a specific account by name
@@ -42,8 +40,8 @@ func (a *AccountManagerImpl) Get(ctx context.Context, accountName string) (*inte
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
 	}
 
-	// TODO: Implement actual API call when account endpoints are available in OpenAPI spec
-	return nil, errors.NewNotImplementedError("account retrieval", "v0.0.43")
+	// v0.0.41 has minimal account support
+	return nil, errors.NewNotImplementedError("account retrieval not supported", "v0.0.41")
 }
 
 // Create creates a new account
@@ -60,17 +58,7 @@ func (a *AccountManagerImpl) Create(ctx context.Context, account *interfaces.Acc
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "account.Name", account.Name, nil)
 	}
 
-	// Validate account hierarchy
-	if account.ParentAccount != "" {
-		// In a real implementation, we would verify the parent account exists
-		// For now, just check it's not the same as the account being created
-		if account.ParentAccount == account.Name {
-			return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account cannot be its own parent", "parentAccount", account.ParentAccount, nil)
-		}
-	}
-
-	// TODO: Implement actual API call when account endpoints are available in OpenAPI spec
-	return nil, errors.NewNotImplementedError("account creation", "v0.0.43")
+	return nil, errors.NewNotImplementedError("account creation not supported", "v0.0.41")
 }
 
 // Update updates an existing account
@@ -87,8 +75,7 @@ func (a *AccountManagerImpl) Update(ctx context.Context, accountName string, upd
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "update data is required", "update", update, nil)
 	}
 
-	// TODO: Implement actual API call when account endpoints are available in OpenAPI spec
-	return errors.NewNotImplementedError("account update", "v0.0.43")
+	return errors.NewNotImplementedError("account update not supported", "v0.0.41")
 }
 
 // Delete deletes an account
@@ -101,15 +88,11 @@ func (a *AccountManagerImpl) Delete(ctx context.Context, accountName string) err
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
 	}
 
-	// TODO: Implement actual API call when account endpoints are available in OpenAPI spec
-	// Note: Account deletion may require special handling for:
-	// - Child accounts (cascade vs prevent)
-	// - Active users in the account
-	// - Running jobs associated with the account
-	return errors.NewNotImplementedError("account deletion", "v0.0.43")
+	return errors.NewNotImplementedError("account deletion not supported", "v0.0.41")
 }
 
 // GetAccountHierarchy retrieves the complete account hierarchy starting from a root account
+// This feature is not available in v0.0.41
 func (a *AccountManagerImpl) GetAccountHierarchy(ctx context.Context, rootAccount string) (*interfaces.AccountHierarchy, error) {
 	if a.client == nil || a.client.apiClient == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
@@ -119,15 +102,11 @@ func (a *AccountManagerImpl) GetAccountHierarchy(ctx context.Context, rootAccoun
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "root account name is required", "rootAccount", rootAccount, nil)
 	}
 
-	// TODO: Implement actual API call to retrieve account hierarchy
-	// This would involve:
-	// 1. Get the root account details
-	// 2. Recursively get all child accounts
-	// 3. Build the hierarchy structure with aggregated quotas and usage
-	return nil, errors.NewNotImplementedError("account hierarchy retrieval", "v0.0.43")
+	return nil, errors.NewNotImplementedError("account hierarchy not supported", "v0.0.41")
 }
 
 // GetParentAccounts retrieves the parent chain for an account up to the root
+// This feature is not available in v0.0.41
 func (a *AccountManagerImpl) GetParentAccounts(ctx context.Context, accountName string) ([]*interfaces.Account, error) {
 	if a.client == nil || a.client.apiClient == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
@@ -137,13 +116,11 @@ func (a *AccountManagerImpl) GetParentAccounts(ctx context.Context, accountName 
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
 	}
 
-	// TODO: Implement actual API call to retrieve parent account chain
-	// This would involve traversing up the account hierarchy from the given account
-	// to the root account, collecting all parent accounts
-	return nil, errors.NewNotImplementedError("parent accounts retrieval", "v0.0.43")
+	return nil, errors.NewNotImplementedError("parent accounts not supported", "v0.0.41")
 }
 
 // GetChildAccounts retrieves child accounts with optional depth limiting
+// This feature is not available in v0.0.41
 func (a *AccountManagerImpl) GetChildAccounts(ctx context.Context, accountName string, depth int) ([]*interfaces.Account, error) {
 	if a.client == nil || a.client.apiClient == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
@@ -157,13 +134,11 @@ func (a *AccountManagerImpl) GetChildAccounts(ctx context.Context, accountName s
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "depth must be non-negative (0 means unlimited)", "depth", depth, nil)
 	}
 
-	// TODO: Implement actual API call to retrieve child accounts
-	// This would involve recursively getting child accounts up to the specified depth
-	// depth=0 means unlimited depth, depth=1 means direct children only
-	return nil, errors.NewNotImplementedError("child accounts retrieval", "v0.0.43")
+	return nil, errors.NewNotImplementedError("child accounts not supported", "v0.0.41")
 }
 
 // GetAccountQuotas retrieves quota information for an account
+// This feature is not available in v0.0.41
 func (a *AccountManagerImpl) GetAccountQuotas(ctx context.Context, accountName string) (*interfaces.AccountQuota, error) {
 	if a.client == nil || a.client.apiClient == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
@@ -173,13 +148,11 @@ func (a *AccountManagerImpl) GetAccountQuotas(ctx context.Context, accountName s
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
 	}
 
-	// TODO: Implement actual API call to retrieve account quotas
-	// This would involve querying SLURM's accounting database for quota information
-	// including CPU limits, job limits, TRES quotas, etc.
-	return nil, errors.NewNotImplementedError("account quotas retrieval", "v0.0.43")
+	return nil, errors.NewNotImplementedError("account quotas not supported", "v0.0.41")
 }
 
 // GetAccountQuotaUsage retrieves quota usage information for an account within a timeframe
+// This feature is not available in v0.0.41
 func (a *AccountManagerImpl) GetAccountQuotaUsage(ctx context.Context, accountName string, timeframe string) (*interfaces.AccountUsage, error) {
 	if a.client == nil || a.client.apiClient == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
@@ -189,37 +162,5 @@ func (a *AccountManagerImpl) GetAccountQuotaUsage(ctx context.Context, accountNa
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
 	}
 
-	if timeframe == "" {
-		timeframe = "current" // Default to current usage period
-	}
-
-	// Validate timeframe format (could be "current", "daily", "weekly", "monthly", "yearly")
-	validTimeframes := []string{"current", "daily", "weekly", "monthly", "yearly"}
-	isValid := false
-	for _, valid := range validTimeframes {
-		if timeframe == valid {
-			isValid = true
-			break
-		}
-	}
-	if !isValid {
-		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "timeframe must be one of: current, daily, weekly, monthly, yearly", "timeframe", timeframe, nil)
-	}
-
-	// TODO: Implement actual API call to retrieve account usage statistics
-	// This would involve querying SLURM's accounting database for usage information
-	// including CPU hours, job counts, efficiency ratios, etc.
-	return nil, errors.NewNotImplementedError("account quota usage retrieval", "v0.0.43")
-}
-
-// Helper function to validate TRES format
-func validateTRES(tres map[string]int) error {
-	// TRES (Trackable Resources) typically include: cpu, mem, energy, node, billing, fs/disk, vmem, pages
-	// Values should be non-negative
-	for resource, value := range tres {
-		if value < 0 {
-			return errors.NewValidationError(errors.ErrorCodeValidationFailed, fmt.Sprintf("invalid TRES value for %s: must be non-negative", resource), "tres."+resource, value, nil)
-		}
-	}
-	return nil
+	return nil, errors.NewNotImplementedError("account quota usage not supported", "v0.0.41")
 }
