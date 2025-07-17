@@ -493,3 +493,175 @@ func TestValidateTRES(t *testing.T) {
 		})
 	}
 }
+
+func TestAccountManagerImpl_GetAccountFairShare(t *testing.T) {
+	tests := []struct {
+		name        string
+		client      *WrapperClient
+		accountName string
+		wantErr     bool
+		errType     string
+	}{
+		{
+			name:        "nil client",
+			client:      nil,
+			accountName: "testaccount",
+			wantErr:     true,
+			errType:     "client error",
+		},
+		{
+			name: "nil api client",
+			client: &WrapperClient{
+				apiClient: nil,
+			},
+			accountName: "testaccount",
+			wantErr:     true,
+			errType:     "client error",
+		},
+		{
+			name: "empty account name",
+			client: &WrapperClient{
+				apiClient: &ClientWithResponses{},
+			},
+			accountName: "",
+			wantErr:     true,
+			errType:     "validation error",
+		},
+		{
+			name: "valid input - not implemented",
+			client: &WrapperClient{
+				apiClient: &ClientWithResponses{},
+			},
+			accountName: "testaccount",
+			wantErr:     true,
+			errType:     "not implemented",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &AccountManagerImpl{
+				client: tt.client,
+			}
+			
+			result, err := a.GetAccountFairShare(context.Background(), tt.accountName)
+			
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("GetAccountFairShare() expected error but got none")
+					return
+				}
+				
+				// Check error type
+				switch tt.errType {
+				case "client error":
+					if !errors.IsClientError(err) {
+						t.Errorf("GetAccountFairShare() expected client error, got %T: %v", err, err)
+					}
+				case "validation error":
+					if !errors.IsValidationError(err) {
+						t.Errorf("GetAccountFairShare() expected validation error, got %T: %v", err, err)
+					}
+				case "not implemented":
+					if !errors.IsNotImplementedError(err) {
+						t.Errorf("GetAccountFairShare() expected not implemented error, got %T: %v", err, err)
+					}
+				}
+			} else {
+				if err != nil {
+					t.Errorf("GetAccountFairShare() unexpected error: %v", err)
+				}
+			}
+			
+			if result != nil && tt.wantErr {
+				t.Errorf("GetAccountFairShare() expected nil result on error")
+			}
+		})
+	}
+}
+
+func TestAccountManagerImpl_GetFairShareHierarchy(t *testing.T) {
+	tests := []struct {
+		name        string
+		client      *WrapperClient
+		rootAccount string
+		wantErr     bool
+		errType     string
+	}{
+		{
+			name:        "nil client",
+			client:      nil,
+			rootAccount: "root",
+			wantErr:     true,
+			errType:     "client error",
+		},
+		{
+			name: "nil api client",
+			client: &WrapperClient{
+				apiClient: nil,
+			},
+			rootAccount: "root",
+			wantErr:     true,
+			errType:     "client error",
+		},
+		{
+			name: "empty root account",
+			client: &WrapperClient{
+				apiClient: &ClientWithResponses{},
+			},
+			rootAccount: "",
+			wantErr:     true,
+			errType:     "validation error",
+		},
+		{
+			name: "valid input - not implemented",
+			client: &WrapperClient{
+				apiClient: &ClientWithResponses{},
+			},
+			rootAccount: "root",
+			wantErr:     true,
+			errType:     "not implemented",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &AccountManagerImpl{
+				client: tt.client,
+			}
+			
+			result, err := a.GetFairShareHierarchy(context.Background(), tt.rootAccount)
+			
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("GetFairShareHierarchy() expected error but got none")
+					return
+				}
+				
+				// Check error type
+				switch tt.errType {
+				case "client error":
+					if !errors.IsClientError(err) {
+						t.Errorf("GetFairShareHierarchy() expected client error, got %T: %v", err, err)
+					}
+				case "validation error":
+					if !errors.IsValidationError(err) {
+						t.Errorf("GetFairShareHierarchy() expected validation error, got %T: %v", err, err)
+					}
+				case "not implemented":
+					if !errors.IsNotImplementedError(err) {
+						t.Errorf("GetFairShareHierarchy() expected not implemented error, got %T: %v", err, err)
+					}
+				}
+			} else {
+				if err != nil {
+					t.Errorf("GetFairShareHierarchy() unexpected error: %v", err)
+				}
+			}
+			
+			if result != nil && tt.wantErr {
+				t.Errorf("GetFairShareHierarchy() expected nil result on error")
+			}
+		})
+	}
+}

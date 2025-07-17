@@ -280,6 +280,38 @@ func (a *AccountManagerImpl) GetAccountUsersWithPermissions(ctx context.Context,
 	return nil, errors.NewNotImplementedError("account users with permissions retrieval", "v0.0.43")
 }
 
+// GetAccountFairShare retrieves fair-share configuration and state for an account
+func (a *AccountManagerImpl) GetAccountFairShare(ctx context.Context, accountName string) (*interfaces.AccountFairShare, error) {
+	if a.client == nil || a.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if accountName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
+	}
+
+	// TODO: Implement actual API call to retrieve account fair-share information
+	// This would involve querying SLURM's shares database for account-level configuration
+	// including shares, usage, and hierarchical fair-share data
+	return nil, errors.NewNotImplementedError("account fair-share retrieval", "v0.0.43")
+}
+
+// GetFairShareHierarchy retrieves the complete fair-share tree structure
+func (a *AccountManagerImpl) GetFairShareHierarchy(ctx context.Context, rootAccount string) (*interfaces.FairShareHierarchy, error) {
+	if a.client == nil || a.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if rootAccount == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "root account name is required", "rootAccount", rootAccount, nil)
+	}
+
+	// TODO: Implement actual API call to retrieve complete fair-share hierarchy
+	// This would involve querying SLURM's shares database for the complete tree structure
+	// starting from the specified root account, including all child accounts and users
+	return nil, errors.NewNotImplementedError("fair-share hierarchy retrieval", "v0.0.43")
+}
+
 // Helper function to validate TRES format
 func validateTRES(tres map[string]int) error {
 	// TRES (Trackable Resources) typically include: cpu, mem, energy, node, billing, fs/disk, vmem, pages

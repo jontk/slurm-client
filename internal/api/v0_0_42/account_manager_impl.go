@@ -222,3 +222,33 @@ func (a *AccountManagerImpl) GetAccountUsersWithPermissions(ctx context.Context,
 	// v0.0.42 has limited permissions-based user retrieval support
 	return nil, errors.NewNotImplementedError("account users with permissions retrieval not fully supported", "v0.0.42")
 }
+
+// GetAccountFairShare retrieves fair-share configuration and state for an account
+// Limited support in v0.0.42
+func (a *AccountManagerImpl) GetAccountFairShare(ctx context.Context, accountName string) (*interfaces.AccountFairShare, error) {
+	if a.client == nil || a.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if accountName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
+	}
+
+	// v0.0.42 has limited fair-share information support
+	return nil, errors.NewNotImplementedError("account fair-share retrieval not fully supported", "v0.0.42")
+}
+
+// GetFairShareHierarchy retrieves the complete fair-share tree structure
+// Limited support in v0.0.42
+func (a *AccountManagerImpl) GetFairShareHierarchy(ctx context.Context, rootAccount string) (*interfaces.FairShareHierarchy, error) {
+	if a.client == nil || a.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if rootAccount == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "root account name is required", "rootAccount", rootAccount, nil)
+	}
+
+	// v0.0.42 has limited fair-share hierarchy support
+	return nil, errors.NewNotImplementedError("fair-share hierarchy retrieval not fully supported", "v0.0.42")
+}
