@@ -8,6 +8,7 @@ import (
 
 	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
+	"github.com/jontk/slurm-client/pkg/watch"
 )
 
 // NodeManagerImpl provides the actual implementation for NodeManager methods
@@ -490,32 +491,12 @@ func (m *NodeManagerImpl) Watch(ctx context.Context, opts *interfaces.WatchNodes
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
-	// Create event channel
-	eventChan := make(chan interfaces.NodeEvent, 100) // Buffer for events
+	// Create a node poller with the List function
+	poller := watch.NewNodePoller(m.List)
 
-	// Start polling goroutine
-	go func() {
-		defer close(eventChan)
+	// Configure polling interval if needed (default is 5 seconds)
+	// poller.WithPollInterval(3 * time.Second)
 
-		// Note: This is a simplified polling implementation
-		// Real-time node monitoring through polling would require:
-		// 1. Periodic node state polling
-		// 2. State comparison between polls
-		// 3. Event generation for state changes
-		// 4. Proper error handling and reconnection logic
-
-		// For now, return immediately as v0.0.42 doesn't have native streaming support
-		// A complete implementation would poll node states and generate events
-
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			// In a full implementation, this would start a polling loop
-			// that fetches node states periodically and compares them
-			// to detect state changes and generate NodeEvents
-		}
-	}()
-
-	return eventChan, nil
+	// Start watching
+	return poller.Watch(ctx, opts)
 }

@@ -181,6 +181,8 @@ type JobEvent struct {
 	OldState  string    `json:"old_state"`
 	NewState  string    `json:"new_state"`
 	Timestamp time.Time `json:"timestamp"`
+	Job       *Job      `json:"job,omitempty"`
+	Error     error     `json:"error,omitempty"`
 }
 
 // Node represents a compute node
@@ -217,6 +219,8 @@ type NodeEvent struct {
 	OldState  string    `json:"old_state"`
 	NewState  string    `json:"new_state"`
 	Timestamp time.Time `json:"timestamp"`
+	Node      *Node     `json:"node,omitempty"`
+	Error     error     `json:"error,omitempty"`
 }
 
 // Partition represents a job partition
@@ -259,11 +263,13 @@ type PartitionUpdate struct {
 
 // PartitionEvent represents a partition state change event
 type PartitionEvent struct {
-	Type          string    `json:"type"`
-	PartitionName string    `json:"partition_name"`
-	OldState      string    `json:"old_state"`
-	NewState      string    `json:"new_state"`
-	Timestamp     time.Time `json:"timestamp"`
+	Type          string     `json:"type"`
+	PartitionName string     `json:"partition_name"`
+	OldState      string     `json:"old_state"`
+	NewState      string     `json:"new_state"`
+	Timestamp     time.Time  `json:"timestamp"`
+	Partition     *Partition `json:"partition,omitempty"`
+	Error         error      `json:"error,omitempty"`
 }
 
 // ClusterInfo represents cluster information
@@ -362,9 +368,12 @@ type ListPartitionsOptions struct {
 
 // WatchJobsOptions provides options for watching job changes
 type WatchJobsOptions struct {
-	UserID    string   `json:"user_id,omitempty"`
-	States    []string `json:"states,omitempty"`
-	Partition string   `json:"partition,omitempty"`
+	UserID          string   `json:"user_id,omitempty"`
+	States          []string `json:"states,omitempty"`
+	Partition       string   `json:"partition,omitempty"`
+	JobIDs          []string `json:"job_ids,omitempty"`
+	ExcludeNew      bool     `json:"exclude_new,omitempty"`
+	ExcludeCompleted bool    `json:"exclude_completed,omitempty"`
 }
 
 // WatchNodesOptions provides options for watching node changes
@@ -372,11 +381,13 @@ type WatchNodesOptions struct {
 	States    []string `json:"states,omitempty"`
 	Partition string   `json:"partition,omitempty"`
 	Features  []string `json:"features,omitempty"`
+	NodeNames []string `json:"node_names,omitempty"`
 }
 
 // WatchPartitionsOptions provides options for watching partition changes
 type WatchPartitionsOptions struct {
-	States []string `json:"states,omitempty"`
+	States         []string `json:"states,omitempty"`
+	PartitionNames []string `json:"partition_names,omitempty"`
 }
 
 // ClientConfig holds configuration for the API client

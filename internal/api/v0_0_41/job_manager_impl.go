@@ -9,6 +9,7 @@ import (
 
 	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
+	"github.com/jontk/slurm-client/pkg/watch"
 )
 
 // JobManagerImpl provides the actual implementation for JobManager methods
@@ -391,23 +392,12 @@ func (m *JobManagerImpl) Watch(ctx context.Context, opts *interfaces.WatchJobsOp
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
-	// Create event channel
-	eventChan := make(chan interfaces.JobEvent, 100)
+	// Create a job poller with the List function
+	poller := watch.NewJobPoller(m.List)
 
-	// Start polling goroutine
-	go func() {
-		defer close(eventChan)
+	// Configure polling interval if needed (default is 5 seconds)
+	// poller.WithPollInterval(3 * time.Second)
 
-		// Note: This is a simplified polling implementation
-		// v0.0.41 doesn't have native streaming support
-
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			// In a full implementation, this would start a polling loop
-		}
-	}()
-
-	return eventChan, nil
+	// Start watching
+	return poller.Watch(ctx, opts)
 }
