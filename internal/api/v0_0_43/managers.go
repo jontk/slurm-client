@@ -183,3 +183,49 @@ func (m *InfoManager) Version(ctx context.Context) (*interfaces.APIVersion, erro
 	}
 	return m.impl.Version(ctx)
 }
+
+// ReservationManager implements the ReservationManager interface for API version v0.0.43
+type ReservationManager struct {
+	client *WrapperClient
+	impl   *ReservationManagerImpl
+}
+
+// List reservations with optional filtering
+func (m *ReservationManager) List(ctx context.Context, opts *interfaces.ListReservationsOptions) (*interfaces.ReservationList, error) {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
+
+// Get retrieves a specific reservation by name
+func (m *ReservationManager) Get(ctx context.Context, reservationName string) (*interfaces.Reservation, error) {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, reservationName)
+}
+
+// Create creates a new reservation
+func (m *ReservationManager) Create(ctx context.Context, reservation *interfaces.ReservationCreate) (*interfaces.ReservationCreateResponse, error) {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Create(ctx, reservation)
+}
+
+// Update updates an existing reservation
+func (m *ReservationManager) Update(ctx context.Context, reservationName string, update *interfaces.ReservationUpdate) error {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, reservationName, update)
+}
+
+// Delete deletes a reservation
+func (m *ReservationManager) Delete(ctx context.Context, reservationName string) error {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Delete(ctx, reservationName)
+}

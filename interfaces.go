@@ -20,6 +20,9 @@ type PartitionManager = interfaces.PartitionManager
 // InfoManager provides version-agnostic cluster information operations
 type InfoManager = interfaces.InfoManager
 
+// ReservationManager provides version-agnostic reservation operations
+type ReservationManager = interfaces.ReservationManager
+
 // Type aliases for data structures
 type Job = interfaces.Job
 type JobList = interfaces.JobList
@@ -44,10 +47,17 @@ type ClusterInfo = interfaces.ClusterInfo
 type ClusterStats = interfaces.ClusterStats
 type APIVersion = interfaces.APIVersion
 
+type Reservation = interfaces.Reservation
+type ReservationList = interfaces.ReservationList
+type ReservationCreate = interfaces.ReservationCreate
+type ReservationCreateResponse = interfaces.ReservationCreateResponse
+type ReservationUpdate = interfaces.ReservationUpdate
+
 // List options
 type ListJobsOptions = interfaces.ListJobsOptions
 type ListNodesOptions = interfaces.ListNodesOptions
 type ListPartitionsOptions = interfaces.ListPartitionsOptions
+type ListReservationsOptions = interfaces.ListReservationsOptions
 
 // Watch options
 type WatchJobsOptions = interfaces.WatchJobsOptions

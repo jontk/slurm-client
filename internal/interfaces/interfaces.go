@@ -23,6 +23,9 @@ type SlurmClient interface {
 	// Info returns the InfoManager for this version
 	Info() InfoManager
 
+	// Reservations returns the ReservationManager for this version (v0.0.43+)
+	Reservations() ReservationManager
+
 	// Close closes the client and any resources
 	Close() error
 }
@@ -94,6 +97,24 @@ type InfoManager interface {
 
 	// Version retrieves API version information
 	Version(ctx context.Context) (*APIVersion, error)
+}
+
+// ReservationManager provides version-agnostic reservation operations
+type ReservationManager interface {
+	// List reservations with optional filtering
+	List(ctx context.Context, opts *ListReservationsOptions) (*ReservationList, error)
+
+	// Get retrieves a specific reservation by name
+	Get(ctx context.Context, reservationName string) (*Reservation, error)
+
+	// Create creates a new reservation
+	Create(ctx context.Context, reservation *ReservationCreate) (*ReservationCreateResponse, error)
+
+	// Update updates an existing reservation
+	Update(ctx context.Context, reservationName string, update *ReservationUpdate) error
+
+	// Delete deletes a reservation
+	Delete(ctx context.Context, reservationName string) error
 }
 
 // Common data structures (version-agnostic)
@@ -337,6 +358,68 @@ type ExtendedDiagnostics struct {
 	RawData                map[string]interface{} `json:"raw_data,omitempty"`
 }
 
+// Reservation represents a resource reservation
+type Reservation struct {
+	Name         string            `json:"name"`
+	State        string            `json:"state"`
+	StartTime    time.Time         `json:"start_time"`
+	EndTime      time.Time         `json:"end_time"`
+	Duration     int               `json:"duration"`
+	Nodes        []string          `json:"nodes"`
+	NodeCount    int               `json:"node_count"`
+	CoreCount    int               `json:"core_count"`
+	Users        []string          `json:"users"`
+	Accounts     []string          `json:"accounts"`
+	Flags        []string          `json:"flags"`
+	Features     []string          `json:"features"`
+	PartitionName string           `json:"partition_name"`
+	Licenses     map[string]int    `json:"licenses"`
+	BurstBuffer  string            `json:"burst_buffer"`
+	Metadata     map[string]interface{} `json:"metadata"`
+}
+
+// ReservationList represents a list of reservations
+type ReservationList struct {
+	Reservations []Reservation `json:"reservations"`
+	Total        int           `json:"total"`
+}
+
+// ReservationCreate represents a reservation creation request
+type ReservationCreate struct {
+	Name         string            `json:"name"`
+	StartTime    time.Time         `json:"start_time"`
+	EndTime      time.Time         `json:"end_time,omitempty"`
+	Duration     int               `json:"duration,omitempty"`
+	Nodes        []string          `json:"nodes,omitempty"`
+	NodeCount    int               `json:"node_count,omitempty"`
+	CoreCount    int               `json:"core_count,omitempty"`
+	Users        []string          `json:"users,omitempty"`
+	Accounts     []string          `json:"accounts,omitempty"`
+	Flags        []string          `json:"flags,omitempty"`
+	Features     []string          `json:"features,omitempty"`
+	PartitionName string           `json:"partition_name,omitempty"`
+	Licenses     map[string]int    `json:"licenses,omitempty"`
+	BurstBuffer  string            `json:"burst_buffer,omitempty"`
+}
+
+// ReservationCreateResponse represents the response from reservation creation
+type ReservationCreateResponse struct {
+	ReservationName string `json:"reservation_name"`
+}
+
+// ReservationUpdate represents a reservation update request
+type ReservationUpdate struct {
+	StartTime    *time.Time        `json:"start_time,omitempty"`
+	EndTime      *time.Time        `json:"end_time,omitempty"`
+	Duration     *int              `json:"duration,omitempty"`
+	Nodes        []string          `json:"nodes,omitempty"`
+	NodeCount    *int              `json:"node_count,omitempty"`
+	Users        []string          `json:"users,omitempty"`
+	Accounts     []string          `json:"accounts,omitempty"`
+	Flags        []string          `json:"flags,omitempty"`
+	Features     []string          `json:"features,omitempty"`
+}
+
 // List options for filtering
 
 // ListJobsOptions provides options for listing jobs
@@ -362,6 +445,16 @@ type ListPartitionsOptions struct {
 	States []string `json:"states,omitempty"`
 	Limit  int      `json:"limit,omitempty"`
 	Offset int      `json:"offset,omitempty"`
+}
+
+// ListReservationsOptions provides options for listing reservations
+type ListReservationsOptions struct {
+	Names    []string `json:"names,omitempty"`
+	Users    []string `json:"users,omitempty"`
+	Accounts []string `json:"accounts,omitempty"`
+	States   []string `json:"states,omitempty"`
+	Limit    int      `json:"limit,omitempty"`
+	Offset   int      `json:"offset,omitempty"`
 }
 
 // Watch options for real-time updates
