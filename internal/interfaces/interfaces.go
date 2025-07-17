@@ -29,6 +29,9 @@ type SlurmClient interface {
 	// QoS returns the QoSManager for this version (v0.0.43+)
 	QoS() QoSManager
 
+	// Accounts returns the AccountManager for this version (v0.0.43+)
+	Accounts() AccountManager
+
 	// Close closes the client and any resources
 	Close() error
 }
@@ -530,6 +533,103 @@ type QoSUpdate struct {
 	DeniedUsers        []string  `json:"denied_users,omitempty"`
 }
 
+// AccountManager manages account operations (v0.0.43+)
+type AccountManager interface {
+	List(ctx context.Context, opts *ListAccountsOptions) (*AccountList, error)
+	Get(ctx context.Context, accountName string) (*Account, error)
+	Create(ctx context.Context, account *AccountCreate) (*AccountCreateResponse, error)
+	Update(ctx context.Context, accountName string, update *AccountUpdate) error
+	Delete(ctx context.Context, accountName string) error
+}
+
+// Account represents a SLURM account
+type Account struct {
+	Name               string   `json:"name"`
+	Description        string   `json:"description,omitempty"`
+	Organization       string   `json:"organization,omitempty"`
+	CoordinatorUsers   []string `json:"coordinator_users,omitempty"`
+	AllowedPartitions  []string `json:"allowed_partitions,omitempty"`
+	DefaultPartition   string   `json:"default_partition,omitempty"`
+	AllowedQoS         []string `json:"allowed_qos,omitempty"`
+	DefaultQoS         string   `json:"default_qos,omitempty"`
+	CPULimit           int      `json:"cpu_limit,omitempty"`
+	MaxJobs            int      `json:"max_jobs,omitempty"`
+	MaxJobsPerUser     int      `json:"max_jobs_per_user,omitempty"`
+	MaxNodes           int      `json:"max_nodes,omitempty"`
+	MaxWallTime        int      `json:"max_wall_time,omitempty"`
+	FairShareTRES      map[string]int `json:"fairshare_tres,omitempty"`
+	GrpTRES            map[string]int `json:"grp_tres,omitempty"`
+	GrpTRESMinutes     map[string]int `json:"grp_tres_minutes,omitempty"`
+	MaxTRES            map[string]int `json:"max_tres,omitempty"`
+	MaxTRESPerUser     map[string]int `json:"max_tres_per_user,omitempty"`
+	SharesPriority     int      `json:"shares_priority,omitempty"`
+	ParentAccount      string   `json:"parent_account,omitempty"`
+	ChildAccounts      []string `json:"child_accounts,omitempty"`
+	Users              []string `json:"users,omitempty"`
+	Flags              []string `json:"flags,omitempty"`
+	CreateTime         string   `json:"create_time,omitempty"`
+	UpdateTime         string   `json:"update_time,omitempty"`
+}
+
+// AccountList represents a list of accounts
+type AccountList struct {
+	Accounts []Account `json:"accounts"`
+	Total    int       `json:"total"`
+}
+
+// AccountCreate represents a request to create an account
+type AccountCreate struct {
+	Name               string   `json:"name"`
+	Description        string   `json:"description,omitempty"`
+	Organization       string   `json:"organization,omitempty"`
+	CoordinatorUsers   []string `json:"coordinator_users,omitempty"`
+	AllowedPartitions  []string `json:"allowed_partitions,omitempty"`
+	DefaultPartition   string   `json:"default_partition,omitempty"`
+	AllowedQoS         []string `json:"allowed_qos,omitempty"`
+	DefaultQoS         string   `json:"default_qos,omitempty"`
+	CPULimit           int      `json:"cpu_limit,omitempty"`
+	MaxJobs            int      `json:"max_jobs,omitempty"`
+	MaxJobsPerUser     int      `json:"max_jobs_per_user,omitempty"`
+	MaxNodes           int      `json:"max_nodes,omitempty"`
+	MaxWallTime        int      `json:"max_wall_time,omitempty"`
+	FairShareTRES      map[string]int `json:"fairshare_tres,omitempty"`
+	GrpTRES            map[string]int `json:"grp_tres,omitempty"`
+	GrpTRESMinutes     map[string]int `json:"grp_tres_minutes,omitempty"`
+	MaxTRES            map[string]int `json:"max_tres,omitempty"`
+	MaxTRESPerUser     map[string]int `json:"max_tres_per_user,omitempty"`
+	SharesPriority     int      `json:"shares_priority,omitempty"`
+	ParentAccount      string   `json:"parent_account,omitempty"`
+	Flags              []string `json:"flags,omitempty"`
+}
+
+// AccountCreateResponse represents the response from account creation
+type AccountCreateResponse struct {
+	AccountName string `json:"account_name"`
+}
+
+// AccountUpdate represents an account update request
+type AccountUpdate struct {
+	Description        *string  `json:"description,omitempty"`
+	Organization       *string  `json:"organization,omitempty"`
+	CoordinatorUsers   []string `json:"coordinator_users,omitempty"`
+	AllowedPartitions  []string `json:"allowed_partitions,omitempty"`
+	DefaultPartition   *string  `json:"default_partition,omitempty"`
+	AllowedQoS         []string `json:"allowed_qos,omitempty"`
+	DefaultQoS         *string  `json:"default_qos,omitempty"`
+	CPULimit           *int     `json:"cpu_limit,omitempty"`
+	MaxJobs            *int     `json:"max_jobs,omitempty"`
+	MaxJobsPerUser     *int     `json:"max_jobs_per_user,omitempty"`
+	MaxNodes           *int     `json:"max_nodes,omitempty"`
+	MaxWallTime        *int     `json:"max_wall_time,omitempty"`
+	FairShareTRES      map[string]int `json:"fairshare_tres,omitempty"`
+	GrpTRES            map[string]int `json:"grp_tres,omitempty"`
+	GrpTRESMinutes     map[string]int `json:"grp_tres_minutes,omitempty"`
+	MaxTRES            map[string]int `json:"max_tres,omitempty"`
+	MaxTRESPerUser     map[string]int `json:"max_tres_per_user,omitempty"`
+	SharesPriority     *int     `json:"shares_priority,omitempty"`
+	Flags              []string `json:"flags,omitempty"`
+}
+
 // List options for filtering
 
 // ListJobsOptions provides options for listing jobs
@@ -574,6 +674,18 @@ type ListQoSOptions struct {
 	Users    []string `json:"users,omitempty"`
 	Limit    int      `json:"limit,omitempty"`
 	Offset   int      `json:"offset,omitempty"`
+}
+
+// ListAccountsOptions provides options for listing accounts
+type ListAccountsOptions struct {
+	Names            []string `json:"names,omitempty"`
+	Organizations    []string `json:"organizations,omitempty"`
+	ParentAccounts   []string `json:"parent_accounts,omitempty"`
+	WithAssociations bool     `json:"with_associations,omitempty"`
+	WithCoordinators bool     `json:"with_coordinators,omitempty"`
+	WithDeleted      bool     `json:"with_deleted,omitempty"`
+	Limit            int      `json:"limit,omitempty"`
+	Offset           int      `json:"offset,omitempty"`
 }
 
 // Watch options for real-time updates
