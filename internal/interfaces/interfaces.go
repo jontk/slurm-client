@@ -32,6 +32,9 @@ type SlurmClient interface {
 	// Accounts returns the AccountManager for this version (v0.0.43+)
 	Accounts() AccountManager
 
+	// Users returns the UserManager for this version (v0.0.43+)
+	Users() UserManager
+
 	// Close closes the client and any resources
 	Close() error
 }
@@ -785,6 +788,285 @@ type WatchNodesOptions struct {
 type WatchPartitionsOptions struct {
 	States         []string `json:"states,omitempty"`
 	PartitionNames []string `json:"partition_names,omitempty"`
+}
+
+// UserManager provides user-related operations
+type UserManager interface {
+	// Core user operations
+	List(ctx context.Context, opts *ListUsersOptions) (*UserList, error)
+	Get(ctx context.Context, userName string) (*User, error)
+	
+	// User-account association operations
+	GetUserAccounts(ctx context.Context, userName string) ([]*UserAccount, error)
+	GetUserQuotas(ctx context.Context, userName string) (*UserQuota, error)
+	GetUserDefaultAccount(ctx context.Context, userName string) (*Account, error)
+	
+	// Fair-share and priority operations
+	GetUserFairShare(ctx context.Context, userName string) (*UserFairShare, error)
+	CalculateJobPriority(ctx context.Context, userName string, jobSubmission *JobSubmission) (*JobPriorityInfo, error)
+}
+
+// User represents a SLURM user
+type User struct {
+	Name               string                 `json:"name"`
+	UID                int                    `json:"uid"`
+	DefaultAccount     string                 `json:"default_account"`
+	DefaultWCKey       string                 `json:"default_wckey,omitempty"`
+	AdminLevel         string                 `json:"admin_level"`
+	CoordinatorAccounts []string              `json:"coordinator_accounts,omitempty"`
+	Accounts           []UserAccount          `json:"accounts,omitempty"`
+	Quotas             *UserQuota             `json:"quotas,omitempty"`
+	FairShare          *UserFairShare         `json:"fair_share,omitempty"`
+	Associations       []UserAssociation      `json:"associations,omitempty"`
+	Created            time.Time              `json:"created"`
+	Modified           time.Time              `json:"modified"`
+	Metadata           map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// UserAccount represents a user's association with an account
+type UserAccount struct {
+	AccountName  string            `json:"account_name"`
+	Partition    string            `json:"partition,omitempty"`
+	QoS          string            `json:"qos,omitempty"`
+	DefaultQoS   string            `json:"default_qos,omitempty"`
+	MaxJobs      int               `json:"max_jobs,omitempty"`
+	MaxSubmitJobs int              `json:"max_submit_jobs,omitempty"`
+	MaxWallTime  int               `json:"max_wall_time,omitempty"`
+	Priority     int               `json:"priority,omitempty"`
+	GraceTime    int               `json:"grace_time,omitempty"`
+	TRES         map[string]int    `json:"tres,omitempty"`
+	MaxTRES      map[string]int    `json:"max_tres,omitempty"`
+	MinTRES      map[string]int    `json:"min_tres,omitempty"`
+	IsDefault    bool              `json:"is_default"`
+	IsActive     bool              `json:"is_active"`
+	Flags        []string          `json:"flags,omitempty"`
+	Created      time.Time         `json:"created"`
+	Modified     time.Time         `json:"modified"`
+}
+
+// UserAssociation represents a user association with cluster/account/partition
+type UserAssociation struct {
+	ID              uint32            `json:"id"`
+	Cluster         string            `json:"cluster"`
+	Account         string            `json:"account"`
+	Partition       string            `json:"partition,omitempty"`
+	User            string            `json:"user"`
+	ParentAccount   string            `json:"parent_account,omitempty"`
+	Lft             int               `json:"lft"`
+	Rgt             int               `json:"rgt"`
+	Shares          int               `json:"shares"`
+	MaxJobs         int               `json:"max_jobs,omitempty"`
+	MaxJobsAccrue   int               `json:"max_jobs_accrue,omitempty"`
+	MinPrioThresh   int               `json:"min_prio_thresh,omitempty"`
+	MaxSubmitJobs   int               `json:"max_submit_jobs,omitempty"`
+	MaxWallDuration int               `json:"max_wall_duration,omitempty"`
+	MaxTRES         map[string]string `json:"max_tres,omitempty"`
+	MinTRES         map[string]string `json:"min_tres,omitempty"`
+	RunningJobs     int               `json:"running_jobs"`
+	Usage           *AssociationUsage `json:"usage,omitempty"`
+	IsDefault       bool              `json:"is_default"`
+	QoS             []string          `json:"qos,omitempty"`
+	DefaultQoS      string            `json:"default_qos,omitempty"`
+}
+
+// UserQuota represents quota information for a user
+type UserQuota struct {
+	UserName          string               `json:"user_name"`
+	DefaultAccount    string               `json:"default_account"`
+	MaxJobs           int                  `json:"max_jobs"`
+	MaxSubmitJobs     int                  `json:"max_submit_jobs"`
+	MaxWallTime       int                  `json:"max_wall_time"`
+	MaxCPUs           int                  `json:"max_cpus"`
+	MaxNodes          int                  `json:"max_nodes"`
+	MaxMemory         int                  `json:"max_memory"`
+	TRESLimits        map[string]int       `json:"tres_limits,omitempty"`
+	AccountQuotas     map[string]*UserAccountQuota `json:"account_quotas,omitempty"`
+	QoSLimits         map[string]*QoSLimits `json:"qos_limits,omitempty"`
+	GraceTime         int                  `json:"grace_time,omitempty"`
+	CurrentUsage      *UserUsage           `json:"current_usage,omitempty"`
+	IsActive          bool                 `json:"is_active"`
+	Enforcement       string               `json:"enforcement"`
+}
+
+// UserAccountQuota represents quota limits for a user within a specific account
+type UserAccountQuota struct {
+	AccountName   string         `json:"account_name"`
+	MaxJobs       int            `json:"max_jobs"`
+	MaxSubmitJobs int            `json:"max_submit_jobs"`
+	MaxWallTime   int            `json:"max_wall_time"`
+	TRESLimits    map[string]int `json:"tres_limits,omitempty"`
+	Priority      int            `json:"priority"`
+	QoS           []string       `json:"qos,omitempty"`
+	DefaultQoS    string         `json:"default_qos,omitempty"`
+}
+
+// UserUsage represents current usage statistics for a user
+type UserUsage struct {
+	UserName        string                    `json:"user_name"`
+	RunningJobs     int                       `json:"running_jobs"`
+	PendingJobs     int                       `json:"pending_jobs"`
+	UsedCPUHours    float64                   `json:"used_cpu_hours"`
+	UsedGPUHours    float64                   `json:"used_gpu_hours,omitempty"`
+	UsedWallTime    int                       `json:"used_wall_time"`
+	TRESUsage       map[string]float64        `json:"tres_usage,omitempty"`
+	AccountUsage    map[string]*AccountUsageStats `json:"account_usage,omitempty"`
+	Efficiency      float64                   `json:"efficiency"`
+	LastJobTime     time.Time                 `json:"last_job_time"`
+	PeriodStart     time.Time                 `json:"period_start"`
+	PeriodEnd       time.Time                 `json:"period_end"`
+}
+
+// AccountUsageStats represents usage statistics for a user within an account
+type AccountUsageStats struct {
+	AccountName    string            `json:"account_name"`
+	JobCount       int               `json:"job_count"`
+	CPUHours       float64           `json:"cpu_hours"`
+	WallHours      float64           `json:"wall_hours"`
+	TRESUsage      map[string]float64 `json:"tres_usage,omitempty"`
+	AverageQueueTime float64         `json:"average_queue_time"`
+	AverageRunTime   float64         `json:"average_run_time"`
+	Efficiency     float64           `json:"efficiency"`
+}
+
+// UserFairShare represents fair-share information for a user
+type UserFairShare struct {
+	UserName         string                      `json:"user_name"`
+	Account          string                      `json:"account"`
+	Cluster          string                      `json:"cluster"`
+	Partition        string                      `json:"partition,omitempty"`
+	FairShareFactor  float64                     `json:"fair_share_factor"`
+	NormalizedShares float64                     `json:"normalized_shares"`
+	EffectiveUsage   float64                     `json:"effective_usage"`
+	FairShareTree    *FairShareNode              `json:"fair_share_tree,omitempty"`
+	PriorityFactors  *JobPriorityFactors         `json:"priority_factors,omitempty"`
+	RawShares        int                         `json:"raw_shares"`
+	NormalizedUsage  float64                     `json:"normalized_usage"`
+	Level            int                         `json:"level"`
+	LastDecay        time.Time                   `json:"last_decay"`
+}
+
+// FairShareNode represents a node in the fair-share tree
+type FairShareNode struct {
+	Name             string           `json:"name"`
+	Account          string           `json:"account,omitempty"`
+	User             string           `json:"user,omitempty"`
+	Parent           string           `json:"parent,omitempty"`
+	Shares           int              `json:"shares"`
+	NormalizedShares float64          `json:"normalized_shares"`
+	Usage            float64          `json:"usage"`
+	FairShareFactor  float64          `json:"fair_share_factor"`
+	Level            int              `json:"level"`
+	Children         []*FairShareNode `json:"children,omitempty"`
+}
+
+// JobPriorityFactors represents the individual factors that contribute to job priority
+type JobPriorityFactors struct {
+	Age       int     `json:"age"`
+	FairShare int     `json:"fair_share"`
+	JobSize   int     `json:"job_size"`
+	Partition int     `json:"partition"`
+	QoS       int     `json:"qos"`
+	TRES      int     `json:"tres"`
+	Site      int     `json:"site"`
+	Nice      int     `json:"nice"`
+	Assoc     int     `json:"assoc"`
+	Total     int     `json:"total"`
+	Weights   *PriorityWeights `json:"weights,omitempty"`
+}
+
+// PriorityWeights represents the weights used in priority calculation
+type PriorityWeights struct {
+	Age       int `json:"age"`
+	FairShare int `json:"fair_share"`
+	JobSize   int `json:"job_size"`
+	Partition int `json:"partition"`
+	QoS       int `json:"qos"`
+	TRES      int `json:"tres"`
+	Site      int `json:"site"`
+	Nice      int `json:"nice"`
+	Assoc     int `json:"assoc"`
+}
+
+// JobPriorityInfo represents calculated priority information for a job
+type JobPriorityInfo struct {
+	JobID           uint32              `json:"job_id,omitempty"`
+	UserName        string              `json:"user_name"`
+	Account         string              `json:"account"`
+	Partition       string              `json:"partition"`
+	QoS             string              `json:"qos"`
+	Priority        int                 `json:"priority"`
+	Factors         *JobPriorityFactors `json:"factors"`
+	Age             int                 `json:"age"`
+	EligibleTime    time.Time           `json:"eligible_time"`
+	EstimatedStart  time.Time           `json:"estimated_start"`
+	PositionInQueue int                 `json:"position_in_queue"`
+	PriorityTier    string              `json:"priority_tier"`
+}
+
+// UserList represents a list of users
+type UserList struct {
+	Users []User `json:"users"`
+	Total int    `json:"total"`
+}
+
+// ListUsersOptions provides filtering options for listing users
+type ListUsersOptions struct {
+	// Basic filtering
+	Names     []string `json:"names,omitempty"`
+	Accounts  []string `json:"accounts,omitempty"`
+	Clusters  []string `json:"clusters,omitempty"`
+	AdminLevels []string `json:"admin_levels,omitempty"`
+	
+	// State filtering
+	ActiveOnly    bool `json:"active_only,omitempty"`
+	CoordinatorsOnly bool `json:"coordinators_only,omitempty"`
+	
+	// Include additional data
+	WithAccounts   bool `json:"with_accounts,omitempty"`
+	WithQuotas     bool `json:"with_quotas,omitempty"`
+	WithFairShare  bool `json:"with_fair_share,omitempty"`
+	WithAssociations bool `json:"with_associations,omitempty"`
+	WithUsage      bool `json:"with_usage,omitempty"`
+	
+	// Pagination
+	Limit  int `json:"limit,omitempty"`
+	Offset int `json:"offset,omitempty"`
+	
+	// Sorting
+	SortBy    string `json:"sort_by,omitempty"`
+	SortOrder string `json:"sort_order,omitempty"`
+}
+
+// AssociationUsage represents usage data for an association
+type AssociationUsage struct {
+	UsedCPUHours    float64            `json:"used_cpu_hours"`
+	UsedGPUHours    float64            `json:"used_gpu_hours,omitempty"`
+	UsedWallTime    int                `json:"used_wall_time"`
+	TRESUsage       map[string]float64 `json:"tres_usage,omitempty"`
+	JobCount        int                `json:"job_count"`
+	RunningJobs     int                `json:"running_jobs"`
+	PendingJobs     int                `json:"pending_jobs"`
+	CompletedJobs   int                `json:"completed_jobs"`
+	FailedJobs      int                `json:"failed_jobs"`
+	CancelledJobs   int                `json:"cancelled_jobs"`
+	Efficiency      float64            `json:"efficiency"`
+	PeriodStart     time.Time          `json:"period_start"`
+	PeriodEnd       time.Time          `json:"period_end"`
+}
+
+// QoSLimits represents Quality of Service limits
+type QoSLimits struct {
+	Name           string         `json:"name"`
+	Priority       int            `json:"priority"`
+	UsageFactor    float64        `json:"usage_factor"`
+	UsageThreshold float64        `json:"usage_threshold"`
+	GraceTime      int            `json:"grace_time"`
+	MaxJobs        int            `json:"max_jobs"`
+	MaxJobsPerUser int            `json:"max_jobs_per_user"`
+	MaxSubmitJobs  int            `json:"max_submit_jobs"`
+	MaxWallTime    int            `json:"max_wall_time"`
+	TRESLimits     map[string]int `json:"tres_limits,omitempty"`
+	Flags          []string       `json:"flags,omitempty"`
 }
 
 // ClientConfig holds configuration for the API client

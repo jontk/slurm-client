@@ -29,6 +29,9 @@ type QoSManager = interfaces.QoSManager
 // AccountManager provides version-agnostic account operations
 type AccountManager = interfaces.AccountManager
 
+// UserManager provides version-agnostic user operations
+type UserManager = interfaces.UserManager
+
 // Type aliases for data structures
 type Job = interfaces.Job
 type JobList = interfaces.JobList
@@ -70,6 +73,25 @@ type AccountList = interfaces.AccountList
 type AccountCreate = interfaces.AccountCreate
 type AccountCreateResponse = interfaces.AccountCreateResponse
 type AccountUpdate = interfaces.AccountUpdate
+type AccountQuota = interfaces.AccountQuota
+type AccountUsage = interfaces.AccountUsage
+type AccountHierarchy = interfaces.AccountHierarchy
+
+type User = interfaces.User
+type UserList = interfaces.UserList
+type UserAccount = interfaces.UserAccount
+type UserAssociation = interfaces.UserAssociation
+type UserQuota = interfaces.UserQuota
+type UserAccountQuota = interfaces.UserAccountQuota
+type UserUsage = interfaces.UserUsage
+type AccountUsageStats = interfaces.AccountUsageStats
+type UserFairShare = interfaces.UserFairShare
+type FairShareNode = interfaces.FairShareNode
+type JobPriorityFactors = interfaces.JobPriorityFactors
+type PriorityWeights = interfaces.PriorityWeights
+type JobPriorityInfo = interfaces.JobPriorityInfo
+type AssociationUsage = interfaces.AssociationUsage
+type QoSLimits = interfaces.QoSLimits
 
 // List options
 type ListJobsOptions = interfaces.ListJobsOptions
@@ -78,6 +100,7 @@ type ListPartitionsOptions = interfaces.ListPartitionsOptions
 type ListReservationsOptions = interfaces.ListReservationsOptions
 type ListQoSOptions = interfaces.ListQoSOptions
 type ListAccountsOptions = interfaces.ListAccountsOptions
+type ListUsersOptions = interfaces.ListUsersOptions
 
 // Watch options
 type WatchJobsOptions = interfaces.WatchJobsOptions
