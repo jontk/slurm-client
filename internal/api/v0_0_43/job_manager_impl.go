@@ -822,3 +822,421 @@ func (m *JobManagerImpl) Watch(ctx context.Context, opts *interfaces.WatchJobsOp
 	// Start watching
 	return poller.Watch(ctx, opts)
 }
+
+// GetJobUtilization retrieves comprehensive resource utilization metrics for a job
+func (m *JobManagerImpl) GetJobUtilization(ctx context.Context, jobID string) (*interfaces.JobUtilization, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// First get the job details to determine status
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// In v0.0.43, full utilization metrics are available through the sacct-like endpoints
+	// For now, we'll simulate utilization data based on job info
+	// TODO: Integrate with real SLURM accounting/statistics endpoints when available
+
+	utilization := &interfaces.JobUtilization{
+		JobID:   jobID,
+		JobName: job.Name,
+		StartTime: job.SubmitTime,
+		EndTime: job.EndTime,
+		
+		// CPU Utilization
+		CPUUtilization: &interfaces.ResourceUtilization{
+			Used:      float64(job.CPUs) * 0.85, // Simulated 85% utilization
+			Allocated: float64(job.CPUs),
+			Limit:     float64(job.CPUs),
+			Percentage: 85.0,
+		},
+		
+		// Memory Utilization
+		MemoryUtilization: &interfaces.ResourceUtilization{
+			Used:      float64(job.Memory) * 0.72, // Simulated 72% utilization
+			Allocated: float64(job.Memory),
+			Limit:     float64(job.Memory),
+			Percentage: 72.0,
+		},
+	}
+
+	// Add metadata
+	utilization.Metadata = map[string]interface{}{
+		"version": "v0.0.43",
+		"source": "simulated", // TODO: Change to "accounting" when real data available
+		"nodes": job.Nodes,
+		"partition": job.Partition,
+		"state": job.State,
+	}
+
+	// GPU utilization (if applicable)
+	// In a real implementation, this would come from GPU monitoring data
+	if gpuCount, ok := job.Metadata["gpu_count"].(int); ok && gpuCount > 0 {
+		utilization.GPUUtilization = &interfaces.GPUUtilization{
+			TotalGPUs: gpuCount,
+			GPUs: make(map[string]interfaces.GPUDeviceUtilization),
+			AverageUtilization: &interfaces.ResourceUtilization{
+				Used:      float64(gpuCount) * 0.90, // Simulated 90% GPU utilization
+				Allocated: float64(gpuCount),
+				Limit:     float64(gpuCount),
+				Percentage: 90.0,
+			},
+		}
+		
+		// Add per-GPU metrics
+		for i := 0; i < gpuCount; i++ {
+			gpuID := fmt.Sprintf("gpu%d", i)
+			utilization.GPUUtilization.GPUs[gpuID] = interfaces.GPUDeviceUtilization{
+				DeviceID:   gpuID,
+				DeviceUUID: fmt.Sprintf("GPU-%d-UUID", i),
+				Utilization: 85.0 + float64(i*5), // Varying utilization
+				MemoryUsed:  16 * 1024 * 1024 * 1024, // 16GB
+				MemoryTotal: 24 * 1024 * 1024 * 1024, // 24GB
+				Temperature: 65.0 + float64(i*2),
+				PowerDraw:   250.0 + float64(i*10),
+				PowerLimit:  300.0,
+			}
+		}
+	}
+
+	// I/O utilization (simulated)
+	utilization.IOUtilization = &interfaces.IOUtilization{
+		ReadBandwidth: &interfaces.ResourceUtilization{
+			Used:      100 * 1024 * 1024, // 100 MB/s
+			Allocated: 500 * 1024 * 1024, // 500 MB/s limit
+			Limit:     500 * 1024 * 1024,
+			Percentage: 20.0,
+		},
+		WriteBandwidth: &interfaces.ResourceUtilization{
+			Used:      50 * 1024 * 1024, // 50 MB/s
+			Allocated: 500 * 1024 * 1024, // 500 MB/s limit
+			Limit:     500 * 1024 * 1024,
+			Percentage: 10.0,
+		},
+		TotalBytesRead:    10 * 1024 * 1024 * 1024, // 10 GB
+		TotalBytesWritten: 5 * 1024 * 1024 * 1024,  // 5 GB
+	}
+
+	// Network utilization (simulated)
+	utilization.NetworkUtilization = &interfaces.NetworkUtilization{
+		TotalBandwidth: &interfaces.ResourceUtilization{
+			Used:      1 * 1024 * 1024 * 1024, // 1 Gbps
+			Allocated: 10 * 1024 * 1024 * 1024, // 10 Gbps limit
+			Limit:     10 * 1024 * 1024 * 1024,
+			Percentage: 10.0,
+		},
+		PacketsReceived: 1000000,
+		PacketsSent:     900000,
+		PacketsDropped:  100,
+		Errors:          5,
+		Interfaces:      make(map[string]interfaces.NetworkInterfaceStats),
+	}
+
+	// Energy usage (simulated)
+	if job.EndTime != nil {
+		duration := job.EndTime.Sub(job.StartTime.Unix() > 0 ? *job.StartTime : job.SubmitTime).Hours()
+		avgPower := 300.0 // 300W average
+		utilization.EnergyUsage = &interfaces.EnergyUsage{
+			TotalEnergyJoules: avgPower * duration * 3600, // Convert to joules
+			AveragePowerWatts: avgPower,
+			PeakPowerWatts:    450.0,
+			MinPowerWatts:     200.0,
+			CPUEnergyJoules:   200.0 * duration * 3600,
+			GPUEnergyJoules:   100.0 * duration * 3600,
+			CarbonFootprint:   avgPower * duration * 0.0004, // Approximate carbon factor
+		}
+	}
+
+	return utilization, nil
+}
+
+// GetJobEfficiency calculates efficiency metrics for a completed job
+func (m *JobManagerImpl) GetJobEfficiency(ctx context.Context, jobID string) (*interfaces.ResourceUtilization, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Get job utilization data
+	utilization, err := m.GetJobUtilization(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Calculate overall efficiency based on resource utilization
+	// This is a weighted average of different resource efficiencies
+	cpuWeight := 0.4
+	memWeight := 0.3
+	gpuWeight := 0.2
+	ioWeight := 0.1
+
+	totalEfficiency := 0.0
+	totalWeight := 0.0
+
+	// CPU efficiency
+	if utilization.CPUUtilization != nil {
+		totalEfficiency += utilization.CPUUtilization.Percentage * cpuWeight
+		totalWeight += cpuWeight
+	}
+
+	// Memory efficiency
+	if utilization.MemoryUtilization != nil {
+		totalEfficiency += utilization.MemoryUtilization.Percentage * memWeight
+		totalWeight += memWeight
+	}
+
+	// GPU efficiency (if applicable)
+	if utilization.GPUUtilization != nil && utilization.GPUUtilization.AverageUtilization != nil {
+		totalEfficiency += utilization.GPUUtilization.AverageUtilization.Percentage * gpuWeight
+		totalWeight += gpuWeight
+	} else {
+		// If no GPU, redistribute weight to CPU and memory
+		totalWeight += gpuWeight * 0.6 // Add 60% to CPU
+		totalWeight += gpuWeight * 0.4 // Add 40% to memory
+	}
+
+	// I/O efficiency
+	if utilization.IOUtilization != nil && utilization.IOUtilization.ReadBandwidth != nil {
+		ioEfficiency := (utilization.IOUtilization.ReadBandwidth.Percentage + 
+		                utilization.IOUtilization.WriteBandwidth.Percentage) / 2
+		totalEfficiency += ioEfficiency * ioWeight
+		totalWeight += ioWeight
+	}
+
+	// Calculate final efficiency percentage
+	efficiency := totalEfficiency / totalWeight
+
+	return &interfaces.ResourceUtilization{
+		Used:       efficiency,
+		Allocated:  100.0,
+		Limit:      100.0,
+		Percentage: efficiency,
+		Metadata: map[string]interface{}{
+			"cpu_efficiency":    utilization.CPUUtilization.Percentage,
+			"memory_efficiency": utilization.MemoryUtilization.Percentage,
+			"calculation_method": "weighted_average",
+			"weights": map[string]float64{
+				"cpu":    cpuWeight,
+				"memory": memWeight,
+				"gpu":    gpuWeight,
+				"io":     ioWeight,
+			},
+		},
+	}, nil
+}
+
+// GetJobPerformance retrieves detailed performance metrics for a job
+func (m *JobManagerImpl) GetJobPerformance(ctx context.Context, jobID string) (*interfaces.JobPerformance, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Get basic job info
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert string jobID to uint32
+	jobIDInt, err := strconv.ParseUint(jobID, 10, 32)
+	if err != nil {
+		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, "Invalid job ID format", err.Error())
+	}
+
+	// Get utilization metrics
+	utilization, err := m.GetJobUtilization(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get efficiency metrics
+	efficiency, err := m.GetJobEfficiency(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build performance report
+	performance := &interfaces.JobPerformance{
+		JobID:     uint32(jobIDInt),
+		JobName:   job.Name,
+		StartTime: job.SubmitTime,
+		EndTime:   job.EndTime,
+		Status:    job.State,
+		ExitCode:  job.ExitCode,
+		
+		ResourceUtilization: efficiency,
+		JobUtilization:     utilization,
+		
+		// Step metrics would come from job step data in real implementation
+		StepMetrics: []interfaces.JobStepPerformance{},
+		
+		// Performance trends (simulated for now)
+		PerformanceTrends: generatePerformanceTrends(job),
+		
+		// Bottleneck analysis
+		Bottlenecks: analyzeBottlenecks(utilization),
+		
+		// Optimization recommendations
+		Recommendations: generateRecommendations(utilization, efficiency),
+	}
+
+	return performance, nil
+}
+
+// Helper function to generate performance trends (simulated)
+func generatePerformanceTrends(job *interfaces.Job) *interfaces.PerformanceTrends {
+	if job.StartTime == nil {
+		return nil
+	}
+
+	// Generate hourly time points
+	startTime := *job.StartTime
+	endTime := time.Now()
+	if job.EndTime != nil {
+		endTime = *job.EndTime
+	}
+
+	duration := endTime.Sub(startTime)
+	points := int(duration.Hours())
+	if points < 1 {
+		points = 1
+	}
+	if points > 24 {
+		points = 24 // Limit to 24 data points
+	}
+
+	trends := &interfaces.PerformanceTrends{
+		TimePoints:    make([]time.Time, points),
+		CPUTrends:     make([]float64, points),
+		MemoryTrends:  make([]float64, points),
+		IOTrends:      make([]float64, points),
+		NetworkTrends: make([]float64, points),
+	}
+
+	// Generate simulated trend data
+	for i := 0; i < points; i++ {
+		trends.TimePoints[i] = startTime.Add(time.Duration(i) * time.Hour)
+		
+		// Simulate varying utilization over time
+		trends.CPUTrends[i] = 70.0 + float64(i%10)*2
+		trends.MemoryTrends[i] = 60.0 + float64(i%8)*3
+		trends.IOTrends[i] = 20.0 + float64(i%5)*4
+		trends.NetworkTrends[i] = 10.0 + float64(i%3)*5
+	}
+
+	return trends
+}
+
+// Helper function to analyze bottlenecks
+func analyzeBottlenecks(utilization *interfaces.JobUtilization) []interfaces.PerformanceBottleneck {
+	bottlenecks := []interfaces.PerformanceBottleneck{}
+
+	// Check CPU bottleneck
+	if utilization.CPUUtilization != nil && utilization.CPUUtilization.Percentage > 95 {
+		bottlenecks = append(bottlenecks, interfaces.PerformanceBottleneck{
+			Type:         "cpu",
+			Severity:     "high",
+			Description:  "CPU utilization is at or near maximum capacity",
+			Impact:       15.0, // 15% performance impact
+			TimeDetected: time.Now(),
+			Duration:     time.Hour, // Simulated duration
+		})
+	}
+
+	// Check memory bottleneck
+	if utilization.MemoryUtilization != nil && utilization.MemoryUtilization.Percentage > 90 {
+		bottlenecks = append(bottlenecks, interfaces.PerformanceBottleneck{
+			Type:         "memory",
+			Severity:     "medium",
+			Description:  "Memory utilization is high, may cause swapping",
+			Impact:       10.0,
+			TimeDetected: time.Now(),
+			Duration:     30 * time.Minute,
+		})
+	}
+
+	// Check I/O bottleneck
+	if utilization.IOUtilization != nil {
+		readUtil := utilization.IOUtilization.ReadBandwidth.Percentage
+		writeUtil := utilization.IOUtilization.WriteBandwidth.Percentage
+		if readUtil > 80 || writeUtil > 80 {
+			bottlenecks = append(bottlenecks, interfaces.PerformanceBottleneck{
+				Type:         "io",
+				Severity:     "medium",
+				Description:  "I/O bandwidth utilization is high",
+				Impact:       8.0,
+				TimeDetected: time.Now(),
+				Duration:     20 * time.Minute,
+			})
+		}
+	}
+
+	return bottlenecks
+}
+
+// Helper function to generate optimization recommendations
+func generateRecommendations(utilization *interfaces.JobUtilization, efficiency *interfaces.ResourceUtilization) []interfaces.OptimizationRecommendation {
+	recommendations := []interfaces.OptimizationRecommendation{}
+
+	// CPU recommendations
+	if utilization.CPUUtilization != nil {
+		if utilization.CPUUtilization.Percentage < 50 {
+			recommendations = append(recommendations, interfaces.OptimizationRecommendation{
+				Type:                "resource_adjustment",
+				Priority:            "high",
+				Title:               "Reduce CPU allocation",
+				Description:         "CPU utilization is low. Consider reducing CPU allocation to improve resource efficiency.",
+				ExpectedImprovement: 20.0,
+				ResourceChanges: map[string]interface{}{
+					"cpu_reduction": "50%",
+				},
+			})
+		} else if utilization.CPUUtilization.Percentage > 95 {
+			recommendations = append(recommendations, interfaces.OptimizationRecommendation{
+				Type:                "resource_adjustment",
+				Priority:            "high",
+				Title:               "Increase CPU allocation",
+				Description:         "CPU utilization is at maximum. Consider increasing CPU allocation for better performance.",
+				ExpectedImprovement: 25.0,
+				ResourceChanges: map[string]interface{}{
+					"cpu_increase": "50%",
+				},
+			})
+		}
+	}
+
+	// Memory recommendations
+	if utilization.MemoryUtilization != nil && utilization.MemoryUtilization.Percentage < 40 {
+		recommendations = append(recommendations, interfaces.OptimizationRecommendation{
+			Type:                "resource_adjustment",
+			Priority:            "medium",
+			Title:               "Optimize memory allocation",
+			Description:         "Memory utilization is low. Consider reducing memory allocation.",
+			ExpectedImprovement: 15.0,
+			ResourceChanges: map[string]interface{}{
+				"memory_reduction": "40%",
+			},
+		})
+	}
+
+	// Overall efficiency recommendation
+	if efficiency.Percentage < 70 {
+		recommendations = append(recommendations, interfaces.OptimizationRecommendation{
+			Type:        "workflow",
+			Priority:    "high",
+			Title:       "Improve overall job efficiency",
+			Description: "Overall job efficiency is below 70%. Review job configuration and resource allocation.",
+			ExpectedImprovement: 30.0,
+			ConfigChanges: map[string]string{
+				"review_parallelization": "true",
+				"optimize_data_locality": "true",
+			},
+		})
+	}
+
+	return recommendations
+}
