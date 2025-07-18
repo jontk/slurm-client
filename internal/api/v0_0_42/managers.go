@@ -4,7 +4,7 @@ package v0_0_42
 
 import (
 	"context"
-	
+
 	"github.com/jontk/slurm-client/internal/interfaces"
 )
 
@@ -68,6 +68,78 @@ func (m *JobManager) Watch(ctx context.Context, opts *interfaces.WatchJobsOption
 		m.impl = NewJobManagerImpl(m.client)
 	}
 	return m.impl.Watch(ctx, opts)
+}
+
+// GetJobUtilization retrieves comprehensive resource utilization metrics for a job
+func (m *JobManager) GetJobUtilization(ctx context.Context, jobID string) (*interfaces.JobUtilization, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobUtilization(ctx, jobID)
+}
+
+// GetJobEfficiency calculates efficiency metrics for a completed job
+func (m *JobManager) GetJobEfficiency(ctx context.Context, jobID string) (*interfaces.ResourceUtilization, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobEfficiency(ctx, jobID)
+}
+
+// GetJobPerformance retrieves detailed performance metrics for a job
+func (m *JobManager) GetJobPerformance(ctx context.Context, jobID string) (*interfaces.JobPerformance, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobPerformance(ctx, jobID)
+}
+
+// GetJobLiveMetrics retrieves real-time performance metrics for a running job
+func (m *JobManager) GetJobLiveMetrics(ctx context.Context, jobID string) (*interfaces.JobLiveMetrics, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobLiveMetrics(ctx, jobID)
+}
+
+// WatchJobMetrics provides streaming performance updates for a running job
+func (m *JobManager) WatchJobMetrics(ctx context.Context, jobID string, opts *interfaces.WatchMetricsOptions) (<-chan interfaces.JobMetricsEvent, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.WatchJobMetrics(ctx, jobID, opts)
+}
+
+// GetJobResourceTrends retrieves performance trends over specified time windows
+func (m *JobManager) GetJobResourceTrends(ctx context.Context, jobID string, opts *interfaces.ResourceTrendsOptions) (*interfaces.JobResourceTrends, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobResourceTrends(ctx, jobID, opts)
+}
+
+// GetJobStepDetails retrieves detailed information about a specific job step
+func (m *JobManager) GetJobStepDetails(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepDetails, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobStepDetails(ctx, jobID, stepID)
+}
+
+// GetJobStepUtilization retrieves resource utilization metrics for a specific job step
+func (m *JobManager) GetJobStepUtilization(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepUtilization, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobStepUtilization(ctx, jobID, stepID)
+}
+
+// ListJobStepsWithMetrics retrieves all job steps with their performance metrics
+func (m *JobManager) ListJobStepsWithMetrics(ctx context.Context, jobID string, opts *interfaces.ListJobStepsOptions) (*interfaces.JobStepMetricsList, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.ListJobStepsWithMetrics(ctx, jobID, opts)
 }
 
 // NodeManager implements the NodeManager interface for API version v0.0.42

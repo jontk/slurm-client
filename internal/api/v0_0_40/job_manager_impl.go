@@ -842,45 +842,45 @@ func (m *JobManagerImpl) GetJobUtilization(ctx context.Context, jobID string) (*
 	// TODO: Integrate with basic SLURM accounting when available
 
 	utilization := &interfaces.JobUtilization{
-		JobID:   jobID,
-		JobName: job.Name,
+		JobID:     jobID,
+		JobName:   job.Name,
 		StartTime: job.SubmitTime,
-		EndTime: job.EndTime,
-		
+		EndTime:   job.EndTime,
+
 		// CPU Utilization (minimal in v0.0.40 - assumes 70% utilization)
 		CPUUtilization: &interfaces.ResourceUtilization{
-			Used:      float64(job.CPUs) * 0.70, // Fixed 70% utilization assumption
-			Allocated: float64(job.CPUs),
-			Limit:     float64(job.CPUs),
+			Used:       float64(job.CPUs) * 0.70, // Fixed 70% utilization assumption
+			Allocated:  float64(job.CPUs),
+			Limit:      float64(job.CPUs),
 			Percentage: 70.0,
 			Metadata: map[string]interface{}{
 				"estimation_method": "fixed_percentage",
-				"confidence": "low",
+				"confidence":        "low",
 			},
 		},
-		
+
 		// Memory Utilization (minimal in v0.0.40 - assumes 60% utilization)
 		MemoryUtilization: &interfaces.ResourceUtilization{
-			Used:      float64(job.Memory) * 0.60, // Fixed 60% utilization assumption
-			Allocated: float64(job.Memory),
-			Limit:     float64(job.Memory),
+			Used:       float64(job.Memory) * 0.60, // Fixed 60% utilization assumption
+			Allocated:  float64(job.Memory),
+			Limit:      float64(job.Memory),
 			Percentage: 60.0,
 			Metadata: map[string]interface{}{
 				"estimation_method": "fixed_percentage",
-				"confidence": "low",
+				"confidence":        "low",
 			},
 		},
 	}
 
 	// Add metadata about v0.0.40 limitations
 	utilization.Metadata = map[string]interface{}{
-		"version": "v0.0.40",
-		"source": "basic_accounting", 
-		"nodes": job.Nodes,
-		"partition": job.Partition,
-		"state": job.State,
-		"feature_level": "minimal", // v0.0.40 has minimal features
-		"data_quality": "estimated", // Most data is estimated, not measured
+		"version":       "v0.0.40",
+		"source":        "basic_accounting",
+		"nodes":         job.Nodes,
+		"partition":     job.Partition,
+		"state":         job.State,
+		"feature_level": "minimal",   // v0.0.40 has minimal features
+		"data_quality":  "estimated", // Most data is estimated, not measured
 		"limitations": []string{
 			"fixed_utilization_percentages",
 			"no_actual_measurements",
@@ -909,8 +909,8 @@ func (m *JobManagerImpl) GetJobEfficiency(ctx context.Context, jobID string) (*i
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
-	// Get job utilization data
-	utilization, err := m.GetJobUtilization(ctx, jobID)
+	// Get job utilization data (not used in v0.0.40 basic calculation)
+	_, err := m.GetJobUtilization(ctx, jobID)
 	if err != nil {
 		return nil, err
 	}
@@ -925,12 +925,12 @@ func (m *JobManagerImpl) GetJobEfficiency(ctx context.Context, jobID string) (*i
 		Limit:      100.0,
 		Percentage: efficiency,
 		Metadata: map[string]interface{}{
-			"cpu_efficiency":    70.0, // Fixed from utilization assumption
-			"memory_efficiency": 60.0, // Fixed from utilization assumption
+			"cpu_efficiency":     70.0, // Fixed from utilization assumption
+			"memory_efficiency":  60.0, // Fixed from utilization assumption
 			"calculation_method": "fixed_estimate_v40",
-			"version": "v0.0.40",
-			"confidence": "very_low",
-			"note": "Efficiency is estimated, not measured in v0.0.40",
+			"version":            "v0.0.40",
+			"confidence":         "very_low",
+			"note":               "Efficiency is estimated, not measured in v0.0.40",
 			"limitations": []string{
 				"no_actual_measurements",
 				"fixed_efficiency_value",
@@ -980,27 +980,27 @@ func (m *JobManagerImpl) GetJobPerformance(ctx context.Context, jobID string) (*
 		EndTime:   job.EndTime,
 		Status:    job.State,
 		ExitCode:  job.ExitCode,
-		
+
 		ResourceUtilization: efficiency,
-		JobUtilization:     utilization,
-		
+		JobUtilization:      utilization,
+
 		// No advanced features available in v0.0.40
 		StepMetrics:       nil,
 		PerformanceTrends: nil,
 		Bottlenecks:       nil, // No bottleneck detection in v0.0.40
-		
+
 		// Only basic recommendation in v0.0.40
 		Recommendations: []interfaces.OptimizationRecommendation{
 			{
-				Type:        "system",
-				Priority:    "medium",
-				Title:       "Upgrade for better analytics",
-				Description: "API v0.0.40 provides only minimal analytics. Upgrade to SLURM API v0.0.41+ for actual resource measurements and v0.0.42+ for comprehensive analytics.",
+				Type:                "system",
+				Priority:            "medium",
+				Title:               "Upgrade for better analytics",
+				Description:         "API v0.0.40 provides only minimal analytics. Upgrade to SLURM API v0.0.41+ for actual resource measurements and v0.0.42+ for comprehensive analytics.",
 				ExpectedImprovement: 0.0,
 				ConfigChanges: map[string]string{
 					"current_api_version": "v0.0.40",
 					"minimum_recommended": "v0.0.41",
-					"optimal_version": "v0.0.42_or_higher",
+					"optimal_version":     "v0.0.42_or_higher",
 				},
 			},
 		},
@@ -1036,14 +1036,14 @@ func (m *JobManagerImpl) WatchJobMetrics(ctx context.Context, jobID string, opts
 	if opts == nil {
 		opts = &interfaces.WatchMetricsOptions{
 			UpdateInterval:     30 * time.Second, // Very slow polling for v0.0.40
-			IncludeCPU:        false, // Not supported
-			IncludeMemory:     false, // Not supported
-			IncludeGPU:        false, // Not supported
-			IncludeNetwork:    false, // Not supported
-			IncludeIO:         false, // Not supported
-			IncludeEnergy:     false, // Not supported
-			IncludeNodeMetrics: false, // Not supported
-			StopOnCompletion:  true,
+			IncludeCPU:         false,            // Not supported
+			IncludeMemory:      false,            // Not supported
+			IncludeGPU:         false,            // Not supported
+			IncludeNetwork:     false,            // Not supported
+			IncludeIO:          false,            // Not supported
+			IncludeEnergy:      false,            // Not supported
+			IncludeNodeMetrics: false,            // Not supported
+			StopOnCompletion:   true,
 		}
 	}
 
@@ -1065,8 +1065,8 @@ func (m *JobManagerImpl) WatchJobMetrics(ctx context.Context, jobID string, opts
 			JobID:     jobID,
 			Timestamp: time.Now(),
 			Metrics: &interfaces.JobLiveMetrics{
-				JobID:   jobID,
-				State:   "UNKNOWN",
+				JobID: jobID,
+				State: "UNKNOWN",
 				Metadata: map[string]interface{}{
 					"warning": "v0.0.40 only supports job state monitoring, no performance metrics available",
 					"version": "v0.0.40",
@@ -1198,4 +1198,428 @@ func (m *JobManagerImpl) GetJobResourceTrends(ctx context.Context, jobID string,
 		"GetJobResourceTrends",
 		"Resource trend analysis is not supported in API v0.0.40. Please upgrade to v0.0.41 or higher.",
 	)
+}
+
+// GetJobStepDetails retrieves minimal job step information (v0.0.40 - very limited features)
+func (m *JobManagerImpl) GetJobStepDetails(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepDetails, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// First get the job details to validate job exists
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse step ID (not used in v0.0.40)
+	_, err = strconv.Atoi(stepID)
+	if err != nil {
+		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, "Invalid step ID format", err.Error())
+	}
+
+	// v0.0.40 has very minimal step tracking
+	stepDetails := &interfaces.JobStepDetails{
+		StepID:    stepID,
+		StepName:  fmt.Sprintf("step_%s", stepID),
+		JobID:     jobID,
+		JobName:   job.Name,
+		State:     deriveMinimalStepState(job.State),
+		StartTime: job.StartTime,
+		EndTime:   job.EndTime,
+		Duration:  calculateMinimalStepDuration(job.StartTime, job.EndTime),
+		ExitCode:  job.ExitCode, // Simple inheritance
+
+		// Minimal resource allocation for v0.0.40
+		CPUAllocation:    job.CPUs,          // Use all job CPUs for simplicity
+		MemoryAllocation: int64(job.Memory), // Use all job memory
+		NodeList:         job.Nodes,
+		TaskCount:        job.CPUs, // Simple 1:1 mapping
+
+		// Minimal command info
+		Command:     deriveMinimalStepCommand(job.Command),
+		CommandLine: job.Command,
+		WorkingDir:  job.WorkingDir,
+		Environment: job.Environment,
+
+		// Minimal performance metrics (v0.0.40)
+		CPUTime:    time.Hour,        // Fixed 1 hour
+		UserTime:   time.Hour,        // Fixed 1 hour
+		SystemTime: time.Minute * 10, // Fixed 10 minutes
+
+		// Minimal resource usage
+		MaxRSS:     int64(job.Memory / 10), // Very conservative
+		MaxVMSize:  int64(job.Memory / 5),  // Very conservative
+		AverageRSS: int64(job.Memory / 20), // Very conservative
+
+		// Minimal I/O statistics
+		TotalReadBytes:  calculateMinimalStepIOBytes(job.CPUs, "read"),
+		TotalWriteBytes: calculateMinimalStepIOBytes(job.CPUs, "write"),
+		ReadOperations:  calculateMinimalStepIOOps(job.CPUs, "read"),
+		WriteOperations: calculateMinimalStepIOOps(job.CPUs, "write"),
+
+		// No network or energy statistics in v0.0.40
+		NetworkBytesReceived: 0,
+		NetworkBytesSent:     0,
+		EnergyConsumed:       0,
+		AveragePowerDraw:     0,
+
+		// Minimal task-level information
+		Tasks: generateMinimalStepTasks(job),
+
+		// Minimal step-specific metadata
+		StepType:        "primary", // Fixed type
+		Priority:        job.Priority,
+		AccountingGroup: "default",
+		QOSLevel:        "normal",
+	}
+
+	// Add metadata (v0.0.40 specific)
+	stepDetails.Metadata = map[string]interface{}{
+		"version":          "v0.0.40",
+		"data_source":      "simulated",
+		"job_partition":    job.Partition,
+		"job_submit_time":  job.SubmitTime,
+		"minimal_tracking": true, // v0.0.40 feature level
+		"very_limited":     true, // v0.0.40 limitation
+		"fixed_values":     true, // Most values are fixed in v0.0.40
+	}
+
+	return stepDetails, nil
+}
+
+// GetJobStepUtilization retrieves minimal resource utilization metrics (v0.0.40 - very limited)
+func (m *JobManagerImpl) GetJobStepUtilization(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepUtilization, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Get step details first
+	stepDetails, err := m.GetJobStepDetails(ctx, jobID, stepID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get job details for context
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create minimal step utilization metrics (v0.0.40)
+	stepUtilization := &interfaces.JobStepUtilization{
+		StepID:   stepID,
+		StepName: stepDetails.StepName,
+		JobID:    jobID,
+		JobName:  job.Name,
+
+		// Time information
+		StartTime: stepDetails.StartTime,
+		EndTime:   stepDetails.EndTime,
+		Duration:  stepDetails.Duration,
+
+		// Minimal CPU utilization metrics
+		CPUUtilization: &interfaces.ResourceUtilization{
+			Used:       float64(stepDetails.CPUAllocation) * 0.5, // Fixed 50% utilization
+			Allocated:  float64(stepDetails.CPUAllocation),
+			Limit:      float64(stepDetails.CPUAllocation),
+			Percentage: 50.0, // Fixed percentage for v0.0.40
+			Metadata: map[string]interface{}{
+				"minimal_tracking": true, // v0.0.40 limitation
+				"fixed_value":      true, // v0.0.40 limitation
+			},
+		},
+
+		// Minimal memory utilization metrics
+		MemoryUtilization: &interfaces.ResourceUtilization{
+			Used:       float64(stepDetails.AverageRSS),
+			Allocated:  float64(stepDetails.MemoryAllocation),
+			Limit:      float64(stepDetails.MemoryAllocation),
+			Percentage: 30.0, // Fixed percentage for v0.0.40
+			Metadata: map[string]interface{}{
+				"minimal_tracking": true, // v0.0.40 limitation
+				"fixed_value":      true, // v0.0.40 limitation
+			},
+		},
+
+		// Minimal I/O utilization
+		IOUtilization: &interfaces.IOUtilization{
+			ReadBandwidth: &interfaces.ResourceUtilization{
+				Used:       calculateMinimalIOBandwidth(stepDetails.TotalReadBytes, stepDetails.Duration),
+				Allocated:  100 * 1024 * 1024, // 100 MB/s limit (very low)
+				Limit:      100 * 1024 * 1024,
+				Percentage: 10.0, // Fixed very low percentage
+			},
+			WriteBandwidth: &interfaces.ResourceUtilization{
+				Used:       calculateMinimalIOBandwidth(stepDetails.TotalWriteBytes, stepDetails.Duration),
+				Allocated:  100 * 1024 * 1024, // 100 MB/s limit
+				Limit:      100 * 1024 * 1024,
+				Percentage: 8.0, // Fixed very low percentage
+			},
+			TotalBytesRead:    stepDetails.TotalReadBytes,
+			TotalBytesWritten: stepDetails.TotalWriteBytes,
+		},
+
+		// No network utilization in v0.0.40
+		NetworkUtilization: &interfaces.NetworkUtilization{
+			TotalBandwidth: &interfaces.ResourceUtilization{
+				Used:       0,
+				Allocated:  0,
+				Limit:      0,
+				Percentage: 0,
+			},
+			PacketsReceived: 0,
+			PacketsSent:     0,
+			PacketsDropped:  0,
+			Errors:          0,
+			Interfaces:      make(map[string]interfaces.NetworkInterfaceStats),
+		},
+
+		// No energy utilization in v0.0.40
+		EnergyUtilization: &interfaces.ResourceUtilization{
+			Used:       0,
+			Allocated:  0,
+			Limit:      0,
+			Percentage: 0,
+			Metadata: map[string]interface{}{
+				"not_supported": true, // v0.0.40 limitation
+			},
+		},
+
+		// Minimal task-level utilization
+		TaskUtilizations: generateMinimalTaskUtilizations(stepDetails),
+
+		// Minimal performance metrics
+		PerformanceMetrics: &interfaces.StepPerformanceMetrics{
+			CPUEfficiency:     50.0, // Fixed value for v0.0.40
+			MemoryEfficiency:  30.0, // Fixed value for v0.0.40
+			IOEfficiency:      25.0, // Fixed value for v0.0.40
+			OverallEfficiency: 35.0, // Fixed value for v0.0.40
+
+			// Minimal bottleneck analysis
+			PrimaryBottleneck:  "cpu", // Fixed for v0.0.40
+			BottleneckSeverity: "low",
+			ResourceBalance:    "unbalanced",
+
+			// Fixed minimal performance indicators
+			ThroughputMBPS:   50.0, // Fixed value
+			LatencyMS:        20.0, // Fixed value
+			ScalabilityScore: 60.0, // Fixed value
+		},
+	}
+
+	// Add metadata (v0.0.40 specific)
+	stepUtilization.Metadata = map[string]interface{}{
+		"version":               "v0.0.40",
+		"data_source":           "simulated",
+		"task_count":            stepDetails.TaskCount,
+		"node_count":            len(stepDetails.NodeList),
+		"minimal_features":      true, // v0.0.40 feature level
+		"very_limited_accuracy": true, // v0.0.40 limitation
+		"all_fixed_metrics":     true, // All metrics are fixed values in v0.0.40
+		"upgrade_recommended":   true, // Recommendation to upgrade
+	}
+
+	return stepUtilization, nil
+}
+
+// Helper functions for v0.0.40 minimal step calculations
+
+func deriveMinimalStepState(jobState string) string {
+	// Very simple step state derivation for v0.0.40
+	return jobState // Direct inheritance
+}
+
+func calculateMinimalStepDuration(startTime, endTime *time.Time) time.Duration {
+	if startTime == nil {
+		return time.Hour // Fixed 1 hour default
+	}
+	if endTime == nil {
+		return time.Since(*startTime)
+	}
+	return endTime.Sub(*startTime)
+}
+
+func deriveMinimalStepCommand(jobCommand string) string {
+	if jobCommand == "" {
+		return "srun /bin/bash" // Basic command
+	}
+	return jobCommand // Direct inheritance
+}
+
+func calculateMinimalStepIOBytes(cpus int, ioType string) int64 {
+	base := int64(cpus) * 256 * 1024 * 1024 // 256MB per CPU base (very low)
+	if ioType == "write" {
+		base = base / 3 // Write is third of read
+	}
+	return base
+}
+
+func calculateMinimalStepIOOps(cpus int, ioType string) int64 {
+	base := int64(cpus) * 2000 // 2K ops per CPU base (very low)
+	if ioType == "write" {
+		base = base / 3
+	}
+	return base
+}
+
+func generateMinimalStepTasks(job *interfaces.Job) []interfaces.StepTaskInfo {
+	taskCount := job.CPUs // Simple 1:1 mapping
+	tasks := make([]interfaces.StepTaskInfo, taskCount)
+
+	for i := 0; i < taskCount; i++ {
+		// Minimal task distribution in v0.0.40
+		nodeIndex := i % len(job.Nodes)
+		nodeName := job.Nodes[nodeIndex]
+
+		tasks[i] = interfaces.StepTaskInfo{
+			TaskID:    i,
+			NodeName:  nodeName,
+			LocalID:   i, // Simple ID
+			State:     job.State,
+			ExitCode:  job.ExitCode,
+			CPUTime:   time.Minute * 30,              // Fixed 30 minutes
+			MaxRSS:    int64(job.Memory / taskCount), // Simple distribution
+			StartTime: job.StartTime,
+			EndTime:   job.EndTime,
+		}
+	}
+
+	return tasks
+}
+
+func generateMinimalTaskUtilizations(stepDetails *interfaces.JobStepDetails) []interfaces.TaskUtilization {
+	tasks := make([]interfaces.TaskUtilization, len(stepDetails.Tasks))
+
+	for i, task := range stepDetails.Tasks {
+		// Fixed minimal utilization values for v0.0.40
+		tasks[i] = interfaces.TaskUtilization{
+			TaskID:            task.TaskID,
+			NodeName:          task.NodeName,
+			CPUUtilization:    50.0, // Fixed CPU utilization
+			MemoryUtilization: 30.0, // Fixed memory utilization
+			State:             task.State,
+			ExitCode:          task.ExitCode,
+		}
+	}
+
+	return tasks
+}
+
+func calculateMinimalIOBandwidth(totalBytes int64, duration time.Duration) float64 {
+	if duration == 0 {
+		return 10.0 // Fixed 10 MB/s default
+	}
+	return float64(totalBytes) / duration.Seconds()
+}
+
+// ListJobStepsWithMetrics retrieves all job steps with minimal metrics for v0.0.40
+func (m *JobManagerImpl) ListJobStepsWithMetrics(ctx context.Context, jobID string, opts *interfaces.ListJobStepsOptions) (*interfaces.JobStepMetricsList, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// First get the job details to validate the job exists
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, errors.WrapError(err)
+	}
+
+	// Get job steps using the existing Steps method
+	stepList, err := m.Steps(ctx, jobID)
+	if err != nil {
+		return nil, errors.WrapError(err)
+	}
+
+	// Process steps with minimal metrics for v0.0.40
+	filteredSteps := []*interfaces.JobStepWithMetrics{}
+	
+	for _, step := range stepList.Steps {
+		// Very basic processing for v0.0.40 - no filtering to keep it simple
+		stepDetails, err := m.GetJobStepDetails(ctx, jobID, step.ID)
+		if err != nil {
+			continue // Skip steps with errors
+		}
+
+		stepUtilization, err := m.GetJobStepUtilization(ctx, jobID, step.ID)
+		if err != nil {
+			continue // Skip steps with errors
+		}
+
+		// Create step with minimal metrics
+		stepWithMetrics := &interfaces.JobStepWithMetrics{
+			JobStepDetails:     stepDetails,
+			JobStepUtilization: stepUtilization,
+		}
+
+		filteredSteps = append(filteredSteps, stepWithMetrics)
+	}
+
+	// No advanced options for v0.0.40 - just basic pagination
+	if opts != nil && opts.Limit > 0 && len(filteredSteps) > opts.Limit {
+		filteredSteps = filteredSteps[:opts.Limit]
+	}
+
+	// Generate very basic summary
+	summary := generateVeryBasicJobStepsSummary(filteredSteps, convertToJobStepPointers(stepList.Steps))
+
+	result := &interfaces.JobStepMetricsList{
+		JobID:         jobID,
+		JobName:       job.Name,
+		Steps:         filteredSteps,
+		Summary:       summary,
+		TotalSteps:    len(stepList.Steps),
+		FilteredSteps: len(filteredSteps),
+		Metadata: map[string]interface{}{
+			"api_version":    "v0.0.40",
+			"generated_at":   time.Now(),
+			"job_state":      job.State,
+			"analysis_level": "minimal",
+			"note":           "Limited metrics available in v0.0.40",
+		},
+	}
+
+	return result, nil
+}
+
+// Helper function to generate very basic summary for v0.0.40
+func generateVeryBasicJobStepsSummary(filteredSteps []*interfaces.JobStepWithMetrics, allSteps []*interfaces.JobStep) *interfaces.JobStepsSummary {
+	summary := &interfaces.JobStepsSummary{
+		TotalSteps: len(allSteps),
+	}
+
+	if len(filteredSteps) == 0 {
+		return summary
+	}
+
+	// Very basic aggregation for v0.0.40
+	completedSteps := 0
+	for _, step := range filteredSteps {
+		if step.State == "COMPLETED" {
+			completedSteps++
+		}
+	}
+
+	summary.CompletedSteps = completedSteps
+
+	// Conservative fixed estimates for v0.0.40
+	summary.AverageCPUEfficiency = 50.0
+	summary.AverageMemoryEfficiency = 45.0
+	summary.AverageIOEfficiency = 40.0
+	summary.AverageOverallEfficiency = 45.0
+	summary.OptimizationPotential = 55.0
+
+	return summary
+}
+
+// Helper function to convert []JobStep to []*JobStep
+func convertToJobStepPointers(steps []interfaces.JobStep) []*interfaces.JobStep {
+	result := make([]*interfaces.JobStep, len(steps))
+	for i := range steps {
+		result[i] = &steps[i]
+	}
+	return result
 }
