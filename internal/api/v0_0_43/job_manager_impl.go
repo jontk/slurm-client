@@ -843,63 +843,64 @@ func (m *JobManagerImpl) GetJobUtilization(ctx context.Context, jobID string) (*
 	// TODO: Integrate with real SLURM accounting/statistics endpoints when available
 
 	utilization := &interfaces.JobUtilization{
-		JobID:   jobID,
-		JobName: job.Name,
+		JobID:     jobID,
+		JobName:   job.Name,
 		StartTime: job.SubmitTime,
-		EndTime: job.EndTime,
-		
+		EndTime:   job.EndTime,
+
 		// CPU Utilization
 		CPUUtilization: &interfaces.ResourceUtilization{
-			Used:      float64(job.CPUs) * 0.85, // Simulated 85% utilization
-			Allocated: float64(job.CPUs),
-			Limit:     float64(job.CPUs),
+			Used:       float64(job.CPUs) * 0.85, // Simulated 85% utilization
+			Allocated:  float64(job.CPUs),
+			Limit:      float64(job.CPUs),
 			Percentage: 85.0,
 		},
-		
+
 		// Memory Utilization
 		MemoryUtilization: &interfaces.ResourceUtilization{
-			Used:      float64(job.Memory) * 0.72, // Simulated 72% utilization
-			Allocated: float64(job.Memory),
-			Limit:     float64(job.Memory),
+			Used:       float64(job.Memory) * 0.72, // Simulated 72% utilization
+			Allocated:  float64(job.Memory),
+			Limit:      float64(job.Memory),
 			Percentage: 72.0,
 		},
 	}
 
 	// Add metadata
 	utilization.Metadata = map[string]interface{}{
-		"version": "v0.0.43",
-		"source": "simulated", // TODO: Change to "accounting" when real data available
-		"nodes": job.Nodes,
+		"version":   "v0.0.43",
+		"source":    "simulated", // TODO: Change to "accounting" when real data available
+		"nodes":     job.Nodes,
 		"partition": job.Partition,
-		"state": job.State,
+		"state":     job.State,
 	}
 
 	// GPU utilization (if applicable)
 	// In a real implementation, this would come from GPU monitoring data
 	if gpuCount, ok := job.Metadata["gpu_count"].(int); ok && gpuCount > 0 {
 		utilization.GPUUtilization = &interfaces.GPUUtilization{
-			TotalGPUs: gpuCount,
-			GPUs: make(map[string]interfaces.GPUDeviceUtilization),
-			AverageUtilization: &interfaces.ResourceUtilization{
-				Used:      float64(gpuCount) * 0.90, // Simulated 90% GPU utilization
-				Allocated: float64(gpuCount),
-				Limit:     float64(gpuCount),
+			DeviceCount: gpuCount,
+			Devices:     make([]interfaces.GPUDeviceUtilization, gpuCount),
+			OverallUtilization: &interfaces.ResourceUtilization{
+				Used:       float64(gpuCount) * 0.90, // Simulated 90% GPU utilization
+				Allocated:  float64(gpuCount),
+				Limit:      float64(gpuCount),
 				Percentage: 90.0,
 			},
 		}
-		
+
 		// Add per-GPU metrics
 		for i := 0; i < gpuCount; i++ {
-			gpuID := fmt.Sprintf("gpu%d", i)
-			utilization.GPUUtilization.GPUs[gpuID] = interfaces.GPUDeviceUtilization{
-				DeviceID:   gpuID,
+			utilization.GPUUtilization.Devices[i] = interfaces.GPUDeviceUtilization{
+				DeviceID:   fmt.Sprintf("gpu%d", i),
 				DeviceUUID: fmt.Sprintf("GPU-%d-UUID", i),
-				Utilization: 85.0 + float64(i*5), // Varying utilization
-				MemoryUsed:  16 * 1024 * 1024 * 1024, // 16GB
-				MemoryTotal: 24 * 1024 * 1024 * 1024, // 24GB
+				Utilization: &interfaces.ResourceUtilization{
+					Used:       85.0 + float64(i*5), // Varying utilization
+					Allocated:  100.0,
+					Limit:      100.0,
+					Percentage: 85.0 + float64(i*5),
+				},
+				PowerUsage:  250.0 + float64(i*10),
 				Temperature: 65.0 + float64(i*2),
-				PowerDraw:   250.0 + float64(i*10),
-				PowerLimit:  300.0,
 			}
 		}
 	}
@@ -907,15 +908,15 @@ func (m *JobManagerImpl) GetJobUtilization(ctx context.Context, jobID string) (*
 	// I/O utilization (simulated)
 	utilization.IOUtilization = &interfaces.IOUtilization{
 		ReadBandwidth: &interfaces.ResourceUtilization{
-			Used:      100 * 1024 * 1024, // 100 MB/s
-			Allocated: 500 * 1024 * 1024, // 500 MB/s limit
-			Limit:     500 * 1024 * 1024,
+			Used:       100 * 1024 * 1024, // 100 MB/s
+			Allocated:  500 * 1024 * 1024, // 500 MB/s limit
+			Limit:      500 * 1024 * 1024,
 			Percentage: 20.0,
 		},
 		WriteBandwidth: &interfaces.ResourceUtilization{
-			Used:      50 * 1024 * 1024, // 50 MB/s
-			Allocated: 500 * 1024 * 1024, // 500 MB/s limit
-			Limit:     500 * 1024 * 1024,
+			Used:       50 * 1024 * 1024,  // 50 MB/s
+			Allocated:  500 * 1024 * 1024, // 500 MB/s limit
+			Limit:      500 * 1024 * 1024,
 			Percentage: 10.0,
 		},
 		TotalBytesRead:    10 * 1024 * 1024 * 1024, // 10 GB
@@ -925,9 +926,9 @@ func (m *JobManagerImpl) GetJobUtilization(ctx context.Context, jobID string) (*
 	// Network utilization (simulated)
 	utilization.NetworkUtilization = &interfaces.NetworkUtilization{
 		TotalBandwidth: &interfaces.ResourceUtilization{
-			Used:      1 * 1024 * 1024 * 1024, // 1 Gbps
-			Allocated: 10 * 1024 * 1024 * 1024, // 10 Gbps limit
-			Limit:     10 * 1024 * 1024 * 1024,
+			Used:       1 * 1024 * 1024 * 1024,  // 1 Gbps
+			Allocated:  10 * 1024 * 1024 * 1024, // 10 Gbps limit
+			Limit:      10 * 1024 * 1024 * 1024,
 			Percentage: 10.0,
 		},
 		PacketsReceived: 1000000,
@@ -939,7 +940,13 @@ func (m *JobManagerImpl) GetJobUtilization(ctx context.Context, jobID string) (*
 
 	// Energy usage (simulated)
 	if job.EndTime != nil {
-		duration := job.EndTime.Sub(job.StartTime.Unix() > 0 ? *job.StartTime : job.SubmitTime).Hours()
+		var startTime time.Time
+		if job.StartTime != nil && job.StartTime.Unix() > 0 {
+			startTime = *job.StartTime
+		} else {
+			startTime = job.SubmitTime
+		}
+		duration := job.EndTime.Sub(startTime).Hours()
 		avgPower := 300.0 // 300W average
 		utilization.EnergyUsage = &interfaces.EnergyUsage{
 			TotalEnergyJoules: avgPower * duration * 3600, // Convert to joules
@@ -991,8 +998,8 @@ func (m *JobManagerImpl) GetJobEfficiency(ctx context.Context, jobID string) (*i
 	}
 
 	// GPU efficiency (if applicable)
-	if utilization.GPUUtilization != nil && utilization.GPUUtilization.AverageUtilization != nil {
-		totalEfficiency += utilization.GPUUtilization.AverageUtilization.Percentage * gpuWeight
+	if utilization.GPUUtilization != nil && utilization.GPUUtilization.OverallUtilization != nil {
+		totalEfficiency += utilization.GPUUtilization.OverallUtilization.Percentage * gpuWeight
 		totalWeight += gpuWeight
 	} else {
 		// If no GPU, redistribute weight to CPU and memory
@@ -1002,8 +1009,8 @@ func (m *JobManagerImpl) GetJobEfficiency(ctx context.Context, jobID string) (*i
 
 	// I/O efficiency
 	if utilization.IOUtilization != nil && utilization.IOUtilization.ReadBandwidth != nil {
-		ioEfficiency := (utilization.IOUtilization.ReadBandwidth.Percentage + 
-		                utilization.IOUtilization.WriteBandwidth.Percentage) / 2
+		ioEfficiency := (utilization.IOUtilization.ReadBandwidth.Percentage +
+			utilization.IOUtilization.WriteBandwidth.Percentage) / 2
 		totalEfficiency += ioEfficiency * ioWeight
 		totalWeight += ioWeight
 	}
@@ -1017,8 +1024,8 @@ func (m *JobManagerImpl) GetJobEfficiency(ctx context.Context, jobID string) (*i
 		Limit:      100.0,
 		Percentage: efficiency,
 		Metadata: map[string]interface{}{
-			"cpu_efficiency":    utilization.CPUUtilization.Percentage,
-			"memory_efficiency": utilization.MemoryUtilization.Percentage,
+			"cpu_efficiency":     utilization.CPUUtilization.Percentage,
+			"memory_efficiency":  utilization.MemoryUtilization.Percentage,
 			"calculation_method": "weighted_average",
 			"weights": map[string]float64{
 				"cpu":    cpuWeight,
@@ -1069,19 +1076,19 @@ func (m *JobManagerImpl) GetJobPerformance(ctx context.Context, jobID string) (*
 		EndTime:   job.EndTime,
 		Status:    job.State,
 		ExitCode:  job.ExitCode,
-		
+
 		ResourceUtilization: efficiency,
-		JobUtilization:     utilization,
-		
+		JobUtilization:      utilization,
+
 		// Step metrics would come from job step data in real implementation
 		StepMetrics: []interfaces.JobStepPerformance{},
-		
+
 		// Performance trends (simulated for now)
 		PerformanceTrends: generatePerformanceTrends(job),
-		
+
 		// Bottleneck analysis
 		Bottlenecks: analyzeBottlenecks(utilization),
-		
+
 		// Optimization recommendations
 		Recommendations: generateRecommendations(utilization, efficiency),
 	}
@@ -1122,7 +1129,7 @@ func generatePerformanceTrends(job *interfaces.Job) *interfaces.PerformanceTrend
 	// Generate simulated trend data
 	for i := 0; i < points; i++ {
 		trends.TimePoints[i] = startTime.Add(time.Duration(i) * time.Hour)
-		
+
 		// Simulate varying utilization over time
 		trends.CPUTrends[i] = 70.0 + float64(i%10)*2
 		trends.MemoryTrends[i] = 60.0 + float64(i%8)*3
@@ -1228,10 +1235,10 @@ func generateRecommendations(utilization *interfaces.JobUtilization, efficiency 
 	// Overall efficiency recommendation
 	if efficiency.Percentage < 70 {
 		recommendations = append(recommendations, interfaces.OptimizationRecommendation{
-			Type:        "workflow",
-			Priority:    "high",
-			Title:       "Improve overall job efficiency",
-			Description: "Overall job efficiency is below 70%. Review job configuration and resource allocation.",
+			Type:                "workflow",
+			Priority:            "high",
+			Title:               "Improve overall job efficiency",
+			Description:         "Overall job efficiency is below 70%. Review job configuration and resource allocation.",
 			ExpectedImprovement: 30.0,
 			ConfigChanges: map[string]string{
 				"review_parallelization": "true",
@@ -1258,7 +1265,7 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 
 	// Only running jobs have live metrics
 	if job.State != "RUNNING" && job.State != "SUSPENDED" {
-		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, 
+		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest,
 			fmt.Sprintf("Job %s is not running (state: %s)", jobID, job.State))
 	}
 
@@ -1277,7 +1284,7 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 		State:          job.State,
 		RunningTime:    runningTime,
 		CollectionTime: time.Now(),
-		
+
 		// Simulate CPU usage with variations
 		CPUUsage: &interfaces.LiveResourceMetric{
 			Current:            float64(job.CPUs) * (0.75 + float64(time.Now().Unix()%20)/100),
@@ -1289,7 +1296,7 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 			Trend:              determineTrend(75.0, 78.0),
 			Unit:               "cores",
 		},
-		
+
 		// Simulate memory usage
 		MemoryUsage: &interfaces.LiveResourceMetric{
 			Current:            float64(job.Memory) * (0.65 + float64(time.Now().Unix()%15)/100),
@@ -1301,11 +1308,11 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 			Trend:              determineTrend(65.0, 68.0),
 			Unit:               "bytes",
 		},
-		
+
 		// Process information (simulated)
 		ProcessCount: 8 + int(time.Now().Unix()%4),
 		ThreadCount:  32 + int(time.Now().Unix()%8),
-		
+
 		// Initialize maps
 		NodeMetrics: make(map[string]*interfaces.NodeLiveMetrics),
 		Alerts:      []interfaces.PerformanceAlert{},
@@ -1352,10 +1359,10 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 	// Add node-level metrics for each allocated node
 	for i, nodeName := range job.Nodes {
 		nodeMetrics := &interfaces.NodeLiveMetrics{
-			NodeName:  nodeName,
-			CPUCores:  job.CPUs / len(job.Nodes), // Distribute cores
-			MemoryGB:  float64(job.Memory) / float64(len(job.Nodes)) / (1024 * 1024 * 1024),
-			
+			NodeName: nodeName,
+			CPUCores: job.CPUs / len(job.Nodes), // Distribute cores
+			MemoryGB: float64(job.Memory) / float64(len(job.Nodes)) / (1024 * 1024 * 1024),
+
 			CPUUsage: &interfaces.LiveResourceMetric{
 				Current:            75.0 + float64(i*5),
 				Average1Min:        77.0 + float64(i*5),
@@ -1366,7 +1373,7 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 				Trend:              "stable",
 				Unit:               "percent",
 			},
-			
+
 			MemoryUsage: &interfaces.LiveResourceMetric{
 				Current:            65.0 + float64(i*3),
 				Average1Min:        67.0 + float64(i*3),
@@ -1377,13 +1384,13 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 				Trend:              "stable",
 				Unit:               "percent",
 			},
-			
+
 			LoadAverage: []float64{
 				2.5 + float64(i)*0.2,
 				2.3 + float64(i)*0.2,
 				2.1 + float64(i)*0.2,
 			},
-			
+
 			// Optional metrics
 			CPUTemperature:   65.0 + float64(i*2) + float64(time.Now().Unix()%5),
 			PowerConsumption: 250.0 + float64(i*20) + float64(time.Now().Unix()%30),
@@ -1392,7 +1399,7 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 			DiskReadRate:     50.0 + float64(i*10),
 			DiskWriteRate:    30.0 + float64(i*8),
 		}
-		
+
 		liveMetrics.NodeMetrics[nodeName] = nodeMetrics
 	}
 
@@ -1517,17 +1524,17 @@ func (m *JobManagerImpl) WatchJobMetrics(ctx context.Context, jobID string, opts
 	if opts == nil {
 		opts = &interfaces.WatchMetricsOptions{
 			UpdateInterval:     5 * time.Second,
-			IncludeCPU:        true,
-			IncludeMemory:     true,
-			IncludeGPU:        true,
-			IncludeNetwork:    true,
-			IncludeIO:         true,
-			IncludeEnergy:     true,
+			IncludeCPU:         true,
+			IncludeMemory:      true,
+			IncludeGPU:         true,
+			IncludeNetwork:     true,
+			IncludeIO:          true,
+			IncludeEnergy:      true,
 			IncludeNodeMetrics: true,
-			StopOnCompletion:  true,
-			CPUThreshold:      90.0,
-			MemoryThreshold:   85.0,
-			GPUThreshold:      90.0,
+			StopOnCompletion:   true,
+			CPUThreshold:       90.0,
+			MemoryThreshold:    85.0,
+			GPUThreshold:       90.0,
 		}
 	}
 
@@ -1684,7 +1691,7 @@ func (m *JobManagerImpl) WatchJobMetrics(ctx context.Context, jobID string, opts
 // Helper function to check if job is in a completed state
 func isJobComplete(state string) bool {
 	completedStates := []string{
-		"COMPLETED", "FAILED", "CANCELLED", "TIMEOUT", 
+		"COMPLETED", "FAILED", "CANCELLED", "TIMEOUT",
 		"NODE_FAIL", "PREEMPTED", "BOOT_FAIL", "DEADLINE",
 		"OUT_OF_MEMORY", "REVOKED",
 	}
@@ -1730,7 +1737,7 @@ func filterMetrics(metrics *interfaces.JobLiveMetrics, opts *interfaces.WatchMet
 	// Filter node metrics
 	if opts.IncludeNodeMetrics && metrics.NodeMetrics != nil {
 		filtered.NodeMetrics = make(map[string]*interfaces.NodeLiveMetrics)
-		
+
 		if len(opts.SpecificNodes) > 0 {
 			// Only include specific nodes
 			for _, nodeName := range opts.SpecificNodes {
@@ -1816,14 +1823,14 @@ func (m *JobManagerImpl) GetJobResourceTrends(ctx context.Context, jobID string,
 	// Set default options
 	if opts == nil {
 		opts = &interfaces.ResourceTrendsOptions{
-			DataPoints:     24,
-			IncludeCPU:     true,
-			IncludeMemory:  true,
-			IncludeGPU:     true,
-			IncludeIO:      true,
-			IncludeNetwork: true,
-			IncludeEnergy:  true,
-			Aggregation:    "avg",
+			DataPoints:      24,
+			IncludeCPU:      true,
+			IncludeMemory:   true,
+			IncludeGPU:      true,
+			IncludeIO:       true,
+			IncludeNetwork:  true,
+			IncludeEnergy:   true,
+			Aggregation:     "avg",
 			DetectAnomalies: true,
 		}
 	}
@@ -1928,7 +1935,7 @@ func generateTimePoints(startTime, endTime *time.Time, numPoints int) []time.Tim
 	}
 
 	points := make([]time.Time, numPoints)
-	
+
 	var duration time.Duration
 	if endTime != nil {
 		duration = endTime.Sub(*startTime)
@@ -1937,7 +1944,7 @@ func generateTimePoints(startTime, endTime *time.Time, numPoints int) []time.Tim
 	}
 
 	interval := duration / time.Duration(numPoints-1)
-	
+
 	for i := 0; i < numPoints; i++ {
 		points[i] = startTime.Add(time.Duration(i) * interval)
 	}
@@ -1958,7 +1965,7 @@ func hasGPU(job *interfaces.Job) bool {
 // Helper function to generate CPU trends
 func generateCPUTrends(job *interfaces.Job, timePoints []time.Time, aggregation string) *interfaces.ResourceTimeSeries {
 	values := make([]float64, len(timePoints))
-	
+
 	// Simulate CPU usage pattern
 	baseCPU := float64(job.CPUs) * 0.75
 	for i := range values {
@@ -1979,7 +1986,7 @@ func generateCPUTrends(job *interfaces.Job, timePoints []time.Time, aggregation 
 // Helper function to generate memory trends
 func generateMemoryTrends(job *interfaces.Job, timePoints []time.Time, aggregation string) *interfaces.ResourceTimeSeries {
 	values := make([]float64, len(timePoints))
-	
+
 	// Simulate memory usage pattern (gradual increase)
 	baseMemory := float64(job.Memory) * 0.5
 	for i := range values {
@@ -1998,7 +2005,7 @@ func generateMemoryTrends(job *interfaces.Job, timePoints []time.Time, aggregati
 // Helper function to generate GPU trends
 func generateGPUTrends(job *interfaces.Job, timePoints []time.Time, aggregation string) *interfaces.ResourceTimeSeries {
 	values := make([]float64, len(timePoints))
-	
+
 	// Simulate GPU usage pattern
 	for i := range values {
 		// GPU typically has high utilization when used
@@ -2013,11 +2020,11 @@ func generateIOTrends(job *interfaces.Job, timePoints []time.Time, aggregation s
 	// Simulate I/O patterns
 	readValues := make([]float64, len(timePoints))
 	writeValues := make([]float64, len(timePoints))
-	
+
 	for i := range readValues {
 		// Simulate burst I/O pattern
 		if i%5 == 0 {
-			readValues[i] = 100.0 + rand.Float64()*50.0  // MB/s
+			readValues[i] = 100.0 + rand.Float64()*50.0 // MB/s
 			writeValues[i] = 80.0 + rand.Float64()*40.0
 		} else {
 			readValues[i] = 20.0 + rand.Float64()*10.0
@@ -2038,10 +2045,10 @@ func generateNetworkTrends(job *interfaces.Job, timePoints []time.Time, aggregat
 	// Simulate network patterns
 	ingressValues := make([]float64, len(timePoints))
 	egressValues := make([]float64, len(timePoints))
-	
+
 	for i := range ingressValues {
 		// Network usage varies
-		ingressValues[i] = 50.0 + rand.Float64()*100.0  // Mbps
+		ingressValues[i] = 50.0 + rand.Float64()*100.0 // Mbps
 		egressValues[i] = 40.0 + rand.Float64()*80.0
 	}
 
@@ -2056,7 +2063,7 @@ func generateNetworkTrends(job *interfaces.Job, timePoints []time.Time, aggregat
 func generateEnergyTrends(job *interfaces.Job, timePoints []time.Time, aggregation string) *interfaces.EnergyTimeSeries {
 	// Simulate energy patterns
 	powerValues := make([]float64, len(timePoints))
-	
+
 	basePower := float64(job.CPUs) * 10.0 // 10W per CPU core base
 	for i := range powerValues {
 		// Power correlates with CPU usage
@@ -2090,7 +2097,7 @@ func calculateTimeSeries(values []float64, unit string) *interfaces.ResourceTime
 	sum := 0.0
 	min := values[0]
 	max := values[0]
-	
+
 	for _, v := range values {
 		sum += v
 		if v < min {
@@ -2100,19 +2107,19 @@ func calculateTimeSeries(values []float64, unit string) *interfaces.ResourceTime
 			max = v
 		}
 	}
-	
+
 	avg := sum / float64(len(values))
-	
+
 	// Calculate standard deviation
 	variance := 0.0
 	for _, v := range values {
 		variance += (v - avg) * (v - avg)
 	}
 	stdDev := math.Sqrt(variance / float64(len(values)))
-	
+
 	// Determine trend
 	trend, slope := analyzeTrend(values)
-	
+
 	return &interfaces.ResourceTimeSeries{
 		Values:     values,
 		Unit:       unit,
@@ -2137,7 +2144,7 @@ func analyzeTrend(values []float64) (string, float64) {
 	sumY := 0.0
 	sumXY := 0.0
 	sumX2 := 0.0
-	
+
 	for i, y := range values {
 		x := float64(i)
 		sumX += x
@@ -2145,13 +2152,13 @@ func analyzeTrend(values []float64) (string, float64) {
 		sumXY += x * y
 		sumX2 += x * x
 	}
-	
+
 	slope := (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX)
-	
+
 	// Determine trend based on slope
 	avgValue := sumY / n
 	relativeSlope := slope / avgValue * 100 // Percentage change per unit
-	
+
 	if math.Abs(relativeSlope) < 1 {
 		return "stable", slope
 	} else if relativeSlope > 5 {
@@ -2171,12 +2178,12 @@ func detectAnomalies(resource string, series *interfaces.ResourceTimeSeries, tim
 	}
 
 	anomalies := []interfaces.ResourceAnomaly{}
-	
+
 	// Simple anomaly detection: values beyond 2 standard deviations
 	threshold := 2.0
 	upperBound := series.Average + threshold*series.StdDev
 	lowerBound := series.Average - threshold*series.StdDev
-	
+
 	for i, value := range series.Values {
 		if value > upperBound {
 			anomalies = append(anomalies, interfaces.ResourceAnomaly{
@@ -2202,7 +2209,7 @@ func detectAnomalies(resource string, series *interfaces.ResourceTimeSeries, tim
 			})
 		}
 	}
-	
+
 	return anomalies
 }
 
@@ -2273,7 +2280,7 @@ func generateTrendsSummary(trends *interfaces.JobResourceTrends) *interfaces.Tre
 		totalVariability += trends.MemoryTrends.StdDev / trends.MemoryTrends.Average
 		varCount++
 	}
-	
+
 	if varCount > 0 {
 		summary.VariabilityIndex = totalVariability / float64(varCount)
 		summary.StabilityScore = 100.0 * (1.0 - math.Min(summary.VariabilityIndex, 1.0))
@@ -2303,7 +2310,7 @@ func generateTrendsSummary(trends *interfaces.JobResourceTrends) *interfaces.Tre
 	if trends.CPUTrends != nil && trends.MemoryTrends != nil {
 		cpuRatio := trends.CPUTrends.Average / trends.CPUTrends.Max
 		memRatio := trends.MemoryTrends.Average / trends.MemoryTrends.Max
-		
+
 		if math.Abs(cpuRatio-memRatio) < 0.2 {
 			summary.ResourceBalance = "balanced"
 		} else if cpuRatio > memRatio+0.2 {
@@ -2314,4 +2321,1137 @@ func generateTrendsSummary(trends *interfaces.JobResourceTrends) *interfaces.Tre
 	}
 
 	return summary
+}
+
+// GetJobStepDetails retrieves detailed information about a specific job step
+func (m *JobManagerImpl) GetJobStepDetails(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepDetails, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// First get the job details to validate job exists
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// In v0.0.43, job step details would come from dedicated step endpoints
+	// For now, we'll simulate step details based on job information
+	// TODO: Integrate with real SLURM job step APIs when available
+
+	// Parse step ID
+	stepIDInt, err := strconv.Atoi(stepID)
+	if err != nil {
+		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, "Invalid step ID format", err.Error())
+	}
+
+	// Simulate step details
+	stepDetails := &interfaces.JobStepDetails{
+		StepID:    stepID,
+		StepName:  fmt.Sprintf("step_%s", stepID),
+		JobID:     jobID,
+		JobName:   job.Name,
+		State:     deriveStepState(job.State, stepIDInt),
+		StartTime: job.StartTime,
+		EndTime:   job.EndTime,
+		Duration:  calculateStepDuration(job.StartTime, job.EndTime),
+		ExitCode:  deriveStepExitCode(job.ExitCode, stepIDInt),
+
+		// Resource allocation (derived from job resources)
+		CPUAllocation:    job.CPUs / 2,          // Assume step uses half the job's CPUs
+		MemoryAllocation: int64(job.Memory / 2), // Half the memory
+		NodeList:         job.Nodes,
+		TaskCount:        calculateStepTaskCount(job.CPUs, stepIDInt),
+
+		// Command and execution details
+		Command:     deriveStepCommand(job.Command, stepIDInt),
+		CommandLine: deriveStepCommandLine(job.Command, stepIDInt),
+		WorkingDir:  job.WorkingDir,
+		Environment: job.Environment,
+
+		// Performance metrics (simulated)
+		CPUTime:    time.Duration(float64(job.CPUs/2) * float64(time.Hour) * 2), // 2 CPU-hours per core
+		UserTime:   time.Duration(float64(job.CPUs/2) * float64(time.Hour) * 1.8),
+		SystemTime: time.Duration(float64(job.CPUs/2) * float64(time.Hour) * 0.2),
+
+		// Resource usage
+		MaxRSS:     int64(job.Memory / 4), // Quarter of allocated memory as max RSS
+		MaxVMSize:  int64(job.Memory / 2), // Half as virtual memory
+		AverageRSS: int64(job.Memory / 6), // Sixth as average RSS
+
+		// I/O statistics (simulated)
+		TotalReadBytes:  calculateStepIOBytes(job.CPUs, stepIDInt, "read"),
+		TotalWriteBytes: calculateStepIOBytes(job.CPUs, stepIDInt, "write"),
+		ReadOperations:  calculateStepIOOps(job.CPUs, stepIDInt, "read"),
+		WriteOperations: calculateStepIOOps(job.CPUs, stepIDInt, "write"),
+
+		// Network statistics (simulated for multi-node jobs)
+		NetworkBytesReceived: calculateNetworkBytes(len(job.Nodes), stepIDInt, "received"),
+		NetworkBytesSent:     calculateNetworkBytes(len(job.Nodes), stepIDInt, "sent"),
+
+		// Energy usage (v0.0.43 supports energy metrics)
+		EnergyConsumed:   calculateStepEnergy(job.CPUs, stepIDInt),
+		AveragePowerDraw: calculateStepPower(job.CPUs, stepIDInt),
+
+		// Task-level information
+		Tasks: generateStepTasks(job, stepIDInt),
+
+		// Step-specific metadata
+		StepType:        deriveStepType(stepIDInt),
+		Priority:        job.Priority,
+		AccountingGroup: deriveAccountingGroup(job.Metadata),
+		QOSLevel:        deriveQOSLevel(job.Metadata),
+	}
+
+	// Add metadata
+	stepDetails.Metadata = map[string]interface{}{
+		"version":                "v0.0.43",
+		"data_source":            "simulated", // TODO: Change to "accounting" when real data available
+		"job_partition":          job.Partition,
+		"job_submit_time":        job.SubmitTime,
+		"step_cpu_efficiency":    calculateStepCPUEfficiency(stepDetails),
+		"step_memory_efficiency": calculateStepMemoryEfficiency(stepDetails),
+	}
+
+	return stepDetails, nil
+}
+
+// GetJobStepUtilization retrieves resource utilization metrics for a specific job step
+func (m *JobManagerImpl) GetJobStepUtilization(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepUtilization, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Get step details first
+	stepDetails, err := m.GetJobStepDetails(ctx, jobID, stepID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get job details for context
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse step ID for calculations
+	stepIDInt, err := strconv.Atoi(stepID)
+	if err != nil {
+		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, "Invalid step ID format", err.Error())
+	}
+
+	// Create step utilization metrics
+	stepUtilization := &interfaces.JobStepUtilization{
+		StepID:   stepID,
+		StepName: stepDetails.StepName,
+		JobID:    jobID,
+		JobName:  job.Name,
+
+		// Time information
+		StartTime: stepDetails.StartTime,
+		EndTime:   stepDetails.EndTime,
+		Duration:  stepDetails.Duration,
+
+		// CPU utilization metrics
+		CPUUtilization: &interfaces.ResourceUtilization{
+			Used:       float64(stepDetails.CPUAllocation) * calculateStepCPUEfficiency(stepDetails) / 100,
+			Allocated:  float64(stepDetails.CPUAllocation),
+			Limit:      float64(stepDetails.CPUAllocation),
+			Percentage: calculateStepCPUEfficiency(stepDetails),
+			Metadata: map[string]interface{}{
+				"cpu_time_hours":    stepDetails.CPUTime.Hours(),
+				"user_time_hours":   stepDetails.UserTime.Hours(),
+				"system_time_ratio": stepDetails.SystemTime.Seconds() / stepDetails.CPUTime.Seconds() * 100,
+			},
+		},
+
+		// Memory utilization metrics
+		MemoryUtilization: &interfaces.ResourceUtilization{
+			Used:       float64(stepDetails.AverageRSS),
+			Allocated:  float64(stepDetails.MemoryAllocation),
+			Limit:      float64(stepDetails.MemoryAllocation),
+			Percentage: calculateStepMemoryEfficiency(stepDetails),
+			Metadata: map[string]interface{}{
+				"max_rss_bytes":    stepDetails.MaxRSS,
+				"max_vmsize_bytes": stepDetails.MaxVMSize,
+				"avg_rss_bytes":    stepDetails.AverageRSS,
+			},
+		},
+
+		// I/O utilization
+		IOUtilization: &interfaces.IOUtilization{
+			ReadBandwidth: &interfaces.ResourceUtilization{
+				Used:       calculateIOBandwidth(stepDetails.TotalReadBytes, stepDetails.Duration),
+				Allocated:  500 * 1024 * 1024, // 500 MB/s assumed limit
+				Limit:      500 * 1024 * 1024,
+				Percentage: calculateIOBandwidth(stepDetails.TotalReadBytes, stepDetails.Duration) / (500 * 1024 * 1024) * 100,
+			},
+			WriteBandwidth: &interfaces.ResourceUtilization{
+				Used:       calculateIOBandwidth(stepDetails.TotalWriteBytes, stepDetails.Duration),
+				Allocated:  500 * 1024 * 1024, // 500 MB/s assumed limit
+				Limit:      500 * 1024 * 1024,
+				Percentage: calculateIOBandwidth(stepDetails.TotalWriteBytes, stepDetails.Duration) / (500 * 1024 * 1024) * 100,
+			},
+			TotalBytesRead:    stepDetails.TotalReadBytes,
+			TotalBytesWritten: stepDetails.TotalWriteBytes,
+		},
+
+		// Network utilization (for multi-node steps)
+		NetworkUtilization: &interfaces.NetworkUtilization{
+			TotalBandwidth: &interfaces.ResourceUtilization{
+				Used:       calculateNetworkBandwidth(stepDetails.NetworkBytesReceived+stepDetails.NetworkBytesSent, stepDetails.Duration),
+				Allocated:  1 * 1024 * 1024 * 1024, // 1 Gbps assumed
+				Limit:      1 * 1024 * 1024 * 1024,
+				Percentage: calculateNetworkBandwidth(stepDetails.NetworkBytesReceived+stepDetails.NetworkBytesSent, stepDetails.Duration) / (1 * 1024 * 1024 * 1024) * 100,
+			},
+			PacketsReceived: calculatePacketCount(stepDetails.NetworkBytesReceived),
+			PacketsSent:     calculatePacketCount(stepDetails.NetworkBytesSent),
+			PacketsDropped:  0, // Simulated - no drops
+			Errors:          0, // Simulated - no errors
+			Interfaces:      make(map[string]interfaces.NetworkInterfaceStats),
+		},
+
+		// Energy utilization (v0.0.43 supports energy metrics)
+		EnergyUtilization: &interfaces.ResourceUtilization{
+			Used:       stepDetails.EnergyConsumed,
+			Allocated:  stepDetails.EnergyConsumed * 1.2, // 20% buffer
+			Limit:      stepDetails.EnergyConsumed * 1.5, // 50% over actual
+			Percentage: 80.0,                             // Simulated 80% energy efficiency
+			Metadata: map[string]interface{}{
+				"average_power_watts": stepDetails.AveragePowerDraw,
+				"energy_joules":       stepDetails.EnergyConsumed,
+				"duration_hours":      stepDetails.Duration.Hours(),
+			},
+		},
+
+		// Task-level utilization
+		TaskUtilizations: generateTaskUtilizations(stepDetails, stepIDInt),
+
+		// Performance metrics
+		PerformanceMetrics: &interfaces.StepPerformanceMetrics{
+			CPUEfficiency:     calculateStepCPUEfficiency(stepDetails),
+			MemoryEfficiency:  calculateStepMemoryEfficiency(stepDetails),
+			IOEfficiency:      calculateStepIOEfficiency(stepDetails),
+			OverallEfficiency: calculateStepOverallEfficiency(stepDetails),
+
+			// Bottleneck analysis
+			PrimaryBottleneck:  identifyStepBottleneck(stepDetails),
+			BottleneckSeverity: "medium",
+			ResourceBalance:    assessStepResourceBalance(stepDetails),
+
+			// Performance indicators
+			ThroughputMBPS:   calculateStepThroughput(stepDetails),
+			LatencyMS:        calculateStepLatency(stepDetails),
+			ScalabilityScore: calculateStepScalability(stepDetails, len(job.Nodes)),
+		},
+	}
+
+	// Add metadata
+	stepUtilization.Metadata = map[string]interface{}{
+		"version":               "v0.0.43",
+		"data_source":           "simulated", // TODO: Change to "accounting" when real data available
+		"task_count":            stepDetails.TaskCount,
+		"node_count":            len(stepDetails.NodeList),
+		"avg_tasks_per_node":    float64(stepDetails.TaskCount) / float64(len(stepDetails.NodeList)),
+		"step_cpu_hours":        stepDetails.CPUTime.Hours(),
+		"step_wall_hours":       stepDetails.Duration.Hours(),
+		"cpu_utilization_ratio": stepDetails.CPUTime.Hours() / (stepDetails.Duration.Hours() * float64(stepDetails.CPUAllocation)),
+	}
+
+	return stepUtilization, nil
+}
+
+// Helper functions for step-level calculations
+
+func deriveStepState(jobState string, stepID int) string {
+	// Derive step state from job state and step characteristics
+	switch jobState {
+	case "RUNNING":
+		if stepID == 0 {
+			return "RUNNING"
+		}
+		return "COMPLETED" // Assume non-primary steps have completed
+	case "COMPLETED":
+		return "COMPLETED"
+	case "FAILED":
+		if stepID == 0 {
+			return "FAILED"
+		}
+		return "COMPLETED" // Some steps may have completed before failure
+	case "CANCELLED":
+		return "CANCELLED"
+	default:
+		return "PENDING"
+	}
+}
+
+func deriveStepExitCode(jobExitCode int, stepID int) int {
+	// Derive step exit code
+	if stepID == 0 {
+		return jobExitCode // Primary step inherits job exit code
+	}
+	if jobExitCode != 0 {
+		return 0 // Non-primary steps may have succeeded even if job failed
+	}
+	return jobExitCode
+}
+
+func calculateStepDuration(startTime, endTime *time.Time) time.Duration {
+	if startTime == nil {
+		return 0
+	}
+	if endTime == nil {
+		return time.Since(*startTime)
+	}
+	return endTime.Sub(*startTime)
+}
+
+func calculateStepTaskCount(cpus int, stepID int) int {
+	// Calculate task count based on CPUs and step type
+	if stepID == 0 {
+		return cpus // Main step uses all CPUs as tasks
+	}
+	return cpus / 4 // Other steps use fewer tasks
+}
+
+func deriveStepCommand(jobCommand string, stepID int) string {
+	if jobCommand == "" {
+		return fmt.Sprintf("srun --step=%d /bin/bash", stepID)
+	}
+	return fmt.Sprintf("srun --step=%d %s", stepID, jobCommand)
+}
+
+func deriveStepCommandLine(jobCommand string, stepID int) string {
+	return fmt.Sprintf("srun --job-name=step_%d --step=%d %s", stepID, stepID, jobCommand)
+}
+
+func calculateStepIOBytes(cpus int, stepID int, ioType string) int64 {
+	base := int64(cpus) * 1024 * 1024 * 1024 // 1GB per CPU base
+	multiplier := float64(stepID+1) * 0.5    // Steps vary in I/O
+	if ioType == "write" {
+		multiplier *= 0.7 // Write is typically less than read
+	}
+	return int64(float64(base) * multiplier)
+}
+
+func calculateStepIOOps(cpus int, stepID int, ioType string) int64 {
+	base := int64(cpus) * 10000 // 10K ops per CPU base
+	multiplier := float64(stepID+1) * 0.8
+	if ioType == "write" {
+		multiplier *= 0.6
+	}
+	return int64(float64(base) * multiplier)
+}
+
+func calculateNetworkBytes(nodeCount int, stepID int, direction string) int64 {
+	if nodeCount <= 1 {
+		return 0 // No network traffic for single-node jobs
+	}
+	base := int64(nodeCount) * 100 * 1024 * 1024 // 100MB per node base
+	multiplier := float64(stepID+1) * 0.6
+	if direction == "sent" {
+		multiplier *= 0.8 // Sent is typically less than received
+	}
+	return int64(float64(base) * multiplier)
+}
+
+func calculateStepEnergy(cpus int, stepID int) float64 {
+	// Energy in joules
+	basePower := float64(cpus) * 15.0    // 15W per CPU
+	duration := float64(stepID+1) * 1800 // 30 minutes per step
+	return basePower * duration
+}
+
+func calculateStepPower(cpus int, stepID int) float64 {
+	// Power in watts
+	return float64(cpus) * 15.0 * (0.8 + float64(stepID)*0.1) // Varying power draw
+}
+
+func generateStepTasks(job *interfaces.Job, stepID int) []interfaces.StepTaskInfo {
+	taskCount := calculateStepTaskCount(job.CPUs, stepID)
+	tasks := make([]interfaces.StepTaskInfo, taskCount)
+
+	for i := 0; i < taskCount; i++ {
+		// Distribute tasks across nodes
+		nodeIndex := i % len(job.Nodes)
+		nodeName := job.Nodes[nodeIndex]
+
+		tasks[i] = interfaces.StepTaskInfo{
+			TaskID:    i,
+			NodeName:  nodeName,
+			LocalID:   i % (taskCount / len(job.Nodes)), // Local task ID on node
+			State:     deriveTaskState(job.State, i),
+			ExitCode:  deriveTaskExitCode(job.ExitCode, i),
+			CPUTime:   time.Duration(i+1) * time.Minute * 30, // Varying CPU time
+			MaxRSS:    int64(job.Memory / taskCount),         // Distribute memory
+			StartTime: job.StartTime,
+			EndTime:   job.EndTime,
+		}
+	}
+
+	return tasks
+}
+
+func deriveStepType(stepID int) string {
+	switch stepID {
+	case 0:
+		return "primary"
+	case 1:
+		return "interactive"
+	default:
+		return "batch"
+	}
+}
+
+func deriveAccountingGroup(metadata map[string]interface{}) string {
+	if metadata == nil {
+		return ""
+	}
+	if account, ok := metadata["account"].(string); ok {
+		return account
+	}
+	return "default"
+}
+
+func deriveQOSLevel(metadata map[string]interface{}) string {
+	if metadata == nil {
+		return ""
+	}
+	if qos, ok := metadata["qos"].(string); ok {
+		return qos
+	}
+	return "normal"
+}
+
+func deriveTaskState(jobState string, taskID int) string {
+	// Most tasks inherit job state, but some may vary
+	if jobState == "RUNNING" && taskID%10 == 0 {
+		return "COMPLETED" // Some tasks complete early
+	}
+	return jobState
+}
+
+func deriveTaskExitCode(jobExitCode int, taskID int) int {
+	// Most tasks inherit job exit code
+	if jobExitCode != 0 && taskID%20 == 0 {
+		return 0 // Some tasks may succeed even if job fails
+	}
+	return jobExitCode
+}
+
+func calculateStepCPUEfficiency(stepDetails *interfaces.JobStepDetails) float64 {
+	if stepDetails.Duration == 0 || stepDetails.CPUAllocation == 0 {
+		return 0.0
+	}
+
+	// Calculate efficiency as ratio of CPU time to allocated CPU time
+	allocatedCPUTime := stepDetails.Duration * time.Duration(stepDetails.CPUAllocation)
+	if allocatedCPUTime == 0 {
+		return 0.0
+	}
+
+	efficiency := stepDetails.CPUTime.Seconds() / allocatedCPUTime.Seconds() * 100
+	if efficiency > 100 {
+		efficiency = 100
+	}
+	return efficiency
+}
+
+func calculateStepMemoryEfficiency(stepDetails *interfaces.JobStepDetails) float64 {
+	if stepDetails.MemoryAllocation == 0 {
+		return 0.0
+	}
+
+	// Calculate efficiency as ratio of average RSS to allocated memory
+	efficiency := float64(stepDetails.AverageRSS) / float64(stepDetails.MemoryAllocation) * 100
+	if efficiency > 100 {
+		efficiency = 100
+	}
+	return efficiency
+}
+
+func calculateStepIOEfficiency(stepDetails *interfaces.JobStepDetails) float64 {
+	// I/O efficiency based on read/write ratio and operation efficiency
+	totalBytes := stepDetails.TotalReadBytes + stepDetails.TotalWriteBytes
+	totalOps := stepDetails.ReadOperations + stepDetails.WriteOperations
+
+	if totalOps == 0 {
+		return 0.0
+	}
+
+	// Average bytes per operation (higher is more efficient for bulk operations)
+	avgBytesPerOp := float64(totalBytes) / float64(totalOps)
+
+	// Normalize to percentage (assume 4KB per op is 100% efficient)
+	efficiency := (avgBytesPerOp / 4096) * 100
+	if efficiency > 100 {
+		efficiency = 100
+	}
+	return efficiency
+}
+
+func calculateStepOverallEfficiency(stepDetails *interfaces.JobStepDetails) float64 {
+	cpuEff := calculateStepCPUEfficiency(stepDetails)
+	memEff := calculateStepMemoryEfficiency(stepDetails)
+	ioEff := calculateStepIOEfficiency(stepDetails)
+
+	// Weighted average
+	return (cpuEff*0.5 + memEff*0.3 + ioEff*0.2)
+}
+
+func identifyStepBottleneck(stepDetails *interfaces.JobStepDetails) string {
+	cpuEff := calculateStepCPUEfficiency(stepDetails)
+	memEff := calculateStepMemoryEfficiency(stepDetails)
+	ioEff := calculateStepIOEfficiency(stepDetails)
+
+	// Find the lowest efficiency as the primary bottleneck
+	if cpuEff <= memEff && cpuEff <= ioEff {
+		return "cpu"
+	} else if memEff <= ioEff {
+		return "memory"
+	}
+	return "io"
+}
+
+func assessStepResourceBalance(stepDetails *interfaces.JobStepDetails) string {
+	cpuEff := calculateStepCPUEfficiency(stepDetails)
+	memEff := calculateStepMemoryEfficiency(stepDetails)
+
+	diff := math.Abs(cpuEff - memEff)
+	if diff < 10 {
+		return "balanced"
+	} else if cpuEff > memEff+10 {
+		return "memory_underutilized"
+	}
+	return "cpu_underutilized"
+}
+
+func calculateStepThroughput(stepDetails *interfaces.JobStepDetails) float64 {
+	if stepDetails.Duration == 0 {
+		return 0.0
+	}
+
+	// Throughput as total I/O bytes per second
+	totalBytes := stepDetails.TotalReadBytes + stepDetails.TotalWriteBytes
+	return float64(totalBytes) / stepDetails.Duration.Seconds()
+}
+
+func calculateStepLatency(stepDetails *interfaces.JobStepDetails) float64 {
+	// Simulated latency based on I/O operations and task count
+	if stepDetails.ReadOperations+stepDetails.WriteOperations == 0 {
+		return 0.0
+	}
+
+	// Average milliseconds per I/O operation
+	totalOps := stepDetails.ReadOperations + stepDetails.WriteOperations
+	durationMS := stepDetails.Duration.Milliseconds()
+
+	return float64(durationMS) / float64(totalOps)
+}
+
+func calculateStepScalability(stepDetails *interfaces.JobStepDetails, nodeCount int) float64 {
+	if nodeCount <= 1 {
+		return 100.0 // Perfect scalability for single-node
+	}
+
+	// Scalability score based on task distribution and efficiency
+	tasksPerNode := float64(stepDetails.TaskCount) / float64(nodeCount)
+
+	// Ideal scalability decreases with more nodes due to coordination overhead
+	idealTasksPerNode := math.Max(1.0, float64(stepDetails.CPUAllocation)/float64(nodeCount))
+	scalabilityRatio := math.Min(tasksPerNode/idealTasksPerNode, 1.0)
+
+	return scalabilityRatio * 100
+}
+
+func generateTaskUtilizations(stepDetails *interfaces.JobStepDetails, stepID int) []interfaces.TaskUtilization {
+	tasks := make([]interfaces.TaskUtilization, len(stepDetails.Tasks))
+
+	for i, task := range stepDetails.Tasks {
+		// Calculate task-specific utilization based on task info
+		cpuUtil := 70.0 + float64(i%20) // Varying CPU utilization per task
+		memUtil := 60.0 + float64(i%15) // Varying memory utilization per task
+
+		tasks[i] = interfaces.TaskUtilization{
+			TaskID:            task.TaskID,
+			NodeName:          task.NodeName,
+			CPUUtilization:    cpuUtil,
+			MemoryUtilization: memUtil,
+			State:             task.State,
+			ExitCode:          task.ExitCode,
+		}
+	}
+
+	return tasks
+}
+
+func calculateIOBandwidth(totalBytes int64, duration time.Duration) float64 {
+	if duration == 0 {
+		return 0.0
+	}
+	return float64(totalBytes) / duration.Seconds()
+}
+
+func calculateNetworkBandwidth(totalBytes int64, duration time.Duration) float64 {
+	if duration == 0 {
+		return 0.0
+	}
+	return float64(totalBytes) * 8 / duration.Seconds() // Convert to bits per second
+}
+
+func calculatePacketCount(totalBytes int64) int64 {
+	// Assume average packet size of 1500 bytes (Ethernet MTU)
+	return totalBytes / 1500
+}
+
+// ListJobStepsWithMetrics retrieves all job steps with their performance metrics
+func (m *JobManagerImpl) ListJobStepsWithMetrics(ctx context.Context, jobID string, opts *interfaces.ListJobStepsOptions) (*interfaces.JobStepMetricsList, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// First get the job details to validate the job exists
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, errors.WrapError(err)
+	}
+
+	// Get job steps using the existing Steps method
+	stepList, err := m.Steps(ctx, jobID)
+	if err != nil {
+		return nil, errors.WrapError(err)
+	}
+
+	// Filter steps based on options if provided
+	filteredSteps := []*interfaces.JobStepWithMetrics{}
+	
+	for _, step := range stepList.Steps {
+		// Apply filtering logic
+		if opts != nil && !shouldIncludeStep(&step, opts) {
+			continue
+		}
+
+		// Get detailed step information
+		stepDetails, err := m.GetJobStepDetails(ctx, jobID, step.ID)
+		if err != nil {
+			// Log error but continue with other steps
+			continue
+		}
+
+		// Get step utilization metrics
+		stepUtilization, err := m.GetJobStepUtilization(ctx, jobID, step.ID)
+		if err != nil {
+			// Log error but continue with other steps
+			continue
+		}
+
+		// Create comprehensive step metrics
+		stepWithMetrics := &interfaces.JobStepWithMetrics{
+			JobStepDetails:     stepDetails,
+			JobStepUtilization: stepUtilization,
+		}
+
+		// Add advanced analytics if requested
+		if opts != nil {
+			if opts.IncludeResourceTrends {
+				stepWithMetrics.Trends = generateStepResourceTrends(stepDetails, stepUtilization)
+			}
+			
+			if opts.IncludePerformanceAnalysis {
+				stepWithMetrics.Comparison = generateStepComparison(stepDetails, stepUtilization, convertToJobStepPointers(stepList.Steps))
+			}
+			
+			if opts.IncludeBottleneckAnalysis {
+				stepWithMetrics.Optimization = generateStepOptimizationSuggestions(stepDetails, stepUtilization)
+			}
+		}
+
+		filteredSteps = append(filteredSteps, stepWithMetrics)
+	}
+
+	// Apply sorting if requested
+	if opts != nil && opts.SortBy != "" {
+		sortJobStepsWithMetrics(filteredSteps, opts.SortBy, opts.SortOrder)
+	}
+
+	// Apply pagination if requested
+	if opts != nil && (opts.Limit > 0 || opts.Offset > 0) {
+		filteredSteps = paginateJobStepsWithMetrics(filteredSteps, opts.Limit, opts.Offset)
+	}
+
+	// Generate summary metrics
+	summary := generateJobStepsSummary(filteredSteps, convertToJobStepPointers(stepList.Steps))
+
+	result := &interfaces.JobStepMetricsList{
+		JobID:         jobID,
+		JobName:       job.Name,
+		Steps:         filteredSteps,
+		Summary:       summary,
+		TotalSteps:    len(stepList.Steps),
+		FilteredSteps: len(filteredSteps),
+		Metadata: map[string]interface{}{
+			"api_version":    "v0.0.43",
+			"generated_at":   time.Now(),
+			"job_state":      job.State,
+			"job_partition":  job.Partition,
+			"analysis_level": "comprehensive",
+		},
+	}
+
+	return result, nil
+}
+
+// Helper function to determine if a step should be included based on filter options
+func shouldIncludeStep(step *interfaces.JobStep, opts *interfaces.ListJobStepsOptions) bool {
+	// State filtering
+	if len(opts.StepStates) > 0 {
+		stateMatch := false
+		for _, state := range opts.StepStates {
+			if step.State == state {
+				stateMatch = true
+				break
+			}
+		}
+		if !stateMatch {
+			return false
+		}
+	}
+
+	// Node filtering - skip for now as JobStep doesn't have Nodes field
+	// TODO: Implement node filtering when JobStep structure is enhanced
+
+	// Step name filtering
+	if len(opts.StepNames) > 0 {
+		nameMatch := false
+		for _, name := range opts.StepNames {
+			if step.Name == name {
+				nameMatch = true
+				break
+			}
+		}
+		if !nameMatch {
+			return false
+		}
+	}
+
+	// Time-based filtering
+	if opts.StartTimeAfter != nil && step.StartTime != nil && step.StartTime.Before(*opts.StartTimeAfter) {
+		return false
+	}
+	if opts.StartTimeBefore != nil && step.StartTime != nil && step.StartTime.After(*opts.StartTimeBefore) {
+		return false
+	}
+	if opts.EndTimeAfter != nil && step.EndTime != nil && step.EndTime.Before(*opts.EndTimeAfter) {
+		return false
+	}
+	if opts.EndTimeBefore != nil && step.EndTime != nil && step.EndTime.After(*opts.EndTimeBefore) {
+		return false
+	}
+
+	// Duration filtering
+	duration := time.Duration(0)
+	if step.StartTime != nil && step.EndTime != nil {
+		duration = step.EndTime.Sub(*step.StartTime)
+	}
+	if opts.MinDuration != nil && duration < *opts.MinDuration {
+		return false
+	}
+	if opts.MaxDuration != nil && duration > *opts.MaxDuration {
+		return false
+	}
+
+	return true
+}
+
+// Helper function to check if slice contains string
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
+// Helper function to generate resource trends for a step
+func generateStepResourceTrends(stepDetails *interfaces.JobStepDetails, stepUtilization *interfaces.JobStepUtilization) *interfaces.StepResourceTrends {
+	// Generate realistic trend data based on step characteristics
+	samplingInterval := time.Minute * 5 // 5-minute sampling
+	duration := stepDetails.Duration
+	sampleCount := int(duration / samplingInterval)
+	if sampleCount < 2 {
+		sampleCount = 2
+	}
+	if sampleCount > 100 {
+		sampleCount = 100 // Cap at 100 samples
+	}
+
+	// Generate timestamps
+	timestamps := make([]time.Time, sampleCount)
+	if stepDetails.StartTime != nil {
+		for i := 0; i < sampleCount; i++ {
+			timestamps[i] = stepDetails.StartTime.Add(time.Duration(i) * samplingInterval)
+		}
+	}
+
+	// Generate CPU trend based on step type and utilization
+	cpuValues := generateCPUTrendValues(stepUtilization.CPUUtilization, sampleCount)
+	cpuTrend := &interfaces.ResourceTrendData{
+		Values:       cpuValues,
+		Timestamps:   timestamps,
+		AverageValue: calculateAverage(cpuValues),
+		MinValue:     findMin(cpuValues),
+		MaxValue:     findMax(cpuValues),
+		StandardDev:  calculateStandardDeviation(cpuValues),
+		SlopePerHour: calculateSlope(cpuValues, samplingInterval),
+	}
+
+	// Generate Memory trend
+	memoryValues := generateMemoryTrendValues(stepUtilization.MemoryUtilization, sampleCount)
+	memoryTrend := &interfaces.ResourceTrendData{
+		Values:       memoryValues,
+		Timestamps:   timestamps,
+		AverageValue: calculateAverage(memoryValues),
+		MinValue:     findMin(memoryValues),
+		MaxValue:     findMax(memoryValues),
+		StandardDev:  calculateStandardDeviation(memoryValues),
+		SlopePerHour: calculateSlope(memoryValues, samplingInterval),
+	}
+
+	// Determine overall trend direction
+	trendDirection := "stable"
+	if cpuTrend.SlopePerHour > 5.0 {
+		trendDirection = "increasing"
+	} else if cpuTrend.SlopePerHour < -5.0 {
+		trendDirection = "decreasing"
+	} else if cpuTrend.StandardDev > 15.0 {
+		trendDirection = "variable"
+	}
+
+	return &interfaces.StepResourceTrends{
+		StepID:           stepDetails.StepID,
+		CPUTrend:         cpuTrend,
+		MemoryTrend:      memoryTrend,
+		SamplingInterval: samplingInterval,
+		TrendDirection:   trendDirection,
+		TrendConfidence:  0.85, // High confidence for v0.0.43
+	}
+}
+
+// Helper function to generate step comparison metrics
+func generateStepComparison(stepDetails *interfaces.JobStepDetails, stepUtilization *interfaces.JobStepUtilization, allSteps []*interfaces.JobStep) *interfaces.StepComparison {
+	// Calculate relative metrics compared to other steps in the job
+	totalSteps := len(allSteps)
+	stepRank := calculateStepPerformanceRank(stepDetails, allSteps)
+	
+	// Efficiency percentile based on CPU utilization
+	cpuEfficiency := stepUtilization.CPUUtilization.Percentage
+	efficiencyPercentile := (float64(totalSteps-stepRank) / float64(totalSteps)) * 100
+
+	return &interfaces.StepComparison{
+		StepID:                   stepDetails.StepID,
+		RelativeCPUEfficiency:    cpuEfficiency / 75.0, // Relative to 75% baseline
+		RelativeMemoryEfficiency: stepUtilization.MemoryUtilization.Percentage / 80.0, // Relative to 80% baseline
+		RelativeDuration:         1.0, // Could be calculated relative to average step duration
+		PerformanceRank:          stepRank,
+		EfficiencyPercentile:     efficiencyPercentile,
+		ComparisonNotes: []string{
+			fmt.Sprintf("Rank %d of %d steps in job", stepRank, totalSteps),
+			fmt.Sprintf("%.1f%% efficiency percentile", efficiencyPercentile),
+		},
+	}
+}
+
+// Helper function to generate optimization suggestions
+func generateStepOptimizationSuggestions(stepDetails *interfaces.JobStepDetails, stepUtilization *interfaces.JobStepUtilization) *interfaces.StepOptimizationSuggestions {
+	suggestions := &interfaces.StepOptimizationSuggestions{
+		StepID: stepDetails.StepID,
+	}
+
+	// Analyze CPU utilization
+	cpuUtil := stepUtilization.CPUUtilization.Percentage
+	if cpuUtil < 50.0 {
+		suggestions.CPUSuggestions = append(suggestions.CPUSuggestions, interfaces.OptimizationSuggestion{
+			Type:                        "cpu_scaling",
+			Severity:                    "warning",
+			Description:                 "CPU utilization is low, consider reducing allocated CPUs",
+			ExpectedBenefit:             "Reduced resource waste and faster job scheduling",
+			ImplementationComplexity:    "low",
+			EstimatedImprovementPercent: 25.0,
+			ActionRequired:              "Reduce CPU count in job submission",
+		})
+		suggestions.RecommendedCPUs = intPtr(int(float64(stepDetails.CPUAllocation) * 0.7))
+	} else if cpuUtil > 95.0 {
+		suggestions.CPUSuggestions = append(suggestions.CPUSuggestions, interfaces.OptimizationSuggestion{
+			Type:                        "cpu_scaling",
+			Severity:                    "critical",
+			Description:                 "CPU utilization is very high, consider increasing allocated CPUs",
+			ExpectedBenefit:             "Better performance and reduced execution time",
+			ImplementationComplexity:    "low",
+			EstimatedImprovementPercent: 30.0,
+			ActionRequired:              "Increase CPU count in job submission",
+		})
+		suggestions.RecommendedCPUs = intPtr(int(float64(stepDetails.CPUAllocation) * 1.3))
+	}
+
+	// Analyze memory utilization
+	memUtil := stepUtilization.MemoryUtilization.Percentage
+	if memUtil < 40.0 {
+		suggestions.MemorySuggestions = append(suggestions.MemorySuggestions, interfaces.OptimizationSuggestion{
+			Type:                        "memory_tuning",
+			Severity:                    "info",
+			Description:                 "Memory utilization is low, consider reducing allocated memory",
+			ExpectedBenefit:             "Reduced resource waste",
+			ImplementationComplexity:    "low",
+			EstimatedImprovementPercent: 15.0,
+			ActionRequired:              "Reduce memory allocation in job submission",
+		})
+		suggestions.RecommendedMemoryMB = intPtr(int(float64(stepDetails.MemoryAllocation) * 0.8))
+	} else if memUtil > 90.0 {
+		suggestions.MemorySuggestions = append(suggestions.MemorySuggestions, interfaces.OptimizationSuggestion{
+			Type:                        "memory_tuning",
+			Severity:                    "warning",
+			Description:                 "Memory utilization is high, consider increasing allocated memory",
+			ExpectedBenefit:             "Prevent out-of-memory errors and improve stability",
+			ImplementationComplexity:    "low",
+			EstimatedImprovementPercent: 20.0,
+			ActionRequired:              "Increase memory allocation in job submission",
+		})
+		suggestions.RecommendedMemoryMB = intPtr(int(float64(stepDetails.MemoryAllocation) * 1.2))
+	}
+
+	// Calculate overall optimization score
+	suggestions.OverallScore = calculateOptimizationScore(cpuUtil, memUtil)
+	suggestions.ImprovementPotential = calculateImprovementPotential(cpuUtil, memUtil)
+
+	// Priority actions
+	if cpuUtil < 30.0 || memUtil < 30.0 {
+		suggestions.HighPriorityActions = append(suggestions.HighPriorityActions, "Significantly reduce resource allocation")
+	}
+	if cpuUtil > 95.0 || memUtil > 95.0 {
+		suggestions.HighPriorityActions = append(suggestions.HighPriorityActions, "Increase resource allocation immediately")
+	}
+
+	return suggestions
+}
+
+// Helper functions for calculations
+func generateCPUTrendValues(utilization *interfaces.ResourceUtilization, count int) []float64 {
+	values := make([]float64, count)
+	baseValue := utilization.Percentage
+	
+	for i := 0; i < count; i++ {
+		// Add some realistic variation
+		variation := (rand.Float64() - 0.5) * 20.0 // +/- 10%
+		values[i] = math.Max(0, math.Min(100, baseValue+variation))
+	}
+	
+	return values
+}
+
+func generateMemoryTrendValues(utilization *interfaces.ResourceUtilization, count int) []float64 {
+	values := make([]float64, count)
+	baseValue := utilization.Percentage
+	
+	for i := 0; i < count; i++ {
+		// Memory tends to be more stable than CPU
+		variation := (rand.Float64() - 0.5) * 10.0 // +/- 5%
+		values[i] = math.Max(0, math.Min(100, baseValue+variation))
+	}
+	
+	return values
+}
+
+func calculateAverage(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	sum := 0.0
+	for _, v := range values {
+		sum += v
+	}
+	return sum / float64(len(values))
+}
+
+func findMin(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	min := values[0]
+	for _, v := range values {
+		if v < min {
+			min = v
+		}
+	}
+	return min
+}
+
+func findMax(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	max := values[0]
+	for _, v := range values {
+		if v > max {
+			max = v
+		}
+	}
+	return max
+}
+
+func calculateStandardDeviation(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	avg := calculateAverage(values)
+	sumSquares := 0.0
+	for _, v := range values {
+		diff := v - avg
+		sumSquares += diff * diff
+	}
+	return math.Sqrt(sumSquares / float64(len(values)))
+}
+
+func calculateSlope(values []float64, interval time.Duration) float64 {
+	if len(values) < 2 {
+		return 0
+	}
+	
+	// Simple linear regression slope
+	n := float64(len(values))
+	sumX := n * (n - 1) / 2 // Sum of indices
+	sumY := calculateAverage(values) * n
+	sumXY := 0.0
+	sumX2 := 0.0
+	
+	for i, y := range values {
+		x := float64(i)
+		sumXY += x * y
+		sumX2 += x * x
+	}
+	
+	slope := (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX)
+	
+	// Convert to per-hour rate
+	samplesPerHour := float64(time.Hour) / float64(interval)
+	return slope * samplesPerHour
+}
+
+func calculateStepPerformanceRank(stepDetails *interfaces.JobStepDetails, allSteps []*interfaces.JobStep) int {
+	// Simple ranking based on step duration (shorter is better for completed steps)
+	rank := 1
+	for _, otherStep := range allSteps {
+		if otherStep.ID != stepDetails.StepID {
+			// Compare based on efficiency metrics (simplified)
+			if stepDetails.Duration > time.Hour {
+				rank++
+			}
+		}
+	}
+	return rank
+}
+
+func calculateOptimizationScore(cpuUtil, memUtil float64) float64 {
+	// Score from 0-100, higher is better
+	cpuScore := 100.0 - math.Abs(cpuUtil-75.0) // Optimal around 75%
+	memScore := 100.0 - math.Abs(memUtil-80.0) // Optimal around 80%
+	return (cpuScore + memScore) / 2.0
+}
+
+func calculateImprovementPotential(cpuUtil, memUtil float64) float64 {
+	// Potential from 0-100, higher means more room for improvement
+	cpuWaste := math.Max(0, 75.0-cpuUtil) + math.Max(0, cpuUtil-95.0)
+	memWaste := math.Max(0, 80.0-memUtil) + math.Max(0, memUtil-95.0)
+	return math.Min(100.0, (cpuWaste+memWaste)*2.0)
+}
+
+func sortJobStepsWithMetrics(steps []*interfaces.JobStepWithMetrics, sortBy, sortOrder string) {
+	// Implementation would depend on sort field
+	// For now, just sort by step ID
+	if sortOrder == "desc" {
+		for i, j := 0, len(steps)-1; i < j; i, j = i+1, j-1 {
+			steps[i], steps[j] = steps[j], steps[i]
+		}
+	}
+}
+
+func paginateJobStepsWithMetrics(steps []*interfaces.JobStepWithMetrics, limit, offset int) []*interfaces.JobStepWithMetrics {
+	if offset >= len(steps) {
+		return []*interfaces.JobStepWithMetrics{}
+	}
+	
+	end := offset + limit
+	if limit <= 0 || end > len(steps) {
+		end = len(steps)
+	}
+	
+	return steps[offset:end]
+}
+
+func generateJobStepsSummary(filteredSteps []*interfaces.JobStepWithMetrics, allSteps []*interfaces.JobStep) *interfaces.JobStepsSummary {
+	summary := &interfaces.JobStepsSummary{
+		TotalSteps: len(allSteps),
+	}
+
+	if len(filteredSteps) == 0 {
+		return summary
+	}
+
+	// Count steps by state
+	for _, step := range allSteps {
+		switch step.State {
+		case "COMPLETED":
+			summary.CompletedSteps++
+		case "FAILED", "CANCELLED":
+			summary.FailedSteps++
+		case "RUNNING":
+			summary.RunningSteps++
+		}
+	}
+
+	// Calculate aggregated metrics from filtered steps
+	totalDuration := time.Duration(0)
+	totalCPUEff := 0.0
+	totalMemEff := 0.0
+	totalIOEff := 0.0
+	totalOverallEff := 0.0
+
+	for _, step := range filteredSteps {
+		totalDuration += step.JobStepDetails.Duration
+		if step.PerformanceMetrics != nil {
+			totalCPUEff += step.PerformanceMetrics.CPUEfficiency
+			totalMemEff += step.PerformanceMetrics.MemoryEfficiency
+			totalIOEff += step.PerformanceMetrics.IOEfficiency
+			totalOverallEff += step.PerformanceMetrics.OverallEfficiency
+		}
+	}
+
+	count := float64(len(filteredSteps))
+	summary.TotalDuration = totalDuration
+	summary.AverageDuration = time.Duration(int64(totalDuration) / int64(len(filteredSteps)))
+	summary.AverageCPUEfficiency = totalCPUEff / count
+	summary.AverageMemoryEfficiency = totalMemEff / count
+	summary.AverageIOEfficiency = totalIOEff / count
+	summary.AverageOverallEfficiency = totalOverallEff / count
+
+	// Calculate optimization potential
+	summary.OptimizationPotential = 100.0 - summary.AverageOverallEfficiency
+
+	return summary
+}
+
+func intPtr(i int) *int {
+	return &i
+}
+
+// Helper function to convert []JobStep to []*JobStep
+func convertToJobStepPointers(steps []interfaces.JobStep) []*interfaces.JobStep {
+	result := make([]*interfaces.JobStep, len(steps))
+	for i := range steps {
+		result[i] = &steps[i]
+	}
+	return result
 }

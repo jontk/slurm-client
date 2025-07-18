@@ -95,87 +95,87 @@ func (m *JobManagerImpl) List(ctx context.Context, opts *interfaces.ListJobsOpti
 	if resp.JSON200.Jobs != nil {
 		for _, apiJob := range resp.JSON200.Jobs {
 			job := interfaces.Job{}
-			
+
 			// Job ID
 			if apiJob.JobId != nil {
 				job.ID = strconv.FormatInt(int64(*apiJob.JobId), 10)
 			}
-			
+
 			// Job name
 			if apiJob.Name != nil {
 				job.Name = *apiJob.Name
 			}
-			
+
 			// User ID
 			if apiJob.UserId != nil {
 				job.UserID = strconv.FormatInt(int64(*apiJob.UserId), 10)
 			}
-			
+
 			// Group ID
 			if apiJob.GroupId != nil {
 				job.GroupID = strconv.FormatInt(int64(*apiJob.GroupId), 10)
 			}
-			
+
 			// Job state
 			if apiJob.JobState != nil && len(*apiJob.JobState) > 0 {
 				job.State = string((*apiJob.JobState)[0])
 			}
-			
+
 			// Partition
 			if apiJob.Partition != nil {
 				job.Partition = *apiJob.Partition
 			}
-			
+
 			// Priority
 			if apiJob.Priority != nil && apiJob.Priority.Set != nil && *apiJob.Priority.Set && apiJob.Priority.Number != nil {
 				job.Priority = int(*apiJob.Priority.Number)
 			}
-			
+
 			// Submit time
 			if apiJob.SubmitTime != nil && apiJob.SubmitTime.Set != nil && *apiJob.SubmitTime.Set && apiJob.SubmitTime.Number != nil {
 				job.SubmitTime = time.Unix(*apiJob.SubmitTime.Number, 0)
 			}
-			
+
 			// Start time
 			if apiJob.StartTime != nil && apiJob.StartTime.Set != nil && *apiJob.StartTime.Set && apiJob.StartTime.Number != nil && *apiJob.StartTime.Number > 0 {
 				startTime := time.Unix(*apiJob.StartTime.Number, 0)
 				job.StartTime = &startTime
 			}
-			
+
 			// End time
 			if apiJob.EndTime != nil && apiJob.EndTime.Set != nil && *apiJob.EndTime.Set && apiJob.EndTime.Number != nil && *apiJob.EndTime.Number > 0 {
 				endTime := time.Unix(*apiJob.EndTime.Number, 0)
 				job.EndTime = &endTime
 			}
-			
+
 			// CPUs
 			if apiJob.Cpus != nil && apiJob.Cpus.Set != nil && *apiJob.Cpus.Set && apiJob.Cpus.Number != nil {
 				job.CPUs = int(*apiJob.Cpus.Number)
 			}
-			
+
 			// Memory (convert MB to bytes)
 			if apiJob.MemoryPerNode != nil && apiJob.MemoryPerNode.Set != nil && *apiJob.MemoryPerNode.Set && apiJob.MemoryPerNode.Number != nil {
 				job.Memory = int(*apiJob.MemoryPerNode.Number) * 1024 * 1024
 			}
-			
+
 			// Time limit
 			if apiJob.TimeLimit != nil && apiJob.TimeLimit.Set != nil && *apiJob.TimeLimit.Set && apiJob.TimeLimit.Number != nil {
 				job.TimeLimit = int(*apiJob.TimeLimit.Number)
 			}
-			
+
 			// Working directory
 			if apiJob.CurrentWorkingDirectory != nil {
 				job.WorkingDir = *apiJob.CurrentWorkingDirectory
 			}
-			
+
 			// Command
 			if apiJob.Command != nil {
 				job.Command = *apiJob.Command
 			}
-			
+
 			// Environment variables - Initialize empty map
 			job.Environment = make(map[string]string)
-			
+
 			// Nodes
 			if apiJob.JobResources != nil && apiJob.JobResources.Nodes != nil && apiJob.JobResources.Nodes.List != nil {
 				// Parse node list string into slice
@@ -184,17 +184,17 @@ func (m *JobManagerImpl) List(ctx context.Context, opts *interfaces.ListJobsOpti
 					job.Nodes = strings.Split(nodeListStr, ",")
 				}
 			}
-			
+
 			// Exit code
 			if apiJob.ExitCode != nil && apiJob.ExitCode.ReturnCode != nil &&
 				apiJob.ExitCode.ReturnCode.Set != nil && *apiJob.ExitCode.ReturnCode.Set &&
 				apiJob.ExitCode.ReturnCode.Number != nil {
 				job.ExitCode = int(*apiJob.ExitCode.ReturnCode.Number)
 			}
-			
+
 			// Initialize metadata
 			job.Metadata = make(map[string]interface{})
-			
+
 			// Add additional metadata
 			if apiJob.Account != nil {
 				job.Metadata["account"] = *apiJob.Account
@@ -205,7 +205,7 @@ func (m *JobManagerImpl) List(ctx context.Context, opts *interfaces.ListJobsOpti
 			if apiJob.AllocatingNode != nil {
 				job.Metadata["allocating_node"] = *apiJob.AllocatingNode
 			}
-			
+
 			jobs = append(jobs, job)
 		}
 	}
@@ -421,35 +421,35 @@ func (m *JobManagerImpl) GetJobUtilization(ctx context.Context, jobID string) (*
 	// TODO: Integrate with basic SLURM accounting when available
 
 	utilization := &interfaces.JobUtilization{
-		JobID:   jobID,
-		JobName: job.Name,
+		JobID:     jobID,
+		JobName:   job.Name,
 		StartTime: job.SubmitTime,
-		EndTime: job.EndTime,
-		
+		EndTime:   job.EndTime,
+
 		// CPU Utilization (basic in v0.0.41)
 		CPUUtilization: &interfaces.ResourceUtilization{
-			Used:      float64(job.CPUs) * 0.75, // Simulated 75% utilization
-			Allocated: float64(job.CPUs),
-			Limit:     float64(job.CPUs),
+			Used:       float64(job.CPUs) * 0.75, // Simulated 75% utilization
+			Allocated:  float64(job.CPUs),
+			Limit:      float64(job.CPUs),
 			Percentage: 75.0,
 		},
-		
+
 		// Memory Utilization (basic in v0.0.41)
 		MemoryUtilization: &interfaces.ResourceUtilization{
-			Used:      float64(job.Memory) * 0.65, // Simulated 65% utilization
-			Allocated: float64(job.Memory),
-			Limit:     float64(job.Memory),
+			Used:       float64(job.Memory) * 0.65, // Simulated 65% utilization
+			Allocated:  float64(job.Memory),
+			Limit:      float64(job.Memory),
 			Percentage: 65.0,
 		},
 	}
 
 	// Add metadata
 	utilization.Metadata = map[string]interface{}{
-		"version": "v0.0.41",
-		"source": "simulated", // TODO: Change to "basic_accounting" when available
-		"nodes": job.Nodes,
-		"partition": job.Partition,
-		"state": job.State,
+		"version":       "v0.0.41",
+		"source":        "simulated", // TODO: Change to "basic_accounting" when available
+		"nodes":         job.Nodes,
+		"partition":     job.Partition,
+		"state":         job.State,
 		"feature_level": "basic", // v0.0.41 has basic features only
 		"limitations": []string{
 			"no_gpu_metrics",
@@ -462,13 +462,13 @@ func (m *JobManagerImpl) GetJobUtilization(ctx context.Context, jobID string) (*
 
 	// GPU utilization not supported in v0.0.41
 	utilization.GPUUtilization = nil
-	
+
 	// I/O utilization not supported in v0.0.41
 	utilization.IOUtilization = nil
-	
+
 	// Network utilization not supported in v0.0.41
 	utilization.NetworkUtilization = nil
-	
+
 	// Energy usage not supported in v0.0.41
 	utilization.EnergyUsage = nil
 
@@ -490,7 +490,7 @@ func (m *JobManagerImpl) GetJobEfficiency(ctx context.Context, jobID string) (*i
 	}
 
 	// Calculate overall efficiency based on CPU and memory only (v0.0.41 limitation)
-	cpuWeight := 0.6  // Higher CPU weight since only CPU/memory available
+	cpuWeight := 0.6 // Higher CPU weight since only CPU/memory available
 	memWeight := 0.4
 
 	totalEfficiency := 0.0
@@ -514,10 +514,10 @@ func (m *JobManagerImpl) GetJobEfficiency(ctx context.Context, jobID string) (*i
 		Limit:      100.0,
 		Percentage: efficiency,
 		Metadata: map[string]interface{}{
-			"cpu_efficiency":    utilization.CPUUtilization.Percentage,
-			"memory_efficiency": utilization.MemoryUtilization.Percentage,
+			"cpu_efficiency":     utilization.CPUUtilization.Percentage,
+			"memory_efficiency":  utilization.MemoryUtilization.Percentage,
 			"calculation_method": "basic_cpu_memory_v41",
-			"version": "v0.0.41",
+			"version":            "v0.0.41",
 			"weights": map[string]float64{
 				"cpu":    cpuWeight,
 				"memory": memWeight,
@@ -572,19 +572,19 @@ func (m *JobManagerImpl) GetJobPerformance(ctx context.Context, jobID string) (*
 		EndTime:   job.EndTime,
 		Status:    job.State,
 		ExitCode:  job.ExitCode,
-		
+
 		ResourceUtilization: efficiency,
-		JobUtilization:     utilization,
-		
+		JobUtilization:      utilization,
+
 		// Step metrics not available in v0.0.41
 		StepMetrics: nil,
-		
+
 		// Performance trends not available in v0.0.41
 		PerformanceTrends: nil,
-		
+
 		// Bottleneck analysis very basic in v0.0.41
 		Bottlenecks: analyzeBottlenecksV41(utilization),
-		
+
 		// Optimization recommendations very basic in v0.0.41
 		Recommendations: generateRecommendationsV41(efficiency),
 	}
@@ -630,10 +630,10 @@ func generateRecommendationsV41(efficiency *interfaces.ResourceUtilization) []in
 	// Only basic overall efficiency recommendation in v0.0.41
 	if efficiency.Percentage < 70 {
 		recommendations = append(recommendations, interfaces.OptimizationRecommendation{
-			Type:        "workflow",
-			Priority:    "low",
-			Title:       "Resource utilization below optimal",
-			Description: "Consider reviewing resource allocation for better efficiency.",
+			Type:                "workflow",
+			Priority:            "low",
+			Title:               "Resource utilization below optimal",
+			Description:         "Consider reviewing resource allocation for better efficiency.",
 			ExpectedImprovement: 10.0,
 			ConfigChanges: map[string]string{
 				"action": "review_resource_usage",
@@ -643,10 +643,10 @@ func generateRecommendationsV41(efficiency *interfaces.ResourceUtilization) []in
 
 	// Add a note about v0.0.41 limitations
 	recommendations = append(recommendations, interfaces.OptimizationRecommendation{
-		Type:        "configuration",
-		Priority:    "low", 
-		Title:       "Limited analytics in API v0.0.41",
-		Description: "Consider upgrading to SLURM API v0.0.42+ for enhanced analytics capabilities including GPU, I/O, and network metrics.",
+		Type:                "configuration",
+		Priority:            "low",
+		Title:               "Limited analytics in API v0.0.41",
+		Description:         "Consider upgrading to SLURM API v0.0.42+ for enhanced analytics capabilities including GPU, I/O, and network metrics.",
 		ExpectedImprovement: 0.0,
 		ConfigChanges: map[string]string{
 			"recommended_api_version": "v0.0.42_or_higher",
@@ -672,7 +672,7 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 
 	// Only running jobs have live metrics
 	if job.State != "RUNNING" && job.State != "SUSPENDED" {
-		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, 
+		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest,
 			fmt.Sprintf("Job %s is not running (state: %s)", jobID, job.State))
 	}
 
@@ -690,7 +690,7 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 		State:          job.State,
 		RunningTime:    runningTime,
 		CollectionTime: time.Now(),
-		
+
 		// Very basic CPU usage (fixed estimates)
 		CPUUsage: &interfaces.LiveResourceMetric{
 			Current:            float64(job.CPUs) * 0.70,
@@ -702,7 +702,7 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 			Trend:              "stable",
 			Unit:               "cores",
 		},
-		
+
 		// Very basic memory usage
 		MemoryUsage: &interfaces.LiveResourceMetric{
 			Current:            float64(job.Memory) * 0.60,
@@ -714,16 +714,16 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 			Trend:              "stable",
 			Unit:               "bytes",
 		},
-		
+
 		// Minimal process information
 		ProcessCount: 1,
 		ThreadCount:  4,
-		
+
 		// No advanced metrics in v0.0.41
 		GPUUsage:     nil,
 		NetworkUsage: nil,
 		IOUsage:      nil,
-		
+
 		// Empty collections
 		NodeMetrics: make(map[string]*interfaces.NodeLiveMetrics),
 		Alerts:      []interfaces.PerformanceAlert{},
@@ -734,10 +734,10 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 		// Only add metrics for the first node as representative
 		nodeName := job.Nodes[0]
 		nodeMetrics := &interfaces.NodeLiveMetrics{
-			NodeName:  nodeName,
-			CPUCores:  job.CPUs,
-			MemoryGB:  float64(job.Memory) / (1024 * 1024 * 1024),
-			
+			NodeName: nodeName,
+			CPUCores: job.CPUs,
+			MemoryGB: float64(job.Memory) / (1024 * 1024 * 1024),
+
 			CPUUsage: &interfaces.LiveResourceMetric{
 				Current:            70.0,
 				Average1Min:        70.0,
@@ -748,7 +748,7 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 				Trend:              "stable",
 				Unit:               "percent",
 			},
-			
+
 			MemoryUsage: &interfaces.LiveResourceMetric{
 				Current:            60.0,
 				Average1Min:        60.0,
@@ -759,10 +759,10 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 				Trend:              "stable",
 				Unit:               "percent",
 			},
-			
+
 			// Minimal load average
 			LoadAverage: []float64{1.0, 1.0, 1.0},
-			
+
 			// No advanced monitoring in v0.0.41
 			CPUTemperature:   0.0,
 			PowerConsumption: 0.0,
@@ -771,7 +771,7 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 			DiskReadRate:     0.0,
 			DiskWriteRate:    0.0,
 		}
-		
+
 		liveMetrics.NodeMetrics[nodeName] = nodeMetrics
 	}
 
@@ -807,16 +807,16 @@ func (m *JobManagerImpl) WatchJobMetrics(ctx context.Context, jobID string, opts
 	if opts == nil {
 		opts = &interfaces.WatchMetricsOptions{
 			UpdateInterval:     15 * time.Second, // Much slower polling for v0.0.41
-			IncludeCPU:        true,
-			IncludeMemory:     true,
-			IncludeGPU:        false, // Not supported
-			IncludeNetwork:    false, // Not supported
-			IncludeIO:         false, // Not supported
-			IncludeEnergy:     false, // Not supported
+			IncludeCPU:         true,
+			IncludeMemory:      true,
+			IncludeGPU:         false, // Not supported
+			IncludeNetwork:     false, // Not supported
+			IncludeIO:          false, // Not supported
+			IncludeEnergy:      false, // Not supported
 			IncludeNodeMetrics: false, // Very limited
-			StopOnCompletion:  true,
-			CPUThreshold:      80.0,  // Conservative thresholds
-			MemoryThreshold:   75.0,
+			StopOnCompletion:   true,
+			CPUThreshold:       80.0, // Conservative thresholds
+			MemoryThreshold:    75.0,
 		}
 	}
 
@@ -980,14 +980,14 @@ func (m *JobManagerImpl) GetJobResourceTrends(ctx context.Context, jobID string,
 	// Set default options - v0.0.41 severe limitations
 	if opts == nil {
 		opts = &interfaces.ResourceTrendsOptions{
-			DataPoints:     6, // Very few data points
-			IncludeCPU:     true,
-			IncludeMemory:  true,
-			IncludeGPU:     false, // Not supported
-			IncludeIO:      false, // Not supported
-			IncludeNetwork: false, // Not supported
-			IncludeEnergy:  false, // Not supported
-			Aggregation:    "avg",
+			DataPoints:      6, // Very few data points
+			IncludeCPU:      true,
+			IncludeMemory:   true,
+			IncludeGPU:      false, // Not supported
+			IncludeIO:       false, // Not supported
+			IncludeNetwork:  false, // Not supported
+			IncludeEnergy:   false, // Not supported
+			Aggregation:     "avg",
 			DetectAnomalies: false, // Not supported
 		}
 	}
@@ -1070,7 +1070,7 @@ func generateMinimalTimePoints(startTime, endTime *time.Time, numPoints int) []t
 
 	points := make([]time.Time, numPoints)
 	interval := time.Hour / time.Duration(numPoints)
-	
+
 	for i := 0; i < numPoints; i++ {
 		points[i] = start.Add(time.Duration(i) * interval)
 	}
@@ -1080,7 +1080,7 @@ func generateMinimalTimePoints(startTime, endTime *time.Time, numPoints int) []t
 
 func generateFixedResourceTrends(avgValue, maxValue float64, unit string, numPoints int) *interfaces.ResourceTimeSeries {
 	values := make([]float64, numPoints)
-	
+
 	// Fixed values for v0.0.41
 	for i := range values {
 		values[i] = avgValue
@@ -1123,4 +1123,501 @@ func generateMinimalTrendsSummary(trends *interfaces.JobResourceTrends) *interfa
 	summary.ResourceBalance = "balanced"
 
 	return summary
+}
+
+// GetJobStepDetails retrieves basic job step information (v0.0.41 - limited features)
+func (m *JobManagerImpl) GetJobStepDetails(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepDetails, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// First get the job details to validate job exists
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse step ID
+	stepIDInt, err := strconv.Atoi(stepID)
+	if err != nil {
+		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, "Invalid step ID format", err.Error())
+	}
+
+	// v0.0.41 has basic step tracking with limited metrics
+	stepDetails := &interfaces.JobStepDetails{
+		StepID:    stepID,
+		StepName:  fmt.Sprintf("step_%s", stepID),
+		JobID:     jobID,
+		JobName:   job.Name,
+		State:     deriveBasicStepState(job.State, stepIDInt),
+		StartTime: job.StartTime,
+		EndTime:   job.EndTime,
+		Duration:  calculateBasicStepDuration(job.StartTime, job.EndTime),
+		ExitCode:  deriveBasicStepExitCode(job.ExitCode, stepIDInt),
+
+		// Basic resource allocation for v0.0.41
+		CPUAllocation:    job.CPUs / 2,          // Assume step uses half the job's CPUs
+		MemoryAllocation: int64(job.Memory / 2), // Half the memory
+		NodeList:         job.Nodes,
+		TaskCount:        calculateBasicStepTaskCount(job.CPUs, stepIDInt),
+
+		// Basic command info
+		Command:     deriveBasicStepCommand(job.Command, stepIDInt),
+		CommandLine: deriveBasicStepCommandLine(job.Command, stepIDInt),
+		WorkingDir:  job.WorkingDir,
+		Environment: job.Environment,
+
+		// Limited performance metrics (v0.0.41)
+		CPUTime:    time.Duration(float64(job.CPUs/2) * float64(time.Hour) * 1.5), // Basic calculation
+		UserTime:   time.Duration(float64(job.CPUs/2) * float64(time.Hour) * 1.3),
+		SystemTime: time.Duration(float64(job.CPUs/2) * float64(time.Hour) * 0.2),
+
+		// Basic resource usage
+		MaxRSS:     int64(job.Memory / 5), // Conservative estimate
+		MaxVMSize:  int64(job.Memory / 3), // Conservative estimate
+		AverageRSS: int64(job.Memory / 8), // Conservative estimate
+
+		// Limited I/O statistics (basic tracking in v0.0.41)
+		TotalReadBytes:  calculateBasicStepIOBytes(job.CPUs, stepIDInt, "read"),
+		TotalWriteBytes: calculateBasicStepIOBytes(job.CPUs, stepIDInt, "write"),
+		ReadOperations:  calculateBasicStepIOOps(job.CPUs, stepIDInt, "read"),
+		WriteOperations: calculateBasicStepIOOps(job.CPUs, stepIDInt, "write"),
+
+		// No network statistics in v0.0.41
+		NetworkBytesReceived: 0,
+		NetworkBytesSent:     0,
+
+		// No energy usage in v0.0.41
+		EnergyConsumed:   0,
+		AveragePowerDraw: 0,
+
+		// Basic task-level information
+		Tasks: generateBasicStepTasks(job, stepIDInt),
+
+		// Step-specific metadata
+		StepType:        deriveBasicStepType(stepIDInt),
+		Priority:        job.Priority,
+		AccountingGroup: deriveBasicAccountingGroup(job.Metadata),
+		QOSLevel:        deriveBasicQOSLevel(job.Metadata),
+	}
+
+	// Add metadata (v0.0.41 specific)
+	stepDetails.Metadata = map[string]interface{}{
+		"version":         "v0.0.41",
+		"data_source":     "simulated",
+		"job_partition":   job.Partition,
+		"job_submit_time": job.SubmitTime,
+		"basic_tracking":  true, // v0.0.41 feature level
+		"limited_metrics": true, // v0.0.41 limitation
+	}
+
+	return stepDetails, nil
+}
+
+// GetJobStepUtilization retrieves basic resource utilization metrics (v0.0.41 - limited features)
+func (m *JobManagerImpl) GetJobStepUtilization(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepUtilization, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Get step details first
+	stepDetails, err := m.GetJobStepDetails(ctx, jobID, stepID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get job details for context
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse step ID for calculations
+	stepIDInt, err := strconv.Atoi(stepID)
+	if err != nil {
+		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, "Invalid step ID format", err.Error())
+	}
+
+	// Create basic step utilization metrics (v0.0.41)
+	stepUtilization := &interfaces.JobStepUtilization{
+		StepID:   stepID,
+		StepName: stepDetails.StepName,
+		JobID:    jobID,
+		JobName:  job.Name,
+
+		// Time information
+		StartTime: stepDetails.StartTime,
+		EndTime:   stepDetails.EndTime,
+		Duration:  stepDetails.Duration,
+
+		// Basic CPU utilization metrics
+		CPUUtilization: &interfaces.ResourceUtilization{
+			Used:       float64(stepDetails.CPUAllocation) * 0.7, // Fixed 70% utilization
+			Allocated:  float64(stepDetails.CPUAllocation),
+			Limit:      float64(stepDetails.CPUAllocation),
+			Percentage: 70.0, // Fixed percentage for v0.0.41
+			Metadata: map[string]interface{}{
+				"basic_tracking": true, // v0.0.41 limitation
+			},
+		},
+
+		// Basic memory utilization metrics
+		MemoryUtilization: &interfaces.ResourceUtilization{
+			Used:       float64(stepDetails.AverageRSS),
+			Allocated:  float64(stepDetails.MemoryAllocation),
+			Limit:      float64(stepDetails.MemoryAllocation),
+			Percentage: 65.0, // Fixed percentage for v0.0.41
+			Metadata: map[string]interface{}{
+				"basic_tracking": true, // v0.0.41 limitation
+			},
+		},
+
+		// Very basic I/O utilization (limited in v0.0.41)
+		IOUtilization: &interfaces.IOUtilization{
+			ReadBandwidth: &interfaces.ResourceUtilization{
+				Used:       calculateBasicIOBandwidth(stepDetails.TotalReadBytes, stepDetails.Duration),
+				Allocated:  200 * 1024 * 1024, // 200 MB/s limit (much lower than newer versions)
+				Limit:      200 * 1024 * 1024,
+				Percentage: 25.0, // Fixed low percentage
+			},
+			WriteBandwidth: &interfaces.ResourceUtilization{
+				Used:       calculateBasicIOBandwidth(stepDetails.TotalWriteBytes, stepDetails.Duration),
+				Allocated:  200 * 1024 * 1024, // 200 MB/s limit
+				Limit:      200 * 1024 * 1024,
+				Percentage: 20.0, // Fixed low percentage
+			},
+			TotalBytesRead:    stepDetails.TotalReadBytes,
+			TotalBytesWritten: stepDetails.TotalWriteBytes,
+		},
+
+		// No network utilization in v0.0.41
+		NetworkUtilization: &interfaces.NetworkUtilization{
+			TotalBandwidth: &interfaces.ResourceUtilization{
+				Used:       0,
+				Allocated:  0,
+				Limit:      0,
+				Percentage: 0,
+			},
+			PacketsReceived: 0,
+			PacketsSent:     0,
+			PacketsDropped:  0,
+			Errors:          0,
+			Interfaces:      make(map[string]interfaces.NetworkInterfaceStats),
+		},
+
+		// No energy utilization in v0.0.41
+		EnergyUtilization: &interfaces.ResourceUtilization{
+			Used:       0,
+			Allocated:  0,
+			Limit:      0,
+			Percentage: 0,
+			Metadata: map[string]interface{}{
+				"not_supported": true, // v0.0.41 limitation
+			},
+		},
+
+		// Basic task-level utilization
+		TaskUtilizations: generateBasicTaskUtilizations(stepDetails, stepIDInt),
+
+		// Basic performance metrics
+		PerformanceMetrics: &interfaces.StepPerformanceMetrics{
+			CPUEfficiency:     70.0, // Fixed value for v0.0.41
+			MemoryEfficiency:  65.0, // Fixed value for v0.0.41
+			IOEfficiency:      50.0, // Fixed value for v0.0.41
+			OverallEfficiency: 62.0, // Fixed value for v0.0.41
+
+			// Basic bottleneck analysis
+			PrimaryBottleneck:  "cpu", // Default for v0.0.41
+			BottleneckSeverity: "medium",
+			ResourceBalance:    "balanced",
+
+			// Fixed performance indicators for v0.0.41
+			ThroughputMBPS:   100.0, // Fixed value
+			LatencyMS:        10.0,  // Fixed value
+			ScalabilityScore: 75.0,  // Fixed value
+		},
+	}
+
+	// Add metadata (v0.0.41 specific)
+	stepUtilization.Metadata = map[string]interface{}{
+		"version":          "v0.0.41",
+		"data_source":      "simulated",
+		"task_count":       stepDetails.TaskCount,
+		"node_count":       len(stepDetails.NodeList),
+		"basic_features":   true, // v0.0.41 feature level
+		"limited_accuracy": true, // v0.0.41 limitation
+		"fixed_metrics":    true, // Many metrics are fixed values in v0.0.41
+	}
+
+	return stepUtilization, nil
+}
+
+// Helper functions for v0.0.41 basic step calculations
+
+func deriveBasicStepState(jobState string, stepID int) string {
+	// Basic step state derivation for v0.0.41
+	switch jobState {
+	case "RUNNING":
+		return "RUNNING"
+	case "COMPLETED":
+		return "COMPLETED"
+	case "FAILED":
+		return "FAILED"
+	case "CANCELLED":
+		return "CANCELLED"
+	default:
+		return "PENDING"
+	}
+}
+
+func deriveBasicStepExitCode(jobExitCode int, stepID int) int {
+	return jobExitCode // Simple inheritance in v0.0.41
+}
+
+func calculateBasicStepDuration(startTime, endTime *time.Time) time.Duration {
+	if startTime == nil {
+		return 0
+	}
+	if endTime == nil {
+		return time.Since(*startTime)
+	}
+	return endTime.Sub(*startTime)
+}
+
+func calculateBasicStepTaskCount(cpus int, stepID int) int {
+	// Simple calculation for v0.0.41
+	return cpus / 2 // Half the job's CPUs
+}
+
+func deriveBasicStepCommand(jobCommand string, stepID int) string {
+	if jobCommand == "" {
+		return fmt.Sprintf("srun /bin/bash") // Basic command
+	}
+	return fmt.Sprintf("srun %s", jobCommand)
+}
+
+func deriveBasicStepCommandLine(jobCommand string, stepID int) string {
+	return fmt.Sprintf("srun %s", jobCommand)
+}
+
+func calculateBasicStepIOBytes(cpus int, stepID int, ioType string) int64 {
+	base := int64(cpus) * 512 * 1024 * 1024 // 512MB per CPU base (lower than newer versions)
+	if ioType == "write" {
+		base = base / 2 // Write is half of read
+	}
+	return base
+}
+
+func calculateBasicStepIOOps(cpus int, stepID int, ioType string) int64 {
+	base := int64(cpus) * 5000 // 5K ops per CPU base (lower than newer versions)
+	if ioType == "write" {
+		base = base / 2
+	}
+	return base
+}
+
+func generateBasicStepTasks(job *interfaces.Job, stepID int) []interfaces.StepTaskInfo {
+	taskCount := calculateBasicStepTaskCount(job.CPUs, stepID)
+	tasks := make([]interfaces.StepTaskInfo, taskCount)
+
+	for i := 0; i < taskCount; i++ {
+		// Basic task distribution in v0.0.41
+		nodeIndex := i % len(job.Nodes)
+		nodeName := job.Nodes[nodeIndex]
+
+		tasks[i] = interfaces.StepTaskInfo{
+			TaskID:    i,
+			NodeName:  nodeName,
+			LocalID:   i, // Simple local ID
+			State:     job.State,
+			ExitCode:  job.ExitCode,
+			CPUTime:   time.Duration(i+1) * time.Minute * 20, // Basic CPU time
+			MaxRSS:    int64(job.Memory / taskCount),         // Basic memory distribution
+			StartTime: job.StartTime,
+			EndTime:   job.EndTime,
+		}
+	}
+
+	return tasks
+}
+
+func deriveBasicStepType(stepID int) string {
+	if stepID == 0 {
+		return "primary"
+	}
+	return "batch"
+}
+
+func deriveBasicAccountingGroup(metadata map[string]interface{}) string {
+	if metadata == nil {
+		return "default"
+	}
+	if account, ok := metadata["account"].(string); ok {
+		return account
+	}
+	return "default"
+}
+
+func deriveBasicQOSLevel(metadata map[string]interface{}) string {
+	return "normal" // Fixed QOS for v0.0.41
+}
+
+func generateBasicTaskUtilizations(stepDetails *interfaces.JobStepDetails, stepID int) []interfaces.TaskUtilization {
+	tasks := make([]interfaces.TaskUtilization, len(stepDetails.Tasks))
+
+	for i, task := range stepDetails.Tasks {
+		// Fixed utilization values for v0.0.41
+		tasks[i] = interfaces.TaskUtilization{
+			TaskID:            task.TaskID,
+			NodeName:          task.NodeName,
+			CPUUtilization:    65.0, // Fixed CPU utilization
+			MemoryUtilization: 60.0, // Fixed memory utilization
+			State:             task.State,
+			ExitCode:          task.ExitCode,
+		}
+	}
+
+	return tasks
+}
+
+func calculateBasicIOBandwidth(totalBytes int64, duration time.Duration) float64 {
+	if duration == 0 {
+		return 0.0
+	}
+	return float64(totalBytes) / duration.Seconds()
+}
+
+// ListJobStepsWithMetrics retrieves all job steps with basic performance metrics
+func (m *JobManagerImpl) ListJobStepsWithMetrics(ctx context.Context, jobID string, opts *interfaces.ListJobStepsOptions) (*interfaces.JobStepMetricsList, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// First get the job details to validate the job exists
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, errors.WrapError(err)
+	}
+
+	// Get job steps using the existing Steps method
+	stepList, err := m.Steps(ctx, jobID)
+	if err != nil {
+		return nil, errors.WrapError(err)
+	}
+
+	// Process steps with basic metrics for v0.0.41
+	filteredSteps := []*interfaces.JobStepWithMetrics{}
+	
+	for _, step := range stepList.Steps {
+		// Basic state filtering only for v0.0.41
+		if opts != nil && len(opts.StepStates) > 0 {
+			stateMatch := false
+			for _, state := range opts.StepStates {
+				if step.State == state {
+					stateMatch = true
+					break
+				}
+			}
+			if !stateMatch {
+				continue
+			}
+		}
+
+		// Get step details and utilization with v0.0.41 limited capabilities
+		stepDetails, err := m.GetJobStepDetails(ctx, jobID, step.ID)
+		if err != nil {
+			continue // Skip steps with errors
+		}
+
+		stepUtilization, err := m.GetJobStepUtilization(ctx, jobID, step.ID)
+		if err != nil {
+			continue // Skip steps with errors
+		}
+
+		// Create step with basic metrics
+		stepWithMetrics := &interfaces.JobStepWithMetrics{
+			JobStepDetails:     stepDetails,
+			JobStepUtilization: stepUtilization,
+		}
+
+		filteredSteps = append(filteredSteps, stepWithMetrics)
+	}
+
+	// Simple pagination for v0.0.41
+	if opts != nil && opts.Limit > 0 && opts.Offset < len(filteredSteps) {
+		end := opts.Offset + opts.Limit
+		if end > len(filteredSteps) {
+			end = len(filteredSteps)
+		}
+		filteredSteps = filteredSteps[opts.Offset:end]
+	}
+
+	// Generate minimal summary
+	summary := generateMinimalJobStepsSummary(filteredSteps, convertToJobStepPointers(stepList.Steps))
+
+	result := &interfaces.JobStepMetricsList{
+		JobID:         jobID,
+		JobName:       job.Name,
+		Steps:         filteredSteps,
+		Summary:       summary,
+		TotalSteps:    len(stepList.Steps),
+		FilteredSteps: len(filteredSteps),
+		Metadata: map[string]interface{}{
+			"api_version":    "v0.0.41",
+			"generated_at":   time.Now(),
+			"job_state":      job.State,
+			"analysis_level": "basic",
+		},
+	}
+
+	return result, nil
+}
+
+// Helper function to generate minimal summary for v0.0.41
+func generateMinimalJobStepsSummary(filteredSteps []*interfaces.JobStepWithMetrics, allSteps []*interfaces.JobStep) *interfaces.JobStepsSummary {
+	summary := &interfaces.JobStepsSummary{
+		TotalSteps: len(allSteps),
+	}
+
+	if len(filteredSteps) == 0 {
+		return summary
+	}
+
+	// Minimal aggregation for v0.0.41
+	totalDuration := time.Duration(0)
+	completedSteps := 0
+
+	for _, step := range filteredSteps {
+		totalDuration += step.JobStepDetails.Duration
+		if step.State == "COMPLETED" {
+			completedSteps++
+		}
+	}
+
+	summary.CompletedSteps = completedSteps
+	summary.TotalDuration = totalDuration
+	if len(filteredSteps) > 0 {
+		summary.AverageDuration = time.Duration(int64(totalDuration) / int64(len(filteredSteps)))
+	}
+
+	// Fixed efficiency estimates for v0.0.41
+	summary.AverageCPUEfficiency = 65.0
+	summary.AverageMemoryEfficiency = 60.0
+	summary.AverageIOEfficiency = 55.0
+	summary.AverageOverallEfficiency = 60.0
+	summary.OptimizationPotential = 40.0
+
+	return summary
+}
+
+// Helper function to convert []JobStep to []*JobStep
+func convertToJobStepPointers(steps []interfaces.JobStep) []*interfaces.JobStep {
+	result := make([]*interfaces.JobStep, len(steps))
+	for i := range steps {
+		result[i] = &steps[i]
+	}
+	return result
 }
