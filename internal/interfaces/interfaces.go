@@ -233,6 +233,136 @@ type JobEvent struct {
 	Error     error     `json:"error,omitempty"`
 }
 
+// JobUtilization represents resource utilization metrics for a job
+type JobUtilization struct {
+	JobID              string                 `json:"job_id"`
+	JobName            string                 `json:"job_name"`
+	UserID             string                 `json:"user_id"`
+	StartTime          time.Time              `json:"start_time"`
+	EndTime            *time.Time             `json:"end_time,omitempty"`
+	CPUUtilization     *ResourceUtilization   `json:"cpu_utilization,omitempty"`
+	MemoryUtilization  *ResourceUtilization   `json:"memory_utilization,omitempty"`
+	GPUUtilization     *GPUUtilization        `json:"gpu_utilization,omitempty"`
+	IOUtilization      *IOUtilization         `json:"io_utilization,omitempty"`
+	NetworkUtilization *NetworkUtilization    `json:"network_utilization,omitempty"`
+	EnergyUsage        *EnergyUsage           `json:"energy_usage,omitempty"`
+	SamplingInterval   int                    `json:"sampling_interval_seconds"`
+	LastUpdated        time.Time              `json:"last_updated"`
+	Metadata           map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// ResourceUtilization represents generic resource utilization metrics
+type ResourceUtilization struct {
+	Requested      float64   `json:"requested"`
+	Allocated      float64   `json:"allocated"`
+	Used           float64   `json:"used"`
+	UsedMin        float64   `json:"used_min"`
+	UsedMax        float64   `json:"used_max"`
+	UsedAvg        float64   `json:"used_avg"`
+	UsedStdDev     float64   `json:"used_stddev"`
+	Efficiency     float64   `json:"efficiency_percentage"`
+	Wasted         float64   `json:"wasted"`
+	SampleCount    int       `json:"sample_count"`
+	Unit           string    `json:"unit"`
+	LastSampleTime time.Time `json:"last_sample_time"`
+}
+
+// GPUUtilization represents GPU-specific utilization metrics
+type GPUUtilization struct {
+	DeviceCount        int                            `json:"device_count"`
+	Devices            []GPUDeviceUtilization         `json:"devices"`
+	OverallUtilization *ResourceUtilization           `json:"overall_utilization"`
+	MemoryUtilization  *ResourceUtilization           `json:"memory_utilization"`
+	PowerUsage         *ResourceUtilization           `json:"power_usage"`
+	Temperature        map[string]float64             `json:"temperature"`
+	ComputeMode        string                         `json:"compute_mode"`
+	DriverVersion      string                         `json:"driver_version"`
+	CUDAVersion        string                         `json:"cuda_version"`
+	Metadata           map[string]interface{}         `json:"metadata,omitempty"`
+}
+
+// GPUDeviceUtilization represents per-GPU device utilization
+type GPUDeviceUtilization struct {
+	DeviceID          string               `json:"device_id"`
+	DeviceName        string               `json:"device_name"`
+	DeviceUUID        string               `json:"device_uuid"`
+	Utilization       *ResourceUtilization `json:"utilization"`
+	MemoryUtilization *ResourceUtilization `json:"memory_utilization"`
+	PowerUsage        float64              `json:"power_usage_watts"`
+	Temperature       float64              `json:"temperature_celsius"`
+	PCIeBandwidth     *ResourceUtilization `json:"pcie_bandwidth,omitempty"`
+	Processes         []GPUProcess         `json:"processes,omitempty"`
+}
+
+// GPUProcess represents a process running on a GPU
+type GPUProcess struct {
+	PID         int    `json:"pid"`
+	ProcessName string `json:"process_name"`
+	MemoryUsed  int64  `json:"memory_used_mb"`
+}
+
+// IOUtilization represents I/O utilization metrics
+type IOUtilization struct {
+	ReadBandwidth    *ResourceUtilization   `json:"read_bandwidth"`
+	WriteBandwidth   *ResourceUtilization   `json:"write_bandwidth"`
+	ReadIOPS         *ResourceUtilization   `json:"read_iops"`
+	WriteIOPS        *ResourceUtilization   `json:"write_iops"`
+	TotalBytesRead   int64                  `json:"total_bytes_read"`
+	TotalBytesWritten int64                 `json:"total_bytes_written"`
+	FileSystems      map[string]IOStats     `json:"file_systems,omitempty"`
+	Metadata         map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// IOStats represents I/O statistics for a specific file system
+type IOStats struct {
+	MountPoint      string  `json:"mount_point"`
+	BytesRead       int64   `json:"bytes_read"`
+	BytesWritten    int64   `json:"bytes_written"`
+	ReadsCompleted  int64   `json:"reads_completed"`
+	WritesCompleted int64   `json:"writes_completed"`
+	AvgReadLatency  float64 `json:"avg_read_latency_ms"`
+	AvgWriteLatency float64 `json:"avg_write_latency_ms"`
+}
+
+// NetworkUtilization represents network utilization metrics
+type NetworkUtilization struct {
+	Interfaces        map[string]NetworkInterfaceStats `json:"interfaces"`
+	TotalBandwidth    *ResourceUtilization             `json:"total_bandwidth"`
+	IngressBandwidth  *ResourceUtilization             `json:"ingress_bandwidth"`
+	EgressBandwidth   *ResourceUtilization             `json:"egress_bandwidth"`
+	PacketsReceived   int64                            `json:"packets_received"`
+	PacketsSent       int64                            `json:"packets_sent"`
+	PacketsDropped    int64                            `json:"packets_dropped"`
+	Errors            int64                            `json:"errors"`
+	ProtocolStats     map[string]int64                 `json:"protocol_stats,omitempty"`
+	Metadata          map[string]interface{}           `json:"metadata,omitempty"`
+}
+
+// NetworkInterfaceStats represents statistics for a specific network interface
+type NetworkInterfaceStats struct {
+	InterfaceName   string  `json:"interface_name"`
+	BytesReceived   int64   `json:"bytes_received"`
+	BytesSent       int64   `json:"bytes_sent"`
+	PacketsReceived int64   `json:"packets_received"`
+	PacketsSent     int64   `json:"packets_sent"`
+	BandwidthMbps   float64 `json:"bandwidth_mbps"`
+	Utilization     float64 `json:"utilization_percentage"`
+}
+
+// EnergyUsage represents energy consumption metrics
+type EnergyUsage struct {
+	TotalEnergyJoules float64                `json:"total_energy_joules"`
+	AveragePowerWatts float64                `json:"average_power_watts"`
+	PeakPowerWatts    float64                `json:"peak_power_watts"`
+	MinPowerWatts     float64                `json:"min_power_watts"`
+	CPUEnergyJoules   float64                `json:"cpu_energy_joules"`
+	GPUEnergyJoules   float64                `json:"gpu_energy_joules"`
+	MemoryEnergyJoules float64               `json:"memory_energy_joules"`
+	CarbonFootprint   float64                `json:"carbon_footprint_kg_co2"`
+	PowerSources      map[string]float64     `json:"power_sources,omitempty"`
+	Metadata          map[string]interface{} `json:"metadata,omitempty"`
+}
+
 // Node represents a compute node
 type Node struct {
 	Name         string                 `json:"name"`
