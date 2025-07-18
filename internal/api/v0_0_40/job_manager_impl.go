@@ -1184,3 +1184,18 @@ func isJobCompleteV40(state string) bool {
 	}
 	return false
 }
+
+// GetJobResourceTrends retrieves performance trends over specified time windows
+// Note: v0.0.40 doesn't support trend analysis, returns minimal data
+func (m *JobManagerImpl) GetJobResourceTrends(ctx context.Context, jobID string, opts *interfaces.ResourceTrendsOptions) (*interfaces.JobResourceTrends, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// v0.0.40 doesn't support resource trends
+	return nil, errors.NewNotImplementedError(
+		"GetJobResourceTrends",
+		"Resource trend analysis is not supported in API v0.0.40. Please upgrade to v0.0.41 or higher.",
+	)
+}

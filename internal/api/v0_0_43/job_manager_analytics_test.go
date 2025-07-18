@@ -755,6 +755,242 @@ func TestWatchJobMetrics(t *testing.T) {
 	})
 }
 
+// TestGetJobResourceTrends tests the GetJobResourceTrends method
+func TestGetJobResourceTrends(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Success_AllResources", func(t *testing.T) {
+		// Create mock job with GPU
+		startTime := time.Now().Add(-2 * time.Hour)
+		endTime := time.Now().Add(-30 * time.Minute)
+		mockJob := &interfaces.Job{
+			ID:        "12350",
+			Name:      "trend-analysis-job",
+			State:     "COMPLETED",
+			CPUs:      32,
+			Memory:    128 * 1024 * 1024 * 1024, // 128GB
+			Partition: "gpu",
+			StartTime: &startTime,
+			EndTime:   &endTime,
+			SubmitTime: startTime.Add(-30 * time.Minute),
+			Metadata: map[string]interface{}{
+				"gpu_count": 4,
+			},
+		}
+
+		manager := &JobManagerImpl{
+			client: &WrapperClient{
+				apiClient: &mockAPIClient{
+					getJobResponse: mockJob,
+				},
+			},
+		}
+
+		// Test with all resources enabled
+		opts := &interfaces.ResourceTrendsOptions{
+			DataPoints:      24,
+			IncludeCPU:     true,
+			IncludeMemory:  true,
+			IncludeGPU:     true,
+			IncludeIO:      true,
+			IncludeNetwork: true,
+			IncludeEnergy:  true,
+			DetectAnomalies: true,
+		}
+
+		trends, err := manager.GetJobResourceTrends(ctx, "12350", opts)
+		require.NoError(t, err)
+		require.NotNil(t, trends)
+
+		// Verify basic fields
+		assert.Equal(t, "12350", trends.JobID)
+		assert.Equal(t, "trend-analysis-job", trends.JobName)
+		assert.Equal(t, 24, len(trends.TimePoints))
+
+		// Verify CPU trends
+		require.NotNil(t, trends.CPUTrends)
+		assert.Equal(t, "cores", trends.CPUTrends.Unit)
+		assert.Len(t, trends.CPUTrends.Values, 24)
+		assert.Greater(t, trends.CPUTrends.Average, 0.0)
+		assert.NotEmpty(t, trends.CPUTrends.Trend)
+
+		// Verify memory trends
+		require.NotNil(t, trends.MemoryTrends)
+		assert.Equal(t, "bytes", trends.MemoryTrends.Unit)
+		assert.Len(t, trends.MemoryTrends.Values, 24)
+
+		// Verify GPU trends
+		require.NotNil(t, trends.GPUTrends)
+		assert.Equal(t, "percent", trends.GPUTrends.Unit)
+
+		// Verify I/O trends
+		require.NotNil(t, trends.IOTrends)
+		require.NotNil(t, trends.IOTrends.ReadBandwidth)
+		require.NotNil(t, trends.IOTrends.WriteBandwidth)
+
+		// Verify network trends
+		require.NotNil(t, trends.NetworkTrends)
+		require.NotNil(t, trends.NetworkTrends.IngressBandwidth)
+		require.NotNil(t, trends.NetworkTrends.EgressBandwidth)
+
+		// Verify energy trends
+		require.NotNil(t, trends.EnergyTrends)
+		require.NotNil(t, trends.EnergyTrends.PowerUsage)
+
+		// Verify summary
+		require.NotNil(t, trends.Summary)
+		assert.Greater(t, trends.Summary.ResourceEfficiency, 0.0)
+		assert.Greater(t, trends.Summary.StabilityScore, 0.0)
+		assert.NotEmpty(t, trends.Summary.OverallTrend)
+	})
+
+	t.Run("Success_PartialResources", func(t *testing.T) {
+		mockJob := &interfaces.Job{
+			ID:        "12351",
+			Name:      "cpu-only-job",
+			State:     "RUNNING",
+			CPUs:      16,
+			Memory:    64 * 1024 * 1024 * 1024,
+			StartTime: &[]time.Time{time.Now().Add(-1 * time.Hour)}[0],
+		}
+
+		manager := &JobManagerImpl{
+			client: &WrapperClient{
+				apiClient: &mockAPIClient{
+					getJobResponse: mockJob,
+				},
+			},
+		}
+
+		// Test with only CPU and memory
+		opts := &interfaces.ResourceTrendsOptions{
+			DataPoints:     12,
+			IncludeCPU:     true,
+			IncludeMemory:  true,
+			IncludeGPU:     false,
+			IncludeIO:      false,
+			IncludeNetwork: false,
+			IncludeEnergy:  false,
+			DetectAnomalies: false,
+		}
+
+		trends, err := manager.GetJobResourceTrends(ctx, "12351", opts)
+		require.NoError(t, err)
+		require.NotNil(t, trends)
+
+		// Verify only requested resources are included
+		assert.NotNil(t, trends.CPUTrends)
+		assert.NotNil(t, trends.MemoryTrends)
+		assert.Nil(t, trends.GPUTrends)
+		assert.Nil(t, trends.IOTrends)
+		assert.Nil(t, trends.NetworkTrends)
+		assert.Nil(t, trends.EnergyTrends)
+
+		// No anomalies when detection disabled
+		assert.Empty(t, trends.Anomalies)
+	})
+
+	t.Run("Success_AnomalyDetection", func(t *testing.T) {
+		mockJob := &interfaces.Job{
+			ID:        "12352",
+			Name:      "anomaly-job",
+			State:     "COMPLETED",
+			CPUs:      8,
+			Memory:    32 * 1024 * 1024 * 1024,
+			StartTime: &[]time.Time{time.Now().Add(-3 * time.Hour)}[0],
+			EndTime:   &[]time.Time{time.Now()}[0],
+		}
+
+		manager := &JobManagerImpl{
+			client: &WrapperClient{
+				apiClient: &mockAPIClient{
+					getJobResponse: mockJob,
+				},
+			},
+		}
+
+		opts := &interfaces.ResourceTrendsOptions{
+			DataPoints:      24,
+			IncludeCPU:      true,
+			IncludeMemory:   true,
+			DetectAnomalies: true,
+		}
+
+		trends, err := manager.GetJobResourceTrends(ctx, "12352", opts)
+		require.NoError(t, err)
+
+		// With random data, we might get anomalies
+		// Just verify the structure is correct
+		for _, anomaly := range trends.Anomalies {
+			assert.NotEmpty(t, anomaly.Resource)
+			assert.NotEmpty(t, anomaly.Type)
+			assert.NotEmpty(t, anomaly.Severity)
+			assert.NotEmpty(t, anomaly.Description)
+			assert.Greater(t, anomaly.Value, 0.0)
+		}
+	})
+
+	t.Run("Success_CustomTimeWindow", func(t *testing.T) {
+		mockJob := &interfaces.Job{
+			ID:        "12353",
+			Name:      "custom-window-job",
+			State:     "RUNNING",
+			CPUs:      4,
+			Memory:    16 * 1024 * 1024 * 1024,
+			StartTime: &[]time.Time{time.Now().Add(-6 * time.Hour)}[0],
+		}
+
+		manager := &JobManagerImpl{
+			client: &WrapperClient{
+				apiClient: &mockAPIClient{
+					getJobResponse: mockJob,
+				},
+			},
+		}
+
+		// Test with custom time window
+		opts := &interfaces.ResourceTrendsOptions{
+			TimeWindow: 2 * time.Hour,
+			DataPoints: 8,
+			IncludeCPU: true,
+		}
+
+		trends, err := manager.GetJobResourceTrends(ctx, "12353", opts)
+		require.NoError(t, err)
+		assert.Equal(t, 2*time.Hour, trends.TimeWindow)
+		assert.Len(t, trends.TimePoints, 8)
+	})
+
+	t.Run("Error_ClientNotInitialized", func(t *testing.T) {
+		manager := &JobManagerImpl{
+			client: &WrapperClient{
+				apiClient: nil,
+			},
+		}
+
+		trends, err := manager.GetJobResourceTrends(ctx, "12350", nil)
+		assert.Error(t, err)
+		assert.Nil(t, trends)
+		clientErr, ok := err.(*errors.ClientError)
+		require.True(t, ok)
+		assert.Equal(t, errors.ErrorCodeClientNotInitialized, clientErr.Code)
+	})
+
+	t.Run("Error_JobNotFound", func(t *testing.T) {
+		manager := &JobManagerImpl{
+			client: &WrapperClient{
+				apiClient: &mockAPIClient{
+					getJobError: errors.NewClientError(errors.ErrorCodeResourceNotFound, "Job not found"),
+				},
+			},
+		}
+
+		trends, err := manager.GetJobResourceTrends(ctx, "99999", nil)
+		assert.Error(t, err)
+		assert.Nil(t, trends)
+	})
+}
+
 // mockHTTPResponse is a mock HTTP response
 type mockHTTPResponse struct {
 	statusCode int

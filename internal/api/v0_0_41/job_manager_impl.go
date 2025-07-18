@@ -962,3 +962,165 @@ func isJobCompleteV41(state string) bool {
 	}
 	return false
 }
+
+// GetJobResourceTrends retrieves performance trends over specified time windows
+// Note: v0.0.41 has very limited trend analysis - basic CPU/memory only
+func (m *JobManagerImpl) GetJobResourceTrends(ctx context.Context, jobID string, opts *interfaces.ResourceTrendsOptions) (*interfaces.JobResourceTrends, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Get job details
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set default options - v0.0.41 severe limitations
+	if opts == nil {
+		opts = &interfaces.ResourceTrendsOptions{
+			DataPoints:     6, // Very few data points
+			IncludeCPU:     true,
+			IncludeMemory:  true,
+			IncludeGPU:     false, // Not supported
+			IncludeIO:      false, // Not supported
+			IncludeNetwork: false, // Not supported
+			IncludeEnergy:  false, // Not supported
+			Aggregation:    "avg",
+			DetectAnomalies: false, // Not supported
+		}
+	}
+
+	// Limit data points for v0.0.41
+	if opts.DataPoints == 0 || opts.DataPoints > 6 {
+		opts.DataPoints = 6
+	}
+
+	// Calculate time window
+	var timeWindow time.Duration
+	if job.StartTime != nil && job.EndTime != nil {
+		timeWindow = job.EndTime.Sub(*job.StartTime)
+	} else {
+		timeWindow = time.Hour
+	}
+
+	// Generate time points
+	timePoints := generateMinimalTimePoints(job.StartTime, job.EndTime, opts.DataPoints)
+
+	// Create minimal trends object
+	trends := &interfaces.JobResourceTrends{
+		JobID:      jobID,
+		JobName:    job.Name,
+		StartTime:  job.SubmitTime,
+		EndTime:    job.EndTime,
+		TimeWindow: timeWindow,
+		DataPoints: len(timePoints),
+		TimePoints: timePoints,
+		Anomalies:  []interfaces.ResourceAnomaly{}, // Not supported
+	}
+
+	// Generate very basic CPU trends
+	if opts.IncludeCPU {
+		trends.CPUTrends = generateFixedResourceTrends(float64(job.CPUs)*0.75, float64(job.CPUs), "cores", len(timePoints))
+	}
+
+	// Generate very basic memory trends
+	if opts.IncludeMemory {
+		trends.MemoryTrends = generateFixedResourceTrends(float64(job.Memory)*0.65, float64(job.Memory), "bytes", len(timePoints))
+	}
+
+	// Not supported in v0.0.41
+	trends.GPUTrends = nil
+	trends.IOTrends = nil
+	trends.NetworkTrends = nil
+	trends.EnergyTrends = nil
+
+	// Generate minimal summary
+	trends.Summary = generateMinimalTrendsSummary(trends)
+
+	// Add metadata
+	trends.Metadata = map[string]interface{}{
+		"version":     "v0.0.41",
+		"data_source": "fixed_estimates",
+		"limitations": []string{
+			"minimal_data_points",
+			"cpu_memory_only",
+			"fixed_values",
+			"no_real_trends",
+			"no_anomaly_detection",
+		},
+		"note": "Upgrade to v0.0.42+ for enhanced trend analysis",
+	}
+
+	return trends, nil
+}
+
+// Helper functions for v0.0.41
+func generateMinimalTimePoints(startTime, endTime *time.Time, numPoints int) []time.Time {
+	if numPoints <= 0 {
+		return []time.Time{}
+	}
+
+	// Use current time if no start time
+	start := time.Now().Add(-time.Hour)
+	if startTime != nil {
+		start = *startTime
+	}
+
+	points := make([]time.Time, numPoints)
+	interval := time.Hour / time.Duration(numPoints)
+	
+	for i := 0; i < numPoints; i++ {
+		points[i] = start.Add(time.Duration(i) * interval)
+	}
+
+	return points
+}
+
+func generateFixedResourceTrends(avgValue, maxValue float64, unit string, numPoints int) *interfaces.ResourceTimeSeries {
+	values := make([]float64, numPoints)
+	
+	// Fixed values for v0.0.41
+	for i := range values {
+		values[i] = avgValue
+	}
+
+	return &interfaces.ResourceTimeSeries{
+		Values:     values,
+		Unit:       unit,
+		Average:    avgValue,
+		Min:        avgValue * 0.9,
+		Max:        maxValue,
+		StdDev:     0.0,
+		Trend:      "stable",
+		TrendSlope: 0.0,
+	}
+}
+
+func generateMinimalTrendsSummary(trends *interfaces.JobResourceTrends) *interfaces.TrendsSummary {
+	summary := &interfaces.TrendsSummary{
+		PeakUtilization:    make(map[string]float64),
+		AverageUtilization: make(map[string]float64),
+	}
+
+	// Fixed summary values
+	if trends.CPUTrends != nil {
+		summary.PeakUtilization["cpu"] = trends.CPUTrends.Max
+		summary.AverageUtilization["cpu"] = trends.CPUTrends.Average
+	}
+
+	if trends.MemoryTrends != nil {
+		summary.PeakUtilization["memory"] = trends.MemoryTrends.Max
+		summary.AverageUtilization["memory"] = trends.MemoryTrends.Average
+	}
+
+	// Fixed values for v0.0.41
+	summary.ResourceEfficiency = 70.0
+	summary.StabilityScore = 80.0
+	summary.VariabilityIndex = 0.2
+	summary.OverallTrend = "stable"
+	summary.ResourceBalance = "balanced"
+
+	return summary
+}

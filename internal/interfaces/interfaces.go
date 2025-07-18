@@ -75,6 +75,9 @@ type JobManager interface {
 	
 	// WatchJobMetrics provides streaming performance updates for a running job
 	WatchJobMetrics(ctx context.Context, jobID string, opts *WatchMetricsOptions) (<-chan JobMetricsEvent, error)
+	
+	// GetJobResourceTrends retrieves performance trends over specified time windows
+	GetJobResourceTrends(ctx context.Context, jobID string, opts *ResourceTrendsOptions) (*JobResourceTrends, error)
 }
 
 // NodeManager provides version-agnostic node operations
@@ -1135,6 +1138,112 @@ type JobStateChange struct {
 	OldState string `json:"old_state"`
 	NewState string `json:"new_state"`
 	Reason   string `json:"reason,omitempty"`
+}
+
+// ResourceTrendsOptions provides options for retrieving resource trends
+type ResourceTrendsOptions struct {
+	// Time window for trend analysis
+	TimeWindow    time.Duration `json:"time_window,omitempty"`     // Default: job duration or 1 hour
+	// Number of data points to collect
+	DataPoints    int           `json:"data_points,omitempty"`     // Default: 24
+	// Resources to include in trends
+	IncludeCPU    bool          `json:"include_cpu"`
+	IncludeMemory bool          `json:"include_memory"`
+	IncludeGPU    bool          `json:"include_gpu"`
+	IncludeIO     bool          `json:"include_io"`
+	IncludeNetwork bool         `json:"include_network"`
+	IncludeEnergy bool          `json:"include_energy"`
+	// Aggregation method for data points
+	Aggregation   string        `json:"aggregation,omitempty"`     // "avg", "max", "min" (default: "avg")
+	// Include anomaly detection
+	DetectAnomalies bool        `json:"detect_anomalies"`
+}
+
+// JobResourceTrends represents resource usage trends over time
+type JobResourceTrends struct {
+	JobID          string                       `json:"job_id"`
+	JobName        string                       `json:"job_name"`
+	StartTime      time.Time                    `json:"start_time"`
+	EndTime        *time.Time                   `json:"end_time,omitempty"`
+	TimeWindow     time.Duration                `json:"time_window"`
+	DataPoints     int                          `json:"data_points"`
+	
+	// Time series data
+	TimePoints     []time.Time                  `json:"time_points"`
+	
+	// Resource trends
+	CPUTrends      *ResourceTimeSeries          `json:"cpu_trends,omitempty"`
+	MemoryTrends   *ResourceTimeSeries          `json:"memory_trends,omitempty"`
+	GPUTrends      *ResourceTimeSeries          `json:"gpu_trends,omitempty"`
+	IOTrends       *IOTimeSeries                `json:"io_trends,omitempty"`
+	NetworkTrends  *NetworkTimeSeries           `json:"network_trends,omitempty"`
+	EnergyTrends   *EnergyTimeSeries            `json:"energy_trends,omitempty"`
+	
+	// Anomalies detected
+	Anomalies      []ResourceAnomaly            `json:"anomalies,omitempty"`
+	
+	// Summary statistics
+	Summary        *TrendsSummary               `json:"summary"`
+	
+	// Metadata
+	Metadata       map[string]interface{}       `json:"metadata,omitempty"`
+}
+
+// ResourceTimeSeries represents time series data for a resource
+type ResourceTimeSeries struct {
+	Values         []float64                    `json:"values"`
+	Unit           string                       `json:"unit"`
+	Average        float64                      `json:"average"`
+	Min            float64                      `json:"min"`
+	Max            float64                      `json:"max"`
+	StdDev         float64                      `json:"std_dev"`
+	Trend          string                       `json:"trend"` // "increasing", "decreasing", "stable", "fluctuating"
+	TrendSlope     float64                      `json:"trend_slope"`
+}
+
+// IOTimeSeries represents I/O time series data
+type IOTimeSeries struct {
+	ReadBandwidth  *ResourceTimeSeries          `json:"read_bandwidth,omitempty"`
+	WriteBandwidth *ResourceTimeSeries          `json:"write_bandwidth,omitempty"`
+	ReadIOPS       *ResourceTimeSeries          `json:"read_iops,omitempty"`
+	WriteIOPS      *ResourceTimeSeries          `json:"write_iops,omitempty"`
+}
+
+// NetworkTimeSeries represents network time series data
+type NetworkTimeSeries struct {
+	IngressBandwidth  *ResourceTimeSeries       `json:"ingress_bandwidth,omitempty"`
+	EgressBandwidth   *ResourceTimeSeries       `json:"egress_bandwidth,omitempty"`
+	PacketRate        *ResourceTimeSeries       `json:"packet_rate,omitempty"`
+}
+
+// EnergyTimeSeries represents energy usage time series data
+type EnergyTimeSeries struct {
+	PowerUsage        *ResourceTimeSeries       `json:"power_usage,omitempty"`
+	EnergyConsumption *ResourceTimeSeries       `json:"energy_consumption,omitempty"`
+	CarbonEmissions   *ResourceTimeSeries       `json:"carbon_emissions,omitempty"`
+}
+
+// ResourceAnomaly represents an anomaly detected in resource usage
+type ResourceAnomaly struct {
+	Timestamp      time.Time                    `json:"timestamp"`
+	Resource       string                       `json:"resource"` // "cpu", "memory", "gpu", etc.
+	Type           string                       `json:"type"`     // "spike", "drop", "pattern_change"
+	Severity       string                       `json:"severity"` // "low", "medium", "high"
+	Value          float64                      `json:"value"`
+	ExpectedValue  float64                      `json:"expected_value"`
+	Deviation      float64                      `json:"deviation_percent"`
+	Description    string                       `json:"description"`
+}
+
+// TrendsSummary provides summary statistics for resource trends
+type TrendsSummary struct {
+	OverallTrend      string                   `json:"overall_trend"`
+	ResourceEfficiency float64                 `json:"resource_efficiency"`
+	StabilityScore    float64                  `json:"stability_score"` // 0-100, higher is more stable
+	VariabilityIndex  float64                  `json:"variability_index"`
+	PeakUtilization   map[string]float64       `json:"peak_utilization"`
+	AverageUtilization map[string]float64      `json:"average_utilization"`
+	ResourceBalance   string                   `json:"resource_balance"` // "balanced", "cpu_heavy", "memory_heavy", etc.
 }
 
 // UserManager provides user-related operations
