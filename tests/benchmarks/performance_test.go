@@ -473,3 +473,359 @@ func benchmarkResponseTime(b *testing.B, delay time.Duration, cacheEnabled bool)
 	avgResponseTime := totalDuration / time.Duration(b.N)
 	b.ReportMetric(float64(avgResponseTime.Nanoseconds())/1e6, "ms_avg_response_time")
 }
+
+// BenchmarkUserAccountQueries tests performance of user-account related queries
+func BenchmarkUserAccountQueries(b *testing.B) {
+	scenarios := []struct {
+		name      string
+		operation string
+		cached    bool
+	}{
+		{"GetUserAccounts_NoCache", "user_accounts", false},
+		{"GetUserAccounts_Cached", "user_accounts", true},
+		{"GetAccountUsers_NoCache", "account_users", false},
+		{"GetAccountUsers_Cached", "account_users", true},
+		{"GetUserQuotas_NoCache", "user_quotas", false},
+		{"GetUserQuotas_Cached", "user_quotas", true},
+		{"GetAccountQuotas_NoCache", "account_quotas", false},
+		{"GetAccountQuotas_Cached", "account_quotas", true},
+		{"BulkUserAccounts_NoCache", "bulk_user_accounts", false},
+		{"BulkUserAccounts_Cached", "bulk_user_accounts", true},
+	}
+
+	for _, scenario := range scenarios {
+		b.Run(scenario.name, func(b *testing.B) {
+			benchmarkUserAccountQuery(b, scenario.operation, scenario.cached)
+		})
+	}
+}
+
+func benchmarkUserAccountQuery(b *testing.B, operation string, useCache bool) {
+	mockServer := mocks.NewMockSlurmServerForVersion("v0.0.43")
+	defer mockServer.Close()
+
+	ctx := context.Background()
+	client, err := slurm.NewClientWithVersion(ctx, "v0.0.43",
+		slurm.WithBaseURL(mockServer.URL()),
+		slurm.WithAuth(auth.NewNoAuth()),
+	)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer client.Close()
+
+	userManager := client.Users()
+	accountManager := client.Accounts()
+
+	// Create cache if enabled
+	var cache *performance.ResponseCache
+	if useCache {
+		config := performance.GetCacheConfigForProfile(performance.ProfileHighThroughput)
+		cache = performance.NewResponseCache(config)
+		defer cache.Close()
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		switch operation {
+		case "user_accounts":
+			// Benchmark GetUserAccounts
+			userName := fmt.Sprintf("user%d", i%100)
+			if useCache {
+				key := fmt.Sprintf("user_accounts:%s", userName)
+				if cached, found := cache.Get(key, nil); found {
+					_ = cached
+					continue
+				}
+			}
+			_, err := userManager.GetUserAccounts(ctx, userName)
+			if err == nil && useCache {
+				key := fmt.Sprintf("user_accounts:%s", userName)
+				cache.Set(key, nil, []byte(`{"accounts":[]}`))
+			}
+
+		case "account_users":
+			// Benchmark GetAccountUsers
+			accountName := fmt.Sprintf("account%d", i%50)
+			if useCache {
+				key := fmt.Sprintf("account_users:%s", accountName)
+				if cached, found := cache.Get(key, nil); found {
+					_ = cached
+					continue
+				}
+			}
+			_, err := accountManager.GetAccountUsers(ctx, accountName, nil)
+			if err == nil && useCache {
+				key := fmt.Sprintf("account_users:%s", accountName)
+				cache.Set(key, nil, []byte(`{"users":[]}`))
+			}
+
+		case "user_quotas":
+			// Benchmark GetUserQuotas
+			userName := fmt.Sprintf("user%d", i%100)
+			if useCache {
+				key := fmt.Sprintf("user_quotas:%s", userName)
+				if cached, found := cache.Get(key, nil); found {
+					_ = cached
+					continue
+				}
+			}
+			_, err := userManager.GetUserQuotas(ctx, userName)
+			if err == nil && useCache {
+				key := fmt.Sprintf("user_quotas:%s", userName)
+				cache.Set(key, nil, []byte(`{"quotas":{}}`))
+			}
+
+		case "account_quotas":
+			// Benchmark GetAccountQuotas
+			accountName := fmt.Sprintf("account%d", i%50)
+			if useCache {
+				key := fmt.Sprintf("account_quotas:%s", accountName)
+				if cached, found := cache.Get(key, nil); found {
+					_ = cached
+					continue
+				}
+			}
+			_, err := accountManager.GetAccountQuotas(ctx, accountName)
+			if err == nil && useCache {
+				key := fmt.Sprintf("account_quotas:%s", accountName)
+				cache.Set(key, nil, []byte(`{"quotas":{}}`))
+			}
+
+		case "bulk_user_accounts":
+			// Benchmark GetBulkUserAccounts
+			userCount := 10 + (i%20)
+			userNames := make([]string, userCount)
+			for j := 0; j < userCount; j++ {
+				userNames[j] = fmt.Sprintf("user%d", j)
+			}
+			if useCache {
+				key := fmt.Sprintf("bulk_user_accounts:%d", userCount)
+				if cached, found := cache.Get(key, nil); found {
+					_ = cached
+					continue
+				}
+			}
+			_, err := userManager.GetBulkUserAccounts(ctx, userNames)
+			if err == nil && useCache {
+				key := fmt.Sprintf("bulk_user_accounts:%d", userCount)
+				cache.Set(key, nil, []byte(`{"results":{}}`))
+			}
+		}
+	}
+}
+
+// BenchmarkFairShareCalculations tests performance of fair-share related operations
+func BenchmarkFairShareCalculations(b *testing.B) {
+	scenarios := []struct {
+		name        string
+		operation   string
+		hierarchyDepth int
+	}{
+		{"GetUserFairShare", "user_fair_share", 0},
+		{"GetAccountFairShare", "account_fair_share", 0},
+		{"GetFairShareHierarchy_Shallow", "fair_share_hierarchy", 3},
+		{"GetFairShareHierarchy_Medium", "fair_share_hierarchy", 5},
+		{"GetFairShareHierarchy_Deep", "fair_share_hierarchy", 10},
+		{"CalculateJobPriority_Simple", "job_priority", 1},
+		{"CalculateJobPriority_Complex", "job_priority", 5},
+	}
+
+	for _, scenario := range scenarios {
+		b.Run(scenario.name, func(b *testing.B) {
+			benchmarkFairShareOperation(b, scenario.operation, scenario.hierarchyDepth)
+		})
+	}
+}
+
+func benchmarkFairShareOperation(b *testing.B, operation string, hierarchyDepth int) {
+	mockServer := mocks.NewMockSlurmServerForVersion("v0.0.43")
+	defer mockServer.Close()
+
+	ctx := context.Background()
+	client, err := slurm.NewClientWithVersion(ctx, "v0.0.43",
+		slurm.WithBaseURL(mockServer.URL()),
+		slurm.WithAuth(auth.NewNoAuth()),
+	)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer client.Close()
+
+	userManager := client.Users()
+	accountManager := client.Accounts()
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		switch operation {
+		case "user_fair_share":
+			userName := fmt.Sprintf("user%d", i%100)
+			_, _ = userManager.GetUserFairShare(ctx, userName)
+
+		case "account_fair_share":
+			accountName := fmt.Sprintf("account%d", i%50)
+			_, _ = accountManager.GetAccountFairShare(ctx, accountName)
+
+		case "fair_share_hierarchy":
+			// Simulate different hierarchy depths
+			rootAccount := "root"
+			if hierarchyDepth > 5 {
+				rootAccount = "complex_root"
+			}
+			_, _ = accountManager.GetFairShareHierarchy(ctx, rootAccount)
+
+		case "job_priority":
+			// Create job submission with varying complexity
+			jobSubmission := &interfaces.JobSubmission{
+				Script:    "#!/bin/bash\necho 'benchmark job'",
+				Account:   fmt.Sprintf("account%d", i%10),
+				Partition: "compute",
+				CPUs:      1 + (i % 16),
+				Memory:    1024 * (1 + (i % 8)),
+			}
+			
+			if hierarchyDepth > 1 {
+				// Add more complex resource requirements
+				jobSubmission.TimeLimit = fmt.Sprintf("%02d:00:00", 1+(i%24))
+				jobSubmission.Nodes = 1 + (i % 4)
+			}
+			
+			userName := fmt.Sprintf("user%d", i%100)
+			_, _ = userManager.CalculateJobPriority(ctx, userName, jobSubmission)
+		}
+	}
+}
+
+// BenchmarkHierarchyTraversal tests performance of account hierarchy navigation
+func BenchmarkHierarchyTraversal(b *testing.B) {
+	depths := []int{1, 3, 5, 10}
+	
+	for _, depth := range depths {
+		b.Run(fmt.Sprintf("Depth_%d", depth), func(b *testing.B) {
+			benchmarkHierarchyTraversal(b, depth)
+		})
+	}
+}
+
+func benchmarkHierarchyTraversal(b *testing.B, maxDepth int) {
+	mockServer := mocks.NewMockSlurmServerForVersion("v0.0.43")
+	defer mockServer.Close()
+
+	ctx := context.Background()
+	client, err := slurm.NewClientWithVersion(ctx, "v0.0.43",
+		slurm.WithBaseURL(mockServer.URL()),
+		slurm.WithAuth(auth.NewNoAuth()),
+	)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer client.Close()
+
+	accountManager := client.Accounts()
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		// Test parent traversal
+		childAccount := fmt.Sprintf("child_level_%d", maxDepth)
+		_, _ = accountManager.GetParentAccounts(ctx, childAccount)
+
+		// Test child traversal with different depths
+		parentAccount := fmt.Sprintf("parent_%d", i%5)
+		depth := i % maxDepth
+		_, _ = accountManager.GetChildAccounts(ctx, parentAccount, depth)
+
+		// Test full hierarchy retrieval
+		if i%10 == 0 {
+			_, _ = accountManager.GetAccountHierarchy(ctx, "root")
+		}
+	}
+}
+
+// BenchmarkConcurrentUserAccountOperations tests concurrent access patterns
+func BenchmarkConcurrentUserAccountOperations(b *testing.B) {
+	concurrencyLevels := []int{1, 5, 10, 20}
+	
+	for _, concurrency := range concurrencyLevels {
+		b.Run(fmt.Sprintf("Concurrency_%d", concurrency), func(b *testing.B) {
+			benchmarkConcurrentUserAccountOps(b, concurrency)
+		})
+	}
+}
+
+func benchmarkConcurrentUserAccountOps(b *testing.B, concurrency int) {
+	mockServer := mocks.NewMockSlurmServerForVersion("v0.0.43")
+	defer mockServer.Close()
+
+	ctx := context.Background()
+	
+	// Create pool of clients
+	clients := make([]interfaces.SlurmClient, concurrency)
+	for i := 0; i < concurrency; i++ {
+		client, err := slurm.NewClientWithVersion(ctx, "v0.0.43",
+			slurm.WithBaseURL(mockServer.URL()),
+			slurm.WithAuth(auth.NewNoAuth()),
+		)
+		if err != nil {
+			b.Fatal(err)
+		}
+		clients[i] = client
+		defer client.Close()
+	}
+
+	b.ResetTimer()
+
+	// Run concurrent operations
+	var wg sync.WaitGroup
+	opsPerWorker := b.N / concurrency
+	
+	start := time.Now()
+	
+	for i := 0; i < concurrency; i++ {
+		wg.Add(1)
+		go func(workerID int, client interfaces.SlurmClient) {
+			defer wg.Done()
+			
+			userManager := client.Users()
+			accountManager := client.Accounts()
+			
+			for j := 0; j < opsPerWorker; j++ {
+				opType := j % 5
+				switch opType {
+				case 0:
+					// User accounts query
+					userName := fmt.Sprintf("user%d", workerID*100+j)
+					_, _ = userManager.GetUserAccounts(ctx, userName)
+				case 1:
+					// Account users query
+					accountName := fmt.Sprintf("account%d", workerID*50+j)
+					_, _ = accountManager.GetAccountUsers(ctx, accountName, nil)
+				case 2:
+					// User quotas query
+					userName := fmt.Sprintf("user%d", workerID*100+j)
+					_, _ = userManager.GetUserQuotas(ctx, userName)
+				case 3:
+					// Fair-share query
+					userName := fmt.Sprintf("user%d", workerID*100+j)
+					_, _ = userManager.GetUserFairShare(ctx, userName)
+				case 4:
+					// Validation query
+					userName := fmt.Sprintf("user%d", workerID*100+j)
+					accountName := fmt.Sprintf("account%d", workerID*50+j)
+					_, _ = userManager.ValidateUserAccountAccess(ctx, userName, accountName)
+				}
+			}
+		}(i, clients[i])
+	}
+	
+	wg.Wait()
+	
+	duration := time.Since(start)
+	totalOps := concurrency * opsPerWorker
+	opsPerSecond := float64(totalOps) / duration.Seconds()
+	
+	b.ReportMetric(opsPerSecond, "ops/sec")
+	b.ReportMetric(float64(duration.Nanoseconds())/float64(totalOps)/1e6, "ms/op")
+}
