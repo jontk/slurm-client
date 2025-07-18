@@ -822,3 +822,189 @@ func (m *JobManagerImpl) Watch(ctx context.Context, opts *interfaces.WatchJobsOp
 	// Start watching
 	return poller.Watch(ctx, opts)
 }
+
+// GetJobUtilization retrieves minimal resource utilization metrics for a job
+// Note: v0.0.40 only supports very basic accounting data
+func (m *JobManagerImpl) GetJobUtilization(ctx context.Context, jobID string) (*interfaces.JobUtilization, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// First get the job details to determine status
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// In v0.0.40, only minimal accounting data is available
+	// Most metrics are estimated based on allocated resources
+	// TODO: Integrate with basic SLURM accounting when available
+
+	utilization := &interfaces.JobUtilization{
+		JobID:   jobID,
+		JobName: job.Name,
+		StartTime: job.SubmitTime,
+		EndTime: job.EndTime,
+		
+		// CPU Utilization (minimal in v0.0.40 - assumes 70% utilization)
+		CPUUtilization: &interfaces.ResourceUtilization{
+			Used:      float64(job.CPUs) * 0.70, // Fixed 70% utilization assumption
+			Allocated: float64(job.CPUs),
+			Limit:     float64(job.CPUs),
+			Percentage: 70.0,
+			Metadata: map[string]interface{}{
+				"estimation_method": "fixed_percentage",
+				"confidence": "low",
+			},
+		},
+		
+		// Memory Utilization (minimal in v0.0.40 - assumes 60% utilization)
+		MemoryUtilization: &interfaces.ResourceUtilization{
+			Used:      float64(job.Memory) * 0.60, // Fixed 60% utilization assumption
+			Allocated: float64(job.Memory),
+			Limit:     float64(job.Memory),
+			Percentage: 60.0,
+			Metadata: map[string]interface{}{
+				"estimation_method": "fixed_percentage",
+				"confidence": "low",
+			},
+		},
+	}
+
+	// Add metadata about v0.0.40 limitations
+	utilization.Metadata = map[string]interface{}{
+		"version": "v0.0.40",
+		"source": "basic_accounting", 
+		"nodes": job.Nodes,
+		"partition": job.Partition,
+		"state": job.State,
+		"feature_level": "minimal", // v0.0.40 has minimal features
+		"data_quality": "estimated", // Most data is estimated, not measured
+		"limitations": []string{
+			"fixed_utilization_percentages",
+			"no_actual_measurements",
+			"no_gpu_support",
+			"no_io_metrics",
+			"no_network_metrics",
+			"no_energy_metrics",
+			"no_performance_counters",
+		},
+	}
+
+	// All advanced metrics are not supported in v0.0.40
+	utilization.GPUUtilization = nil
+	utilization.IOUtilization = nil
+	utilization.NetworkUtilization = nil
+	utilization.EnergyUsage = nil
+
+	return utilization, nil
+}
+
+// GetJobEfficiency calculates minimal efficiency metrics for a completed job
+// Note: v0.0.40 only provides rough estimates based on assumptions
+func (m *JobManagerImpl) GetJobEfficiency(ctx context.Context, jobID string) (*interfaces.ResourceUtilization, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Get job utilization data
+	utilization, err := m.GetJobUtilization(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// v0.0.40 uses fixed efficiency estimate based on assumed utilization
+	// This is very basic and not based on actual measurements
+	efficiency := 65.0 // Fixed 65% efficiency assumption for v0.0.40
+
+	return &interfaces.ResourceUtilization{
+		Used:       efficiency,
+		Allocated:  100.0,
+		Limit:      100.0,
+		Percentage: efficiency,
+		Metadata: map[string]interface{}{
+			"cpu_efficiency":    70.0, // Fixed from utilization assumption
+			"memory_efficiency": 60.0, // Fixed from utilization assumption
+			"calculation_method": "fixed_estimate_v40",
+			"version": "v0.0.40",
+			"confidence": "very_low",
+			"note": "Efficiency is estimated, not measured in v0.0.40",
+			"limitations": []string{
+				"no_actual_measurements",
+				"fixed_efficiency_value",
+				"no_resource_specific_data",
+			},
+		},
+	}, nil
+}
+
+// GetJobPerformance retrieves minimal performance metrics for a job
+// Note: v0.0.40 provides only the most basic information
+func (m *JobManagerImpl) GetJobPerformance(ctx context.Context, jobID string) (*interfaces.JobPerformance, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Get basic job info
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert string jobID to uint32
+	jobIDInt, err := strconv.ParseUint(jobID, 10, 32)
+	if err != nil {
+		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, "Invalid job ID format", err.Error())
+	}
+
+	// Get utilization metrics
+	utilization, err := m.GetJobUtilization(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get efficiency metrics
+	efficiency, err := m.GetJobEfficiency(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build minimal performance report (v0.0.40 version with very limited features)
+	performance := &interfaces.JobPerformance{
+		JobID:     uint32(jobIDInt),
+		JobName:   job.Name,
+		StartTime: job.SubmitTime,
+		EndTime:   job.EndTime,
+		Status:    job.State,
+		ExitCode:  job.ExitCode,
+		
+		ResourceUtilization: efficiency,
+		JobUtilization:     utilization,
+		
+		// No advanced features available in v0.0.40
+		StepMetrics:       nil,
+		PerformanceTrends: nil,
+		Bottlenecks:       nil, // No bottleneck detection in v0.0.40
+		
+		// Only basic recommendation in v0.0.40
+		Recommendations: []interfaces.OptimizationRecommendation{
+			{
+				Type:        "system",
+				Priority:    "medium",
+				Title:       "Upgrade for better analytics",
+				Description: "API v0.0.40 provides only minimal analytics. Upgrade to SLURM API v0.0.41+ for actual resource measurements and v0.0.42+ for comprehensive analytics.",
+				ExpectedImprovement: 0.0,
+				ConfigChanges: map[string]string{
+					"current_api_version": "v0.0.40",
+					"minimum_recommended": "v0.0.41",
+					"optimal_version": "v0.0.42_or_higher",
+				},
+			},
+		},
+	}
+
+	return performance, nil
+}
