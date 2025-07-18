@@ -94,6 +94,8 @@ type AssociationUsage = interfaces.AssociationUsage
 type QoSLimits = interfaces.QoSLimits
 type UserAccountAssociation = interfaces.UserAccountAssociation
 type UserAccessValidation = interfaces.UserAccessValidation
+type AccountFairShare = interfaces.AccountFairShare
+type FairShareHierarchy = interfaces.FairShareHierarchy
 
 // List options
 type ListJobsOptions = interfaces.ListJobsOptions

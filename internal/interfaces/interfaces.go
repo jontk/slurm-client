@@ -557,6 +557,10 @@ type AccountManager interface {
 	GetAccountUsers(ctx context.Context, accountName string, opts *ListAccountUsersOptions) ([]*UserAccountAssociation, error)
 	ValidateUserAccess(ctx context.Context, userName, accountName string) (*UserAccessValidation, error)
 	GetAccountUsersWithPermissions(ctx context.Context, accountName string, permissions []string) ([]*UserAccountAssociation, error)
+	
+	// Fair-share methods
+	GetAccountFairShare(ctx context.Context, accountName string) (*AccountFairShare, error)
+	GetFairShareHierarchy(ctx context.Context, rootAccount string) (*FairShareHierarchy, error)
 }
 
 // Account represents a SLURM account
@@ -1012,6 +1016,44 @@ type JobPriorityInfo struct {
 	EstimatedStart  time.Time           `json:"estimated_start"`
 	PositionInQueue int                 `json:"position_in_queue"`
 	PriorityTier    string              `json:"priority_tier"`
+}
+
+// AccountFairShare represents fair-share configuration and state for an account
+type AccountFairShare struct {
+	AccountName      string                `json:"account_name"`
+	Cluster          string                `json:"cluster"`
+	Parent           string                `json:"parent,omitempty"`
+	Shares           int                   `json:"shares"`
+	RawShares        int                   `json:"raw_shares"`
+	NormalizedShares float64               `json:"normalized_shares"`
+	Usage            float64               `json:"usage"`
+	EffectiveUsage   float64               `json:"effective_usage"`
+	FairShareFactor  float64               `json:"fair_share_factor"`
+	Level            int                   `json:"level"`
+	LevelShares      int                   `json:"level_shares"`
+	UserCount        int                   `json:"user_count"`
+	ActiveUsers      int                   `json:"active_users"`
+	JobCount         int                   `json:"job_count"`
+	Children         []*AccountFairShare   `json:"children,omitempty"`
+	Users            []*UserFairShare      `json:"users,omitempty"`
+	LastDecay        time.Time             `json:"last_decay"`
+	Created          time.Time             `json:"created"`
+	Modified         time.Time             `json:"modified"`
+}
+
+// FairShareHierarchy represents the complete fair-share tree structure
+type FairShareHierarchy struct {
+	Cluster       string            `json:"cluster"`
+	RootAccount   string            `json:"root_account"`
+	Tree          *FairShareNode    `json:"tree"`
+	TotalShares   int               `json:"total_shares"`
+	TotalUsage    float64           `json:"total_usage"`
+	LastUpdate    time.Time         `json:"last_update"`
+	DecayHalfLife int               `json:"decay_half_life"`
+	UsageWindow   int               `json:"usage_window"`
+	Algorithm     string            `json:"algorithm"`
+	Accounts      []*AccountFairShare `json:"accounts,omitempty"`
+	Users         []*UserFairShare  `json:"users,omitempty"`
 }
 
 // UserList represents a list of users
