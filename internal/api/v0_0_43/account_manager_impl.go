@@ -212,6 +212,74 @@ func (a *AccountManagerImpl) GetAccountQuotaUsage(ctx context.Context, accountNa
 	return nil, errors.NewNotImplementedError("account quota usage retrieval", "v0.0.43")
 }
 
+// GetAccountUsers retrieves all users associated with an account
+func (a *AccountManagerImpl) GetAccountUsers(ctx context.Context, accountName string, opts *interfaces.ListAccountUsersOptions) ([]*interfaces.UserAccountAssociation, error) {
+	if a.client == nil || a.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if accountName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
+	}
+
+	// TODO: Implement actual API call to retrieve account users
+	// This would involve querying SLURM's association database for all users
+	// associated with the given account, including their roles and permissions
+	return nil, errors.NewNotImplementedError("account users retrieval", "v0.0.43")
+}
+
+// ValidateUserAccess validates user access to an account
+func (a *AccountManagerImpl) ValidateUserAccess(ctx context.Context, userName, accountName string) (*interfaces.UserAccessValidation, error) {
+	if a.client == nil || a.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if userName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
+	}
+
+	if accountName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
+	}
+
+	// TODO: Implement actual API call to validate user access
+	// This would involve checking user associations, permissions, and quotas
+	return nil, errors.NewNotImplementedError("user access validation", "v0.0.43")
+}
+
+// GetAccountUsersWithPermissions retrieves users with specific permissions for an account
+func (a *AccountManagerImpl) GetAccountUsersWithPermissions(ctx context.Context, accountName string, permissions []string) ([]*interfaces.UserAccountAssociation, error) {
+	if a.client == nil || a.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if accountName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
+	}
+
+	if len(permissions) == 0 {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one permission is required", "permissions", permissions, nil)
+	}
+
+	// Validate permission names
+	validPermissions := []string{"read", "write", "admin", "coordinator", "submit", "cancel", "modify"}
+	for _, perm := range permissions {
+		isValid := false
+		for _, valid := range validPermissions {
+			if perm == valid {
+				isValid = true
+				break
+			}
+		}
+		if !isValid {
+			return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, fmt.Sprintf("invalid permission: %s", perm), "permissions", perm, nil)
+		}
+	}
+
+	// TODO: Implement actual API call to retrieve users with specific permissions
+	return nil, errors.NewNotImplementedError("account users with permissions retrieval", "v0.0.43")
+}
+
 // Helper function to validate TRES format
 func validateTRES(tres map[string]int) error {
 	// TRES (Trackable Resources) typically include: cpu, mem, energy, node, billing, fs/disk, vmem, pages

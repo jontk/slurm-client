@@ -23,8 +23,8 @@ func NewReservationManagerImpl(client *WrapperClient) *ReservationManagerImpl {
 
 // List retrieves a list of reservations with optional filtering
 func (r *ReservationManagerImpl) List(ctx context.Context, opts *interfaces.ListReservationsOptions) (*interfaces.ReservationList, error) {
-	if r.client == nil || r.client.client == nil {
-		return nil, errors.NewClientError("API client not initialized", nil)
+	if r.client == nil || r.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// TODO: Call the v0.0.43 API to list reservations
@@ -35,12 +35,12 @@ func (r *ReservationManagerImpl) List(ctx context.Context, opts *interfaces.List
 
 // Get retrieves a specific reservation by name
 func (r *ReservationManagerImpl) Get(ctx context.Context, reservationName string) (*interfaces.Reservation, error) {
-	if r.client == nil || r.client.client == nil {
-		return nil, errors.NewClientError("API client not initialized", nil)
+	if r.client == nil || r.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	if reservationName == "" {
-		return nil, errors.NewValidationError("reservation name is required", nil)
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "reservation name is required", "reservationName", reservationName, nil)
 	}
 
 	// TODO: Call the v0.0.43 API to get reservation details
@@ -51,23 +51,23 @@ func (r *ReservationManagerImpl) Get(ctx context.Context, reservationName string
 
 // Create creates a new reservation
 func (r *ReservationManagerImpl) Create(ctx context.Context, reservation *interfaces.ReservationCreate) (*interfaces.ReservationCreateResponse, error) {
-	if r.client == nil || r.client.client == nil {
-		return nil, errors.NewClientError("API client not initialized", nil)
+	if r.client == nil || r.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	if reservation == nil {
-		return nil, errors.NewValidationError("reservation data is required", nil)
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "reservation data is required", "reservation", reservation, nil)
 	}
 
 	// Validate required fields
 	if reservation.Name == "" {
-		return nil, errors.NewValidationError("reservation name is required", nil)
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "reservation name is required", "reservation.Name", reservation.Name, nil)
 	}
 	if reservation.StartTime.IsZero() {
-		return nil, errors.NewValidationError("reservation start time is required", nil)
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "reservation start time is required", "reservation.StartTime", reservation.StartTime, nil)
 	}
 	if reservation.EndTime.IsZero() && reservation.Duration == 0 {
-		return nil, errors.NewValidationError("either end time or duration is required", nil)
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "either end time or duration is required", "reservation.EndTime/Duration", fmt.Sprintf("EndTime: %v, Duration: %v", reservation.EndTime, reservation.Duration), nil)
 	}
 
 	// TODO: Call the v0.0.43 API to create reservation
@@ -78,16 +78,16 @@ func (r *ReservationManagerImpl) Create(ctx context.Context, reservation *interf
 
 // Update updates an existing reservation
 func (r *ReservationManagerImpl) Update(ctx context.Context, reservationName string, update *interfaces.ReservationUpdate) error {
-	if r.client == nil || r.client.client == nil {
-		return errors.NewClientError("API client not initialized", nil)
+	if r.client == nil || r.client.apiClient == nil {
+		return errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	if reservationName == "" {
-		return errors.NewValidationError("reservation name is required", nil)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "reservation name is required", "reservationName", reservationName, nil)
 	}
 
 	if update == nil {
-		return errors.NewValidationError("update data is required", nil)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "update data is required", "update", update, nil)
 	}
 
 	// TODO: Call the v0.0.43 API to update reservation
@@ -98,12 +98,12 @@ func (r *ReservationManagerImpl) Update(ctx context.Context, reservationName str
 
 // Delete deletes a reservation
 func (r *ReservationManagerImpl) Delete(ctx context.Context, reservationName string) error {
-	if r.client == nil || r.client.client == nil {
-		return errors.NewClientError("API client not initialized", nil)
+	if r.client == nil || r.client.apiClient == nil {
+		return errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	if reservationName == "" {
-		return errors.NewValidationError("reservation name is required", nil)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "reservation name is required", "reservationName", reservationName, nil)
 	}
 
 	// TODO: Call the v0.0.43 API to delete reservation
@@ -128,7 +128,7 @@ func (r *ReservationManagerImpl) List(ctx context.Context, opts *interfaces.List
 	}
 
 	// Call API
-	resp, err := r.client.client.GetReservations(ctx, params)
+	resp, err := r.client.apiClient.GetReservations(ctx, params)
 	if err != nil {
 		return nil, errors.WrapAPIError(err, "failed to list reservations")
 	}

@@ -120,3 +120,63 @@ func (u *UserManagerImpl) CalculateJobPriority(ctx context.Context, userName str
 
 	return nil, errors.NewNotImplementedError("job priority calculation not supported", "v0.0.41")
 }
+
+// ValidateUserAccountAccess validates user access to a specific account
+// This feature is not available in v0.0.41
+func (u *UserManagerImpl) ValidateUserAccountAccess(ctx context.Context, userName, accountName string) (*interfaces.UserAccessValidation, error) {
+	if u.client == nil || u.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if userName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
+	}
+
+	if accountName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
+	}
+
+	return nil, errors.NewNotImplementedError("user-account access validation not supported", "v0.0.41")
+}
+
+// GetUserAccountAssociations retrieves detailed user account associations
+// This feature is not available in v0.0.41
+func (u *UserManagerImpl) GetUserAccountAssociations(ctx context.Context, userName string, opts *interfaces.ListUserAccountAssociationsOptions) ([]*interfaces.UserAccountAssociation, error) {
+	if u.client == nil || u.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if userName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
+	}
+
+	return nil, errors.NewNotImplementedError("user account associations not supported", "v0.0.41")
+}
+
+// GetBulkUserAccounts retrieves accounts for multiple users in a single call
+// This feature is not available in v0.0.41
+func (u *UserManagerImpl) GetBulkUserAccounts(ctx context.Context, userNames []string) (map[string][]*interfaces.UserAccount, error) {
+	if u.client == nil || u.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if len(userNames) == 0 {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one user name is required", "userNames", userNames, nil)
+	}
+
+	return nil, errors.NewNotImplementedError("bulk user accounts not supported", "v0.0.41")
+}
+
+// GetBulkAccountUsers retrieves users for multiple accounts in a single call
+// This feature is not available in v0.0.41
+func (u *UserManagerImpl) GetBulkAccountUsers(ctx context.Context, accountNames []string) (map[string][]*interfaces.UserAccountAssociation, error) {
+	if u.client == nil || u.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if len(accountNames) == 0 {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one account name is required", "accountNames", accountNames, nil)
+	}
+
+	return nil, errors.NewNotImplementedError("bulk account users not supported", "v0.0.41")
+}

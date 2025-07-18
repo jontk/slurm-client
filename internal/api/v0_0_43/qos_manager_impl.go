@@ -2,7 +2,6 @@ package v0_0_43
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
@@ -23,7 +22,7 @@ func NewQoSManagerImpl(client *WrapperClient) *QoSManagerImpl {
 // List retrieves a list of QoS with optional filtering
 func (q *QoSManagerImpl) List(ctx context.Context, opts *interfaces.ListQoSOptions) (*interfaces.QoSList, error) {
 	if q.client == nil || q.client.apiClient == nil {
-		return nil, errors.NewClientError("API client not initialized", nil)
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// TODO: Call the v0.0.43 API to list QoS
@@ -35,11 +34,11 @@ func (q *QoSManagerImpl) List(ctx context.Context, opts *interfaces.ListQoSOptio
 // Get retrieves a specific QoS by name
 func (q *QoSManagerImpl) Get(ctx context.Context, qosName string) (*interfaces.QoS, error) {
 	if q.client == nil || q.client.apiClient == nil {
-		return nil, errors.NewClientError("API client not initialized", nil)
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	if qosName == "" {
-		return nil, errors.NewValidationError("QoS name is required", nil)
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS name is required", "qosName", qosName, nil)
 	}
 
 	// TODO: Call the v0.0.43 API to get QoS details
@@ -51,16 +50,16 @@ func (q *QoSManagerImpl) Get(ctx context.Context, qosName string) (*interfaces.Q
 // Create creates a new QoS
 func (q *QoSManagerImpl) Create(ctx context.Context, qos *interfaces.QoSCreate) (*interfaces.QoSCreateResponse, error) {
 	if q.client == nil || q.client.apiClient == nil {
-		return nil, errors.NewClientError("API client not initialized", nil)
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	if qos == nil {
-		return nil, errors.NewValidationError("QoS data is required", nil)
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS data is required", "qos", qos, nil)
 	}
 
 	// Validate required fields
 	if qos.Name == "" {
-		return nil, errors.NewValidationError("QoS name is required", nil)
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS name is required", "qos.Name", qos.Name, nil)
 	}
 
 	// TODO: Call the v0.0.43 API to create QoS
@@ -72,15 +71,15 @@ func (q *QoSManagerImpl) Create(ctx context.Context, qos *interfaces.QoSCreate) 
 // Update updates an existing QoS
 func (q *QoSManagerImpl) Update(ctx context.Context, qosName string, update *interfaces.QoSUpdate) error {
 	if q.client == nil || q.client.apiClient == nil {
-		return errors.NewClientError("API client not initialized", nil)
+		return errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	if qosName == "" {
-		return errors.NewValidationError("QoS name is required", nil)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS name is required", "qosName", qosName, nil)
 	}
 
 	if update == nil {
-		return errors.NewValidationError("update data is required", nil)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "update data is required", "update", update, nil)
 	}
 
 	// TODO: Call the v0.0.43 API to update QoS
@@ -92,11 +91,11 @@ func (q *QoSManagerImpl) Update(ctx context.Context, qosName string, update *int
 // Delete deletes a QoS
 func (q *QoSManagerImpl) Delete(ctx context.Context, qosName string) error {
 	if q.client == nil || q.client.apiClient == nil {
-		return errors.NewClientError("API client not initialized", nil)
+		return errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	if qosName == "" {
-		return errors.NewValidationError("QoS name is required", nil)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS name is required", "qosName", qosName, nil)
 	}
 
 	// TODO: Call the v0.0.43 API to delete QoS
