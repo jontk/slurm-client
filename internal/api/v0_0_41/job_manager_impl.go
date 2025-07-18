@@ -794,3 +794,171 @@ func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*
 
 	return liveMetrics, nil
 }
+
+// WatchJobMetrics provides streaming performance updates for a running job
+// Note: v0.0.41 has very limited streaming capabilities - basic CPU/memory only
+func (m *JobManagerImpl) WatchJobMetrics(ctx context.Context, jobID string, opts *interfaces.WatchMetricsOptions) (<-chan interfaces.JobMetricsEvent, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Default options if not provided - v0.0.41 limitations
+	if opts == nil {
+		opts = &interfaces.WatchMetricsOptions{
+			UpdateInterval:     15 * time.Second, // Much slower polling for v0.0.41
+			IncludeCPU:        true,
+			IncludeMemory:     true,
+			IncludeGPU:        false, // Not supported
+			IncludeNetwork:    false, // Not supported
+			IncludeIO:         false, // Not supported
+			IncludeEnergy:     false, // Not supported
+			IncludeNodeMetrics: false, // Very limited
+			StopOnCompletion:  true,
+			CPUThreshold:      80.0,  // Conservative thresholds
+			MemoryThreshold:   75.0,
+		}
+	}
+
+	// Enforce minimum update interval for v0.0.41
+	if opts.UpdateInterval < 15*time.Second {
+		opts.UpdateInterval = 15 * time.Second
+	}
+
+	// Create event channel
+	eventChan := make(chan interfaces.JobMetricsEvent, 3)
+
+	// Start monitoring goroutine
+	go func() {
+		defer close(eventChan)
+
+		// Track previous state
+		var previousState string
+
+		// Initial state check
+		job, err := m.Get(ctx, jobID)
+		if err != nil {
+			eventChan <- interfaces.JobMetricsEvent{
+				Type:      "error",
+				JobID:     jobID,
+				Timestamp: time.Now(),
+				Error:     err,
+			}
+			return
+		}
+		previousState = job.State
+
+		// Set up monitoring timer
+		ticker := time.NewTicker(opts.UpdateInterval)
+		defer ticker.Stop()
+
+		// Set up max duration timer if specified
+		var maxTimer *time.Timer
+		if opts.MaxDuration > 0 {
+			maxTimer = time.NewTimer(opts.MaxDuration)
+			defer maxTimer.Stop()
+		}
+
+		// Simple monitoring loop for v0.0.41
+		for {
+			select {
+			case <-ctx.Done():
+				eventChan <- interfaces.JobMetricsEvent{
+					Type:      "complete",
+					JobID:     jobID,
+					Timestamp: time.Now(),
+					Error:     ctx.Err(),
+				}
+				return
+
+			case <-ticker.C:
+				// Get current job state
+				job, err := m.Get(ctx, jobID)
+				if err != nil {
+					eventChan <- interfaces.JobMetricsEvent{
+						Type:      "error",
+						JobID:     jobID,
+						Timestamp: time.Now(),
+						Error:     err,
+					}
+					continue
+				}
+
+				// Check for state change
+				if job.State != previousState {
+					stateChange := &interfaces.JobStateChange{
+						OldState: previousState,
+						NewState: job.State,
+					}
+					previousState = job.State
+
+					eventChan <- interfaces.JobMetricsEvent{
+						Type:        "update",
+						JobID:       jobID,
+						Timestamp:   time.Now(),
+						StateChange: stateChange,
+					}
+
+					// Check if we should stop
+					if opts.StopOnCompletion && isJobCompleteV41(job.State) {
+						eventChan <- interfaces.JobMetricsEvent{
+							Type:      "complete",
+							JobID:     jobID,
+							Timestamp: time.Now(),
+						}
+						return
+					}
+				}
+
+				// Only collect metrics for running jobs
+				if job.State == "RUNNING" {
+					// Get basic metrics
+					metrics, err := m.GetJobLiveMetrics(ctx, jobID)
+					if err != nil {
+						// v0.0.41 might not support live metrics for all jobs
+						// Continue monitoring without sending error
+						continue
+					}
+
+					// Send simplified metrics update
+					eventChan <- interfaces.JobMetricsEvent{
+						Type:      "update",
+						JobID:     jobID,
+						Timestamp: time.Now(),
+						Metrics:   metrics,
+					}
+				}
+
+			case <-func() <-chan time.Time {
+				if maxTimer != nil {
+					return maxTimer.C
+				}
+				return nil
+			}():
+				// Max duration reached
+				eventChan <- interfaces.JobMetricsEvent{
+					Type:      "complete",
+					JobID:     jobID,
+					Timestamp: time.Now(),
+				}
+				return
+			}
+		}
+	}()
+
+	return eventChan, nil
+}
+
+// Helper function to check if job is complete (v0.0.41)
+func isJobCompleteV41(state string) bool {
+	completedStates := []string{
+		"COMPLETED", "FAILED", "CANCELLED", "TIMEOUT",
+		"NODE_FAIL", "PREEMPTED",
+	}
+	for _, s := range completedStates {
+		if state == s {
+			return true
+		}
+	}
+	return false
+}

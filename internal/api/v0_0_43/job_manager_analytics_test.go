@@ -351,12 +351,25 @@ func TestHelperFunctions(t *testing.T) {
 // mockAPIClient is a mock implementation for testing
 type mockAPIClient struct {
 	getJobResponse *interfaces.Job
+	getJobFunc     func() *interfaces.Job
 	getJobError    error
 }
 
 func (m *mockAPIClient) SlurmV0043GetJobWithResponse(ctx context.Context, jobID string, params *SlurmV0043GetJobParams) (*SlurmV0043GetJobResponse, error) {
 	if m.getJobError != nil {
 		return nil, m.getJobError
+	}
+
+	// Get job from function or response
+	job := m.getJobResponse
+	if m.getJobFunc != nil {
+		job = m.getJobFunc()
+	}
+
+	if job == nil {
+		return &SlurmV0043GetJobResponse{
+			HTTPResponse: &mockHTTPResponse{statusCode: 404},
+		}, nil
 	}
 
 	// Convert jobID to int32
@@ -369,15 +382,15 @@ func (m *mockAPIClient) SlurmV0043GetJobWithResponse(ctx context.Context, jobID 
 			Jobs: []V0043JobInfo{
 				{
 					JobId:     &jobIDInt32,
-					Name:      &m.getJobResponse.Name,
-					JobState:  &[]string{m.getJobResponse.State},
-					Partition: &m.getJobResponse.Partition,
+					Name:      &job.Name,
+					JobState:  &[]string{job.State},
+					Partition: &job.Partition,
 					Cpus: &V0043Uint32NoValStruct{
-						Number: &[]int32{int32(m.getJobResponse.CPUs)}[0],
+						Number: &[]int32{int32(job.CPUs)}[0],
 						Set:    &[]bool{true}[0],
 					},
 					MemoryPerNode: &V0043Uint64NoValStruct{
-						Number: &[]int64{m.getJobResponse.Memory / (1024 * 1024)}[0], // Convert to MB
+						Number: &[]int64{job.Memory / (1024 * 1024)}[0], // Convert to MB
 						Set:    &[]bool{true}[0],
 					},
 				},
@@ -386,9 +399,11 @@ func (m *mockAPIClient) SlurmV0043GetJobWithResponse(ctx context.Context, jobID 
 	}
 
 	// Add metadata
-	if gpuCount, ok := m.getJobResponse.Metadata["gpu_count"].(int); ok {
-		// In real implementation, this would be in a different field
-		resp.JSON200.Jobs[0].AdminComment = &[]string{"gpu_count:" + strconv.Itoa(gpuCount)}[0]
+	if job.Metadata != nil {
+		if gpuCount, ok := job.Metadata["gpu_count"].(int); ok {
+			// In real implementation, this would be in a different field
+			resp.JSON200.Jobs[0].AdminComment = &[]string{"gpu_count:" + strconv.Itoa(gpuCount)}[0]
+		}
 	}
 
 	return resp, nil
@@ -397,4 +412,354 @@ func (m *mockAPIClient) SlurmV0043GetJobWithResponse(ctx context.Context, jobID 
 func (m *mockAPIClient) SlurmV0043GetJobsWithResponse(ctx context.Context, params *SlurmV0043GetJobsParams) (*SlurmV0043GetJobsResponse, error) {
 	// Not used in these tests
 	return nil, nil
+}
+
+// TestGetJobLiveMetrics tests the GetJobLiveMetrics method
+func TestGetJobLiveMetrics(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Success_RunningJob", func(t *testing.T) {
+		// Create mock running job
+		mockJob := &interfaces.Job{
+			ID:        "12345",
+			Name:      "test-job",
+			State:     "RUNNING",
+			CPUs:      16,
+			Memory:    64 * 1024 * 1024 * 1024, // 64GB
+			Partition: "compute",
+			Nodes:     []string{"node001", "node002"},
+			SubmitTime: time.Now().Add(-2 * time.Hour),
+			StartTime:  &[]time.Time{time.Now().Add(-1 * time.Hour)}[0],
+		}
+
+		manager := &JobManagerImpl{
+			client: &WrapperClient{
+				apiClient: &mockAPIClient{
+					getJobResponse: mockJob,
+				},
+			},
+		}
+
+		// Test GetJobLiveMetrics
+		metrics, err := manager.GetJobLiveMetrics(ctx, "12345")
+		require.NoError(t, err)
+		require.NotNil(t, metrics)
+
+		// Verify basic fields
+		assert.Equal(t, "12345", metrics.JobID)
+		assert.Equal(t, "test-job", metrics.JobName)
+		assert.Equal(t, "RUNNING", metrics.State)
+		assert.Greater(t, metrics.RunningTime, time.Duration(0))
+
+		// Verify CPU metrics
+		require.NotNil(t, metrics.CPUUsage)
+		assert.Greater(t, metrics.CPUUsage.Current, 0.0)
+		assert.Equal(t, "cores", metrics.CPUUsage.Unit)
+
+		// Verify memory metrics
+		require.NotNil(t, metrics.MemoryUsage)
+		assert.Greater(t, metrics.MemoryUsage.Current, 0.0)
+		assert.Equal(t, "bytes", metrics.MemoryUsage.Unit)
+
+		// Verify GPU metrics (v0.0.43 supports GPU)
+		require.NotNil(t, metrics.GPUUsage)
+		assert.Equal(t, "percent", metrics.GPUUsage.Unit)
+
+		// Verify node metrics
+		assert.Len(t, metrics.NodeMetrics, 2)
+		for _, node := range []string{"node001", "node002"} {
+			nodeMetrics, exists := metrics.NodeMetrics[node]
+			require.True(t, exists)
+			assert.Equal(t, node, nodeMetrics.NodeName)
+			assert.NotNil(t, nodeMetrics.CPUUsage)
+			assert.NotNil(t, nodeMetrics.MemoryUsage)
+		}
+	})
+
+	t.Run("Error_NotRunning", func(t *testing.T) {
+		// Create mock completed job
+		mockJob := &interfaces.Job{
+			ID:    "12346",
+			Name:  "completed-job",
+			State: "COMPLETED",
+		}
+
+		manager := &JobManagerImpl{
+			client: &WrapperClient{
+				apiClient: &mockAPIClient{
+					getJobResponse: mockJob,
+				},
+			},
+		}
+
+		// Test GetJobLiveMetrics on completed job
+		metrics, err := manager.GetJobLiveMetrics(ctx, "12346")
+		assert.Error(t, err)
+		assert.Nil(t, metrics)
+		assert.Contains(t, err.Error(), "not running")
+	})
+
+	t.Run("Error_ClientNotInitialized", func(t *testing.T) {
+		manager := &JobManagerImpl{
+			client: &WrapperClient{
+				apiClient: nil,
+			},
+		}
+
+		metrics, err := manager.GetJobLiveMetrics(ctx, "12345")
+		assert.Error(t, err)
+		assert.Nil(t, metrics)
+		clientErr, ok := err.(*errors.ClientError)
+		require.True(t, ok)
+		assert.Equal(t, errors.ErrorCodeClientNotInitialized, clientErr.Code)
+	})
+}
+
+// TestWatchJobMetrics tests the WatchJobMetrics method
+func TestWatchJobMetrics(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Success_StateChanges", func(t *testing.T) {
+		// Create mock job that changes state
+		jobStates := []string{"PENDING", "RUNNING", "COMPLETED"}
+		stateIndex := 0
+		
+		mockAPI := &mockAPIClient{
+			getJobFunc: func() *interfaces.Job {
+				state := jobStates[stateIndex]
+				if stateIndex < len(jobStates)-1 {
+					stateIndex++
+				}
+				return &interfaces.Job{
+					ID:    "12345",
+					Name:  "test-job",
+					State: state,
+					CPUs:  8,
+					Memory: 32 * 1024 * 1024 * 1024,
+					StartTime: func() *time.Time {
+						if state == "RUNNING" {
+							t := time.Now()
+							return &t
+						}
+						return nil
+					}(),
+				}
+			},
+		}
+
+		manager := &JobManagerImpl{
+			client: &WrapperClient{
+				apiClient: mockAPI,
+			},
+		}
+
+		// Test WatchJobMetrics with fast updates
+		opts := &interfaces.WatchMetricsOptions{
+			UpdateInterval:   100 * time.Millisecond,
+			IncludeCPU:      true,
+			IncludeMemory:   true,
+			StopOnCompletion: true,
+		}
+
+		eventChan, err := manager.WatchJobMetrics(ctx, "12345", opts)
+		require.NoError(t, err)
+		require.NotNil(t, eventChan)
+
+		// Collect events
+		var events []interfaces.JobMetricsEvent
+		timeout := time.After(1 * time.Second)
+		
+	CollectLoop:
+		for {
+			select {
+			case event, ok := <-eventChan:
+				if !ok {
+					break CollectLoop
+				}
+				events = append(events, event)
+				if event.Type == "complete" {
+					break CollectLoop
+				}
+			case <-timeout:
+				t.Fatal("Timeout waiting for events")
+			}
+		}
+
+		// Verify we got state change events
+		assert.GreaterOrEqual(t, len(events), 2)
+		
+		// Check for state changes
+		stateChangeFound := false
+		for _, event := range events {
+			if event.StateChange != nil {
+				stateChangeFound = true
+				assert.NotEmpty(t, event.StateChange.OldState)
+				assert.NotEmpty(t, event.StateChange.NewState)
+			}
+		}
+		assert.True(t, stateChangeFound, "Expected at least one state change event")
+	})
+
+	t.Run("Success_MetricsUpdates", func(t *testing.T) {
+		// Create mock running job
+		mockJob := &interfaces.Job{
+			ID:        "12347",
+			Name:      "metrics-job",
+			State:     "RUNNING",
+			CPUs:      16,
+			Memory:    64 * 1024 * 1024 * 1024,
+			StartTime: &[]time.Time{time.Now()}[0],
+		}
+
+		manager := &JobManagerImpl{
+			client: &WrapperClient{
+				apiClient: &mockAPIClient{
+					getJobResponse: mockJob,
+				},
+			},
+		}
+
+		// Test with short duration
+		opts := &interfaces.WatchMetricsOptions{
+			UpdateInterval:   100 * time.Millisecond,
+			IncludeCPU:      true,
+			IncludeMemory:   true,
+			IncludeGPU:      true,
+			MaxDuration:     300 * time.Millisecond,
+		}
+
+		eventChan, err := manager.WatchJobMetrics(ctx, "12347", opts)
+		require.NoError(t, err)
+
+		// Collect events
+		var metricsEvents []interfaces.JobMetricsEvent
+		for event := range eventChan {
+			if event.Type == "update" && event.Metrics != nil {
+				metricsEvents = append(metricsEvents, event)
+			}
+		}
+
+		// Verify we got metrics updates
+		assert.GreaterOrEqual(t, len(metricsEvents), 1)
+		for _, event := range metricsEvents {
+			assert.NotNil(t, event.Metrics)
+			assert.NotNil(t, event.Metrics.CPUUsage)
+			assert.NotNil(t, event.Metrics.MemoryUsage)
+		}
+	})
+
+	t.Run("Success_ThresholdAlerts", func(t *testing.T) {
+		// Create mock job with high utilization
+		mockJob := &interfaces.Job{
+			ID:        "12348",
+			Name:      "high-usage-job",
+			State:     "RUNNING",
+			CPUs:      16,
+			Memory:    64 * 1024 * 1024 * 1024,
+			StartTime: &[]time.Time{time.Now()}[0],
+		}
+
+		manager := &JobManagerImpl{
+			client: &WrapperClient{
+				apiClient: &mockAPIClient{
+					getJobResponse: mockJob,
+				},
+			},
+		}
+
+		// Test with low thresholds to trigger alerts
+		opts := &interfaces.WatchMetricsOptions{
+			UpdateInterval:  100 * time.Millisecond,
+			IncludeCPU:     true,
+			IncludeMemory:  true,
+			CPUThreshold:   50.0,    // Low threshold to trigger
+			MemoryThreshold: 50.0,   // Low threshold to trigger
+			MaxDuration:    300 * time.Millisecond,
+		}
+
+		eventChan, err := manager.WatchJobMetrics(ctx, "12348", opts)
+		require.NoError(t, err)
+
+		// Collect alert events
+		var alertEvents []interfaces.JobMetricsEvent
+		for event := range eventChan {
+			if event.Type == "alert" && event.Alert != nil {
+				alertEvents = append(alertEvents, event)
+			}
+		}
+
+		// Verify we got threshold alerts
+		assert.GreaterOrEqual(t, len(alertEvents), 1)
+		for _, event := range alertEvents {
+			assert.NotNil(t, event.Alert)
+			assert.Contains(t, []string{"cpu", "memory"}, event.Alert.Category)
+			assert.Equal(t, "warning", event.Alert.Type)
+		}
+	})
+
+	t.Run("Error_ClientNotInitialized", func(t *testing.T) {
+		manager := &JobManagerImpl{
+			client: &WrapperClient{
+				apiClient: nil,
+			},
+		}
+
+		eventChan, err := manager.WatchJobMetrics(ctx, "12345", nil)
+		assert.Error(t, err)
+		assert.Nil(t, eventChan)
+		clientErr, ok := err.(*errors.ClientError)
+		require.True(t, ok)
+		assert.Equal(t, errors.ErrorCodeClientNotInitialized, clientErr.Code)
+	})
+
+	t.Run("Success_ContextCancellation", func(t *testing.T) {
+		mockJob := &interfaces.Job{
+			ID:    "12349",
+			Name:  "cancel-job",
+			State: "RUNNING",
+		}
+
+		manager := &JobManagerImpl{
+			client: &WrapperClient{
+				apiClient: &mockAPIClient{
+					getJobResponse: mockJob,
+				},
+			},
+		}
+
+		// Create cancellable context
+		cancelCtx, cancel := context.WithCancel(ctx)
+		
+		opts := &interfaces.WatchMetricsOptions{
+			UpdateInterval: 50 * time.Millisecond,
+		}
+
+		eventChan, err := manager.WatchJobMetrics(cancelCtx, "12349", opts)
+		require.NoError(t, err)
+
+		// Cancel context after short delay
+		go func() {
+			time.Sleep(100 * time.Millisecond)
+			cancel()
+		}()
+
+		// Wait for completion event
+		var gotComplete bool
+		for event := range eventChan {
+			if event.Type == "complete" {
+				gotComplete = true
+				assert.Error(t, event.Error) // Should have context error
+			}
+		}
+		assert.True(t, gotComplete)
+	})
+}
+
+// mockHTTPResponse is a mock HTTP response
+type mockHTTPResponse struct {
+	statusCode int
+}
+
+func (m *mockHTTPResponse) StatusCode() int {
+	return m.statusCode
 }

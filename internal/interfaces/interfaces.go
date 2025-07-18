@@ -72,6 +72,9 @@ type JobManager interface {
 	
 	// GetJobLiveMetrics retrieves real-time performance metrics for a running job
 	GetJobLiveMetrics(ctx context.Context, jobID string) (*JobLiveMetrics, error)
+	
+	// WatchJobMetrics provides streaming performance updates for a running job
+	WatchJobMetrics(ctx context.Context, jobID string, opts *WatchMetricsOptions) (<-chan JobMetricsEvent, error)
 }
 
 // NodeManager provides version-agnostic node operations
@@ -1091,6 +1094,47 @@ type WatchNodesOptions struct {
 type WatchPartitionsOptions struct {
 	States         []string `json:"states,omitempty"`
 	PartitionNames []string `json:"partition_names,omitempty"`
+}
+
+// WatchMetricsOptions provides options for watching job metrics
+type WatchMetricsOptions struct {
+	// Interval between metric collections (default 5s)
+	UpdateInterval time.Duration `json:"update_interval,omitempty"`
+	// Which metrics to collect
+	IncludeCPU     bool `json:"include_cpu"`
+	IncludeMemory  bool `json:"include_memory"`
+	IncludeGPU     bool `json:"include_gpu"`
+	IncludeNetwork bool `json:"include_network"`
+	IncludeIO      bool `json:"include_io"`
+	IncludeEnergy  bool `json:"include_energy"`
+	// Per-node metrics
+	IncludeNodeMetrics bool     `json:"include_node_metrics"`
+	SpecificNodes      []string `json:"specific_nodes,omitempty"`
+	// Alert thresholds
+	CPUThreshold     float64 `json:"cpu_threshold,omitempty"`      // Alert if CPU usage > threshold (0-100)
+	MemoryThreshold  float64 `json:"memory_threshold,omitempty"`   // Alert if memory usage > threshold (0-100)
+	GPUThreshold     float64 `json:"gpu_threshold,omitempty"`      // Alert if GPU usage > threshold (0-100)
+	// Stop conditions
+	StopOnCompletion bool `json:"stop_on_completion"` // Stop watching when job completes
+	MaxDuration      time.Duration `json:"max_duration,omitempty"` // Maximum time to watch
+}
+
+// JobMetricsEvent represents a job metrics update event
+type JobMetricsEvent struct {
+	Type           string              `json:"type"` // "update", "alert", "error", "complete"
+	JobID          string              `json:"job_id"`
+	Timestamp      time.Time           `json:"timestamp"`
+	Metrics        *JobLiveMetrics     `json:"metrics,omitempty"`
+	Alert          *PerformanceAlert   `json:"alert,omitempty"`
+	Error          error               `json:"error,omitempty"`
+	StateChange    *JobStateChange     `json:"state_change,omitempty"`
+}
+
+// JobStateChange represents a job state transition in metrics events
+type JobStateChange struct {
+	OldState string `json:"old_state"`
+	NewState string `json:"new_state"`
+	Reason   string `json:"reason,omitempty"`
 }
 
 // UserManager provides user-related operations

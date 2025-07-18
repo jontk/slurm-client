@@ -1502,3 +1502,297 @@ func checkPerformanceAlerts(metrics *interfaces.JobLiveMetrics) []interfaces.Per
 
 	return alerts
 }
+
+// WatchJobMetrics provides streaming performance updates for a running job
+// This implements real-time monitoring by polling at specified intervals
+func (m *JobManagerImpl) WatchJobMetrics(ctx context.Context, jobID string, opts *interfaces.WatchMetricsOptions) (<-chan interfaces.JobMetricsEvent, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Default options if not provided
+	if opts == nil {
+		opts = &interfaces.WatchMetricsOptions{
+			UpdateInterval:     5 * time.Second,
+			IncludeCPU:        true,
+			IncludeMemory:     true,
+			IncludeGPU:        true,
+			IncludeNetwork:    true,
+			IncludeIO:         true,
+			IncludeEnergy:     true,
+			IncludeNodeMetrics: true,
+			StopOnCompletion:  true,
+			CPUThreshold:      90.0,
+			MemoryThreshold:   85.0,
+			GPUThreshold:      90.0,
+		}
+	}
+
+	// Set default update interval if not specified
+	if opts.UpdateInterval == 0 {
+		opts.UpdateInterval = 5 * time.Second
+	}
+
+	// Create event channel
+	eventChan := make(chan interfaces.JobMetricsEvent, 10)
+
+	// Start monitoring goroutine
+	go func() {
+		defer close(eventChan)
+
+		// Track previous state for state change detection
+		var previousState string
+
+		// Initial state check
+		job, err := m.Get(ctx, jobID)
+		if err != nil {
+			eventChan <- interfaces.JobMetricsEvent{
+				Type:      "error",
+				JobID:     jobID,
+				Timestamp: time.Now(),
+				Error:     err,
+			}
+			return
+		}
+		previousState = job.State
+
+		// Set up monitoring timer
+		ticker := time.NewTicker(opts.UpdateInterval)
+		defer ticker.Stop()
+
+		// Set up max duration timer if specified
+		var maxTimer *time.Timer
+		if opts.MaxDuration > 0 {
+			maxTimer = time.NewTimer(opts.MaxDuration)
+			defer maxTimer.Stop()
+		}
+
+		// Start monitoring loop
+		for {
+			select {
+			case <-ctx.Done():
+				// Context cancelled
+				eventChan <- interfaces.JobMetricsEvent{
+					Type:      "complete",
+					JobID:     jobID,
+					Timestamp: time.Now(),
+					Error:     ctx.Err(),
+				}
+				return
+
+			case <-ticker.C:
+				// Get current job state
+				job, err := m.Get(ctx, jobID)
+				if err != nil {
+					eventChan <- interfaces.JobMetricsEvent{
+						Type:      "error",
+						JobID:     jobID,
+						Timestamp: time.Now(),
+						Error:     err,
+					}
+					continue
+				}
+
+				// Check for state change
+				if job.State != previousState {
+					stateChange := &interfaces.JobStateChange{
+						OldState: previousState,
+						NewState: job.State,
+					}
+					previousState = job.State
+
+					// Send state change event
+					eventChan <- interfaces.JobMetricsEvent{
+						Type:        "update",
+						JobID:       jobID,
+						Timestamp:   time.Now(),
+						StateChange: stateChange,
+					}
+
+					// Check if we should stop on completion
+					if opts.StopOnCompletion && isJobComplete(job.State) {
+						eventChan <- interfaces.JobMetricsEvent{
+							Type:      "complete",
+							JobID:     jobID,
+							Timestamp: time.Now(),
+						}
+						return
+					}
+				}
+
+				// Only collect metrics for running jobs
+				if job.State == "RUNNING" || job.State == "SUSPENDED" {
+					// Get live metrics
+					metrics, err := m.GetJobLiveMetrics(ctx, jobID)
+					if err != nil {
+						eventChan <- interfaces.JobMetricsEvent{
+							Type:      "error",
+							JobID:     jobID,
+							Timestamp: time.Now(),
+							Error:     err,
+						}
+						continue
+					}
+
+					// Filter metrics based on options
+					filteredMetrics := filterMetrics(metrics, opts)
+
+					// Send metrics update
+					eventChan <- interfaces.JobMetricsEvent{
+						Type:      "update",
+						JobID:     jobID,
+						Timestamp: time.Now(),
+						Metrics:   filteredMetrics,
+					}
+
+					// Check for threshold alerts
+					if alerts := checkThresholds(filteredMetrics, opts); len(alerts) > 0 {
+						for _, alert := range alerts {
+							eventChan <- interfaces.JobMetricsEvent{
+								Type:      "alert",
+								JobID:     jobID,
+								Timestamp: time.Now(),
+								Alert:     &alert,
+							}
+						}
+					}
+				}
+
+			case <-func() <-chan time.Time {
+				if maxTimer != nil {
+					return maxTimer.C
+				}
+				return nil
+			}():
+				// Max duration reached
+				eventChan <- interfaces.JobMetricsEvent{
+					Type:      "complete",
+					JobID:     jobID,
+					Timestamp: time.Now(),
+				}
+				return
+			}
+		}
+	}()
+
+	return eventChan, nil
+}
+
+// Helper function to check if job is in a completed state
+func isJobComplete(state string) bool {
+	completedStates := []string{
+		"COMPLETED", "FAILED", "CANCELLED", "TIMEOUT", 
+		"NODE_FAIL", "PREEMPTED", "BOOT_FAIL", "DEADLINE",
+		"OUT_OF_MEMORY", "REVOKED",
+	}
+	for _, s := range completedStates {
+		if state == s {
+			return true
+		}
+	}
+	return false
+}
+
+// Helper function to filter metrics based on options
+func filterMetrics(metrics *interfaces.JobLiveMetrics, opts *interfaces.WatchMetricsOptions) *interfaces.JobLiveMetrics {
+	// Create a copy of metrics
+	filtered := &interfaces.JobLiveMetrics{
+		JobID:          metrics.JobID,
+		JobName:        metrics.JobName,
+		State:          metrics.State,
+		RunningTime:    metrics.RunningTime,
+		CollectionTime: metrics.CollectionTime,
+		ProcessCount:   metrics.ProcessCount,
+		ThreadCount:    metrics.ThreadCount,
+		Metadata:       metrics.Metadata,
+	}
+
+	// Include metrics based on options
+	if opts.IncludeCPU && metrics.CPUUsage != nil {
+		filtered.CPUUsage = metrics.CPUUsage
+	}
+	if opts.IncludeMemory && metrics.MemoryUsage != nil {
+		filtered.MemoryUsage = metrics.MemoryUsage
+	}
+	if opts.IncludeGPU && metrics.GPUUsage != nil {
+		filtered.GPUUsage = metrics.GPUUsage
+	}
+	if opts.IncludeNetwork && metrics.NetworkUsage != nil {
+		filtered.NetworkUsage = metrics.NetworkUsage
+	}
+	if opts.IncludeIO && metrics.IOUsage != nil {
+		filtered.IOUsage = metrics.IOUsage
+	}
+
+	// Filter node metrics
+	if opts.IncludeNodeMetrics && metrics.NodeMetrics != nil {
+		filtered.NodeMetrics = make(map[string]*interfaces.NodeLiveMetrics)
+		
+		if len(opts.SpecificNodes) > 0 {
+			// Only include specific nodes
+			for _, nodeName := range opts.SpecificNodes {
+				if nodeMetrics, exists := metrics.NodeMetrics[nodeName]; exists {
+					filtered.NodeMetrics[nodeName] = nodeMetrics
+				}
+			}
+		} else {
+			// Include all nodes
+			filtered.NodeMetrics = metrics.NodeMetrics
+		}
+	}
+
+	// Include alerts
+	filtered.Alerts = metrics.Alerts
+
+	return filtered
+}
+
+// Helper function to check thresholds and generate alerts
+func checkThresholds(metrics *interfaces.JobLiveMetrics, opts *interfaces.WatchMetricsOptions) []interfaces.PerformanceAlert {
+	var alerts []interfaces.PerformanceAlert
+
+	// Check CPU threshold
+	if opts.CPUThreshold > 0 && metrics.CPUUsage != nil && metrics.CPUUsage.UtilizationPercent > opts.CPUThreshold {
+		alerts = append(alerts, interfaces.PerformanceAlert{
+			Type:              "warning",
+			Category:          "cpu",
+			Message:           fmt.Sprintf("CPU utilization (%.1f%%) exceeds threshold (%.1f%%)", metrics.CPUUsage.UtilizationPercent, opts.CPUThreshold),
+			Severity:          "medium",
+			Timestamp:         time.Now(),
+			CurrentValue:      metrics.CPUUsage.UtilizationPercent,
+			ThresholdValue:    opts.CPUThreshold,
+			RecommendedAction: "Consider optimizing CPU usage or increasing resource allocation",
+		})
+	}
+
+	// Check memory threshold
+	if opts.MemoryThreshold > 0 && metrics.MemoryUsage != nil && metrics.MemoryUsage.UtilizationPercent > opts.MemoryThreshold {
+		alerts = append(alerts, interfaces.PerformanceAlert{
+			Type:              "warning",
+			Category:          "memory",
+			Message:           fmt.Sprintf("Memory utilization (%.1f%%) exceeds threshold (%.1f%%)", metrics.MemoryUsage.UtilizationPercent, opts.MemoryThreshold),
+			Severity:          "medium",
+			Timestamp:         time.Now(),
+			CurrentValue:      metrics.MemoryUsage.UtilizationPercent,
+			ThresholdValue:    opts.MemoryThreshold,
+			RecommendedAction: "Consider optimizing memory usage or increasing memory allocation",
+		})
+	}
+
+	// Check GPU threshold
+	if opts.GPUThreshold > 0 && metrics.GPUUsage != nil && metrics.GPUUsage.UtilizationPercent > opts.GPUThreshold {
+		alerts = append(alerts, interfaces.PerformanceAlert{
+			Type:              "warning",
+			Category:          "gpu",
+			Message:           fmt.Sprintf("GPU utilization (%.1f%%) exceeds threshold (%.1f%%)", metrics.GPUUsage.UtilizationPercent, opts.GPUThreshold),
+			Severity:          "medium",
+			Timestamp:         time.Now(),
+			CurrentValue:      metrics.GPUUsage.UtilizationPercent,
+			ThresholdValue:    opts.GPUThreshold,
+			RecommendedAction: "Consider optimizing GPU usage or distributing GPU workload",
+		})
+	}
+
+	return alerts
+}
