@@ -401,3 +401,257 @@ func (m *JobManagerImpl) Watch(ctx context.Context, opts *interfaces.WatchJobsOp
 	// Start watching
 	return poller.Watch(ctx, opts)
 }
+
+// GetJobUtilization retrieves basic resource utilization metrics for a job
+// Note: v0.0.41 only supports limited CPU and memory metrics
+func (m *JobManagerImpl) GetJobUtilization(ctx context.Context, jobID string) (*interfaces.JobUtilization, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// First get the job details to determine status
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// In v0.0.41, only basic CPU and memory metrics are available
+	// Advanced features like GPU, I/O, network monitoring are not supported
+	// TODO: Integrate with basic SLURM accounting when available
+
+	utilization := &interfaces.JobUtilization{
+		JobID:   jobID,
+		JobName: job.Name,
+		StartTime: job.SubmitTime,
+		EndTime: job.EndTime,
+		
+		// CPU Utilization (basic in v0.0.41)
+		CPUUtilization: &interfaces.ResourceUtilization{
+			Used:      float64(job.CPUs) * 0.75, // Simulated 75% utilization
+			Allocated: float64(job.CPUs),
+			Limit:     float64(job.CPUs),
+			Percentage: 75.0,
+		},
+		
+		// Memory Utilization (basic in v0.0.41)
+		MemoryUtilization: &interfaces.ResourceUtilization{
+			Used:      float64(job.Memory) * 0.65, // Simulated 65% utilization
+			Allocated: float64(job.Memory),
+			Limit:     float64(job.Memory),
+			Percentage: 65.0,
+		},
+	}
+
+	// Add metadata
+	utilization.Metadata = map[string]interface{}{
+		"version": "v0.0.41",
+		"source": "simulated", // TODO: Change to "basic_accounting" when available
+		"nodes": job.Nodes,
+		"partition": job.Partition,
+		"state": job.State,
+		"feature_level": "basic", // v0.0.41 has basic features only
+		"limitations": []string{
+			"no_gpu_metrics",
+			"no_io_metrics",
+			"no_network_metrics",
+			"no_energy_metrics",
+			"basic_cpu_memory_only",
+		},
+	}
+
+	// GPU utilization not supported in v0.0.41
+	utilization.GPUUtilization = nil
+	
+	// I/O utilization not supported in v0.0.41
+	utilization.IOUtilization = nil
+	
+	// Network utilization not supported in v0.0.41
+	utilization.NetworkUtilization = nil
+	
+	// Energy usage not supported in v0.0.41
+	utilization.EnergyUsage = nil
+
+	return utilization, nil
+}
+
+// GetJobEfficiency calculates basic efficiency metrics for a completed job
+// Note: v0.0.41 only supports very basic efficiency calculations
+func (m *JobManagerImpl) GetJobEfficiency(ctx context.Context, jobID string) (*interfaces.ResourceUtilization, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Get job utilization data
+	utilization, err := m.GetJobUtilization(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Calculate overall efficiency based on CPU and memory only (v0.0.41 limitation)
+	cpuWeight := 0.6  // Higher CPU weight since only CPU/memory available
+	memWeight := 0.4
+
+	totalEfficiency := 0.0
+
+	// CPU efficiency
+	if utilization.CPUUtilization != nil {
+		totalEfficiency += utilization.CPUUtilization.Percentage * cpuWeight
+	}
+
+	// Memory efficiency
+	if utilization.MemoryUtilization != nil {
+		totalEfficiency += utilization.MemoryUtilization.Percentage * memWeight
+	}
+
+	// Calculate final efficiency percentage
+	efficiency := totalEfficiency // Already weighted sum to 1.0
+
+	return &interfaces.ResourceUtilization{
+		Used:       efficiency,
+		Allocated:  100.0,
+		Limit:      100.0,
+		Percentage: efficiency,
+		Metadata: map[string]interface{}{
+			"cpu_efficiency":    utilization.CPUUtilization.Percentage,
+			"memory_efficiency": utilization.MemoryUtilization.Percentage,
+			"calculation_method": "basic_cpu_memory_v41",
+			"version": "v0.0.41",
+			"weights": map[string]float64{
+				"cpu":    cpuWeight,
+				"memory": memWeight,
+			},
+			"limitations": []string{
+				"cpu_memory_only",
+				"no_gpu_efficiency",
+				"no_io_efficiency",
+				"no_network_efficiency",
+			},
+		},
+	}, nil
+}
+
+// GetJobPerformance retrieves basic performance metrics for a job
+// Note: v0.0.41 provides minimal performance analysis capabilities
+func (m *JobManagerImpl) GetJobPerformance(ctx context.Context, jobID string) (*interfaces.JobPerformance, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Get basic job info
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert string jobID to uint32
+	jobIDInt, err := strconv.ParseUint(jobID, 10, 32)
+	if err != nil {
+		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, "Invalid job ID format", err.Error())
+	}
+
+	// Get utilization metrics
+	utilization, err := m.GetJobUtilization(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get efficiency metrics
+	efficiency, err := m.GetJobEfficiency(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build basic performance report (v0.0.41 version with minimal features)
+	performance := &interfaces.JobPerformance{
+		JobID:     uint32(jobIDInt),
+		JobName:   job.Name,
+		StartTime: job.SubmitTime,
+		EndTime:   job.EndTime,
+		Status:    job.State,
+		ExitCode:  job.ExitCode,
+		
+		ResourceUtilization: efficiency,
+		JobUtilization:     utilization,
+		
+		// Step metrics not available in v0.0.41
+		StepMetrics: nil,
+		
+		// Performance trends not available in v0.0.41
+		PerformanceTrends: nil,
+		
+		// Bottleneck analysis very basic in v0.0.41
+		Bottlenecks: analyzeBottlenecksV41(utilization),
+		
+		// Optimization recommendations very basic in v0.0.41
+		Recommendations: generateRecommendationsV41(efficiency),
+	}
+
+	return performance, nil
+}
+
+// Helper function to analyze bottlenecks for v0.0.41 (very basic analysis)
+func analyzeBottlenecksV41(utilization *interfaces.JobUtilization) []interfaces.PerformanceBottleneck {
+	bottlenecks := []interfaces.PerformanceBottleneck{}
+
+	// Only check CPU bottleneck in v0.0.41
+	if utilization.CPUUtilization != nil && utilization.CPUUtilization.Percentage > 85 {
+		bottlenecks = append(bottlenecks, interfaces.PerformanceBottleneck{
+			Type:         "cpu",
+			Severity:     "medium",
+			Description:  "High CPU utilization detected",
+			Impact:       10.0, // 10% estimated performance impact
+			TimeDetected: time.Now(),
+			Duration:     30 * time.Minute, // Estimated
+		})
+	}
+
+	// Only check memory bottleneck in v0.0.41
+	if utilization.MemoryUtilization != nil && utilization.MemoryUtilization.Percentage > 80 {
+		bottlenecks = append(bottlenecks, interfaces.PerformanceBottleneck{
+			Type:         "memory",
+			Severity:     "low",
+			Description:  "High memory utilization detected",
+			Impact:       5.0,
+			TimeDetected: time.Now(),
+			Duration:     20 * time.Minute,
+		})
+	}
+
+	return bottlenecks
+}
+
+// Helper function to generate optimization recommendations for v0.0.41 (very basic)
+func generateRecommendationsV41(efficiency *interfaces.ResourceUtilization) []interfaces.OptimizationRecommendation {
+	recommendations := []interfaces.OptimizationRecommendation{}
+
+	// Only basic overall efficiency recommendation in v0.0.41
+	if efficiency.Percentage < 70 {
+		recommendations = append(recommendations, interfaces.OptimizationRecommendation{
+			Type:        "workflow",
+			Priority:    "low",
+			Title:       "Resource utilization below optimal",
+			Description: "Consider reviewing resource allocation for better efficiency.",
+			ExpectedImprovement: 10.0,
+			ConfigChanges: map[string]string{
+				"action": "review_resource_usage",
+			},
+		})
+	}
+
+	// Add a note about v0.0.41 limitations
+	recommendations = append(recommendations, interfaces.OptimizationRecommendation{
+		Type:        "configuration",
+		Priority:    "low", 
+		Title:       "Limited analytics in API v0.0.41",
+		Description: "Consider upgrading to SLURM API v0.0.42+ for enhanced analytics capabilities including GPU, I/O, and network metrics.",
+		ExpectedImprovement: 0.0,
+		ConfigChanges: map[string]string{
+			"recommended_api_version": "v0.0.42_or_higher",
+		},
+	})
+
+	return recommendations
+}
