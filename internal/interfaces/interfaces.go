@@ -61,6 +61,14 @@ type JobManager interface {
 
 	// Watch provides real-time job updates (if supported by version)
 	Watch(ctx context.Context, opts *WatchJobsOptions) (<-chan JobEvent, error)
+	
+	// Analytics methods for resource utilization and performance
+	// GetJobUtilization retrieves comprehensive resource utilization metrics for a job
+	GetJobUtilization(ctx context.Context, jobID string) (*JobUtilization, error)
+	// GetJobEfficiency calculates efficiency metrics for a completed job
+	GetJobEfficiency(ctx context.Context, jobID string) (*ResourceUtilization, error)
+	// GetJobPerformance retrieves detailed performance metrics for a job
+	GetJobPerformance(ctx context.Context, jobID string) (*JobPerformance, error)
 }
 
 // NodeManager provides version-agnostic node operations
@@ -361,6 +369,82 @@ type EnergyUsage struct {
 	CarbonFootprint   float64                `json:"carbon_footprint_kg_co2"`
 	PowerSources      map[string]float64     `json:"power_sources,omitempty"`
 	Metadata          map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// JobPerformance represents comprehensive performance metrics for a job
+type JobPerformance struct {
+	JobID               uint32                      `json:"job_id"`
+	JobName             string                      `json:"job_name"`
+	StartTime           time.Time                   `json:"start_time"`
+	EndTime             *time.Time                  `json:"end_time,omitempty"`
+	Status              string                      `json:"status"`
+	ExitCode            int                         `json:"exit_code"`
+	
+	// Resource utilization
+	ResourceUtilization *ResourceUtilization        `json:"resource_utilization"`
+	JobUtilization      *JobUtilization            `json:"job_utilization"`
+	
+	// Step-level metrics
+	StepMetrics         []JobStepPerformance       `json:"step_metrics,omitempty"`
+	
+	// Performance trends over time
+	PerformanceTrends   *PerformanceTrends         `json:"performance_trends,omitempty"`
+	
+	// Bottleneck analysis
+	Bottlenecks         []PerformanceBottleneck    `json:"bottlenecks,omitempty"`
+	
+	// Optimization recommendations
+	Recommendations     []OptimizationRecommendation `json:"recommendations,omitempty"`
+}
+
+// JobStepPerformance represents performance metrics for a job step
+type JobStepPerformance struct {
+	StepID              uint32                      `json:"step_id"`
+	StepName            string                      `json:"step_name"`
+	StartTime           time.Time                   `json:"start_time"`
+	EndTime             *time.Time                  `json:"end_time,omitempty"`
+	Duration            time.Duration               `json:"duration"`
+	ExitCode            int                         `json:"exit_code"`
+	
+	// Resource metrics
+	CPUUtilization      float64                     `json:"cpu_utilization"`
+	MemoryUtilization   float64                     `json:"memory_utilization"`
+	GPUUtilization      float64                     `json:"gpu_utilization,omitempty"`
+	IOThroughput        float64                     `json:"io_throughput"`
+	NetworkThroughput   float64                     `json:"network_throughput"`
+}
+
+// PerformanceTrends represents performance trends over time
+type PerformanceTrends struct {
+	TimePoints          []time.Time                 `json:"time_points"`
+	CPUTrends           []float64                   `json:"cpu_trends"`
+	MemoryTrends        []float64                   `json:"memory_trends"`
+	GPUTrends           []float64                   `json:"gpu_trends,omitempty"`
+	IOTrends            []float64                   `json:"io_trends"`
+	NetworkTrends       []float64                   `json:"network_trends"`
+	PowerTrends         []float64                   `json:"power_trends,omitempty"`
+}
+
+// PerformanceBottleneck represents a detected performance bottleneck
+type PerformanceBottleneck struct {
+	Type                string                      `json:"type"` // cpu, memory, gpu, io, network
+	Severity            string                      `json:"severity"` // low, medium, high, critical
+	Description         string                      `json:"description"`
+	Impact              float64                     `json:"impact"` // Estimated performance impact percentage
+	TimeDetected        time.Time                   `json:"time_detected"`
+	Duration            time.Duration               `json:"duration"`
+	AffectedNodes       []string                    `json:"affected_nodes,omitempty"`
+}
+
+// OptimizationRecommendation represents a performance optimization suggestion
+type OptimizationRecommendation struct {
+	Type                string                      `json:"type"` // resource_adjustment, configuration, workflow
+	Priority            string                      `json:"priority"` // low, medium, high
+	Title               string                      `json:"title"`
+	Description         string                      `json:"description"`
+	ExpectedImprovement float64                     `json:"expected_improvement"` // Percentage improvement
+	ResourceChanges     map[string]interface{}      `json:"resource_changes,omitempty"`
+	ConfigChanges       map[string]string           `json:"config_changes,omitempty"`
 }
 
 // Node represents a compute node
