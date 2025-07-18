@@ -169,3 +169,56 @@ func (a *AccountManagerImpl) GetAccountQuotaUsage(ctx context.Context, accountNa
 	// v0.0.42 has limited usage statistics support
 	return nil, errors.NewNotImplementedError("account quota usage retrieval not fully supported", "v0.0.42")
 }
+
+// GetAccountUsers retrieves all users associated with an account
+// Limited support in v0.0.42
+func (a *AccountManagerImpl) GetAccountUsers(ctx context.Context, accountName string, opts *interfaces.ListAccountUsersOptions) ([]*interfaces.UserAccountAssociation, error) {
+	if a.client == nil || a.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if accountName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
+	}
+
+	// v0.0.42 has limited account users support
+	return nil, errors.NewNotImplementedError("account users retrieval not fully supported", "v0.0.42")
+}
+
+// ValidateUserAccess validates user access to an account
+// Limited support in v0.0.42
+func (a *AccountManagerImpl) ValidateUserAccess(ctx context.Context, userName, accountName string) (*interfaces.UserAccessValidation, error) {
+	if a.client == nil || a.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if userName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
+	}
+
+	if accountName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
+	}
+
+	// v0.0.42 has limited user access validation support
+	return nil, errors.NewNotImplementedError("user access validation not fully supported", "v0.0.42")
+}
+
+// GetAccountUsersWithPermissions retrieves users with specific permissions for an account
+// Limited support in v0.0.42
+func (a *AccountManagerImpl) GetAccountUsersWithPermissions(ctx context.Context, accountName string, permissions []string) ([]*interfaces.UserAccountAssociation, error) {
+	if a.client == nil || a.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if accountName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
+	}
+
+	if len(permissions) == 0 {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one permission is required", "permissions", permissions, nil)
+	}
+
+	// v0.0.42 has limited permissions-based user retrieval support
+	return nil, errors.NewNotImplementedError("account users with permissions retrieval not fully supported", "v0.0.42")
+}

@@ -92,6 +92,8 @@ type PriorityWeights = interfaces.PriorityWeights
 type JobPriorityInfo = interfaces.JobPriorityInfo
 type AssociationUsage = interfaces.AssociationUsage
 type QoSLimits = interfaces.QoSLimits
+type UserAccountAssociation = interfaces.UserAccountAssociation
+type UserAccessValidation = interfaces.UserAccessValidation
 
 // List options
 type ListJobsOptions = interfaces.ListJobsOptions
@@ -101,6 +103,8 @@ type ListReservationsOptions = interfaces.ListReservationsOptions
 type ListQoSOptions = interfaces.ListQoSOptions
 type ListAccountsOptions = interfaces.ListAccountsOptions
 type ListUsersOptions = interfaces.ListUsersOptions
+type ListAccountUsersOptions = interfaces.ListAccountUsersOptions
+type ListUserAccountAssociationsOptions = interfaces.ListUserAccountAssociationsOptions
 
 // Watch options
 type WatchJobsOptions = interfaces.WatchJobsOptions

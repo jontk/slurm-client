@@ -552,6 +552,11 @@ type AccountManager interface {
 	// Quota-related methods
 	GetAccountQuotas(ctx context.Context, accountName string) (*AccountQuota, error)
 	GetAccountQuotaUsage(ctx context.Context, accountName string, timeframe string) (*AccountUsage, error)
+	
+	// User-account association methods
+	GetAccountUsers(ctx context.Context, accountName string, opts *ListAccountUsersOptions) ([]*UserAccountAssociation, error)
+	ValidateUserAccess(ctx context.Context, userName, accountName string) (*UserAccessValidation, error)
+	GetAccountUsersWithPermissions(ctx context.Context, accountName string, permissions []string) ([]*UserAccountAssociation, error)
 }
 
 // Account represents a SLURM account
@@ -804,6 +809,12 @@ type UserManager interface {
 	// Fair-share and priority operations
 	GetUserFairShare(ctx context.Context, userName string) (*UserFairShare, error)
 	CalculateJobPriority(ctx context.Context, userName string, jobSubmission *JobSubmission) (*JobPriorityInfo, error)
+	
+	// Enhanced user-account association operations
+	ValidateUserAccountAccess(ctx context.Context, userName, accountName string) (*UserAccessValidation, error)
+	GetUserAccountAssociations(ctx context.Context, userName string, opts *ListUserAccountAssociationsOptions) ([]*UserAccountAssociation, error)
+	GetBulkUserAccounts(ctx context.Context, userNames []string) (map[string][]*UserAccount, error)
+	GetBulkAccountUsers(ctx context.Context, accountNames []string) (map[string][]*UserAccountAssociation, error)
 }
 
 // User represents a SLURM user
@@ -1067,6 +1078,106 @@ type QoSLimits struct {
 	MaxWallTime    int            `json:"max_wall_time"`
 	TRESLimits     map[string]int `json:"tres_limits,omitempty"`
 	Flags          []string       `json:"flags,omitempty"`
+}
+
+// UserAccountAssociation represents a detailed user-account association with permissions
+type UserAccountAssociation struct {
+	UserName        string                 `json:"user_name"`
+	AccountName     string                 `json:"account_name"`
+	Cluster         string                 `json:"cluster"`
+	Partition       string                 `json:"partition,omitempty"`
+	Role            string                 `json:"role"`
+	Permissions     []string               `json:"permissions"`
+	IsDefault       bool                   `json:"is_default"`
+	IsActive        bool                   `json:"is_active"`
+	IsCoordinator   bool                   `json:"is_coordinator"`
+	MaxJobs         int                    `json:"max_jobs,omitempty"`
+	MaxSubmitJobs   int                    `json:"max_submit_jobs,omitempty"`
+	MaxWallTime     int                    `json:"max_wall_time,omitempty"`
+	Priority        int                    `json:"priority,omitempty"`
+	QoS             []string               `json:"qos,omitempty"`
+	DefaultQoS      string                 `json:"default_qos,omitempty"`
+	TRESLimits      map[string]int         `json:"tres_limits,omitempty"`
+	SharesRaw       int                    `json:"shares_raw,omitempty"`
+	FairShareFactor float64                `json:"fair_share_factor,omitempty"`
+	GraceTime       int                    `json:"grace_time,omitempty"`
+	Created         time.Time              `json:"created"`
+	Modified        time.Time              `json:"modified"`
+	LastAccessed    time.Time              `json:"last_accessed"`
+	Flags           []string               `json:"flags,omitempty"`
+	Metadata        map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// UserAccessValidation represents the result of user access validation
+type UserAccessValidation struct {
+	UserName        string                 `json:"user_name"`
+	AccountName     string                 `json:"account_name"`
+	HasAccess       bool                   `json:"has_access"`
+	AccessLevel     string                 `json:"access_level"`
+	Permissions     []string               `json:"permissions"`
+	Restrictions    []string               `json:"restrictions,omitempty"`
+	Reason          string                 `json:"reason,omitempty"`
+	ValidFrom       time.Time              `json:"valid_from"`
+	ValidUntil      *time.Time             `json:"valid_until,omitempty"`
+	Association     *UserAccountAssociation `json:"association,omitempty"`
+	QuotaLimits     *UserAccountQuota      `json:"quota_limits,omitempty"`
+	CurrentUsage    *AccountUsageStats     `json:"current_usage,omitempty"`
+	ValidationTime  time.Time              `json:"validation_time"`
+}
+
+// ListAccountUsersOptions provides filtering options for listing account users
+type ListAccountUsersOptions struct {
+	// Basic filtering
+	Roles         []string `json:"roles,omitempty"`
+	Permissions   []string `json:"permissions,omitempty"`
+	ActiveOnly    bool     `json:"active_only,omitempty"`
+	CoordinatorsOnly bool  `json:"coordinators_only,omitempty"`
+	
+	// State filtering
+	Partitions    []string `json:"partitions,omitempty"`
+	QoS           []string `json:"qos,omitempty"`
+	
+	// Include additional data
+	WithPermissions bool `json:"with_permissions,omitempty"`
+	WithQuotas      bool `json:"with_quotas,omitempty"`
+	WithUsage       bool `json:"with_usage,omitempty"`
+	WithFairShare   bool `json:"with_fair_share,omitempty"`
+	
+	// Pagination
+	Limit  int `json:"limit,omitempty"`
+	Offset int `json:"offset,omitempty"`
+	
+	// Sorting
+	SortBy    string `json:"sort_by,omitempty"`
+	SortOrder string `json:"sort_order,omitempty"`
+}
+
+// ListUserAccountAssociationsOptions provides filtering options for user account associations
+type ListUserAccountAssociationsOptions struct {
+	// Basic filtering
+	Accounts      []string `json:"accounts,omitempty"`
+	Clusters      []string `json:"clusters,omitempty"`
+	Partitions    []string `json:"partitions,omitempty"`
+	Roles         []string `json:"roles,omitempty"`
+	Permissions   []string `json:"permissions,omitempty"`
+	
+	// State filtering
+	ActiveOnly    bool `json:"active_only,omitempty"`
+	DefaultOnly   bool `json:"default_only,omitempty"`
+	CoordinatorRoles bool `json:"coordinator_roles,omitempty"`
+	
+	// Include additional data
+	WithQuotas    bool `json:"with_quotas,omitempty"`
+	WithUsage     bool `json:"with_usage,omitempty"`
+	WithFairShare bool `json:"with_fair_share,omitempty"`
+	
+	// Pagination
+	Limit  int `json:"limit,omitempty"`
+	Offset int `json:"offset,omitempty"`
+	
+	// Sorting
+	SortBy    string `json:"sort_by,omitempty"`
+	SortOrder string `json:"sort_order,omitempty"`
 }
 
 // ClientConfig holds configuration for the API client

@@ -137,6 +137,98 @@ func (u *UserManagerImpl) CalculateJobPriority(ctx context.Context, userName str
 	return nil, errors.NewNotImplementedError("job priority calculation", "v0.0.43")
 }
 
+// ValidateUserAccountAccess validates user access to a specific account
+func (u *UserManagerImpl) ValidateUserAccountAccess(ctx context.Context, userName, accountName string) (*interfaces.UserAccessValidation, error) {
+	if u.client == nil || u.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if userName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
+	}
+
+	if accountName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
+	}
+
+	// TODO: Implement actual API call to validate user-account access
+	// This would involve checking association tables, permissions, and active status
+	return nil, errors.NewNotImplementedError("user-account access validation", "v0.0.43")
+}
+
+// GetUserAccountAssociations retrieves detailed user account associations
+func (u *UserManagerImpl) GetUserAccountAssociations(ctx context.Context, userName string, opts *interfaces.ListUserAccountAssociationsOptions) ([]*interfaces.UserAccountAssociation, error) {
+	if u.client == nil || u.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if userName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
+	}
+
+	// TODO: Implement actual API call to retrieve detailed user account associations
+	// This would include roles, permissions, quotas, and usage information
+	return nil, errors.NewNotImplementedError("user account associations retrieval", "v0.0.43")
+}
+
+// GetBulkUserAccounts retrieves accounts for multiple users in a single call
+func (u *UserManagerImpl) GetBulkUserAccounts(ctx context.Context, userNames []string) (map[string][]*interfaces.UserAccount, error) {
+	if u.client == nil || u.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if len(userNames) == 0 {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one user name is required", "userNames", userNames, nil)
+	}
+
+	// Validate all user names
+	for i, userName := range userNames {
+		if userName == "" {
+			return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, fmt.Sprintf("user name at index %d is empty", i), "userNames[" + fmt.Sprintf("%d", i) + "]", userName, nil)
+		}
+		if err := validateUserName(userName); err != nil {
+			return nil, err
+		}
+	}
+
+	// Limit bulk operations to prevent excessive load
+	if len(userNames) > 100 {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "bulk operations limited to 100 users maximum", "userNames", len(userNames), nil)
+	}
+
+	// TODO: Implement actual API call for bulk user account retrieval
+	return nil, errors.NewNotImplementedError("bulk user accounts retrieval", "v0.0.43")
+}
+
+// GetBulkAccountUsers retrieves users for multiple accounts in a single call
+func (u *UserManagerImpl) GetBulkAccountUsers(ctx context.Context, accountNames []string) (map[string][]*interfaces.UserAccountAssociation, error) {
+	if u.client == nil || u.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	if len(accountNames) == 0 {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one account name is required", "accountNames", accountNames, nil)
+	}
+
+	// Validate all account names
+	for i, accountName := range accountNames {
+		if accountName == "" {
+			return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, fmt.Sprintf("account name at index %d is empty", i), "accountNames[" + fmt.Sprintf("%d", i) + "]", accountName, nil)
+		}
+		if err := validateAccountContext(accountName); err != nil {
+			return nil, err
+		}
+	}
+
+	// Limit bulk operations to prevent excessive load
+	if len(accountNames) > 100 {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "bulk operations limited to 100 accounts maximum", "accountNames", len(accountNames), nil)
+	}
+
+	// TODO: Implement actual API call for bulk account users retrieval
+	return nil, errors.NewNotImplementedError("bulk account users retrieval", "v0.0.43")
+}
+
 // Helper function to validate user name format
 func validateUserName(userName string) error {
 	if userName == "" {
