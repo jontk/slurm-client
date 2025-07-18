@@ -1008,3 +1008,18 @@ func (m *JobManagerImpl) GetJobPerformance(ctx context.Context, jobID string) (*
 
 	return performance, nil
 }
+
+// GetJobLiveMetrics retrieves real-time performance metrics for a running job
+// Note: v0.0.40 doesn't support real-time monitoring, returns error
+func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*interfaces.JobLiveMetrics, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// v0.0.40 doesn't support live metrics
+	return nil, errors.NewNotImplementedError(
+		"GetJobLiveMetrics",
+		"Real-time job monitoring is not supported in API v0.0.40. Please upgrade to v0.0.41 or higher.",
+	)
+}

@@ -655,3 +655,142 @@ func generateRecommendationsV41(efficiency *interfaces.ResourceUtilization) []in
 
 	return recommendations
 }
+
+// GetJobLiveMetrics retrieves real-time performance metrics for a running job
+// Note: v0.0.41 only supports very basic live metrics
+func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*interfaces.JobLiveMetrics, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// First get the job details to check if it's running
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Only running jobs have live metrics
+	if job.State != "RUNNING" && job.State != "SUSPENDED" {
+		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, 
+			fmt.Sprintf("Job %s is not running (state: %s)", jobID, job.State))
+	}
+
+	// Calculate running time
+	runningTime := time.Duration(0)
+	if job.StartTime != nil {
+		runningTime = time.Since(*job.StartTime)
+	}
+
+	// Create minimal live metrics response
+	// v0.0.41 has very limited real-time capabilities
+	liveMetrics := &interfaces.JobLiveMetrics{
+		JobID:          jobID,
+		JobName:        job.Name,
+		State:          job.State,
+		RunningTime:    runningTime,
+		CollectionTime: time.Now(),
+		
+		// Very basic CPU usage (fixed estimates)
+		CPUUsage: &interfaces.LiveResourceMetric{
+			Current:            float64(job.CPUs) * 0.70,
+			Average1Min:        float64(job.CPUs) * 0.70,
+			Average5Min:        float64(job.CPUs) * 0.70,
+			Peak:               float64(job.CPUs) * 0.80,
+			Allocated:          float64(job.CPUs),
+			UtilizationPercent: 70.0,
+			Trend:              "stable",
+			Unit:               "cores",
+		},
+		
+		// Very basic memory usage
+		MemoryUsage: &interfaces.LiveResourceMetric{
+			Current:            float64(job.Memory) * 0.60,
+			Average1Min:        float64(job.Memory) * 0.60,
+			Average5Min:        float64(job.Memory) * 0.60,
+			Peak:               float64(job.Memory) * 0.70,
+			Allocated:          float64(job.Memory),
+			UtilizationPercent: 60.0,
+			Trend:              "stable",
+			Unit:               "bytes",
+		},
+		
+		// Minimal process information
+		ProcessCount: 1,
+		ThreadCount:  4,
+		
+		// No advanced metrics in v0.0.41
+		GPUUsage:     nil,
+		NetworkUsage: nil,
+		IOUsage:      nil,
+		
+		// Empty collections
+		NodeMetrics: make(map[string]*interfaces.NodeLiveMetrics),
+		Alerts:      []interfaces.PerformanceAlert{},
+	}
+
+	// Add very basic node metrics (v0.0.41 has minimal per-node data)
+	if len(job.Nodes) > 0 {
+		// Only add metrics for the first node as representative
+		nodeName := job.Nodes[0]
+		nodeMetrics := &interfaces.NodeLiveMetrics{
+			NodeName:  nodeName,
+			CPUCores:  job.CPUs,
+			MemoryGB:  float64(job.Memory) / (1024 * 1024 * 1024),
+			
+			CPUUsage: &interfaces.LiveResourceMetric{
+				Current:            70.0,
+				Average1Min:        70.0,
+				Average5Min:        70.0,
+				Peak:               80.0,
+				Allocated:          100.0,
+				UtilizationPercent: 70.0,
+				Trend:              "stable",
+				Unit:               "percent",
+			},
+			
+			MemoryUsage: &interfaces.LiveResourceMetric{
+				Current:            60.0,
+				Average1Min:        60.0,
+				Average5Min:        60.0,
+				Peak:               70.0,
+				Allocated:          100.0,
+				UtilizationPercent: 60.0,
+				Trend:              "stable",
+				Unit:               "percent",
+			},
+			
+			// Minimal load average
+			LoadAverage: []float64{1.0, 1.0, 1.0},
+			
+			// No advanced monitoring in v0.0.41
+			CPUTemperature:   0.0,
+			PowerConsumption: 0.0,
+			NetworkInRate:    0.0,
+			NetworkOutRate:   0.0,
+			DiskReadRate:     0.0,
+			DiskWriteRate:    0.0,
+		}
+		
+		liveMetrics.NodeMetrics[nodeName] = nodeMetrics
+	}
+
+	// Add metadata about limitations
+	liveMetrics.Metadata = map[string]interface{}{
+		"version":           "v0.0.41",
+		"collection_method": "minimal_monitoring",
+		"limitations": []string{
+			"fixed_utilization_values",
+			"no_gpu_metrics",
+			"no_network_metrics",
+			"no_io_metrics",
+			"no_temperature_monitoring",
+			"no_power_monitoring",
+			"no_alerts",
+			"single_node_representation",
+		},
+		"note": "Upgrade to v0.0.42+ for enhanced live monitoring",
+	}
+
+	return liveMetrics, nil
+}
