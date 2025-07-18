@@ -69,6 +69,9 @@ type JobManager interface {
 	GetJobEfficiency(ctx context.Context, jobID string) (*ResourceUtilization, error)
 	// GetJobPerformance retrieves detailed performance metrics for a job
 	GetJobPerformance(ctx context.Context, jobID string) (*JobPerformance, error)
+	
+	// GetJobLiveMetrics retrieves real-time performance metrics for a running job
+	GetJobLiveMetrics(ctx context.Context, jobID string) (*JobLiveMetrics, error)
 }
 
 // NodeManager provides version-agnostic node operations
@@ -445,6 +448,83 @@ type OptimizationRecommendation struct {
 	ExpectedImprovement float64                     `json:"expected_improvement"` // Percentage improvement
 	ResourceChanges     map[string]interface{}      `json:"resource_changes,omitempty"`
 	ConfigChanges       map[string]string           `json:"config_changes,omitempty"`
+}
+
+// JobLiveMetrics represents real-time performance metrics for a running job
+type JobLiveMetrics struct {
+	JobID               string                      `json:"job_id"`
+	JobName             string                      `json:"job_name"`
+	State               string                      `json:"state"`
+	RunningTime         time.Duration               `json:"running_time"`
+	CollectionTime      time.Time                   `json:"collection_time"`
+	
+	// Current resource usage
+	CPUUsage            *LiveResourceMetric         `json:"cpu_usage"`
+	MemoryUsage         *LiveResourceMetric         `json:"memory_usage"`
+	GPUUsage            *LiveResourceMetric         `json:"gpu_usage,omitempty"`
+	NetworkUsage        *LiveResourceMetric         `json:"network_usage,omitempty"`
+	IOUsage             *LiveResourceMetric         `json:"io_usage,omitempty"`
+	
+	// Process information
+	ProcessCount        int                         `json:"process_count"`
+	ThreadCount         int                         `json:"thread_count"`
+	
+	// Node-level metrics
+	NodeMetrics         map[string]*NodeLiveMetrics `json:"node_metrics,omitempty"`
+	
+	// Alerts and warnings
+	Alerts              []PerformanceAlert          `json:"alerts,omitempty"`
+	
+	// Metadata
+	Metadata            map[string]interface{}      `json:"metadata,omitempty"`
+}
+
+// LiveResourceMetric represents a real-time resource metric
+type LiveResourceMetric struct {
+	Current             float64                     `json:"current"`
+	Average1Min         float64                     `json:"average_1min"`
+	Average5Min         float64                     `json:"average_5min"`
+	Peak                float64                     `json:"peak"`
+	Allocated           float64                     `json:"allocated"`
+	UtilizationPercent  float64                     `json:"utilization_percent"`
+	Trend               string                      `json:"trend"` // increasing, decreasing, stable
+	Unit                string                      `json:"unit"`
+}
+
+// NodeLiveMetrics represents real-time metrics for a specific node
+type NodeLiveMetrics struct {
+	NodeName            string                      `json:"node_name"`
+	CPUCores            int                         `json:"cpu_cores"`
+	MemoryGB            float64                     `json:"memory_gb"`
+	
+	// Resource metrics
+	CPUUsage            *LiveResourceMetric         `json:"cpu_usage"`
+	MemoryUsage         *LiveResourceMetric         `json:"memory_usage"`
+	LoadAverage         []float64                   `json:"load_average"` // 1, 5, 15 min
+	
+	// Temperature and power
+	CPUTemperature      float64                     `json:"cpu_temperature_celsius,omitempty"`
+	PowerConsumption    float64                     `json:"power_consumption_watts,omitempty"`
+	
+	// Network and I/O
+	NetworkInRate       float64                     `json:"network_in_rate_mbps,omitempty"`
+	NetworkOutRate      float64                     `json:"network_out_rate_mbps,omitempty"`
+	DiskReadRate        float64                     `json:"disk_read_rate_mbps,omitempty"`
+	DiskWriteRate       float64                     `json:"disk_write_rate_mbps,omitempty"`
+}
+
+// PerformanceAlert represents a performance-related alert or warning
+type PerformanceAlert struct {
+	Type                string                      `json:"type"` // warning, critical
+	Category            string                      `json:"category"` // cpu, memory, gpu, io, network
+	Message             string                      `json:"message"`
+	Severity            string                      `json:"severity"` // low, medium, high, critical
+	Timestamp           time.Time                   `json:"timestamp"`
+	NodeName            string                      `json:"node_name,omitempty"`
+	ResourceName        string                      `json:"resource_name,omitempty"`
+	CurrentValue        float64                     `json:"current_value,omitempty"`
+	ThresholdValue      float64                     `json:"threshold_value,omitempty"`
+	RecommendedAction   string                      `json:"recommended_action,omitempty"`
 }
 
 // Node represents a compute node

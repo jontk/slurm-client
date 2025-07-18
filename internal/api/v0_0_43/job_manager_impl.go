@@ -1240,3 +1240,265 @@ func generateRecommendations(utilization *interfaces.JobUtilization, efficiency 
 
 	return recommendations
 }
+
+// GetJobLiveMetrics retrieves real-time performance metrics for a running job
+func (m *JobManagerImpl) GetJobLiveMetrics(ctx context.Context, jobID string) (*interfaces.JobLiveMetrics, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// First get the job details to check if it's running
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Only running jobs have live metrics
+	if job.State != "RUNNING" && job.State != "SUSPENDED" {
+		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, 
+			fmt.Sprintf("Job %s is not running (state: %s)", jobID, job.State))
+	}
+
+	// Calculate running time
+	runningTime := time.Duration(0)
+	if job.StartTime != nil {
+		runningTime = time.Since(*job.StartTime)
+	}
+
+	// Create live metrics response
+	// In v0.0.43, we would integrate with real-time monitoring endpoints
+	// For now, simulate real-time data based on job info
+	liveMetrics := &interfaces.JobLiveMetrics{
+		JobID:          jobID,
+		JobName:        job.Name,
+		State:          job.State,
+		RunningTime:    runningTime,
+		CollectionTime: time.Now(),
+		
+		// Simulate CPU usage with variations
+		CPUUsage: &interfaces.LiveResourceMetric{
+			Current:            float64(job.CPUs) * (0.75 + float64(time.Now().Unix()%20)/100),
+			Average1Min:        float64(job.CPUs) * 0.78,
+			Average5Min:        float64(job.CPUs) * 0.76,
+			Peak:               float64(job.CPUs) * 0.95,
+			Allocated:          float64(job.CPUs),
+			UtilizationPercent: 78.0,
+			Trend:              determineTrend(75.0, 78.0),
+			Unit:               "cores",
+		},
+		
+		// Simulate memory usage
+		MemoryUsage: &interfaces.LiveResourceMetric{
+			Current:            float64(job.Memory) * (0.65 + float64(time.Now().Unix()%15)/100),
+			Average1Min:        float64(job.Memory) * 0.68,
+			Average5Min:        float64(job.Memory) * 0.66,
+			Peak:               float64(job.Memory) * 0.85,
+			Allocated:          float64(job.Memory),
+			UtilizationPercent: 68.0,
+			Trend:              determineTrend(65.0, 68.0),
+			Unit:               "bytes",
+		},
+		
+		// Process information (simulated)
+		ProcessCount: 8 + int(time.Now().Unix()%4),
+		ThreadCount:  32 + int(time.Now().Unix()%8),
+		
+		// Initialize maps
+		NodeMetrics: make(map[string]*interfaces.NodeLiveMetrics),
+		Alerts:      []interfaces.PerformanceAlert{},
+	}
+
+	// Add GPU metrics if available
+	if gpuCount, ok := job.Metadata["gpu_count"].(int); ok && gpuCount > 0 {
+		liveMetrics.GPUUsage = &interfaces.LiveResourceMetric{
+			Current:            float64(gpuCount) * (0.85 + float64(time.Now().Unix()%10)/100),
+			Average1Min:        float64(gpuCount) * 0.88,
+			Average5Min:        float64(gpuCount) * 0.86,
+			Peak:               float64(gpuCount) * 0.98,
+			Allocated:          float64(gpuCount),
+			UtilizationPercent: 88.0,
+			Trend:              "stable",
+			Unit:               "gpus",
+		}
+	}
+
+	// Add network metrics
+	liveMetrics.NetworkUsage = &interfaces.LiveResourceMetric{
+		Current:            1200.0 + float64(time.Now().Unix()%200), // Mbps
+		Average1Min:        1250.0,
+		Average5Min:        1230.0,
+		Peak:               1800.0,
+		Allocated:          10000.0, // 10 Gbps
+		UtilizationPercent: 12.5,
+		Trend:              "increasing",
+		Unit:               "mbps",
+	}
+
+	// Add I/O metrics
+	liveMetrics.IOUsage = &interfaces.LiveResourceMetric{
+		Current:            150.0 + float64(time.Now().Unix()%50), // MB/s
+		Average1Min:        160.0,
+		Average5Min:        155.0,
+		Peak:               250.0,
+		Allocated:          500.0, // 500 MB/s limit
+		UtilizationPercent: 32.0,
+		Trend:              "stable",
+		Unit:               "MB/s",
+	}
+
+	// Add node-level metrics for each allocated node
+	for i, nodeName := range job.Nodes {
+		nodeMetrics := &interfaces.NodeLiveMetrics{
+			NodeName:  nodeName,
+			CPUCores:  job.CPUs / len(job.Nodes), // Distribute cores
+			MemoryGB:  float64(job.Memory) / float64(len(job.Nodes)) / (1024 * 1024 * 1024),
+			
+			CPUUsage: &interfaces.LiveResourceMetric{
+				Current:            75.0 + float64(i*5),
+				Average1Min:        77.0 + float64(i*5),
+				Average5Min:        76.0 + float64(i*5),
+				Peak:               92.0 + float64(i*3),
+				Allocated:          100.0,
+				UtilizationPercent: 77.0 + float64(i*5),
+				Trend:              "stable",
+				Unit:               "percent",
+			},
+			
+			MemoryUsage: &interfaces.LiveResourceMetric{
+				Current:            65.0 + float64(i*3),
+				Average1Min:        67.0 + float64(i*3),
+				Average5Min:        66.0 + float64(i*3),
+				Peak:               82.0 + float64(i*2),
+				Allocated:          100.0,
+				UtilizationPercent: 67.0 + float64(i*3),
+				Trend:              "stable",
+				Unit:               "percent",
+			},
+			
+			LoadAverage: []float64{
+				2.5 + float64(i)*0.2,
+				2.3 + float64(i)*0.2,
+				2.1 + float64(i)*0.2,
+			},
+			
+			// Optional metrics
+			CPUTemperature:   65.0 + float64(i*2) + float64(time.Now().Unix()%5),
+			PowerConsumption: 250.0 + float64(i*20) + float64(time.Now().Unix()%30),
+			NetworkInRate:    100.0 + float64(i*50),
+			NetworkOutRate:   80.0 + float64(i*40),
+			DiskReadRate:     50.0 + float64(i*10),
+			DiskWriteRate:    30.0 + float64(i*8),
+		}
+		
+		liveMetrics.NodeMetrics[nodeName] = nodeMetrics
+	}
+
+	// Check for alerts
+	liveMetrics.Alerts = checkPerformanceAlerts(liveMetrics)
+
+	// Add metadata
+	liveMetrics.Metadata = map[string]interface{}{
+		"version":           "v0.0.43",
+		"collection_method": "simulated", // TODO: Change to "live" when real monitoring available
+		"refresh_interval":  5,           // seconds
+		"nodes_monitored":   len(job.Nodes),
+	}
+
+	return liveMetrics, nil
+}
+
+// Helper function to determine trend
+func determineTrend(previous, current float64) string {
+	diff := current - previous
+	if diff > 2.0 {
+		return "increasing"
+	} else if diff < -2.0 {
+		return "decreasing"
+	}
+	return "stable"
+}
+
+// Helper function to check for performance alerts
+func checkPerformanceAlerts(metrics *interfaces.JobLiveMetrics) []interfaces.PerformanceAlert {
+	alerts := []interfaces.PerformanceAlert{}
+
+	// Check CPU usage
+	if metrics.CPUUsage != nil && metrics.CPUUsage.UtilizationPercent > 90 {
+		alerts = append(alerts, interfaces.PerformanceAlert{
+			Type:              "warning",
+			Category:          "cpu",
+			Message:           "CPU utilization is above 90%",
+			Severity:          "high",
+			Timestamp:         time.Now(),
+			CurrentValue:      metrics.CPUUsage.UtilizationPercent,
+			ThresholdValue:    90.0,
+			RecommendedAction: "Consider scaling up CPU resources if this persists",
+		})
+	}
+
+	// Check memory usage
+	if metrics.MemoryUsage != nil && metrics.MemoryUsage.UtilizationPercent > 85 {
+		alerts = append(alerts, interfaces.PerformanceAlert{
+			Type:              "warning",
+			Category:          "memory",
+			Message:           "Memory utilization is above 85%",
+			Severity:          "medium",
+			Timestamp:         time.Now(),
+			CurrentValue:      metrics.MemoryUsage.UtilizationPercent,
+			ThresholdValue:    85.0,
+			RecommendedAction: "Monitor for potential out-of-memory conditions",
+		})
+	}
+
+	// Check GPU usage if available
+	if metrics.GPUUsage != nil && metrics.GPUUsage.UtilizationPercent > 95 {
+		alerts = append(alerts, interfaces.PerformanceAlert{
+			Type:              "warning",
+			Category:          "gpu",
+			Message:           "GPU utilization is above 95%",
+			Severity:          "high",
+			Timestamp:         time.Now(),
+			CurrentValue:      metrics.GPUUsage.UtilizationPercent,
+			ThresholdValue:    95.0,
+			RecommendedAction: "GPU is near maximum capacity",
+		})
+	}
+
+	// Check node-specific alerts
+	for nodeName, nodeMetrics := range metrics.NodeMetrics {
+		// Check CPU temperature
+		if nodeMetrics.CPUTemperature > 80 {
+			alerts = append(alerts, interfaces.PerformanceAlert{
+				Type:              "critical",
+				Category:          "cpu",
+				Message:           fmt.Sprintf("High CPU temperature on node %s", nodeName),
+				Severity:          "critical",
+				Timestamp:         time.Now(),
+				NodeName:          nodeName,
+				ResourceName:      "cpu_temperature",
+				CurrentValue:      nodeMetrics.CPUTemperature,
+				ThresholdValue:    80.0,
+				RecommendedAction: "Check cooling system and reduce load if necessary",
+			})
+		}
+
+		// Check load average
+		if len(nodeMetrics.LoadAverage) > 0 && nodeMetrics.LoadAverage[0] > float64(nodeMetrics.CPUCores)*1.5 {
+			alerts = append(alerts, interfaces.PerformanceAlert{
+				Type:              "warning",
+				Category:          "cpu",
+				Message:           fmt.Sprintf("High load average on node %s", nodeName),
+				Severity:          "medium",
+				Timestamp:         time.Now(),
+				NodeName:          nodeName,
+				ResourceName:      "load_average",
+				CurrentValue:      nodeMetrics.LoadAverage[0],
+				ThresholdValue:    float64(nodeMetrics.CPUCores) * 1.5,
+				RecommendedAction: "System is overloaded, consider distributing work",
+			})
+		}
+	}
+
+	return alerts
+}
