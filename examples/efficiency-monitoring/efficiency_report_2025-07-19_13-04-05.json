@@ -1,0 +1,115 @@
+{
+  "timestamp": "2025-07-19T13:04:05.940402+01:00",
+  "total_jobs_analyzed": 5,
+  "overall_summary": {
+    "average_efficiency": 79.5,
+    "efficiency_distribution": {
+      "Excellent": 0,
+      "Good": 2,
+      "Poor": 0,
+      "Very Poor": 0
+    },
+    "resource_waste_analysis": {
+      "total_cpu_waste_hours": 1.2,
+      "total_memory_waste_gb": 2.4,
+      "total_gpu_waste_hours": 0,
+      "waste_by_resource": {
+        "CPU": 1.2,
+        "Memory": 2.4
+      },
+      "most_wasteful_jobs": []
+    },
+    "potential_savings": {
+      "estimated_cost_savings": 0,
+      "cpu_core_savings": 0,
+      "memory_gb_savings": 0,
+      "gpu_savings": 0,
+      "optimization_potential": 0
+    },
+    "top_issues": null
+  },
+  "job_analysis": [
+    {
+      "job_id": "1001",
+      "efficiency_score": 79.5,
+      "efficiency_grade": "B (Good)",
+      "resource_breakdown": {
+        "CPU": 82,
+        "GPU": 0,
+        "IO": 65,
+        "Memory": 76
+      },
+      "recommendations": [
+        {
+          "type": "reduction",
+          "resource": "Memory",
+          "current": 4,
+          "recommended": 3,
+          "reason": "Low memory utilization detected",
+          "confidence": 0.85
+        }
+      ],
+      "issues_summary": [
+        "No significant efficiency issues detected"
+      ],
+      "optimizations": null
+    },
+    {
+      "job_id": "1002",
+      "efficiency_score": 79.5,
+      "efficiency_grade": "B (Good)",
+      "resource_breakdown": {
+        "CPU": 82,
+        "GPU": 0,
+        "IO": 65,
+        "Memory": 76
+      },
+      "recommendations": [
+        {
+          "type": "reduction",
+          "resource": "Memory",
+          "current": 4,
+          "recommended": 3,
+          "reason": "Low memory utilization detected",
+          "confidence": 0.85
+        }
+      ],
+      "issues_summary": [
+        "No significant efficiency issues detected"
+      ],
+      "optimizations": null
+    }
+  ],
+  "recommendations": [
+    {
+      "category": "Monitoring Enhancement",
+      "impact": "Medium",
+      "description": "Continuous efficiency monitoring will help maintain optimal resource utilization",
+      "actions": [
+        "Deploy automated efficiency reporting (weekly/monthly)",
+        "Implement real-time efficiency alerts for jobs",
+        "Create efficiency trends analysis and forecasting",
+        "Integrate efficiency metrics into scheduler decisions"
+      ],
+      "priority": "Medium",
+      "confidence": 0.75
+    }
+  ],
+  "trend_analysis": {
+    "efficiency_trend": "Improving",
+    "trend_direction": "Positive",
+    "trend_magnitude": 2.1,
+    "predicted_efficiency": 81.5,
+    "seasonal_patterns": [
+      "Higher efficiency during regular business hours",
+      "Lower efficiency during peak usage periods",
+      "Resource waste increases during project deadlines"
+    ],
+    "recommended_actions": [
+      "Monitor efficiency trends weekly",
+      "Adjust scheduling policies based on efficiency patterns",
+      "Provide proactive optimization recommendations",
+      "Implement efficiency-based resource pricing"
+    ]
+  }
+}
