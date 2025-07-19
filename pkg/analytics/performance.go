@@ -100,18 +100,19 @@ func (pa *PerformanceAnalyzer) calculatePerformanceMetrics(
 		ResourceWasteRatio: make(map[string]float64),
 	}
 	
-	// Efficiency deltas
-	if analyticsA.EfficiencyMetrics != nil && analyticsB.EfficiencyMetrics != nil {
-		metrics.OverallEfficiencyDelta = analyticsB.EfficiencyMetrics.OverallEfficiencyScore - 
-		                                analyticsA.EfficiencyMetrics.OverallEfficiencyScore
-		metrics.CPUEfficiencyDelta = analyticsB.EfficiencyMetrics.CPUEfficiency - 
-		                             analyticsA.EfficiencyMetrics.CPUEfficiency
-		metrics.MemoryEfficiencyDelta = analyticsB.EfficiencyMetrics.MemoryEfficiency - 
-		                                analyticsA.EfficiencyMetrics.MemoryEfficiency
-		metrics.GPUEfficiencyDelta = analyticsB.EfficiencyMetrics.GPUEfficiency - 
-		                             analyticsA.EfficiencyMetrics.GPUEfficiency
-		metrics.IOEfficiencyDelta = analyticsB.EfficiencyMetrics.IOEfficiency - 
-		                           analyticsA.EfficiencyMetrics.IOEfficiency
+	// Efficiency deltas using available fields
+	metrics.OverallEfficiencyDelta = analyticsB.OverallEfficiency - analyticsA.OverallEfficiency
+	
+	if analyticsA.CPUAnalytics != nil && analyticsB.CPUAnalytics != nil {
+		metrics.CPUEfficiencyDelta = analyticsB.CPUAnalytics.EfficiencyPercent - analyticsA.CPUAnalytics.EfficiencyPercent
+	}
+	
+	if analyticsA.MemoryAnalytics != nil && analyticsB.MemoryAnalytics != nil {
+		metrics.MemoryEfficiencyDelta = analyticsB.MemoryAnalytics.EfficiencyPercent - analyticsA.MemoryAnalytics.EfficiencyPercent
+	}
+	
+	if analyticsA.IOAnalytics != nil && analyticsB.IOAnalytics != nil {
+		metrics.IOEfficiencyDelta = analyticsB.IOAnalytics.EfficiencyPercent - analyticsA.IOAnalytics.EfficiencyPercent
 	}
 	
 	// Runtime ratio
@@ -135,10 +136,12 @@ func (pa *PerformanceAnalyzer) calculatePerformanceMetrics(
 	costA := pa.calculateResourceCost(jobA, runtimeA)
 	costB := pa.calculateResourceCost(jobB, runtimeB)
 	
-	if costA > 0 && costB > 0 && analyticsA.EfficiencyMetrics != nil && analyticsB.EfficiencyMetrics != nil {
-		perfPerCostA := analyticsA.EfficiencyMetrics.OverallEfficiencyScore / costA
-		perfPerCostB := analyticsB.EfficiencyMetrics.OverallEfficiencyScore / costB
-		metrics.CostEfficiencyRatio = perfPerCostB / perfPerCostA
+	if costA > 0 && costB > 0 {
+		perfPerCostA := analyticsA.OverallEfficiency / costA
+		perfPerCostB := analyticsB.OverallEfficiency / costB
+		if perfPerCostA > 0 {
+			metrics.CostEfficiencyRatio = perfPerCostB / perfPerCostA
+		}
 	}
 	
 	return metrics
@@ -149,8 +152,12 @@ func (pa *PerformanceAnalyzer) calculateResourceDifferences(jobA, jobB *interfac
 	diffs := ResourceDifferences{
 		CPUDelta:      jobB.CPUs - jobA.CPUs,
 		MemoryDeltaGB: float64(jobB.Memory-jobA.Memory) / (1024 * 1024 * 1024),
-		GPUDelta:      jobB.GPUs - jobA.GPUs,
 	}
+	
+	// Check GPU allocation from metadata
+	gpuA, _ := jobA.Metadata["gpus"].(int)
+	gpuB, _ := jobB.Metadata["gpus"].(int)
+	diffs.GPUDelta = gpuB - gpuA
 	
 	runtimeA := pa.getJobRuntime(jobA)
 	runtimeB := pa.getJobRuntime(jobB)
@@ -209,9 +216,11 @@ func (pa *PerformanceAnalyzer) generateComparisonSummary(comparison *JobPerforma
 		float64(comparison.JobA.Memory)/(1024*1024*1024),
 		float64(comparison.JobB.Memory)/(1024*1024*1024),
 		diffs.MemoryDeltaGB)
-	if comparison.JobA.GPUs > 0 || comparison.JobB.GPUs > 0 {
+	gpuA, _ := comparison.JobA.Metadata["gpus"].(int)
+	gpuB, _ := comparison.JobB.Metadata["gpus"].(int)
+	if gpuA > 0 || gpuB > 0 {
 		summary += fmt.Sprintf("  GPU: A=%d, B=%d (diff: %+d)\n",
-			comparison.JobA.GPUs, comparison.JobB.GPUs, diffs.GPUDelta)
+			gpuA, gpuB, diffs.GPUDelta)
 	}
 	summary += fmt.Sprintf("  Runtime: A=%v, B=%v (ratio: %.2f)\n\n",
 		pa.getJobRuntime(comparison.JobA),
@@ -226,7 +235,9 @@ func (pa *PerformanceAnalyzer) generateComparisonSummary(comparison *JobPerforma
 		pa.betterOrWorse(metrics.OverallEfficiencyDelta))
 	summary += fmt.Sprintf("  CPU: %+.1f%%\n", metrics.CPUEfficiencyDelta)
 	summary += fmt.Sprintf("  Memory: %+.1f%%\n", metrics.MemoryEfficiencyDelta)
-	if comparison.JobA.GPUs > 0 || comparison.JobB.GPUs > 0 {
+	gpuA2, _ := comparison.JobA.Metadata["gpus"].(int)
+	gpuB2, _ := comparison.JobB.Metadata["gpus"].(int)
+	if gpuA2 > 0 || gpuB2 > 0 {
 		summary += fmt.Sprintf("  GPU: %+.1f%%\n", metrics.GPUEfficiencyDelta)
 	}
 	summary += fmt.Sprintf("  I/O: %+.1f%%\n\n", metrics.IOEfficiencyDelta)
@@ -337,10 +348,8 @@ func (pa *PerformanceAnalyzer) GetSimilarJobsPerformance(
 			}
 			
 			// Calculate performance comparison
-			if referenceAnalytics != nil && candidate.Analytics != nil &&
-			   referenceAnalytics.EfficiencyMetrics != nil && candidate.Analytics.EfficiencyMetrics != nil {
-				result.EfficiencyDelta = candidate.Analytics.EfficiencyMetrics.OverallEfficiencyScore -
-				                       referenceAnalytics.EfficiencyMetrics.OverallEfficiencyScore
+			if referenceAnalytics != nil && candidate.Analytics != nil {
+				result.EfficiencyDelta = candidate.Analytics.OverallEfficiency - referenceAnalytics.OverallEfficiency
 			}
 			
 			// Calculate runtime ratio
@@ -362,11 +371,11 @@ func (pa *PerformanceAnalyzer) GetSimilarJobsPerformance(
 	sort.Slice(analysis.SimilarJobs, func(i, j int) bool {
 		effI := float64(0)
 		effJ := float64(0)
-		if analysis.SimilarJobs[i].Analytics != nil && analysis.SimilarJobs[i].Analytics.EfficiencyMetrics != nil {
-			effI = analysis.SimilarJobs[i].Analytics.EfficiencyMetrics.OverallEfficiencyScore
+		if analysis.SimilarJobs[i].Analytics != nil {
+			effI = analysis.SimilarJobs[i].Analytics.OverallEfficiency
 		}
-		if analysis.SimilarJobs[j].Analytics != nil && analysis.SimilarJobs[j].Analytics.EfficiencyMetrics != nil {
-			effJ = analysis.SimilarJobs[j].Analytics.EfficiencyMetrics.OverallEfficiencyScore
+		if analysis.SimilarJobs[j].Analytics != nil {
+			effJ = analysis.SimilarJobs[j].Analytics.OverallEfficiency
 		}
 		return effI > effJ
 	})
@@ -422,10 +431,18 @@ func (pa *PerformanceAnalyzer) calculateJobSimilarity(jobA, jobB *interfaces.Job
 	weights += 0.2
 	
 	// GPU similarity (10% weight)
-	if jobA.GPUs == jobB.GPUs {
+	gpuA, _ := jobA.Metadata["gpus"].(int)
+	gpuB, _ := jobB.Metadata["gpus"].(int)
+	if gpuA == gpuB {
 		similarity += 0.1
-	} else if jobA.GPUs > 0 && jobB.GPUs > 0 {
-		gpuRatio := float64(min(jobA.GPUs, jobB.GPUs)) / float64(max(jobA.GPUs, jobB.GPUs))
+	} else if gpuA > 0 && gpuB > 0 {
+		minGPU := gpuA
+		maxGPU := gpuB
+		if gpuB < gpuA {
+			minGPU = gpuB
+			maxGPU = gpuA
+		}
+		gpuRatio := float64(minGPU) / float64(maxGPU)
 		similarity += 0.1 * gpuRatio
 	}
 	weights += 0.1
@@ -434,7 +451,13 @@ func (pa *PerformanceAnalyzer) calculateJobSimilarity(jobA, jobB *interfaces.Job
 	runtimeA := pa.getJobRuntime(jobA)
 	runtimeB := pa.getJobRuntime(jobB)
 	if runtimeA > 0 && runtimeB > 0 {
-		runtimeRatio := float64(min(runtimeA, runtimeB)) / float64(max(runtimeA, runtimeB))
+		minRuntime := runtimeA
+		maxRuntime := runtimeB
+		if runtimeB < runtimeA {
+			minRuntime = runtimeB
+			maxRuntime = runtimeA
+		}
+		runtimeRatio := float64(minRuntime) / float64(maxRuntime)
 		similarity += 0.1 * runtimeRatio
 	}
 	weights += 0.1
@@ -456,11 +479,11 @@ func (pa *PerformanceAnalyzer) calculatePerformanceStatistics(similarJobs []*Sim
 	efficiencies := make([]float64, 0)
 	runtimes := make([]time.Duration, 0)
 	cpuAllocations := make([]int, 0)
-	memoryAllocations := make([]int64, 0)
+	memoryAllocations := make([]int, 0)
 	
 	for _, job := range similarJobs {
-		if job.Analytics != nil && job.Analytics.EfficiencyMetrics != nil {
-			eff := job.Analytics.EfficiencyMetrics.OverallEfficiencyScore
+		if job.Analytics != nil {
+			eff := job.Analytics.OverallEfficiency
 			efficiencies = append(efficiencies, eff)
 			
 			if eff > stats.BestEfficiency {
@@ -503,7 +526,7 @@ func (pa *PerformanceAnalyzer) calculatePerformanceStatistics(similarJobs []*Sim
 		stats.OptimalResources = ResourceRecommendation{
 			CPUs:      bestJob.Job.CPUs,
 			MemoryGB:  float64(bestJob.Job.Memory) / (1024 * 1024 * 1024),
-			GPUs:      bestJob.Job.GPUs,
+			GPUs:      func() int { gpus, _ := bestJob.Job.Metadata["gpus"].(int); return gpus }(),
 			Reasoning: fmt.Sprintf("Based on best performing similar job with %.1f%% efficiency",
 				stats.BestEfficiency),
 		}
@@ -542,11 +565,11 @@ func (pa *PerformanceAnalyzer) identifyBestPractices(similarJobs []*SimilarJobRe
 	allHighCPUEff := true
 	allHighMemEff := true
 	for _, job := range topJobs {
-		if job.Analytics != nil && job.Analytics.EfficiencyMetrics != nil {
-			if job.Analytics.EfficiencyMetrics.CPUEfficiency < 80.0 {
+		if job.Analytics != nil {
+			if job.Analytics.CPUAnalytics != nil && job.Analytics.CPUAnalytics.EfficiencyPercent < 80.0 {
 				allHighCPUEff = false
 			}
-			if job.Analytics.EfficiencyMetrics.MemoryEfficiency < 80.0 {
+			if job.Analytics.MemoryAnalytics != nil && job.Analytics.MemoryAnalytics.EfficiencyPercent < 80.0 {
 				allHighMemEff = false
 			}
 		}
@@ -613,19 +636,19 @@ func (pa *PerformanceAnalyzer) generateRecommendations(
 	}
 	
 	// Compare efficiency to statistics
-	if referenceAnalytics != nil && referenceAnalytics.EfficiencyMetrics != nil {
-		refEff := referenceAnalytics.EfficiencyMetrics.OverallEfficiencyScore
+	if referenceAnalytics != nil {
+		refEff := referenceAnalytics.OverallEfficiency
 		if refEff < analysis.PerformanceStats.MedianEfficiency-10.0 {
 			recommendations = append(recommendations, fmt.Sprintf(
 				"Job efficiency (%.1f%%) is below median (%.1f%%) for similar jobs",
 				refEff, analysis.PerformanceStats.MedianEfficiency))
 			
 			// Add specific improvement suggestions
-			if referenceAnalytics.EfficiencyMetrics.CPUEfficiency < 70.0 {
+			if referenceAnalytics.CPUAnalytics != nil && referenceAnalytics.CPUAnalytics.EfficiencyPercent < 70.0 {
 				recommendations = append(recommendations,
 					"Focus on improving CPU utilization through better parallelization")
 			}
-			if referenceAnalytics.EfficiencyMetrics.MemoryEfficiency < 70.0 {
+			if referenceAnalytics.MemoryAnalytics != nil && referenceAnalytics.MemoryAnalytics.EfficiencyPercent < 70.0 {
 				recommendations = append(recommendations,
 					"Optimize memory usage patterns to reduce allocation needs")
 			}
@@ -657,7 +680,8 @@ func (pa *PerformanceAnalyzer) calculateResourceCost(job *interfaces.Job, runtim
 	hours := runtime.Hours()
 	cpuCost := float64(job.CPUs) * hours
 	memoryCost := float64(job.Memory) / (1024 * 1024 * 1024) * hours * 0.1 // Memory is cheaper
-	gpuCost := float64(job.GPUs) * hours * 10.0 // GPUs are expensive
+	gpuCount, _ := job.Metadata["gpus"].(int)
+	gpuCost := float64(gpuCount) * hours * 10.0 // GPUs are expensive
 	
 	return cpuCost + memoryCost + gpuCost
 }

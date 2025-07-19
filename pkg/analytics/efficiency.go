@@ -280,16 +280,16 @@ func (ec *EfficiencyCalculator) CalculateIOEfficiency(analytics *interfaces.IOAn
 
 // CalculateNetworkEfficiency calculates network efficiency percentage
 func (ec *EfficiencyCalculator) CalculateNetworkEfficiency(utilization *interfaces.NetworkUtilization) float64 {
-	if utilization.TotalBandwidth.Max == 0 {
-		return utilization.TotalBandwidth.Percentage
+	if utilization.TotalBandwidth == nil || utilization.TotalBandwidth.UsedMax == 0 {
+		return 0.0
 	}
 	
-	efficiency := utilization.TotalBandwidth.Percentage
+	efficiency := utilization.TotalBandwidth.Efficiency
 	
 	// Consider individual interface efficiency
 	underutilizedInterfaces := 0
 	for _, iface := range utilization.Interfaces {
-		if iface.Utilization.Percentage < 30.0 {
+		if iface.Utilization < 30.0 {
 			underutilizedInterfaces++
 		}
 	}
@@ -322,12 +322,13 @@ func (ec *EfficiencyCalculator) CalculateEnergyEfficiency(usage *interfaces.Ener
 		return 100.0
 	}
 	
-	// Base efficiency on power efficiency relative to TDP
+	// Base efficiency on power usage patterns
 	efficiency := 100.0
-	if usage.TDPWatts > 0 {
-		powerRatio := avgPower / usage.TDPWatts
+	// Note: TDPWatts not available in current interface, using peak power as reference
+	if usage.PeakPowerWatts > 0 {
+		powerRatio := avgPower / usage.PeakPowerWatts
 		if powerRatio > 0.9 {
-			// Running close to TDP, likely inefficient
+			// Running close to peak, likely inefficient
 			efficiency = 70.0
 		} else if powerRatio > 0.7 {
 			efficiency = 85.0
@@ -336,17 +337,13 @@ func (ec *EfficiencyCalculator) CalculateEnergyEfficiency(usage *interfaces.Ener
 		}
 	}
 	
-	// Consider energy breakdown if available
-	breakdown := usage.EnergyBreakdown
-	if breakdown != nil {
-		// Penalize high uncore/other energy usage
-		totalBreakdown := breakdown.CPUEnergy + breakdown.MemoryEnergy + breakdown.GPUEnergy
-		if totalBreakdown > 0 {
-			coreRatio := breakdown.CPUEnergy / totalBreakdown
-			if coreRatio < 0.6 {
-				// Too much energy in non-compute components
-				efficiency *= 0.9
-			}
+	// Consider energy breakdown using individual energy fields
+	totalBreakdown := usage.CPUEnergyJoules + usage.MemoryEnergyJoules + usage.GPUEnergyJoules
+	if totalBreakdown > 0 {
+		coreRatio := usage.CPUEnergyJoules / totalBreakdown
+		if coreRatio < 0.6 {
+			// Too much energy in non-compute components
+			efficiency *= 0.9
 		}
 	}
 	
@@ -399,17 +396,22 @@ func (ec *EfficiencyCalculator) CalculateResourceWaste(
 		waste["memory_percent"] = (float64(unusedBytes) / float64(analytics.MemoryAnalytics.AllocatedBytes)) * 100.0
 	}
 	
-	// GPU waste (in GPU-hours)
-	if job.GPUs > 0 && analytics.EfficiencyMetrics != nil {
-		gpuEfficiency := analytics.EfficiencyMetrics.GPUEfficiency
-		waste["gpu_hours"] = float64(job.GPUs) * (100.0 - gpuEfficiency) / 100.0 * runtime.Hours()
+	// GPU waste (in GPU-hours) - using Metadata to check for GPU allocation
+	if gpuCount, ok := job.Metadata["gpus"].(int); ok && gpuCount > 0 {
+		// Estimate GPU efficiency from overall efficiency if available
+		gpuEfficiency := analytics.OverallEfficiency
+		if gpuEfficiency == 0 {
+			gpuEfficiency = 50.0 // Default assumption
+		}
+		waste["gpu_hours"] = float64(gpuCount) * (100.0 - gpuEfficiency) / 100.0 * runtime.Hours()
 		waste["gpu_percent"] = 100.0 - gpuEfficiency
 	}
 	
 	// I/O waste (estimated from low utilization)
-	if analytics.IOAnalytics != nil && analytics.IOAnalytics.IOWaitPercent > 20.0 {
-		waste["io_wait_hours"] = analytics.IOAnalytics.IOWaitPercent / 100.0 * runtime.Hours()
-		waste["io_wait_percent"] = analytics.IOAnalytics.IOWaitPercent
+	if analytics.IOAnalytics != nil && analytics.IOAnalytics.UtilizationPercent < 50.0 {
+		wastePercent := 100.0 - analytics.IOAnalytics.UtilizationPercent
+		waste["io_underutilized_hours"] = wastePercent / 100.0 * runtime.Hours()
+		waste["io_waste_percent"] = wastePercent
 	}
 	
 	return waste
@@ -464,56 +466,58 @@ func (ec *EfficiencyCalculator) GenerateOptimizationRecommendations(
 			})
 		}
 		
-		if analytics.MemoryAnalytics.MemoryLeakDetected {
+		// Check for potential memory leak by comparing virtual vs resident memory
+		if analytics.MemoryAnalytics.VirtualMemorySize > analytics.MemoryAnalytics.ResidentSetSize*2 {
 			recommendations = append(recommendations, OptimizationRecommendation{
 				Resource:   "Memory",
-				Type:       "code_fix",
-				Current:    analytics.MemoryAnalytics.LeakRatePerHour,
-				Reason:     "Memory leak detected",
-				Impact:     "Prevent job failure and resource waste",
-				Confidence: 0.95,
+				Type:       "code_review",
+				Current:    float64(analytics.MemoryAnalytics.VirtualMemorySize) / float64(analytics.MemoryAnalytics.ResidentSetSize),
+				Reason:     "High virtual memory usage suggests potential inefficiency",
+				Impact:     "Review memory allocation patterns",
+				Confidence: 0.6,
 			})
 		}
 		
-		if analytics.MemoryAnalytics.SwapBytes > analytics.MemoryAnalytics.AllocatedBytes/10 {
+		// Check if memory usage is close to allocation (potential pressure)
+		if analytics.MemoryAnalytics.UtilizationPercent > 90.0 {
 			recommendations = append(recommendations, OptimizationRecommendation{
 				Resource:    "Memory",
 				Type:        "increase",
 				Current:     analytics.MemoryAnalytics.AllocatedBytes / (1024 * 1024 * 1024),
-				Recommended: (analytics.MemoryAnalytics.MaxUsedBytes * 12 / 10) / (1024 * 1024 * 1024),
-				Reason:      "Significant swap usage detected",
-				Impact:      "Improve performance by reducing swap",
-				Confidence:  0.9,
+				Recommended: int64(float64(analytics.MemoryAnalytics.AllocatedBytes) * 1.2) / (1024 * 1024 * 1024),
+				Reason:      "High memory pressure detected",
+				Impact:      "Prevent potential memory constraints",
+				Confidence:  0.8,
 			})
 		}
 	}
 	
-	// GPU recommendations
-	if job.GPUs > 0 && analytics.EfficiencyMetrics != nil && analytics.EfficiencyMetrics.GPUEfficiency < 50.0 {
+	// GPU recommendations - use overall efficiency as proxy for GPU efficiency
+	if gpuCount, ok := job.Metadata["gpus"].(int); ok && gpuCount > 0 && analytics.OverallEfficiency < 50.0 {
 		recommendations = append(recommendations, OptimizationRecommendation{
 			Resource:    "GPU",
 			Type:        "reduction",
-			Current:     job.GPUs,
-			Recommended: int(math.Ceil(float64(job.GPUs) * analytics.EfficiencyMetrics.GPUEfficiency / 100.0)),
-			Reason:      "Low GPU utilization detected",
+			Current:     gpuCount,
+			Recommended: int(math.Ceil(float64(gpuCount) * analytics.OverallEfficiency / 100.0)),
+			Reason:      "Low overall efficiency may indicate GPU underutilization",
 			Impact:      "Free up expensive GPU resources",
-			Confidence:  0.75,
+			Confidence:  0.6,
 		})
 	}
 	
 	// I/O recommendations
 	if analytics.IOAnalytics != nil {
-		if analytics.IOAnalytics.IOWaitPercent > 30.0 {
+		if analytics.IOAnalytics.UtilizationPercent < 30.0 {
 			recommendations = append(recommendations, OptimizationRecommendation{
 				Resource:   "IO",
 				Type:       "optimization",
-				Current:    analytics.IOAnalytics.IOWaitPercent,
-				Reason:     "High I/O wait time detected",
-				Impact:     "Improve job performance",
+				Current:    analytics.IOAnalytics.UtilizationPercent,
+				Reason:     "Low I/O utilization detected",
+				Impact:     "Optimize storage usage",
 				Confidence: 0.7,
 				Details: map[string]interface{}{
-					"suggestion": "Consider using local SSD storage or optimizing I/O patterns",
-					"wait_time":  analytics.IOAnalytics.IOWaitPercent,
+					"suggestion": "Consider adjusting I/O patterns or using different storage",
+					"utilization": analytics.IOAnalytics.UtilizationPercent,
 				},
 			})
 		}
@@ -541,19 +545,18 @@ func (ec *EfficiencyCalculator) GenerateOptimizationRecommendations(
 	}
 	
 	// Overall efficiency recommendation
-	if analytics.EfficiencyMetrics != nil && analytics.EfficiencyMetrics.OverallEfficiencyScore < 60.0 {
+	if analytics.OverallEfficiency < 60.0 {
 		recommendations = append(recommendations, OptimizationRecommendation{
 			Resource:   "Overall",
 			Type:       "review",
-			Current:    analytics.EfficiencyMetrics.OverallEfficiencyScore,
+			Current:    analytics.OverallEfficiency,
 			Reason:     "Low overall job efficiency",
 			Impact:     "Significant resource waste",
 			Confidence: 0.85,
 			Details: map[string]interface{}{
-				"cpu_efficiency":    analytics.EfficiencyMetrics.CPUEfficiency,
-				"memory_efficiency": analytics.EfficiencyMetrics.MemoryEfficiency,
-				"gpu_efficiency":    analytics.EfficiencyMetrics.GPUEfficiency,
-				"io_efficiency":     analytics.EfficiencyMetrics.IOEfficiency,
+				"cpu_efficiency":    analytics.CPUAnalytics.EfficiencyPercent,
+				"memory_efficiency": analytics.MemoryAnalytics.EfficiencyPercent,
+				"io_efficiency":     analytics.IOAnalytics.EfficiencyPercent,
 			},
 		})
 	}

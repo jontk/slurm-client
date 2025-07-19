@@ -37,9 +37,9 @@ func (pht *PerformanceHistoryTracker) GetJobPerformanceHistory(
 		return nil, fmt.Errorf("no performance samples provided")
 	}
 
-	// Sort samples by timestamp
+	// Sort samples by start time
 	sort.Slice(samples, func(i, j int) bool {
-		return samples[i].Timestamp.Before(samples[j].Timestamp)
+		return samples[i].StartTime.Before(samples[j].StartTime)
 	})
 
 	// Filter samples based on time range if specified
@@ -66,8 +66,8 @@ func (pht *PerformanceHistoryTracker) GetJobPerformanceHistory(
 	return &interfaces.JobPerformanceHistory{
 		JobID:          job.ID,
 		JobName:        job.Name,
-		StartTime:      job.StartTime,
-		EndTime:        *job.EndTime,
+		StartTime:      func() time.Time { if job.StartTime != nil { return *job.StartTime }; return time.Time{} }(),
+		EndTime:        func() time.Time { if job.EndTime != nil { return *job.EndTime }; return time.Time{} }(),
 		TimeSeriesData: timeSeriesData,
 		Statistics:     statistics,
 		Trends:         trends,
@@ -86,10 +86,10 @@ func (pht *PerformanceHistoryTracker) filterSamplesByTimeRange(
 
 	var filtered []interfaces.JobComprehensiveAnalytics
 	for _, sample := range samples {
-		if opts.StartTime != nil && sample.Timestamp.Before(*opts.StartTime) {
+		if opts.StartTime != nil && sample.StartTime.Before(*opts.StartTime) {
 			continue
 		}
-		if opts.EndTime != nil && sample.Timestamp.After(*opts.EndTime) {
+		if opts.EndTime != nil && sample.StartTime.After(*opts.EndTime) {
 			continue
 		}
 		filtered = append(filtered, sample)
@@ -144,7 +144,7 @@ func (pht *PerformanceHistoryTracker) determineInterval(
 		return time.Hour
 	}
 
-	duration := samples[len(samples)-1].Timestamp.Sub(samples[0].Timestamp)
+	duration := samples[len(samples)-1].StartTime.Sub(samples[0].StartTime)
 	switch {
 	case duration <= 24*time.Hour:
 		return time.Hour
@@ -169,11 +169,11 @@ func (pht *PerformanceHistoryTracker) groupSamplesByInterval(
 	var groups [][]interfaces.JobComprehensiveAnalytics
 	var currentGroup []interfaces.JobComprehensiveAnalytics
 	
-	baseTime := samples[0].Timestamp.Truncate(interval)
+	baseTime := samples[0].StartTime.Truncate(interval)
 	currentTime := baseTime
 
 	for _, sample := range samples {
-		sampleTime := sample.Timestamp.Truncate(interval)
+		sampleTime := sample.StartTime.Truncate(interval)
 		
 		if sampleTime.After(currentTime) {
 			// Start new group
@@ -215,7 +215,7 @@ func (pht *PerformanceHistoryTracker) createSnapshot(
 
 	for i, sample := range group {
 		if i == 0 {
-			timestamp = sample.Timestamp
+			timestamp = sample.StartTime
 		}
 
 		if sample.CPUAnalytics != nil {
@@ -225,14 +225,9 @@ func (pht *PerformanceHistoryTracker) createSnapshot(
 			memSum += sample.MemoryAnalytics.UtilizationPercent
 		}
 		if sample.IOAnalytics != nil {
-			ioSum += sample.IOAnalytics.ReadBandwidthMBps + sample.IOAnalytics.WriteBandwidthMBps
+			ioSum += sample.IOAnalytics.AverageReadBandwidth + sample.IOAnalytics.AverageWriteBandwidth
 		}
-		if sample.EfficiencyMetrics != nil {
-			effSum += sample.EfficiencyMetrics.OverallEfficiencyScore
-			if sample.EfficiencyMetrics.GPUEfficiency > 0 {
-				gpuSum += sample.EfficiencyMetrics.GPUEfficiency
-			}
-		}
+		effSum += sample.OverallEfficiency
 		// Add network and power if available in analytics
 		count++
 	}
@@ -268,11 +263,9 @@ func (pht *PerformanceHistoryTracker) calculatePerformanceStatistics(
 			memValues = append(memValues, sample.MemoryAnalytics.UtilizationPercent)
 		}
 		if sample.IOAnalytics != nil {
-			ioValues = append(ioValues, sample.IOAnalytics.ReadBandwidthMBps+sample.IOAnalytics.WriteBandwidthMBps)
+			ioValues = append(ioValues, sample.IOAnalytics.AverageReadBandwidth+sample.IOAnalytics.AverageWriteBandwidth)
 		}
-		if sample.EfficiencyMetrics != nil {
-			effValues = append(effValues, sample.EfficiencyMetrics.OverallEfficiencyScore)
-		}
+		effValues = append(effValues, sample.OverallEfficiency)
 	}
 
 	return interfaces.PerformanceStatistics{
@@ -427,7 +420,7 @@ func (pht *PerformanceHistoryTracker) detectAnomalies(
 	snapshots []interfaces.PerformanceSnapshot,
 	stats interfaces.PerformanceStatistics,
 ) []interfaces.PerformanceAnomaly {
-	var anomalies []interfaces.PerformanceAnomaly
+	anomalies := make([]interfaces.PerformanceAnomaly, 0)
 
 	// Define thresholds
 	cpuThreshold := stats.StdDevCPU * 2
