@@ -3986,3 +3986,85 @@ func (m *JobManagerImpl) GetJobComprehensiveAnalytics(ctx context.Context, jobID
 		},
 	}, nil
 }
+
+// GetStepAccountingData retrieves accounting data for a specific job step
+func (m *JobManagerImpl) GetStepAccountingData(ctx context.Context, jobID string, stepID string) (*interfaces.StepAccountingRecord, error) {
+	// v0.0.43 has enhanced step accounting data support
+	return nil, fmt.Errorf("GetStepAccountingData not fully implemented in v0.0.43")
+}
+
+// GetJobStepAPIData integrates with SLURM's native job step APIs for real-time data
+func (m *JobManagerImpl) GetJobStepAPIData(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepAPIData, error) {
+	// v0.0.43 has enhanced job step API data support
+	return nil, fmt.Errorf("GetJobStepAPIData not fully implemented in v0.0.43")
+}
+
+// ListJobStepsFromSacct queries job steps using SLURM's sacct command integration
+func (m *JobManagerImpl) ListJobStepsFromSacct(ctx context.Context, options *interfaces.SacctQueryOptions) ([]*interfaces.StepAccountingRecord, error) {
+	// v0.0.43 has enhanced sacct integration support
+	return nil, fmt.Errorf("ListJobStepsFromSacct not fully implemented in v0.0.43")
+}
+
+// AnalyzeBatchJobs performs bulk analysis on a collection of jobs
+func (m *JobManagerImpl) AnalyzeBatchJobs(ctx context.Context, jobIDs []string, opts *interfaces.BatchAnalysisOptions) (*interfaces.BatchJobAnalysis, error) {
+	if len(jobIDs) == 0 {
+		return nil, fmt.Errorf("no job IDs provided for batch analysis")
+	}
+
+	analysis := &interfaces.BatchJobAnalysis{
+		TotalJobs:   len(jobIDs),
+		Timestamp:   time.Now(),
+		JobAnalyses: make([]interfaces.IndividualJobAnalysis, 0, len(jobIDs)),
+	}
+
+	var totalEfficiency float64
+	var completedAnalyses int
+
+	for _, jobID := range jobIDs {
+		// Get comprehensive analytics for each job
+		utilization, err := m.GetJobUtilization(ctx, jobID)
+		if err != nil {
+			// Add failed analysis entry
+			analysis.JobAnalyses = append(analysis.JobAnalyses, interfaces.IndividualJobAnalysis{
+				JobID:  jobID,
+				Status: "failed",
+				Error:  err.Error(),
+			})
+			continue
+		}
+
+		efficiency, err := m.GetJobEfficiency(ctx, jobID)
+		if err != nil {
+			analysis.JobAnalyses = append(analysis.JobAnalyses, interfaces.IndividualJobAnalysis{
+				JobID:  jobID,
+				Status: "failed",
+				Error:  err.Error(),
+			})
+			continue
+		}
+
+		// Create individual job analysis
+		jobAnalysis := interfaces.IndividualJobAnalysis{
+			JobID:               jobID,
+			Status:             "completed",
+			EfficiencyScore:    efficiency.OverallEfficiencyScore,
+			CPUUtilization:     float64(utilization.CPUUtilization.UtilizationPercent),
+			MemoryUtilization:  float64(utilization.MemoryUtilization.UtilizationPercent),
+			ResourceWasteCPU:   float64(efficiency.ResourceWaste.CPUPercent),
+			ResourceWasteMemory: float64(efficiency.ResourceWaste.MemoryPercent),
+		}
+
+		analysis.JobAnalyses = append(analysis.JobAnalyses, jobAnalysis)
+		totalEfficiency += efficiency.OverallEfficiencyScore
+		completedAnalyses++
+	}
+
+	// Calculate summary statistics
+	if completedAnalyses > 0 {
+		analysis.AverageEfficiency = totalEfficiency / float64(completedAnalyses)
+		analysis.CompletedAnalyses = completedAnalyses
+		analysis.FailedAnalyses = len(jobIDs) - completedAnalyses
+	}
+
+	return analysis, nil
+}
