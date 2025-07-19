@@ -1,0 +1,96 @@
+{
+  "job_id": "1001",
+  "utilization": {
+    "cpu_utilization": {
+      "allocated_cores": 4,
+      "used_cores": 3.4,
+      "utilization_percent": 85,
+      "efficiency_percent": 82
+    },
+    "memory_utilization": {
+      "allocated_bytes": 4294967296,
+      "used_bytes": 3350074490,
+      "utilization_percent": 78,
+      "efficiency_percent": 76
+    },
+    "gpu_utilization": {
+      "device_count": 0,
+      "utilization_percent": 0
+    },
+    "io_utilization": {
+      "read_bytes": 104857600,
+      "write_bytes": 52428800,
+      "utilization_percent": 65
+    }
+  },
+  "efficiency": {
+    "overall_efficiency_score": 79.5,
+    "cpu_efficiency": 82,
+    "memory_efficiency": 76,
+    "gpu_efficiency": 0,
+    "resource_waste": {
+      "cpu_core_hours": 0.6,
+      "cpu_percent": 15,
+      "memory_gb_hours": 1.2,
+      "memory_percent": 22
+    },
+    "optimization_recommendations": [
+      {
+        "type": "reduction",
+        "resource": "Memory",
+        "current": 4,
+        "recommended": 3,
+        "reason": "Low memory utilization detected",
+        "confidence": 0.85
+      }
+    ]
+  },
+  "performance": {
+    "cpu_analytics": {
+      "allocated_cores": 4,
+      "used_cores": 3.4,
+      "utilization_percent": 85,
+      "efficiency_percent": 82,
+      "average_frequency": 2800,
+      "max_frequency": 3200
+    },
+    "memory_analytics": {
+      "allocated_bytes": 4294967296,
+      "used_bytes": 3221225472,
+      "utilization_percent": 75,
+      "efficiency_percent": 73
+    },
+    "io_analytics": {
+      "read_bytes": 104857600,
+      "write_bytes": 52428800,
+      "read_operations": 1000,
+      "write_operations": 500,
+      "average_read_bandwidth": 120.5,
+      "average_write_bandwidth": 85.2
+    },
+    "overall_efficiency": 79.5
+  },
+  "live_metrics": {
+    "cpu_usage": {
+      "current": 85.2,
+      "average": 82.5,
+      "peak": 95.1,
+      "utilization": 85
+    },
+    "memory_usage": {
+      "current": 3221225472,
+      "average": 3000000000,
+      "peak": 3400000000,
+      "utilization": 75
+    },
+    "disk_usage": {
+      "read_rate_mbps": 45.2,
+      "write_rate_mbps": 28.7
+    },
+    "network_usage": {
+      "in_rate_mbps": 125.5,
+      "out_rate_mbps": 87.3
+    },
+    "timestamp": 1752924365
+  }
+}
