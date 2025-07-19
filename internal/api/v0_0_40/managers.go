@@ -174,6 +174,30 @@ func (m *JobManager) GetJobComprehensiveAnalytics(ctx context.Context, jobID str
 	return m.impl.GetJobComprehensiveAnalytics(ctx, jobID)
 }
 
+// GetStepAccountingData retrieves accounting data for a specific job step
+func (m *JobManager) GetStepAccountingData(ctx context.Context, jobID string, stepID string) (*interfaces.StepAccountingRecord, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetStepAccountingData(ctx, jobID, stepID)
+}
+
+// GetJobStepAPIData integrates with SLURM's native job step APIs for real-time data
+func (m *JobManager) GetJobStepAPIData(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepAPIData, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobStepAPIData(ctx, jobID, stepID)
+}
+
+// ListJobStepsFromSacct queries job steps using SLURM's sacct command integration
+func (m *JobManager) ListJobStepsFromSacct(ctx context.Context, options *interfaces.SacctQueryOptions) ([]*interfaces.StepAccountingRecord, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.ListJobStepsFromSacct(ctx, options)
+}
+
 // NodeManager implements the NodeManager interface for API version v0.0.40
 type NodeManager struct {
 	client *WrapperClient

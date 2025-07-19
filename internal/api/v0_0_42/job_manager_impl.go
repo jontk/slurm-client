@@ -3255,3 +3255,21 @@ func combineBottlenecksV42(cpu *interfaces.CPUAnalytics, memory *interfaces.Memo
 	
 	return bottlenecks
 }
+
+// GetStepAccountingData retrieves accounting data for a specific job step
+func (m *JobManagerImpl) GetStepAccountingData(ctx context.Context, jobID string, stepID string) (*interfaces.StepAccountingRecord, error) {
+	// v0.0.42 has basic step accounting data support
+	return nil, fmt.Errorf("GetStepAccountingData not fully implemented in v0.0.42")
+}
+
+// GetJobStepAPIData integrates with SLURM's native job step APIs for real-time data
+func (m *JobManagerImpl) GetJobStepAPIData(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepAPIData, error) {
+	// v0.0.42 has basic job step API data support
+	return nil, fmt.Errorf("GetJobStepAPIData not fully implemented in v0.0.42")
+}
+
+// ListJobStepsFromSacct queries job steps using SLURM's sacct command integration
+func (m *JobManagerImpl) ListJobStepsFromSacct(ctx context.Context, options *interfaces.SacctQueryOptions) ([]*interfaces.StepAccountingRecord, error) {
+	// v0.0.42 has basic sacct integration support
+	return nil, fmt.Errorf("ListJobStepsFromSacct not fully implemented in v0.0.42")
+}

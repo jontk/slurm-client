@@ -259,6 +259,336 @@ func TestDataQuality_v40(t *testing.T) {
 	})
 }
 
+// TestJobManager_GetJobCPUAnalytics tests the GetJobCPUAnalytics method for v0.0.40
+func TestJobManager_GetJobCPUAnalytics(t *testing.T) {
+	ctx := context.Background()
+	jm := &JobManager{}
+
+	tests := []struct {
+		name    string
+		jobID   string
+		wantErr bool
+	}{
+		{
+			name:    "valid job ID",
+			jobID:   "12345",
+			wantErr: false,
+		},
+		{
+			name:    "empty job ID",
+			jobID:   "",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			analytics, err := jm.GetJobCPUAnalytics(ctx, tt.jobID)
+			
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, analytics)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, analytics)
+				
+				// Verify minimal analytics for v0.0.40
+				assert.Equal(t, 4, analytics.AllocatedCores)
+				assert.Equal(t, 4, analytics.RequestedCores)
+				assert.Equal(t, 2.0, analytics.UsedCores)
+				assert.Equal(t, 50.0, analytics.UtilizationPercent)
+				assert.Equal(t, 50.0, analytics.EfficiencyPercent)
+				assert.Equal(t, 2.0, analytics.IdleCores)
+				assert.False(t, analytics.Oversubscribed)
+				
+				// Verify core-level metrics
+				assert.Len(t, analytics.CoreMetrics, 4)
+				for i, metric := range analytics.CoreMetrics {
+					assert.Equal(t, i, metric.CoreID)
+					assert.Equal(t, 50.0, metric.Utilization)
+					assert.Equal(t, 2.5, metric.Frequency)
+					assert.Equal(t, 60.0, metric.Temperature)
+				}
+			}
+		})
+	}
+}
+
+// TestJobManager_GetJobMemoryAnalytics tests the GetJobMemoryAnalytics method for v0.0.40
+func TestJobManager_GetJobMemoryAnalytics(t *testing.T) {
+	ctx := context.Background()
+	jm := &JobManager{}
+
+	tests := []struct {
+		name    string
+		jobID   string
+		wantErr bool
+	}{
+		{
+			name:    "valid job ID",
+			jobID:   "12345",
+			wantErr: false,
+		},
+		{
+			name:    "empty job ID",
+			jobID:   "",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			analytics, err := jm.GetJobMemoryAnalytics(ctx, tt.jobID)
+			
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, analytics)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, analytics)
+				
+				// Verify minimal analytics for v0.0.40
+				assert.Equal(t, int64(16*1024*1024*1024), analytics.AllocatedBytes)
+				assert.Equal(t, int64(16*1024*1024*1024), analytics.RequestedBytes)
+				assert.InDelta(t, 9.6*1024*1024*1024, float64(analytics.UsedBytes), 1024)
+				assert.Equal(t, 60.0, analytics.UtilizationPercent)
+				assert.InDelta(t, 10.24*1024*1024*1024, float64(analytics.MaxUsedBytes), 1024)
+				assert.Equal(t, int64(1*1024*1024*1024), analytics.CacheBytes)
+				assert.Equal(t, int64(1*1024*1024*1024), analytics.SwapBytes)
+				assert.Equal(t, 10000, analytics.PageFaults)
+				assert.Equal(t, 100, analytics.MajorPageFaults)
+				
+				// NUMA metrics should be minimal
+				assert.Len(t, analytics.NUMAMetrics, 1)
+				if len(analytics.NUMAMetrics) > 0 {
+					numa := analytics.NUMAMetrics[0]
+					assert.Equal(t, 0, numa.NodeID)
+					assert.InDelta(t, 9.6*1024*1024*1024, float64(numa.UsedBytes), 1024)
+					assert.Equal(t, 0.0, numa.LocalAccessPercent)
+					assert.Equal(t, 0.0, numa.RemoteAccessPercent)
+				}
+				
+				// Minimal memory leak detection
+				assert.False(t, analytics.MemoryLeakDetected)
+				assert.Equal(t, 0.0, analytics.LeakRatePerHour)
+			}
+		})
+	}
+}
+
+// TestJobManager_GetJobIOAnalytics tests the GetJobIOAnalytics method for v0.0.40
+func TestJobManager_GetJobIOAnalytics(t *testing.T) {
+	ctx := context.Background()
+	jm := &JobManager{}
+
+	tests := []struct {
+		name    string
+		jobID   string
+		wantErr bool
+	}{
+		{
+			name:    "valid job ID",
+			jobID:   "12345",
+			wantErr: false,
+		},
+		{
+			name:    "empty job ID",
+			jobID:   "",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			analytics, err := jm.GetJobIOAnalytics(ctx, tt.jobID)
+			
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, analytics)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, analytics)
+				
+				// Verify minimal analytics for v0.0.40
+				assert.Equal(t, int64(10*1024*1024*1024), analytics.ReadBytes)
+				assert.Equal(t, int64(5*1024*1024*1024), analytics.WriteBytes)
+				assert.Equal(t, int64(1000), analytics.ReadOperations)
+				assert.Equal(t, int64(500), analytics.WriteOperations)
+				assert.Equal(t, 100.0, analytics.ReadBandwidthMBps)
+				assert.Equal(t, 50.0, analytics.WriteBandwidthMBps)
+				assert.Equal(t, 10.0, analytics.ReadLatencyMs)
+				assert.Equal(t, 15.0, analytics.WriteLatencyMs)
+				assert.Equal(t, 10.0, analytics.IOWaitPercent)
+				
+				// Device metrics should be minimal
+				assert.Len(t, analytics.DeviceMetrics, 1)
+				if len(analytics.DeviceMetrics) > 0 {
+					device := analytics.DeviceMetrics[0]
+					assert.Equal(t, "/dev/sda", device.DeviceName)
+					assert.Equal(t, "local", device.DeviceType)
+					assert.Equal(t, 20.0, device.UtilizationPercent)
+					assert.Equal(t, 100.0, device.ReadBandwidthMBps)
+					assert.Equal(t, 50.0, device.WriteBandwidthMBps)
+					assert.Equal(t, int64(1000), device.ReadOps)
+					assert.Equal(t, int64(500), device.WriteOps)
+					assert.Equal(t, 10.0, device.AvgQueueDepth)
+				}
+			}
+		})
+	}
+}
+
+// TestJobManager_GetJobComprehensiveAnalytics tests the GetJobComprehensiveAnalytics method for v0.0.40
+func TestJobManager_GetJobComprehensiveAnalytics(t *testing.T) {
+	ctx := context.Background()
+	jm := &JobManager{}
+
+	tests := []struct {
+		name    string
+		jobID   string
+		wantErr bool
+	}{
+		{
+			name:    "valid job ID",
+			jobID:   "12345",
+			wantErr: false,
+		},
+		{
+			name:    "empty job ID",
+			jobID:   "",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			analytics, err := jm.GetJobComprehensiveAnalytics(ctx, tt.jobID)
+			
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, analytics)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, analytics)
+				
+				// Verify all components are present
+				assert.NotNil(t, analytics.CPUAnalytics)
+				assert.NotNil(t, analytics.MemoryAnalytics)
+				assert.NotNil(t, analytics.IOAnalytics)
+				assert.NotNil(t, analytics.EfficiencyMetrics)
+				
+				// Verify efficiency metrics
+				assert.Equal(t, 43.33, analytics.EfficiencyMetrics.OverallEfficiencyScore)
+				assert.Equal(t, 50.0, analytics.EfficiencyMetrics.CPUEfficiency)
+				assert.Equal(t, 60.0, analytics.EfficiencyMetrics.MemoryEfficiency)
+				assert.Equal(t, 20.0, analytics.EfficiencyMetrics.IOEfficiency)
+				assert.Equal(t, 0.0, analytics.EfficiencyMetrics.GPUEfficiency)
+				
+				// Verify resource waste
+				waste := analytics.EfficiencyMetrics.ResourceWaste
+				assert.Equal(t, 50.0, waste["cpu_cores"])
+				assert.InDelta(t, 40.0, waste["memory_gb"], 0.1)
+				assert.Equal(t, 0.0, waste["gpu_hours"])
+				
+				// Verify bottlenecks
+				assert.Len(t, analytics.EfficiencyMetrics.Bottlenecks, 2)
+				if len(analytics.EfficiencyMetrics.Bottlenecks) >= 2 {
+					// CPU bottleneck
+					cpuBottleneck := analytics.EfficiencyMetrics.Bottlenecks[0]
+					assert.Equal(t, "cpu", cpuBottleneck.Resource)
+					assert.Equal(t, "underutilization", cpuBottleneck.Type)
+					assert.Equal(t, "moderate", cpuBottleneck.Severity)
+					assert.Equal(t, "high", cpuBottleneck.Impact)
+					assert.Contains(t, cpuBottleneck.Description, "50% utilization")
+					
+					// Memory bottleneck
+					memBottleneck := analytics.EfficiencyMetrics.Bottlenecks[1]
+					assert.Equal(t, "memory", memBottleneck.Resource)
+					assert.Equal(t, "overallocation", memBottleneck.Type)
+					assert.Equal(t, "low", memBottleneck.Severity)
+					assert.Equal(t, "low", memBottleneck.Impact)
+					assert.Contains(t, memBottleneck.Description, "allocated but unused")
+				}
+				
+				// Verify optimization recommendations
+				assert.Len(t, analytics.OptimizationRecommendations, 2)
+				if len(analytics.OptimizationRecommendations) >= 2 {
+					assert.Contains(t, analytics.OptimizationRecommendations[0], "CPU cores")
+					assert.Contains(t, analytics.OptimizationRecommendations[1], "memory allocation")
+				}
+			}
+		})
+	}
+}
+
+// TestJobManager_AnalyticsErrorHandling tests error handling for analytics methods
+func TestJobManager_AnalyticsErrorHandling(t *testing.T) {
+	ctx := context.Background()
+	jm := &JobManager{}
+
+	t.Run("nil context handling", func(t *testing.T) {
+		// GetJobCPUAnalytics with nil context should handle gracefully
+		analytics, err := jm.GetJobCPUAnalytics(nil, "12345")
+		assert.NoError(t, err)
+		assert.NotNil(t, analytics)
+	})
+
+	t.Run("invalid job ID format", func(t *testing.T) {
+		// Empty job ID should return error
+		analytics, err := jm.GetJobCPUAnalytics(ctx, "")
+		assert.Error(t, err)
+		assert.Nil(t, analytics)
+		assert.Contains(t, err.Error(), "job ID is required")
+	})
+
+	t.Run("consistent error messages", func(t *testing.T) {
+		// All methods should return consistent error for empty job ID
+		methods := []func(context.Context, string) (interface{}, error){
+			func(ctx context.Context, jobID string) (interface{}, error) {
+				return jm.GetJobCPUAnalytics(ctx, jobID)
+			},
+			func(ctx context.Context, jobID string) (interface{}, error) {
+				return jm.GetJobMemoryAnalytics(ctx, jobID)
+			},
+			func(ctx context.Context, jobID string) (interface{}, error) {
+				return jm.GetJobIOAnalytics(ctx, jobID)
+			},
+			func(ctx context.Context, jobID string) (interface{}, error) {
+				return jm.GetJobComprehensiveAnalytics(ctx, jobID)
+			},
+		}
+
+		for _, method := range methods {
+			result, err := method(ctx, "")
+			assert.Error(t, err)
+			assert.Nil(t, result)
+			assert.Contains(t, err.Error(), "job ID is required")
+		}
+	})
+}
+
+// BenchmarkJobManager_GetJobCPUAnalytics benchmarks GetJobCPUAnalytics performance
+func BenchmarkJobManager_GetJobCPUAnalytics(b *testing.B) {
+	ctx := context.Background()
+	jm := &JobManager{}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = jm.GetJobCPUAnalytics(ctx, "12345")
+	}
+}
+
+// BenchmarkJobManager_GetJobComprehensiveAnalytics benchmarks GetJobComprehensiveAnalytics performance
+func BenchmarkJobManager_GetJobComprehensiveAnalytics(b *testing.B) {
+	ctx := context.Background()
+	jm := &JobManager{}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = jm.GetJobComprehensiveAnalytics(ctx, "12345")
+	}
+}
+
 // mockAPIClient is a mock implementation for testing
 type mockAPIClient struct {
 	getJobResponse *interfaces.Job

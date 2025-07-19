@@ -1675,7 +1675,7 @@ func (m *JobManagerImpl) GetJobCPUAnalytics(ctx context.Context, jobID string) (
 		L3CacheMisses:   1000, // Fixed cache misses
 
 		// Fixed instruction metrics
-		InstructionsPerCycle: int64(1.8),     // Fixed IPC
+		InstructionsPerCycle: int64(1),     // Fixed IPC
 		BranchMispredictions: 2000,    // Fixed mispredictions
 		TotalInstructions:    1000000, // Fixed instruction count
 
@@ -2121,4 +2121,22 @@ func combineBottlenecksV40(cpu *interfaces.CPUAnalytics, memory *interfaces.Memo
 	})
 	
 	return bottlenecks
+}
+
+// GetStepAccountingData retrieves accounting data for a specific job step
+func (m *JobManagerImpl) GetStepAccountingData(ctx context.Context, jobID string, stepID string) (*interfaces.StepAccountingRecord, error) {
+	// v0.0.40 has no step accounting data support
+	return nil, fmt.Errorf("GetStepAccountingData not implemented in v0.0.40")
+}
+
+// GetJobStepAPIData integrates with SLURM's native job step APIs for real-time data
+func (m *JobManagerImpl) GetJobStepAPIData(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepAPIData, error) {
+	// v0.0.40 has no real-time job step API data support
+	return nil, fmt.Errorf("GetJobStepAPIData not implemented in v0.0.40")
+}
+
+// ListJobStepsFromSacct queries job steps using SLURM's sacct command integration
+func (m *JobManagerImpl) ListJobStepsFromSacct(ctx context.Context, options *interfaces.SacctQueryOptions) ([]*interfaces.StepAccountingRecord, error) {
+	// v0.0.40 has no sacct integration support
+	return nil, fmt.Errorf("ListJobStepsFromSacct not implemented in v0.0.40")
 }
