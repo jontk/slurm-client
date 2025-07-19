@@ -88,7 +88,7 @@ func (ec *EfficiencyCalculator) CalculateOverallEfficiency(
 	}
 	
 	// GPU efficiency (only if GPUs are allocated)
-	if gpuUtilization != nil && gpuUtilization.TotalGPUs > 0 {
+	if gpuUtilization != nil && gpuUtilization.DeviceCount > 0 {
 		gpuEff := ec.CalculateGPUEfficiency(gpuUtilization)
 		weightedSum += gpuEff * weights.GPU
 		totalWeight += weights.GPU
@@ -169,9 +169,9 @@ func (ec *EfficiencyCalculator) CalculateMemoryEfficiency(analytics *interfaces.
 	// Base efficiency is utilization
 	efficiency := analytics.UtilizationPercent
 	
-	// Penalize swap usage
-	if analytics.SwapBytes > 0 {
-		swapRatio := float64(analytics.SwapBytes) / float64(analytics.AllocatedBytes)
+	// Penalize swap usage (using PageSwaps as indicator)
+	if analytics.PageSwaps > 0 {
+		swapRatio := float64(analytics.PageSwaps) / 10000.0 // Normalize swap activity
 		swapPenalty := math.Min(swapRatio*0.3, 0.3) // Up to 30% penalty for swap
 		efficiency *= (1.0 - swapPenalty)
 	}
@@ -183,12 +183,12 @@ func (ec *EfficiencyCalculator) CalculateMemoryEfficiency(analytics *interfaces.
 	}
 	
 	// Reward good memory locality (NUMA efficiency)
-	if len(analytics.NUMAMetrics) > 1 {
+	if len(analytics.NUMANodes) > 1 {
 		avgLocalAccess := 0.0
-		for _, numa := range analytics.NUMAMetrics {
-			avgLocalAccess += numa.LocalAccessPercent
+		for _, numa := range analytics.NUMANodes {
+			avgLocalAccess += numa.LocalAccesses
 		}
-		avgLocalAccess /= float64(len(analytics.NUMAMetrics))
+		avgLocalAccess /= float64(len(analytics.NUMANodes))
 		
 		if avgLocalAccess > 90.0 {
 			efficiency *= 1.05 // 5% bonus for excellent locality
@@ -197,43 +197,43 @@ func (ec *EfficiencyCalculator) CalculateMemoryEfficiency(analytics *interfaces.
 		}
 	}
 	
-	// Severe penalty for memory leaks
-	if analytics.MemoryLeakDetected {
-		efficiency *= 0.5 // 50% penalty for memory leaks
-	}
-	
 	return math.Min(efficiency, 100.0)
 }
 
 // CalculateGPUEfficiency calculates GPU efficiency percentage
 func (ec *EfficiencyCalculator) CalculateGPUEfficiency(utilization *interfaces.GPUUtilization) float64 {
-	if utilization.TotalGPUs == 0 {
+	if utilization.DeviceCount == 0 {
 		return 0.0
 	}
 	
-	// Use average utilization across all GPUs
-	efficiency := utilization.AverageUtilization.Percentage
+	// Use overall utilization
+	efficiency := 0.0
+	if utilization.OverallUtilization != nil {
+		efficiency = utilization.OverallUtilization.Percentage
+	}
 	
 	// Penalize underutilized individual GPUs
 	underutilizedCount := 0
-	for _, gpu := range utilization.GPUs {
-		if gpu.Utilization.Percentage < 50.0 {
+	for _, gpu := range utilization.Devices {
+		if gpu.Utilization != nil && gpu.Utilization.Percentage < 50.0 {
 			underutilizedCount++
 		}
 	}
 	
 	if underutilizedCount > 0 {
-		penalty := float64(underutilizedCount) / float64(utilization.TotalGPUs) * 0.1
+		penalty := float64(underutilizedCount) / float64(utilization.DeviceCount) * 0.1
 		efficiency *= (1.0 - penalty)
 	}
 	
 	// Consider memory efficiency on GPUs
 	avgMemoryUtilization := 0.0
-	for _, gpu := range utilization.GPUs {
-		avgMemoryUtilization += gpu.MemoryUtilization.Percentage
+	for _, gpu := range utilization.Devices {
+		if gpu.MemoryUtilization != nil {
+			avgMemoryUtilization += gpu.MemoryUtilization.Percentage
+		}
 	}
-	if len(utilization.GPUs) > 0 {
-		avgMemoryUtilization /= float64(len(utilization.GPUs))
+	if len(utilization.Devices) > 0 {
+		avgMemoryUtilization /= float64(len(utilization.Devices))
 		// Blend GPU compute and memory utilization
 		efficiency = efficiency*0.7 + avgMemoryUtilization*0.3
 	}
@@ -248,8 +248,8 @@ func (ec *EfficiencyCalculator) CalculateIOEfficiency(analytics *interfaces.IOAn
 	theoreticalReadBW := 1000.0
 	theoreticalWriteBW := 500.0
 	
-	readEfficiency := math.Min(analytics.ReadBandwidthMBps/theoreticalReadBW*100.0, 100.0)
-	writeEfficiency := math.Min(analytics.WriteBandwidthMBps/theoreticalWriteBW*100.0, 100.0)
+	readEfficiency := math.Min(analytics.AverageReadBandwidth/theoreticalReadBW*100.0, 100.0)
+	writeEfficiency := math.Min(analytics.AverageWriteBandwidth/theoreticalWriteBW*100.0, 100.0)
 	
 	// Weight reads and writes based on operation count
 	totalOps := analytics.ReadOperations + analytics.WriteOperations
@@ -262,29 +262,17 @@ func (ec *EfficiencyCalculator) CalculateIOEfficiency(analytics *interfaces.IOAn
 	
 	efficiency := readEfficiency*readWeight + writeEfficiency*writeWeight
 	
-	// Penalize high I/O wait
-	if analytics.IOWaitPercent > 10.0 {
-		waitPenalty := math.Min((analytics.IOWaitPercent-10.0)/100.0*0.2, 0.2)
-		efficiency *= (1.0 - waitPenalty)
-	}
-	
 	// Penalize high latency
-	avgLatency := (analytics.ReadLatencyMs*readWeight + analytics.WriteLatencyMs*writeWeight)
+	avgLatency := (analytics.AverageReadLatency*readWeight + analytics.AverageWriteLatency*writeWeight)
 	if avgLatency > 20.0 {
 		latencyPenalty := math.Min((avgLatency-20.0)/100.0*0.15, 0.15)
 		efficiency *= (1.0 - latencyPenalty)
 	}
 	
-	// Consider device-level efficiency
-	if len(analytics.DeviceMetrics) > 0 {
-		avgDeviceUtil := 0.0
-		for _, device := range analytics.DeviceMetrics {
-			avgDeviceUtil += device.UtilizationPercent
-		}
-		avgDeviceUtil /= float64(len(analytics.DeviceMetrics))
-		
-		// Blend bandwidth efficiency with device utilization
-		efficiency = efficiency*0.7 + avgDeviceUtil*0.3
+	// Use the utilization percentage if available
+	if analytics.UtilizationPercent > 0 {
+		// Blend bandwidth efficiency with overall utilization
+		efficiency = efficiency*0.7 + analytics.UtilizationPercent*0.3
 	}
 	
 	return math.Min(efficiency, 100.0)
