@@ -87,6 +87,20 @@ type JobManager interface {
 
 	// ListJobStepsWithMetrics retrieves all job steps with their performance metrics
 	ListJobStepsWithMetrics(ctx context.Context, jobID string, opts *ListJobStepsOptions) (*JobStepMetricsList, error)
+
+	// SLURM Integration Methods for Task 2.7
+
+	// GetJobStepsFromAccounting retrieves job step data from SLURM's accounting database
+	GetJobStepsFromAccounting(ctx context.Context, jobID string, opts *AccountingQueryOptions) (*AccountingJobSteps, error)
+
+	// GetStepAccountingData retrieves detailed accounting information for a specific job step
+	GetStepAccountingData(ctx context.Context, jobID string, stepID string) (*StepAccountingRecord, error)
+
+	// GetJobStepAPIData integrates with SLURM's native job step APIs for real-time data
+	GetJobStepAPIData(ctx context.Context, jobID string, stepID string) (*JobStepAPIData, error)
+
+	// ListJobStepsFromSacct queries job steps using SLURM's sacct command integration
+	ListJobStepsFromSacct(ctx context.Context, jobID string, opts *SacctQueryOptions) (*SacctJobStepData, error)
 }
 
 // NodeManager provides version-agnostic node operations
@@ -451,9 +465,10 @@ type PerformanceTrends struct {
 // PerformanceBottleneck represents a detected performance bottleneck
 type PerformanceBottleneck struct {
 	Type          string        `json:"type"`     // cpu, memory, gpu, io, network
+	Resource      string        `json:"resource"` // Specific resource affected  
 	Severity      string        `json:"severity"` // low, medium, high, critical
 	Description   string        `json:"description"`
-	Impact        float64       `json:"impact"` // Estimated performance impact percentage
+	Impact        string        `json:"impact"`   // Description of performance impact
 	TimeDetected  time.Time     `json:"time_detected"`
 	Duration      time.Duration `json:"duration"`
 	AffectedNodes []string      `json:"affected_nodes,omitempty"`
@@ -1984,4 +1999,481 @@ type ClientConfig struct {
 	HTTPClient *http.Client
 	APIKey     string
 	Debug      bool
+}
+
+// AccountingQueryOptions defines options for querying SLURM's accounting database
+type AccountingQueryOptions struct {
+	StartTime  *time.Time `json:"start_time,omitempty"`
+	EndTime    *time.Time `json:"end_time,omitempty"`
+	User       string     `json:"user,omitempty"`
+	Account    string     `json:"account,omitempty"`
+	Partition  string     `json:"partition,omitempty"`
+	State      string     `json:"state,omitempty"`
+	Format     string     `json:"format,omitempty"`
+	MaxRecords int        `json:"max_records,omitempty"`
+}
+
+// AccountingJobSteps contains job step data from SLURM's accounting database
+type AccountingJobSteps struct {
+	JobID    string                   `json:"job_id"`
+	JobName  string                   `json:"job_name"`
+	User     string                   `json:"user"`
+	Account  string                   `json:"account"`
+	Steps    []StepAccountingRecord   `json:"steps"`
+	Summary  *JobAccountingSummary    `json:"summary,omitempty"`
+	Metadata map[string]interface{}   `json:"metadata,omitempty"`
+}
+
+// StepAccountingRecord contains detailed accounting information for a job step
+type StepAccountingRecord struct {
+	StepID          string                 `json:"step_id"`
+	StepName        string                 `json:"step_name"`
+	JobID           string                 `json:"job_id"`
+	UserID          string                 `json:"user_id"`
+	GroupID         string                 `json:"group_id"`
+	Account         string                 `json:"account"`
+	Partition       string                 `json:"partition"`
+	Nodes           []string               `json:"nodes"`
+	CPUs            int                    `json:"cpus"`
+	Tasks           int                    `json:"tasks"`
+	
+	// Timing information
+	SubmitTime      time.Time              `json:"submit_time"`
+	StartTime       *time.Time             `json:"start_time,omitempty"`
+	EndTime         *time.Time             `json:"end_time,omitempty"`
+	ElapsedTime     time.Duration          `json:"elapsed_time"`
+	CPUTime         time.Duration          `json:"cpu_time"`
+	
+	// Resource usage
+	AllocCPUs       int                    `json:"alloc_cpus"`
+	ReqCPUs         int                    `json:"req_cpus"`
+	AllocMem        int64                  `json:"alloc_mem"`
+	ReqMem          int64                  `json:"req_mem"`
+	MaxRSS          int64                  `json:"max_rss"`
+	MaxVMSize       int64                  `json:"max_vm_size"`
+	
+	// I/O and performance
+	MaxDiskRead     int64                  `json:"max_disk_read"`
+	MaxDiskWrite    int64                  `json:"max_disk_write"`
+	AveCPU          float64                `json:"ave_cpu"`
+	AveCPUFreq      float64                `json:"ave_cpu_freq"`
+	
+	// Status and exit information
+	State           string                 `json:"state"`
+	ExitCode        int                    `json:"exit_code"`
+	DerivedExitCode int                    `json:"derived_exit_code"`
+	
+	// Additional metadata
+	QOS             string                 `json:"qos,omitempty"`
+	Constraints     string                 `json:"constraints,omitempty"`
+	WorkDir         string                 `json:"work_dir,omitempty"`
+	Metadata        map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// JobStepAPIData contains real-time data from SLURM's native job step APIs
+type JobStepAPIData struct {
+	StepID          string                 `json:"step_id"`
+	JobID           string                 `json:"job_id"`
+	StepName        string                 `json:"step_name"`
+	State           string                 `json:"state"`
+	
+	// Real-time resource usage
+	CurrentCPUUsage     float64            `json:"current_cpu_usage"`
+	CurrentMemoryUsage  int64              `json:"current_memory_usage"`
+	CurrentIOReads      int64              `json:"current_io_reads"`
+	CurrentIOWrites     int64              `json:"current_io_writes"`
+	
+	// Task information
+	TaskCount           int                `json:"task_count"`
+	RunningTasks        int                `json:"running_tasks"`
+	CompletedTasks      int                `json:"completed_tasks"`
+	FailedTasks         int                `json:"failed_tasks"`
+	
+	// Network information
+	NetworkBytesIn      int64              `json:"network_bytes_in"`
+	NetworkBytesOut     int64              `json:"network_bytes_out"`
+	
+	// Performance counters
+	ContextSwitches     int64              `json:"context_switches"`
+	PageFaults          int64              `json:"page_faults"`
+	
+	// Timing
+	StartTime           *time.Time         `json:"start_time,omitempty"`
+	LastUpdate          time.Time          `json:"last_update"`
+	
+	// Additional API data
+	ProcessTree         []ProcessInfo      `json:"process_tree,omitempty"`
+	EnvironmentVars     map[string]string  `json:"environment_vars,omitempty"`
+	Metadata            map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// SacctQueryOptions defines options for querying with sacct command
+type SacctQueryOptions struct {
+	JobID       string     `json:"job_id,omitempty"`
+	User        string     `json:"user,omitempty"`
+	Account     string     `json:"account,omitempty"`
+	Partition   string     `json:"partition,omitempty"`
+	State       []string   `json:"state,omitempty"`
+	StartTime   *time.Time `json:"start_time,omitempty"`
+	EndTime     *time.Time `json:"end_time,omitempty"`
+	Format      []string   `json:"format,omitempty"`      // Fields to include
+	Delimiter   string     `json:"delimiter,omitempty"`   // Field delimiter
+	NoHeader    bool       `json:"no_header,omitempty"`   // Skip header line
+	Parsable    bool       `json:"parsable,omitempty"`    // Machine-readable format
+	Brief       bool       `json:"brief,omitempty"`       // Brief output
+	Verbose     bool       `json:"verbose,omitempty"`     // Verbose output
+	Units       string     `json:"units,omitempty"`       // Units for resource values
+	MaxRecords  int        `json:"max_records,omitempty"` // Limit number of records
+}
+
+// SacctJobStepData contains job step data retrieved via sacct command
+type SacctJobStepData struct {
+	JobID        string                   `json:"job_id"`
+	QueryOptions *SacctQueryOptions       `json:"query_options"`
+	Steps        []SacctStepRecord        `json:"steps"`
+	TotalSteps   int                      `json:"total_steps"`
+	QueryTime    time.Time                `json:"query_time"`
+	Metadata     map[string]interface{}   `json:"metadata,omitempty"`
+}
+
+// SacctStepRecord represents a single step record from sacct output
+type SacctStepRecord struct {
+	JobID           string                 `json:"job_id"`
+	StepID          string                 `json:"step_id"`
+	StepName        string                 `json:"step_name"`
+	Account         string                 `json:"account"`
+	User            string                 `json:"user"`
+	Group           string                 `json:"group"`
+	JobName         string                 `json:"job_name"`
+	Partition       string                 `json:"partition"`
+	NodeList        string                 `json:"node_list"`
+	NodeCount       int                    `json:"node_count"`
+	
+	// Resource allocation
+	AllocCPUs       int                    `json:"alloc_cpus"`
+	ReqCPUs         int                    `json:"req_cpus"`
+	AllocMem        string                 `json:"alloc_mem"`        // Can be in various units
+	ReqMem          string                 `json:"req_mem"`          // Can be in various units
+	AllocNodes      int                    `json:"alloc_nodes"`
+	ReqNodes        string                 `json:"req_nodes"`
+	
+	// Timing
+	Submit          string                 `json:"submit"`           // Submit time
+	Start           string                 `json:"start"`            // Start time
+	End             string                 `json:"end"`              // End time
+	Elapsed         string                 `json:"elapsed"`          // Elapsed time
+	CPUTime         string                 `json:"cpu_time"`         // Total CPU time
+	CPUTimeRAW      int64                  `json:"cpu_time_raw"`     // CPU time in seconds
+	
+	// Resource usage
+	MaxRSS          string                 `json:"max_rss"`          // Maximum resident set size
+	MaxVMSize       string                 `json:"max_vm_size"`      // Maximum virtual memory size
+	MaxDiskRead     string                 `json:"max_disk_read"`    // Maximum disk read
+	MaxDiskWrite    string                 `json:"max_disk_write"`   // Maximum disk write
+	MaxPages        int64                  `json:"max_pages"`        // Maximum number of pages
+	
+	// Performance metrics
+	AveCPU          string                 `json:"ave_cpu"`          // Average CPU utilization
+	AveCPUFreq      string                 `json:"ave_cpu_freq"`     // Average CPU frequency
+	AvePages        float64                `json:"ave_pages"`        // Average pages per second
+	AveDiskRead     string                 `json:"ave_disk_read"`    // Average disk read rate
+	AveDiskWrite    string                 `json:"ave_disk_write"`   // Average disk write rate
+	
+	// Status
+	State           string                 `json:"state"`            // Job state
+	ExitCode        string                 `json:"exit_code"`        // Exit code
+	DerivedExitCode string                 `json:"derived_exit_code"` // Derived exit code
+	
+	// Additional fields
+	QOS             string                 `json:"qos,omitempty"`
+	Priority        int                    `json:"priority,omitempty"`
+	ReqTRES         string                 `json:"req_tres,omitempty"`    // Requested TRES
+	AllocTRES       string                 `json:"alloc_tres,omitempty"`  // Allocated TRES
+	TRESUsageIn     string                 `json:"tres_usage_in,omitempty"`  // TRES usage input
+	TRESUsageOut    string                 `json:"tres_usage_out,omitempty"` // TRES usage output
+	
+	// Raw data for custom parsing
+	RawData         map[string]string      `json:"raw_data,omitempty"`
+	Metadata        map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// JobAccountingSummary provides summary statistics for job accounting data
+type JobAccountingSummary struct {
+	TotalSteps       int                    `json:"total_steps"`
+	CompletedSteps   int                    `json:"completed_steps"`
+	FailedSteps      int                    `json:"failed_steps"`
+	RunningSteps     int                    `json:"running_steps"`
+	
+	// Resource totals
+	TotalCPUTime     time.Duration          `json:"total_cpu_time"`
+	TotalElapsed     time.Duration          `json:"total_elapsed"`
+	TotalMemoryUsed  int64                  `json:"total_memory_used"`
+	TotalDiskRead    int64                  `json:"total_disk_read"`
+	TotalDiskWrite   int64                  `json:"total_disk_write"`
+	
+	// Efficiency metrics
+	OverallCPUEff    float64                `json:"overall_cpu_efficiency"`
+	OverallMemEff    float64                `json:"overall_memory_efficiency"`
+	OverallIOEff     float64                `json:"overall_io_efficiency"`
+	
+	Metadata         map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// ProcessInfo contains information about processes in a job step
+type ProcessInfo struct {
+	PID              int                    `json:"pid"`
+	PPID             int                    `json:"ppid"`
+	Command          string                 `json:"command"`
+	CPUPercent       float64                `json:"cpu_percent"`
+	MemoryPercent    float64                `json:"memory_percent"`
+	RSS              int64                  `json:"rss"`
+	VMS              int64                  `json:"vms"`
+	Status           string                 `json:"status"`
+	StartTime        time.Time              `json:"start_time"`
+	Children         []ProcessInfo          `json:"children,omitempty"`
+}
+
+// CPUAnalytics provides detailed CPU performance analysis and metrics
+type CPUAnalytics struct {
+	AllocatedCores    int     `json:"allocated_cores"`
+	RequestedCores    int     `json:"requested_cores"`
+	UsedCores         float64 `json:"used_cores"`
+	UtilizationPercent float64 `json:"utilization_percent"`
+	EfficiencyPercent float64 `json:"efficiency_percent"`
+	IdleCores         float64 `json:"idle_cores"`
+	Oversubscribed    bool    `json:"oversubscribed"`
+
+	// Per-core metrics for detailed analysis
+	CoreMetrics []CPUCoreMetric `json:"core_metrics,omitempty"`
+
+	// Thermal and frequency information
+	AverageTemperature     float64 `json:"average_temperature"`
+	MaxTemperature         float64 `json:"max_temperature"`
+	ThermalThrottleEvents  int64   `json:"thermal_throttle_events"`
+	AverageFrequency       float64 `json:"average_frequency_ghz"`
+	MaxFrequency           float64 `json:"max_frequency_ghz"`
+	FrequencyScalingEvents int64   `json:"frequency_scaling_events"`
+
+	// Threading and context metrics
+	ContextSwitches      int64   `json:"context_switches"`
+	Interrupts           int64   `json:"interrupts"`
+	SoftInterrupts       int64   `json:"soft_interrupts"`
+	LoadAverage1Min      float64 `json:"load_average_1min"`
+	LoadAverage5Min      float64 `json:"load_average_5min"`
+	LoadAverage15Min     float64 `json:"load_average_15min"`
+
+	// Cache performance metrics
+	L1CacheHitRate  float64 `json:"l1_cache_hit_rate"`
+	L2CacheHitRate  float64 `json:"l2_cache_hit_rate"`
+	L3CacheHitRate  float64 `json:"l3_cache_hit_rate"`
+	L1CacheMisses   int64   `json:"l1_cache_misses"`
+	L2CacheMisses   int64   `json:"l2_cache_misses"`
+	L3CacheMisses   int64   `json:"l3_cache_misses"`
+
+	// Instruction-level metrics
+	InstructionsPerCycle int64 `json:"instructions_per_cycle"`
+	BranchMispredictions int64 `json:"branch_mispredictions"`
+	TotalInstructions    int64 `json:"total_instructions"`
+
+	// Performance recommendations and bottleneck analysis
+	Recommendations []OptimizationRecommendation `json:"recommendations,omitempty"`
+	Bottlenecks     []PerformanceBottleneck      `json:"bottlenecks,omitempty"`
+
+	// Additional metadata and context
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// CPUCoreMetric contains performance metrics for an individual CPU core
+type CPUCoreMetric struct {
+	CoreID           int     `json:"core_id"`
+	Utilization      float64 `json:"utilization_percent"`
+	Frequency        float64 `json:"frequency_ghz"`
+	Temperature      float64 `json:"temperature_celsius"`
+	LoadAverage      float64 `json:"load_average"`
+	ContextSwitches  int64   `json:"context_switches"`
+	Interrupts       int64   `json:"interrupts"`
+}
+
+// MemoryAnalytics provides detailed memory performance analysis and metrics
+type MemoryAnalytics struct {
+	AllocatedBytes     int64   `json:"allocated_bytes"`
+	RequestedBytes     int64   `json:"requested_bytes"`
+	UsedBytes          int64   `json:"used_bytes"`
+	UtilizationPercent float64 `json:"utilization_percent"`
+	EfficiencyPercent  float64 `json:"efficiency_percent"`
+	FreeBytes          int64   `json:"free_bytes"`
+	Overcommitted      bool    `json:"overcommitted"`
+
+	// Memory breakdown by type
+	ResidentSetSize    int64 `json:"resident_set_size"`
+	VirtualMemorySize  int64 `json:"virtual_memory_size"`
+	SharedMemory       int64 `json:"shared_memory"`
+	BufferedMemory     int64 `json:"buffered_memory"`
+	CachedMemory       int64 `json:"cached_memory"`
+
+	// NUMA topology and memory locality
+	NUMANodes []NUMANodeMetrics `json:"numa_nodes,omitempty"`
+
+	// Memory bandwidth and performance
+	BandwidthUtilization float64 `json:"bandwidth_utilization_percent"`
+	MemoryBandwidthMBPS  int64   `json:"memory_bandwidth_mbps"`
+	PeakBandwidthMBPS    int64   `json:"peak_bandwidth_mbps"`
+
+	// Page and swap metrics
+	PageFaults      int64 `json:"page_faults"`
+	MajorPageFaults int64 `json:"major_page_faults"`
+	MinorPageFaults int64 `json:"minor_page_faults"`
+	PageSwaps       int64 `json:"page_swaps"`
+
+	// Memory access patterns
+	RandomAccess     float64 `json:"random_access_percent"`
+	SequentialAccess float64 `json:"sequential_access_percent"`
+	LocalityScore    float64 `json:"locality_score"`
+
+	// Memory leak detection and analysis
+	MemoryLeaks []MemoryLeak `json:"memory_leaks,omitempty"`
+
+	// Performance recommendations and bottleneck analysis
+	Recommendations []OptimizationRecommendation `json:"recommendations,omitempty"`
+	Bottlenecks     []PerformanceBottleneck      `json:"bottlenecks,omitempty"`
+
+	// Additional metadata and context
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// NUMANodeMetrics contains memory and CPU metrics for a specific NUMA node
+type NUMANodeMetrics struct {
+	NodeID           int     `json:"node_id"`
+	CPUCores         int     `json:"cpu_cores"`
+	MemoryTotal      int64   `json:"memory_total"`
+	MemoryUsed       int64   `json:"memory_used"`
+	MemoryFree       int64   `json:"memory_free"`
+	CPUUtilization   float64 `json:"cpu_utilization_percent"`
+	MemoryBandwidth  int64   `json:"memory_bandwidth_mbps"`
+	LocalAccesses    float64 `json:"local_accesses_percent"`
+	RemoteAccesses   float64 `json:"remote_accesses_percent"`
+	InterconnectLoad float64 `json:"interconnect_load_percent"`
+}
+
+// MemoryLeak contains information about detected memory leaks
+type MemoryLeak struct {
+	LeakType    string  `json:"leak_type"`      // gradual, sudden, cyclic, etc.
+	SizeBytes   int64   `json:"size_bytes"`     // Current size of the leak
+	GrowthRate  int64   `json:"growth_rate"`    // Bytes per second growth
+	Location    string  `json:"location"`       // Where the leak was detected
+	Severity    string  `json:"severity"`       // low, medium, high, critical
+	Description string  `json:"description"`    // Human-readable description
+}
+
+// IOAnalytics provides detailed I/O performance analysis and metrics
+type IOAnalytics struct {
+	ReadBytes         int64   `json:"read_bytes"`
+	WriteBytes        int64   `json:"write_bytes"`
+	ReadOperations    int64   `json:"read_operations"`
+	WriteOperations   int64   `json:"write_operations"`
+	UtilizationPercent float64 `json:"utilization_percent"`
+	EfficiencyPercent float64 `json:"efficiency_percent"`
+
+	// Bandwidth metrics
+	AverageReadBandwidth  float64 `json:"average_read_bandwidth_mbps"`
+	AverageWriteBandwidth float64 `json:"average_write_bandwidth_mbps"`
+	PeakReadBandwidth     float64 `json:"peak_read_bandwidth_mbps"`
+	PeakWriteBandwidth    float64 `json:"peak_write_bandwidth_mbps"`
+
+	// Latency metrics
+	AverageReadLatency  float64 `json:"average_read_latency_ms"`
+	AverageWriteLatency float64 `json:"average_write_latency_ms"`
+	MaxReadLatency      float64 `json:"max_read_latency_ms"`
+	MaxWriteLatency     float64 `json:"max_write_latency_ms"`
+
+	// Queue depth and wait times
+	QueueDepth        float64 `json:"queue_depth"`
+	MaxQueueDepth     float64 `json:"max_queue_depth"`
+	QueueTime         float64 `json:"queue_time_ms"`
+
+	// Access patterns
+	RandomAccessPercent     float64 `json:"random_access_percent"`
+	SequentialAccessPercent float64 `json:"sequential_access_percent"`
+
+	// I/O size distribution
+	AverageIOSize  int64 `json:"average_io_size_bytes"`
+	MaxIOSize      int64 `json:"max_io_size_bytes"`
+	MinIOSize      int64 `json:"min_io_size_bytes"`
+
+	// Storage device information
+	StorageDevices []StorageDevice `json:"storage_devices,omitempty"`
+
+	// Performance recommendations and bottleneck analysis
+	Recommendations []OptimizationRecommendation `json:"recommendations,omitempty"`
+	Bottlenecks     []PerformanceBottleneck      `json:"bottlenecks,omitempty"`
+
+	// Additional metadata and context
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// StorageDevice contains information and metrics for a storage device
+type StorageDevice struct {
+	DeviceName      string  `json:"device_name"`
+	DeviceType      string  `json:"device_type"`       // ssd, hdd, nvme_ssd, etc.
+	MountPoint      string  `json:"mount_point"`
+	TotalCapacity   int64   `json:"total_capacity"`
+	UsedCapacity    int64   `json:"used_capacity"`
+	AvailCapacity   int64   `json:"available_capacity"`
+	Utilization     float64 `json:"utilization_percent"`
+	IOPS            int64   `json:"iops"`
+	ThroughputMBPS  int64   `json:"throughput_mbps"`
+}
+
+// JobComprehensiveAnalytics combines all analytics into a complete performance report
+type JobComprehensiveAnalytics struct {
+	JobID     uint32    `json:"job_id"`
+	JobName   string    `json:"job_name"`
+	StartTime time.Time `json:"start_time"`
+	EndTime   *time.Time `json:"end_time,omitempty"`
+	Duration  time.Duration `json:"duration"`
+	Status    string    `json:"status"`
+
+	// Individual analytics components
+	CPUAnalytics    *CPUAnalytics    `json:"cpu_analytics"`
+	MemoryAnalytics *MemoryAnalytics `json:"memory_analytics"`
+	IOAnalytics     *IOAnalytics     `json:"io_analytics"`
+
+	// Overall performance metrics
+	OverallEfficiency float64 `json:"overall_efficiency_percent"`
+
+	// Cross-resource analysis
+	CrossResourceAnalysis *CrossResourceAnalysis `json:"cross_resource_analysis"`
+
+	// Optimization recommendations
+	OptimalConfiguration *OptimalJobConfiguration `json:"optimal_configuration"`
+
+	// Combined recommendations and bottlenecks
+	Recommendations []OptimizationRecommendation `json:"recommendations,omitempty"`
+	Bottlenecks     []PerformanceBottleneck      `json:"bottlenecks,omitempty"`
+
+	// Additional metadata and context
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// CrossResourceAnalysis analyzes relationships and bottlenecks across different resource types
+type CrossResourceAnalysis struct {
+	PrimaryBottleneck    string  `json:"primary_bottleneck"`       // cpu, memory, io, network, none
+	SecondaryBottleneck  string  `json:"secondary_bottleneck"`     // cpu, memory, io, network, none
+	BottleneckSeverity   string  `json:"bottleneck_severity"`      // none, low, medium, high, critical
+	ResourceBalance      string  `json:"resource_balance"`         // optimal, cpu_bound, memory_bound, io_bound, unbalanced
+	OptimizationPotential float64 `json:"optimization_potential_percent"`
+	ScalabilityScore     float64 `json:"scalability_score"`
+	ResourceWaste        float64 `json:"resource_waste_percent"`
+	LoadBalanceScore     float64 `json:"load_balance_score"`
+}
+
+// OptimalJobConfiguration provides recommended resource allocation for future job runs
+type OptimalJobConfiguration struct {
+	RecommendedCPUs    int               `json:"recommended_cpus"`
+	RecommendedMemory  int64             `json:"recommended_memory_bytes"`
+	RecommendedNodes   int               `json:"recommended_nodes"`
+	RecommendedRuntime int               `json:"recommended_runtime_minutes"`
+	ExpectedSpeedup    float64           `json:"expected_speedup"`
+	CostReduction      float64           `json:"cost_reduction_percent"`
+	ConfigChanges      map[string]string `json:"config_changes,omitempty"`
 }
