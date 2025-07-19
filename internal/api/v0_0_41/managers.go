@@ -142,6 +142,38 @@ func (m *JobManager) ListJobStepsWithMetrics(ctx context.Context, jobID string, 
 	return m.impl.ListJobStepsWithMetrics(ctx, jobID, opts)
 }
 
+// GetJobCPUAnalytics retrieves detailed CPU performance analysis for a job
+func (m *JobManager) GetJobCPUAnalytics(ctx context.Context, jobID string) (*interfaces.CPUAnalytics, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobCPUAnalytics(ctx, jobID)
+}
+
+// GetJobMemoryAnalytics retrieves detailed memory performance analysis for a job
+func (m *JobManager) GetJobMemoryAnalytics(ctx context.Context, jobID string) (*interfaces.MemoryAnalytics, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobMemoryAnalytics(ctx, jobID)
+}
+
+// GetJobIOAnalytics retrieves detailed I/O performance analysis for a job
+func (m *JobManager) GetJobIOAnalytics(ctx context.Context, jobID string) (*interfaces.IOAnalytics, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobIOAnalytics(ctx, jobID)
+}
+
+// GetJobComprehensiveAnalytics retrieves comprehensive performance analysis for a job
+func (m *JobManager) GetJobComprehensiveAnalytics(ctx context.Context, jobID string) (*interfaces.JobComprehensiveAnalytics, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobComprehensiveAnalytics(ctx, jobID)
+}
+
 // NodeManager implements the NodeManager interface for API version v0.0.41
 type NodeManager struct {
 	client *WrapperClient

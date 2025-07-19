@@ -1623,3 +1623,502 @@ func convertToJobStepPointers(steps []interfaces.JobStep) []*interfaces.JobStep 
 	}
 	return result
 }
+
+// GetJobCPUAnalytics retrieves minimal CPU performance analysis for a job (v0.0.40 - very limited)
+func (m *JobManagerImpl) GetJobCPUAnalytics(ctx context.Context, jobID string) (*interfaces.CPUAnalytics, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Get basic job info
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create minimal CPU analytics for v0.0.40 (mostly fixed values)
+	cpuAnalytics := &interfaces.CPUAnalytics{
+		AllocatedCores:     job.CPUs,
+		RequestedCores:     job.CPUs,
+		UsedCores:          float64(job.CPUs) * 0.5, // Fixed 50% utilization
+		UtilizationPercent: 50.0,                    // Fixed utilization for v0.0.40
+		EfficiencyPercent:  45.0,                    // Fixed efficiency
+		IdleCores:          float64(job.CPUs) * 0.5,
+		Oversubscribed:     false, // Fixed for v0.0.40
+
+		// Fixed per-core metrics (v0.0.40 doesn't have real per-core data)
+		CoreMetrics: generateMinimalCoreMetrics(job.CPUs),
+
+		// Fixed thermal and frequency data
+		AverageTemperature:     65.0, // Fixed temperature
+		MaxTemperature:         75.0, // Fixed max temp
+		ThermalThrottleEvents:  0,    // No thermal monitoring in v0.0.40
+		AverageFrequency:       2.4,  // Fixed frequency GHz
+		MaxFrequency:           3.2,  // Fixed max frequency
+		FrequencyScalingEvents: 0,    // No frequency monitoring
+
+		// Fixed threading metrics
+		ContextSwitches:      10000, // Fixed value
+		Interrupts:           5000,  // Fixed value
+		SoftInterrupts:       3000,  // Fixed value
+		LoadAverage1Min:      1.5,   // Fixed load
+		LoadAverage5Min:      1.2,   // Fixed load
+		LoadAverage15Min:     1.0,   // Fixed load
+
+		// Fixed cache metrics
+		L1CacheHitRate:  95.0, // Fixed cache hit rate
+		L2CacheHitRate:  90.0, // Fixed cache hit rate
+		L3CacheHitRate:  85.0, // Fixed cache hit rate
+		L1CacheMisses:   5000, // Fixed cache misses
+		L2CacheMisses:   3000, // Fixed cache misses
+		L3CacheMisses:   1000, // Fixed cache misses
+
+		// Fixed instruction metrics
+		InstructionsPerCycle: int64(1.8),     // Fixed IPC
+		BranchMispredictions: 2000,    // Fixed mispredictions
+		TotalInstructions:    1000000, // Fixed instruction count
+
+		// Very basic recommendations for v0.0.40
+		Recommendations: []interfaces.OptimizationRecommendation{
+			{
+				Type:        "upgrade",
+				Priority:    "high",
+				Title:       "Upgrade SLURM API for real CPU analytics",
+				Description: "v0.0.40 provides only simulated CPU metrics. Upgrade to v0.0.41+ for actual measurements.",
+				ConfigChanges: map[string]string{
+					"current_version": "v0.0.40",
+					"recommended":     "v0.0.42+",
+				},
+			},
+		},
+
+		// Basic bottleneck analysis
+		Bottlenecks: []interfaces.PerformanceBottleneck{
+			{
+				Type:        "analysis_limitation",
+				Resource:    "cpu_monitoring",
+				Severity:    "info",
+				Description: "Real CPU bottleneck analysis requires v0.0.41+ API",
+				Impact:      "No actual CPU performance monitoring available",
+			},
+		},
+	}
+
+	// Add metadata (v0.0.40 specific)
+	cpuAnalytics.Metadata = map[string]interface{}{
+		"version":           "v0.0.40",
+		"data_source":       "simulated",
+		"job_nodes":         job.Nodes,
+		"job_partition":     job.Partition,
+		"analysis_limited":  true,
+		"fixed_values":      true,
+		"upgrade_required": true,
+	}
+
+	return cpuAnalytics, nil
+}
+
+// GetJobMemoryAnalytics retrieves minimal memory performance analysis for a job (v0.0.40 - very limited)
+func (m *JobManagerImpl) GetJobMemoryAnalytics(ctx context.Context, jobID string) (*interfaces.MemoryAnalytics, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Get basic job info
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create minimal memory analytics for v0.0.40 (mostly fixed values)
+	memoryAnalytics := &interfaces.MemoryAnalytics{
+		AllocatedBytes:     int64(job.Memory),
+		RequestedBytes:     int64(job.Memory),
+		UsedBytes:          int64(job.Memory) * 6 / 10, // Fixed 60% usage
+		UtilizationPercent: 60.0,                       // Fixed utilization
+		EfficiencyPercent:  55.0,                       // Fixed efficiency
+		FreeBytes:          int64(job.Memory) * 4 / 10, // Fixed free memory
+		Overcommitted:      false,                      // Fixed for v0.0.40
+
+		// Fixed memory breakdown
+		ResidentSetSize:    int64(job.Memory) * 5 / 10, // Fixed RSS
+		VirtualMemorySize:  int64(job.Memory) * 8 / 10, // Fixed VMS
+		SharedMemory:       int64(job.Memory) * 1 / 10, // Fixed shared
+		BufferedMemory:     int64(job.Memory) * 1 / 20, // Fixed buffered
+		CachedMemory:       int64(job.Memory) * 1 / 20, // Fixed cached
+
+		// Fixed NUMA metrics (v0.0.40 doesn't have real NUMA data)
+		NUMANodes: generateMinimalNUMAMetrics(job.CPUs, int64(job.Memory)),
+
+		// Fixed memory bandwidth
+		BandwidthUtilization: 15.0, // Fixed 15% bandwidth usage
+		MemoryBandwidthMBPS:  8000, // Fixed 8GB/s bandwidth
+		PeakBandwidthMBPS:    12000, // Fixed peak bandwidth
+
+		// Fixed page metrics
+		PageFaults:      100000, // Fixed page faults
+		MajorPageFaults: 1000,   // Fixed major faults
+		MinorPageFaults: 99000,  // Fixed minor faults
+		PageSwaps:       0,      // No swapping assumed
+
+		// Fixed memory access patterns
+		RandomAccess:     30.0, // Fixed random access %
+		SequentialAccess: 70.0, // Fixed sequential access %
+		LocalityScore:    75.0, // Fixed locality score
+
+		// No memory leaks detected in v0.0.40 (no leak detection)
+		MemoryLeaks: []interfaces.MemoryLeak{},
+
+		// Basic recommendations for v0.0.40
+		Recommendations: []interfaces.OptimizationRecommendation{
+			{
+				Type:        "upgrade",
+				Priority:    "high",
+				Title:       "Upgrade for real memory analytics",
+				Description: "v0.0.40 provides only simulated memory metrics. Upgrade to v0.0.42+ for comprehensive memory analysis.",
+				ConfigChanges: map[string]string{
+					"current_version": "v0.0.40",
+					"recommended":     "v0.0.42+",
+				},
+			},
+		},
+
+		// Basic bottleneck analysis
+		Bottlenecks: []interfaces.PerformanceBottleneck{
+			{
+				Type:        "analysis_limitation",
+				Resource:    "memory_monitoring",
+				Severity:    "info",
+				Description: "Real memory bottleneck analysis requires v0.0.42+ API",
+				Impact:      "No actual memory performance monitoring available",
+			},
+		},
+	}
+
+	// Add metadata (v0.0.40 specific)
+	memoryAnalytics.Metadata = map[string]interface{}{
+		"version":           "v0.0.40",
+		"data_source":       "simulated",
+		"job_nodes":         job.Nodes,
+		"job_partition":     job.Partition,
+		"analysis_limited":  true,
+		"fixed_values":      true,
+		"numa_unsupported":  true,
+		"upgrade_required": true,
+	}
+
+	return memoryAnalytics, nil
+}
+
+// GetJobIOAnalytics retrieves minimal I/O performance analysis for a job (v0.0.40 - very limited)
+func (m *JobManagerImpl) GetJobIOAnalytics(ctx context.Context, jobID string) (*interfaces.IOAnalytics, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Get basic job info
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Calculate job runtime for I/O calculations
+	runtime := calculateJobRuntime(job)
+
+	// Fixed I/O amounts based on job size (very basic)
+	baseIO := int64(job.CPUs) * 100 * 1024 * 1024 // 100MB per CPU
+
+	// Create minimal I/O analytics for v0.0.40 (mostly fixed values)
+	ioAnalytics := &interfaces.IOAnalytics{
+		ReadBytes:         baseIO * 3, // Fixed read amount
+		WriteBytes:        baseIO,     // Fixed write amount
+		ReadOperations:    10000,      // Fixed read ops
+		WriteOperations:   3000,       // Fixed write ops
+		UtilizationPercent: 20.0,      // Fixed utilization
+		EfficiencyPercent: 18.0,       // Fixed efficiency
+
+		// Fixed bandwidth metrics
+		AverageReadBandwidth:  calculateMinimalIOBandwidth(baseIO*3, runtime),
+		AverageWriteBandwidth: calculateMinimalIOBandwidth(baseIO, runtime),
+		PeakReadBandwidth:     calculateMinimalIOBandwidth(baseIO*3, runtime) * 1.5,
+		PeakWriteBandwidth:    calculateMinimalIOBandwidth(baseIO, runtime) * 1.3,
+
+		// Fixed latency metrics
+		AverageReadLatency:  15.0, // Fixed 15ms
+		AverageWriteLatency: 25.0, // Fixed 25ms
+		MaxReadLatency:      50.0, // Fixed max latency
+		MaxWriteLatency:     80.0, // Fixed max latency
+
+		// Fixed queue metrics
+		QueueDepth:        4.0, // Fixed queue depth
+		MaxQueueDepth:     8.0, // Fixed max queue depth
+		QueueTime:         5.0, // Fixed queue time ms
+
+		// Fixed random/sequential access patterns
+		RandomAccessPercent:     25.0, // Fixed random access
+		SequentialAccessPercent: 75.0, // Fixed sequential access
+
+		// Fixed I/O sizes
+		AverageIOSize:  64 * 1024,   // Fixed 64KB
+		MaxIOSize:     1024 * 1024, // Fixed 1MB
+		MinIOSize:     4 * 1024,    // Fixed 4KB
+
+		// Minimal storage device info (fixed for v0.0.40)
+		StorageDevices: []interfaces.StorageDevice{
+			{
+				DeviceName:      "unknown",   // v0.0.40 doesn't track devices
+				DeviceType:      "disk",      // Assumed disk
+				MountPoint:      "/",         // Assumed root
+				TotalCapacity:   1000 * 1024 * 1024 * 1024, // Fixed 1TB
+				UsedCapacity:    500 * 1024 * 1024 * 1024,  // Fixed 500GB
+				AvailCapacity:   500 * 1024 * 1024 * 1024,  // Fixed 500GB
+				Utilization:     20.0,                      // Fixed utilization
+				IOPS:            1000,                      // Fixed IOPS
+				ThroughputMBPS:  100,                       // Fixed throughput
+			},
+		},
+
+		// Basic recommendations for v0.0.40
+		Recommendations: []interfaces.OptimizationRecommendation{
+			{
+				Type:        "upgrade",
+				Priority:    "high",
+				Title:       "Upgrade for real I/O analytics",
+				Description: "v0.0.40 provides only simulated I/O metrics. Upgrade to v0.0.42+ for comprehensive I/O analysis.",
+				ConfigChanges: map[string]string{
+					"current_version": "v0.0.40",
+					"recommended":     "v0.0.42+",
+				},
+			},
+		},
+
+		// Basic bottleneck analysis
+		Bottlenecks: []interfaces.PerformanceBottleneck{
+			{
+				Type:        "analysis_limitation",
+				Resource:    "io_monitoring",
+				Severity:    "info",
+				Description: "Real I/O bottleneck analysis requires v0.0.42+ API",
+				Impact:      "No actual I/O performance monitoring available",
+			},
+		},
+	}
+
+	// Add metadata (v0.0.40 specific)
+	ioAnalytics.Metadata = map[string]interface{}{
+		"version":           "v0.0.40",
+		"data_source":       "simulated",
+		"job_nodes":         job.Nodes,
+		"job_partition":     job.Partition,
+		"analysis_limited":  true,
+		"fixed_values":      true,
+		"device_tracking":   false,
+		"upgrade_required": true,
+	}
+
+	return ioAnalytics, nil
+}
+
+// GetJobComprehensiveAnalytics retrieves comprehensive performance analysis (v0.0.40 - very limited)
+func (m *JobManagerImpl) GetJobComprehensiveAnalytics(ctx context.Context, jobID string) (*interfaces.JobComprehensiveAnalytics, error) {
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Get individual analytics components
+	cpuAnalytics, err := m.GetJobCPUAnalytics(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	memoryAnalytics, err := m.GetJobMemoryAnalytics(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	ioAnalytics, err := m.GetJobIOAnalytics(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get basic job info
+	job, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert string jobID to uint32
+	jobIDInt, err := strconv.ParseUint(jobID, 10, 32)
+	if err != nil {
+		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, "Invalid job ID format", err.Error())
+	}
+
+	// Create comprehensive analytics combining all components (v0.0.40 version)
+	comprehensiveAnalytics := &interfaces.JobComprehensiveAnalytics{
+		JobID:     uint32(jobIDInt),
+		JobName:   job.Name,
+		StartTime: job.SubmitTime,
+		EndTime:   job.EndTime,
+		Duration:  calculateJobRuntime(job),
+		Status:    job.State,
+
+		// Individual analytics components
+		CPUAnalytics:    cpuAnalytics,
+		MemoryAnalytics: memoryAnalytics,
+		IOAnalytics:     ioAnalytics,
+
+		// Fixed overall efficiency for v0.0.40
+		OverallEfficiency: 42.0, // Fixed overall efficiency
+
+		// Fixed cross-resource analysis
+		CrossResourceAnalysis: &interfaces.CrossResourceAnalysis{
+			PrimaryBottleneck:    "cpu",           // Fixed bottleneck
+			SecondaryBottleneck:  "memory",        // Fixed secondary
+			BottleneckSeverity:   "medium",        // Fixed severity
+			ResourceBalance:      "cpu_bound",     // Fixed balance
+			OptimizationPotential: 35.0,          // Fixed potential
+			ScalabilityScore:     60.0,           // Fixed scalability
+			ResourceWaste:        25.0,           // Fixed waste percentage
+			LoadBalanceScore:     70.0,           // Fixed load balance
+		},
+
+		// Fixed optimization config for v0.0.40
+		OptimalConfiguration: &interfaces.OptimalJobConfiguration{
+			RecommendedCPUs:    int(float64(job.CPUs) * 0.8), // 20% fewer CPUs
+			RecommendedMemory:  int64(float64(job.Memory) * 0.9), // 10% less memory
+			RecommendedNodes:   len(job.Nodes),    // Same nodes
+			RecommendedRuntime: job.TimeLimit + 60, // Add 1 hour buffer
+			ExpectedSpeedup:    1.1,               // Fixed 10% speedup
+			CostReduction:      15.0,              // Fixed 15% cost reduction
+			ConfigChanges: map[string]string{
+				"cpu_reduction":    "20_percent",
+				"memory_reduction": "10_percent",
+				"runtime_buffer":   "1_hour",
+			},
+		},
+
+		// Combined recommendations from all components
+		Recommendations: combineRecommendationsV40(cpuAnalytics, memoryAnalytics, ioAnalytics),
+
+		// Combined bottlenecks from all components
+		Bottlenecks: combineBottlenecksV40(cpuAnalytics, memoryAnalytics, ioAnalytics),
+	}
+
+	// Add comprehensive metadata (v0.0.40)
+	comprehensiveAnalytics.Metadata = map[string]interface{}{
+		"version":               "v0.0.40",
+		"analysis_timestamp":    time.Now(),
+		"data_source":           "simulated",
+		"job_partition":         job.Partition,
+		"job_nodes":             job.Nodes,
+		"comprehensive_limited": true,
+		"all_fixed_values":      true,
+		"upgrade_critical":      true,
+		"analysis_confidence":   "very_low",
+		"limitations": []string{
+			"no_real_measurements",
+			"fixed_efficiency_values",
+			"no_cross_resource_correlation",
+			"no_optimization_validation",
+			"limited_bottleneck_detection",
+		},
+	}
+
+	return comprehensiveAnalytics, nil
+}
+
+// Helper functions for v0.0.40 minimal analytics
+
+func generateMinimalCoreMetrics(cpuCount int) []interfaces.CPUCoreMetric {
+	coreMetrics := make([]interfaces.CPUCoreMetric, cpuCount)
+	for i := 0; i < cpuCount; i++ {
+		coreMetrics[i] = interfaces.CPUCoreMetric{
+			CoreID:           i,
+			Utilization:      50.0 + float64(i%10)*2, // Slight variation
+			Frequency:        2.4,                     // Fixed frequency
+			Temperature:      65.0,                    // Fixed temperature
+			LoadAverage:      1.0,                     // Fixed load
+			ContextSwitches:  1000,                    // Fixed switches
+			Interrupts:       500,                     // Fixed interrupts
+		}
+	}
+	return coreMetrics
+}
+
+func generateMinimalNUMAMetrics(cpus int, memory int64) []interfaces.NUMANodeMetrics {
+	// v0.0.40 assumes 1 NUMA node for simplicity
+	return []interfaces.NUMANodeMetrics{
+		{
+			NodeID:           0,
+			CPUCores:         cpus,              // All CPUs on node 0
+			MemoryTotal:      memory,            // All memory on node 0
+			MemoryUsed:       memory * 6 / 10,   // Fixed 60% usage
+			MemoryFree:       memory * 4 / 10,   // Fixed 40% free
+			CPUUtilization:   50.0,              // Fixed CPU util
+			MemoryBandwidth:  8000,              // Fixed bandwidth MB/s
+			LocalAccesses:    70.0,              // Fixed 70% local
+			RemoteAccesses:   30.0,              // Fixed 30% remote
+			InterconnectLoad: 15.0,              // Fixed interconnect
+		},
+	}
+}
+
+func calculateJobRuntime(job *interfaces.Job) time.Duration {
+	if job.StartTime == nil {
+		return time.Hour // Default 1 hour
+	}
+	if job.EndTime == nil {
+		return time.Since(*job.StartTime)
+	}
+	return job.EndTime.Sub(*job.StartTime)
+}
+
+func combineRecommendationsV40(cpu *interfaces.CPUAnalytics, memory *interfaces.MemoryAnalytics, io *interfaces.IOAnalytics) []interfaces.OptimizationRecommendation {
+	recommendations := []interfaces.OptimizationRecommendation{}
+	
+	// Add all recommendations from components
+	recommendations = append(recommendations, cpu.Recommendations...)
+	recommendations = append(recommendations, memory.Recommendations...)
+	recommendations = append(recommendations, io.Recommendations...)
+	
+	// Add a comprehensive upgrade recommendation
+	recommendations = append(recommendations, interfaces.OptimizationRecommendation{
+		Type:                "upgrade",
+		Priority:            "critical",
+		Title:               "Upgrade SLURM API for comprehensive analytics",
+		Description:         "v0.0.40 provides only basic simulated metrics. Upgrade to v0.0.42+ for real comprehensive job analytics with actual measurements and optimization.",
+		ExpectedImprovement: 0.0, // No improvement possible with v0.0.40
+		ConfigChanges: map[string]string{
+			"current_version":        "v0.0.40",
+			"minimum_recommended":    "v0.0.41",
+			"optimal_version":        "v0.0.42",
+			"comprehensive_version":  "v0.0.43",
+		},
+	})
+	
+	return recommendations
+}
+
+func combineBottlenecksV40(cpu *interfaces.CPUAnalytics, memory *interfaces.MemoryAnalytics, io *interfaces.IOAnalytics) []interfaces.PerformanceBottleneck {
+	bottlenecks := []interfaces.PerformanceBottleneck{}
+	
+	// Add all bottlenecks from components
+	bottlenecks = append(bottlenecks, cpu.Bottlenecks...)
+	bottlenecks = append(bottlenecks, memory.Bottlenecks...)
+	bottlenecks = append(bottlenecks, io.Bottlenecks...)
+	
+	// Add a comprehensive limitation bottleneck
+	bottlenecks = append(bottlenecks, interfaces.PerformanceBottleneck{
+		Type:        "api_limitation",
+		Resource:    "comprehensive_analytics",
+		Severity:    "critical",
+		Description: "v0.0.40 API severely limits comprehensive performance analysis",
+		Impact:      "No real bottleneck detection, optimization, or performance monitoring available",
+	})
+	
+	return bottlenecks
+}
