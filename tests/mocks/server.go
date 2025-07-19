@@ -167,6 +167,21 @@ func DefaultServerConfig() *ServerConfig {
 			"info.ping":        true,
 			"info.stats":       true,
 			"info.version":     true,
+			// Analytics endpoints
+			"jobs.utilization":      true,
+			"jobs.efficiency":       true,
+			"jobs.performance":      true,
+			"jobs.live_metrics":     true,
+			"jobs.resource_trends":  true,
+			"jobs.step_utilization": true,
+			"jobs.performance_history": true,
+			"jobs.performance_trends":  true,
+			"jobs.efficiency_trends":   true,
+			"jobs.compare_performance": true,
+			"jobs.similar_performance": true,
+			"jobs.analyze_batch":       true,
+			"jobs.workflow_performance": true,
+			"jobs.efficiency_report":    true,
 		},
 	}
 }
@@ -253,6 +268,22 @@ func (m *MockSlurmServer) setupRouter() {
 	apiRouter.HandleFunc("/job/{job_id}", m.handleJobsCancel).Methods("DELETE")
 	apiRouter.HandleFunc("/job/{job_id}", m.handleJobsUpdate).Methods("PATCH")
 	apiRouter.HandleFunc("/job/{job_id}/steps", m.handleJobsSteps).Methods("GET")
+	
+	// Job Analytics endpoints
+	apiRouter.HandleFunc("/job/{job_id}/utilization", m.handleJobUtilization).Methods("GET")
+	apiRouter.HandleFunc("/job/{job_id}/efficiency", m.handleJobEfficiency).Methods("GET")
+	apiRouter.HandleFunc("/job/{job_id}/performance", m.handleJobPerformance).Methods("GET")
+	apiRouter.HandleFunc("/job/{job_id}/live_metrics", m.handleJobLiveMetrics).Methods("GET")
+	apiRouter.HandleFunc("/job/{job_id}/resource_trends", m.handleJobResourceTrends).Methods("GET")
+	apiRouter.HandleFunc("/job/{job_id}/step/{step_id}/utilization", m.handleJobStepUtilization).Methods("GET")
+	apiRouter.HandleFunc("/jobs/performance/history", m.handleJobPerformanceHistory).Methods("GET")
+	apiRouter.HandleFunc("/jobs/performance/trends", m.handlePerformanceTrends).Methods("GET")
+	apiRouter.HandleFunc("/jobs/efficiency/trends", m.handleUserEfficiencyTrends).Methods("GET")
+	apiRouter.HandleFunc("/jobs/performance/compare", m.handleCompareJobPerformance).Methods("POST")
+	apiRouter.HandleFunc("/jobs/performance/similar", m.handleSimilarJobsPerformance).Methods("GET")
+	apiRouter.HandleFunc("/jobs/performance/analyze_batch", m.handleAnalyzeBatchJobs).Methods("POST")
+	apiRouter.HandleFunc("/jobs/workflow/performance", m.handleWorkflowPerformance).Methods("GET")
+	apiRouter.HandleFunc("/jobs/efficiency/report", m.handleGenerateEfficiencyReport).Methods("GET")
 
 	// Node endpoints
 	apiRouter.HandleFunc("/nodes", m.handleNodesList).Methods("GET")

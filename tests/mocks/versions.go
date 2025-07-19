@@ -65,6 +65,10 @@ func v040SupportedOperations() map[string]bool {
 		"info.ping":         true,
 		"info.stats":        true,
 		"info.version":      true,
+		// Basic analytics support in v0.0.40
+		"jobs.utilization":      true,
+		"jobs.efficiency":       true,
+		"jobs.performance":      true,
 	}
 }
 
@@ -87,6 +91,13 @@ func v041SupportedOperations() map[string]bool {
 		"info.ping":         true,
 		"info.stats":        true,
 		"info.version":      true,
+		// Enhanced analytics support in v0.0.41
+		"jobs.utilization":      true,
+		"jobs.efficiency":       true,
+		"jobs.performance":      true,
+		"jobs.live_metrics":     true,
+		"jobs.resource_trends":  true,
+		"jobs.step_utilization": true,
 	}
 }
 
@@ -109,6 +120,21 @@ func v042SupportedOperations() map[string]bool {
 		"info.ping":         true,
 		"info.stats":        true,
 		"info.version":      true,
+		// Full analytics support in v0.0.42
+		"jobs.utilization":         true,
+		"jobs.efficiency":          true,
+		"jobs.performance":         true,
+		"jobs.live_metrics":        true,
+		"jobs.resource_trends":     true,
+		"jobs.step_utilization":    true,
+		"jobs.performance_history": true,
+		"jobs.performance_trends":  true,
+		"jobs.efficiency_trends":   true,
+		"jobs.compare_performance": true,
+		"jobs.similar_performance": true,
+		"jobs.analyze_batch":       true,
+		"jobs.workflow_performance": true,
+		"jobs.efficiency_report":   true,
 	}
 }
 
@@ -131,6 +157,21 @@ func v043SupportedOperations() map[string]bool {
 		"info.ping":         true,
 		"info.stats":        true,
 		"info.version":      true,
+		// Complete analytics support in v0.0.43
+		"jobs.utilization":         true,
+		"jobs.efficiency":          true,
+		"jobs.performance":         true,
+		"jobs.live_metrics":        true,
+		"jobs.resource_trends":     true,
+		"jobs.step_utilization":    true,
+		"jobs.performance_history": true,
+		"jobs.performance_trends":  true,
+		"jobs.efficiency_trends":   true,
+		"jobs.compare_performance": true,
+		"jobs.similar_performance": true,
+		"jobs.analyze_batch":       true,
+		"jobs.workflow_performance": true,
+		"jobs.efficiency_report":   true,
 		// Additional features in v0.0.43
 		"reservations.list": false, // Would be true if we implemented reservations
 		"qos.list":          false, // Would be true if we implemented QoS
