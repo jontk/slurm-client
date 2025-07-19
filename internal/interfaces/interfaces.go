@@ -101,6 +101,38 @@ type JobManager interface {
 
 	// ListJobStepsFromSacct queries job steps using SLURM's sacct command integration
 	ListJobStepsFromSacct(ctx context.Context, jobID string, opts *SacctQueryOptions) (*SacctJobStepData, error)
+
+	// Advanced Analytics Methods
+	// GetJobCPUAnalytics retrieves detailed CPU performance metrics for a job
+	GetJobCPUAnalytics(ctx context.Context, jobID string) (*CPUAnalytics, error)
+	
+	// GetJobMemoryAnalytics retrieves detailed memory performance metrics for a job
+	GetJobMemoryAnalytics(ctx context.Context, jobID string) (*MemoryAnalytics, error)
+	
+	// GetJobIOAnalytics retrieves detailed I/O performance metrics for a job
+	GetJobIOAnalytics(ctx context.Context, jobID string) (*IOAnalytics, error)
+	
+	// GetJobComprehensiveAnalytics retrieves all performance metrics for a job
+	GetJobComprehensiveAnalytics(ctx context.Context, jobID string) (*JobComprehensiveAnalytics, error)
+
+	// Historical Performance Tracking Methods
+	// GetJobPerformanceHistory retrieves historical performance data for a job
+	GetJobPerformanceHistory(ctx context.Context, jobID string, opts *PerformanceHistoryOptions) (*JobPerformanceHistory, error)
+	
+	// GetPerformanceTrends analyzes cluster-wide performance trends
+	GetPerformanceTrends(ctx context.Context, opts *TrendAnalysisOptions) (*PerformanceTrends, error)
+	
+	// GetUserEfficiencyTrends tracks efficiency trends for a specific user
+	GetUserEfficiencyTrends(ctx context.Context, userID string, opts *EfficiencyTrendOptions) (*UserEfficiencyTrends, error)
+	
+	// AnalyzeBatchJobs performs bulk analysis on a collection of jobs
+	AnalyzeBatchJobs(ctx context.Context, jobIDs []string, opts *BatchAnalysisOptions) (*BatchJobAnalysis, error)
+	
+	// GetWorkflowPerformance analyzes performance of multi-job workflows
+	GetWorkflowPerformance(ctx context.Context, workflowID string, opts *WorkflowAnalysisOptions) (*WorkflowPerformance, error)
+	
+	// GenerateEfficiencyReport creates comprehensive efficiency reports
+	GenerateEfficiencyReport(ctx context.Context, opts *ReportOptions) (*EfficiencyReport, error)
 }
 
 // NodeManager provides version-agnostic node operations
@@ -451,16 +483,7 @@ type JobStepPerformance struct {
 	NetworkThroughput float64 `json:"network_throughput"`
 }
 
-// PerformanceTrends represents performance trends over time
-type PerformanceTrends struct {
-	TimePoints    []time.Time `json:"time_points"`
-	CPUTrends     []float64   `json:"cpu_trends"`
-	MemoryTrends  []float64   `json:"memory_trends"`
-	GPUTrends     []float64   `json:"gpu_trends,omitempty"`
-	IOTrends      []float64   `json:"io_trends"`
-	NetworkTrends []float64   `json:"network_trends"`
-	PowerTrends   []float64   `json:"power_trends,omitempty"`
-}
+// PerformanceTrends is defined later in the file with comprehensive historical tracking structure
 
 // PerformanceBottleneck represents a detected performance bottleneck
 type PerformanceBottleneck struct {
@@ -2476,4 +2499,582 @@ type OptimalJobConfiguration struct {
 	ExpectedSpeedup    float64           `json:"expected_speedup"`
 	CostReduction      float64           `json:"cost_reduction_percent"`
 	ConfigChanges      map[string]string `json:"config_changes,omitempty"`
+}
+
+// Historical Performance Tracking Data Structures
+
+// PerformanceHistoryOptions configures historical performance queries
+type PerformanceHistoryOptions struct {
+	StartTime     *time.Time `json:"start_time,omitempty"`
+	EndTime       *time.Time `json:"end_time,omitempty"`
+	Interval      string     `json:"interval,omitempty"` // hourly, daily, weekly
+	MetricTypes   []string   `json:"metric_types,omitempty"` // cpu, memory, io, gpu
+	IncludeSteps  bool       `json:"include_steps"`
+	IncludeTrends bool       `json:"include_trends"`
+}
+
+// JobPerformanceHistory contains historical performance data for a job
+type JobPerformanceHistory struct {
+	JobID     string    `json:"job_id"`
+	JobName   string    `json:"job_name"`
+	StartTime time.Time `json:"start_time"`
+	EndTime   time.Time `json:"end_time"`
+	
+	// Time series data
+	TimeSeriesData []PerformanceSnapshot `json:"time_series_data"`
+	
+	// Aggregated statistics
+	Statistics PerformanceStatistics `json:"statistics"`
+	
+	// Trend analysis
+	Trends *PerformanceTrendAnalysis `json:"trends,omitempty"`
+	
+	// Anomalies detected
+	Anomalies []PerformanceAnomaly `json:"anomalies,omitempty"`
+}
+
+// PerformanceSnapshot represents performance metrics at a point in time
+type PerformanceSnapshot struct {
+	Timestamp        time.Time `json:"timestamp"`
+	CPUUtilization   float64   `json:"cpu_utilization"`
+	MemoryUtilization float64  `json:"memory_utilization"`
+	IOBandwidth      float64   `json:"io_bandwidth_mbps"`
+	GPUUtilization   float64   `json:"gpu_utilization,omitempty"`
+	NetworkBandwidth float64   `json:"network_bandwidth_mbps,omitempty"`
+	PowerUsage       float64   `json:"power_usage_watts,omitempty"`
+	
+	// Efficiency metrics at this snapshot
+	Efficiency float64 `json:"efficiency_score"`
+}
+
+// PerformanceStatistics contains statistical analysis of performance data
+type PerformanceStatistics struct {
+	AverageCPU       float64 `json:"average_cpu"`
+	AverageMemory    float64 `json:"average_memory"`
+	AverageIO        float64 `json:"average_io"`
+	AverageEfficiency float64 `json:"average_efficiency"`
+	
+	PeakCPU          float64 `json:"peak_cpu"`
+	PeakMemory       float64 `json:"peak_memory"`
+	PeakIO           float64 `json:"peak_io"`
+	
+	MinCPU           float64 `json:"min_cpu"`
+	MinMemory        float64 `json:"min_memory"`
+	MinIO            float64 `json:"min_io"`
+	
+	StdDevCPU        float64 `json:"std_dev_cpu"`
+	StdDevMemory     float64 `json:"std_dev_memory"`
+	StdDevIO         float64 `json:"std_dev_io"`
+}
+
+// PerformanceTrendAnalysis contains trend analysis results
+type PerformanceTrendAnalysis struct {
+	CPUTrend         TrendInfo `json:"cpu_trend"`
+	MemoryTrend      TrendInfo `json:"memory_trend"`
+	IOTrend          TrendInfo `json:"io_trend"`
+	EfficiencyTrend  TrendInfo `json:"efficiency_trend"`
+	
+	// Predicted future values
+	PredictedCPU     float64   `json:"predicted_cpu"`
+	PredictedMemory  float64   `json:"predicted_memory"`
+	PredictedRuntime time.Duration `json:"predicted_runtime"`
+}
+
+// TrendInfo describes a performance trend
+type TrendInfo struct {
+	Direction   string  `json:"direction"` // increasing, decreasing, stable
+	Slope       float64 `json:"slope"`
+	Confidence  float64 `json:"confidence"`
+	ChangeRate  float64 `json:"change_rate_percent"`
+}
+
+// PerformanceAnomaly represents an anomaly in performance metrics
+type PerformanceAnomaly struct {
+	Timestamp   time.Time `json:"timestamp"`
+	Type        string    `json:"type"` // spike, drop, pattern_change
+	Metric      string    `json:"metric"` // cpu, memory, io, etc.
+	Severity    string    `json:"severity"` // low, medium, high, critical
+	Value       float64   `json:"value"`
+	Expected    float64   `json:"expected"`
+	Deviation   float64   `json:"deviation_percent"`
+	Description string    `json:"description"`
+}
+
+// TrendAnalysisOptions configures cluster-wide trend analysis
+type TrendAnalysisOptions struct {
+	StartTime    *time.Time `json:"start_time,omitempty"`
+	EndTime      *time.Time `json:"end_time,omitempty"`
+	Granularity  string     `json:"granularity"` // hourly, daily, weekly, monthly
+	Partitions   []string   `json:"partitions,omitempty"`
+	UserFilter   []string   `json:"users,omitempty"`
+	JobTypes     []string   `json:"job_types,omitempty"`
+	MinJobSize   *int       `json:"min_job_size,omitempty"`
+}
+
+// PerformanceTrends contains cluster-wide performance trends
+type PerformanceTrends struct {
+	TimeRange    TimeRange         `json:"time_range"`
+	Granularity  string            `json:"granularity"`
+	
+	// Cluster-wide metrics
+	ClusterUtilization []UtilizationPoint `json:"cluster_utilization"`
+	ClusterEfficiency  []EfficiencyPoint  `json:"cluster_efficiency"`
+	
+	// Partition-specific trends
+	PartitionTrends map[string]*PartitionTrend `json:"partition_trends"`
+	
+	// Resource type trends
+	CPUTrends     ResourceTrend `json:"cpu_trends"`
+	MemoryTrends  ResourceTrend `json:"memory_trends"`
+	GPUTrends     ResourceTrend `json:"gpu_trends"`
+	
+	// Job characteristics trends
+	JobSizeTrends    []JobSizeTrend    `json:"job_size_trends"`
+	JobDurationTrends []JobDurationTrend `json:"job_duration_trends"`
+	
+	// Top patterns and insights
+	Insights []TrendInsight `json:"insights"`
+}
+
+// TimeRange represents a time period
+type TimeRange struct {
+	Start time.Time `json:"start"`
+	End   time.Time `json:"end"`
+}
+
+// UtilizationPoint represents utilization at a point in time
+type UtilizationPoint struct {
+	Timestamp   time.Time `json:"timestamp"`
+	Utilization float64   `json:"utilization"`
+	JobCount    int       `json:"job_count"`
+}
+
+// EfficiencyPoint represents efficiency at a point in time
+type EfficiencyPoint struct {
+	Timestamp  time.Time `json:"timestamp"`
+	Efficiency float64   `json:"efficiency"`
+	JobCount   int       `json:"job_count"`
+}
+
+// PartitionTrend contains trends for a specific partition
+type PartitionTrend struct {
+	PartitionName string             `json:"partition_name"`
+	Utilization   []UtilizationPoint `json:"utilization"`
+	Efficiency    []EfficiencyPoint  `json:"efficiency"`
+	JobCounts     []JobCountPoint    `json:"job_counts"`
+	QueueLength   []QueueLengthPoint `json:"queue_length"`
+}
+
+// ResourceTrend contains trend data for a resource type
+type ResourceTrend struct {
+	Average      []float64     `json:"average"`
+	Peak         []float64     `json:"peak"`
+	Timestamps   []time.Time   `json:"timestamps"`
+	Trend        TrendInfo     `json:"trend"`
+}
+
+// JobSizeTrend tracks job size distribution over time
+type JobSizeTrend struct {
+	Timestamp    time.Time `json:"timestamp"`
+	SmallJobs    int       `json:"small_jobs"`    // < 16 cores
+	MediumJobs   int       `json:"medium_jobs"`   // 16-128 cores
+	LargeJobs    int       `json:"large_jobs"`    // > 128 cores
+	AverageSize  float64   `json:"average_size"`
+}
+
+// JobDurationTrend tracks job duration distribution over time
+type JobDurationTrend struct {
+	Timestamp      time.Time     `json:"timestamp"`
+	ShortJobs      int           `json:"short_jobs"`      // < 1 hour
+	MediumJobs     int           `json:"medium_jobs"`     // 1-12 hours
+	LongJobs       int           `json:"long_jobs"`       // > 12 hours
+	AverageDuration time.Duration `json:"average_duration"`
+}
+
+// JobCountPoint represents job count at a point in time
+type JobCountPoint struct {
+	Timestamp time.Time `json:"timestamp"`
+	Running   int       `json:"running"`
+	Pending   int       `json:"pending"`
+	Total     int       `json:"total"`
+}
+
+// QueueLengthPoint represents queue length at a point in time
+type QueueLengthPoint struct {
+	Timestamp   time.Time     `json:"timestamp"`
+	QueueLength int           `json:"queue_length"`
+	WaitTime    time.Duration `json:"average_wait_time"`
+}
+
+// TrendInsight represents an insight derived from trend analysis
+type TrendInsight struct {
+	Type        string    `json:"type"` // pattern, anomaly, prediction
+	Category    string    `json:"category"` // utilization, efficiency, capacity
+	Severity    string    `json:"severity"` // info, warning, critical
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Timestamp   time.Time `json:"timestamp"`
+	Confidence  float64   `json:"confidence"`
+	Recommendation string `json:"recommendation,omitempty"`
+}
+
+// EfficiencyTrendOptions configures user efficiency trend analysis
+type EfficiencyTrendOptions struct {
+	StartTime   *time.Time `json:"start_time,omitempty"`
+	EndTime     *time.Time `json:"end_time,omitempty"`
+	Granularity string     `json:"granularity"` // daily, weekly, monthly
+	JobTypes    []string   `json:"job_types,omitempty"`
+	Partitions  []string   `json:"partitions,omitempty"`
+	CompareToAverage bool  `json:"compare_to_average"`
+}
+
+// UserEfficiencyTrends contains efficiency trends for a specific user
+type UserEfficiencyTrends struct {
+	UserID      string    `json:"user_id"`
+	TimeRange   TimeRange `json:"time_range"`
+	
+	// Efficiency over time
+	EfficiencyHistory []EfficiencyDataPoint `json:"efficiency_history"`
+	
+	// Resource utilization trends
+	CPUUtilizationTrend    []float64 `json:"cpu_utilization_trend"`
+	MemoryUtilizationTrend []float64 `json:"memory_utilization_trend"`
+	
+	// Job characteristics
+	JobCountTrend     []int           `json:"job_count_trend"`
+	JobSizeTrend      []float64       `json:"job_size_trend"`
+	JobDurationTrend  []time.Duration `json:"job_duration_trend"`
+	
+	// Comparative analysis
+	AverageEfficiency       float64 `json:"average_efficiency"`
+	ClusterAverageEfficiency float64 `json:"cluster_average_efficiency"`
+	EfficiencyRank          int     `json:"efficiency_rank"`
+	EfficiencyPercentile    float64 `json:"efficiency_percentile"`
+	
+	// Improvement tracking
+	ImprovementRate     float64 `json:"improvement_rate"`
+	BestPeriod          TimeRange `json:"best_period"`
+	WorstPeriod         TimeRange `json:"worst_period"`
+	
+	// Recommendations
+	Recommendations []string `json:"recommendations"`
+}
+
+// EfficiencyDataPoint represents efficiency at a specific time
+type EfficiencyDataPoint struct {
+	Timestamp   time.Time `json:"timestamp"`
+	Efficiency  float64   `json:"efficiency"`
+	JobCount    int       `json:"job_count"`
+	CPUHours    float64   `json:"cpu_hours"`
+	MemoryGBH   float64   `json:"memory_gb_hours"`
+	WastedHours float64   `json:"wasted_cpu_hours"`
+}
+
+// BatchAnalysisOptions configures batch job analysis
+type BatchAnalysisOptions struct {
+	IncludeDetails   bool     `json:"include_details"`
+	IncludeComparison bool    `json:"include_comparison"`
+	ComparisonBaseline string  `json:"comparison_baseline"` // average, best, worst
+	MetricTypes      []string `json:"metric_types"`
+}
+
+// BatchJobAnalysis contains analysis results for a batch of jobs
+type BatchJobAnalysis struct {
+	JobCount      int       `json:"job_count"`
+	AnalyzedCount int       `json:"analyzed_count"`
+	FailedCount   int       `json:"failed_count"`
+	TimeRange     TimeRange `json:"time_range"`
+	
+	// Aggregate statistics
+	AggregateStats BatchStatistics `json:"aggregate_stats"`
+	
+	// Per-job analysis
+	JobAnalyses []JobAnalysisSummary `json:"job_analyses,omitempty"`
+	
+	// Comparative analysis
+	Comparison *BatchComparison `json:"comparison,omitempty"`
+	
+	// Patterns and insights
+	Patterns []BatchPattern `json:"patterns"`
+	Outliers []string       `json:"outlier_job_ids"`
+	
+	// Recommendations
+	BatchRecommendations []BatchRecommendation `json:"recommendations"`
+}
+
+// BatchStatistics contains aggregate statistics for batch analysis
+type BatchStatistics struct {
+	TotalCPUHours      float64         `json:"total_cpu_hours"`
+	TotalMemoryGBH     float64         `json:"total_memory_gb_hours"`
+	TotalGPUHours      float64         `json:"total_gpu_hours"`
+	AverageEfficiency  float64         `json:"average_efficiency"`
+	MedianEfficiency   float64         `json:"median_efficiency"`
+	StdDevEfficiency   float64         `json:"std_dev_efficiency"`
+	TotalWaste         ResourceWaste   `json:"total_waste"`
+	AverageRuntime     time.Duration   `json:"average_runtime"`
+	SuccessRate        float64         `json:"success_rate"`
+}
+
+// JobAnalysisSummary contains summary of individual job analysis
+type JobAnalysisSummary struct {
+	JobID          string  `json:"job_id"`
+	JobName        string  `json:"job_name"`
+	Efficiency     float64 `json:"efficiency"`
+	Runtime        time.Duration `json:"runtime"`
+	CPUUtilization float64 `json:"cpu_utilization"`
+	MemoryUtilization float64 `json:"memory_utilization"`
+	Status         string  `json:"status"`
+	Issues         []string `json:"issues,omitempty"`
+}
+
+// BatchComparison compares batch performance against baseline
+type BatchComparison struct {
+	Baseline        string  `json:"baseline"`
+	EfficiencyDelta float64 `json:"efficiency_delta"`
+	RuntimeDelta    float64 `json:"runtime_delta"`
+	WasteDelta      float64 `json:"waste_delta"`
+	CostDelta       float64 `json:"cost_delta"`
+}
+
+// BatchPattern represents a pattern found in batch analysis
+type BatchPattern struct {
+	Type        string   `json:"type"` // efficiency_degradation, resource_imbalance, etc.
+	Description string   `json:"description"`
+	JobCount    int      `json:"job_count"`
+	JobIDs      []string `json:"job_ids"`
+	Impact      string   `json:"impact"`
+	Confidence  float64  `json:"confidence"`
+}
+
+// BatchRecommendation provides recommendations for the batch
+type BatchRecommendation struct {
+	Category    string   `json:"category"` // resource_allocation, scheduling, configuration
+	Priority    string   `json:"priority"` // high, medium, low
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Impact      string   `json:"impact"`
+	JobsAffected []string `json:"jobs_affected"`
+}
+
+// ResourceWaste contains resource waste metrics
+type ResourceWaste struct {
+	CPUCoreHours   float64 `json:"cpu_core_hours"`
+	MemoryGBHours  float64 `json:"memory_gb_hours"`
+	GPUHours       float64 `json:"gpu_hours"`
+	EstimatedCost  float64 `json:"estimated_cost"`
+}
+
+// WorkflowAnalysisOptions configures workflow performance analysis
+type WorkflowAnalysisOptions struct {
+	IncludeDependencies bool     `json:"include_dependencies"`
+	IncludeBottlenecks  bool     `json:"include_bottlenecks"`
+	IncludeOptimization bool     `json:"include_optimization"`
+	TimeWindow          *TimeRange `json:"time_window,omitempty"`
+}
+
+// WorkflowPerformance contains performance analysis for a workflow
+type WorkflowPerformance struct {
+	WorkflowID    string    `json:"workflow_id"`
+	WorkflowName  string    `json:"workflow_name"`
+	TotalJobs     int       `json:"total_jobs"`
+	CompletedJobs int       `json:"completed_jobs"`
+	StartTime     time.Time `json:"start_time"`
+	EndTime       *time.Time `json:"end_time,omitempty"`
+	
+	// Overall metrics
+	TotalDuration     time.Duration `json:"total_duration"`
+	WallClockTime     time.Duration `json:"wall_clock_time"`
+	Parallelization   float64       `json:"parallelization_efficiency"`
+	OverallEfficiency float64       `json:"overall_efficiency"`
+	
+	// Stage analysis
+	Stages []WorkflowStage `json:"stages"`
+	
+	// Critical path analysis
+	CriticalPath []string      `json:"critical_path_job_ids"`
+	CriticalPathDuration time.Duration `json:"critical_path_duration"`
+	
+	// Bottleneck analysis
+	Bottlenecks []WorkflowBottleneck `json:"bottlenecks,omitempty"`
+	
+	// Dependencies
+	Dependencies *WorkflowDependencies `json:"dependencies,omitempty"`
+	
+	// Optimization suggestions
+	Optimization *WorkflowOptimization `json:"optimization,omitempty"`
+}
+
+// WorkflowStage represents a stage in the workflow
+type WorkflowStage struct {
+	StageID      string        `json:"stage_id"`
+	StageName    string        `json:"stage_name"`
+	JobIDs       []string      `json:"job_ids"`
+	StartTime    time.Time     `json:"start_time"`
+	EndTime      time.Time     `json:"end_time"`
+	Duration     time.Duration `json:"duration"`
+	Efficiency   float64       `json:"efficiency"`
+	Parallelism  int           `json:"parallelism"`
+	Status       string        `json:"status"`
+}
+
+// WorkflowBottleneck identifies a bottleneck in the workflow
+type WorkflowBottleneck struct {
+	Type        string        `json:"type"` // resource, dependency, scheduling
+	Location    string        `json:"location"` // job_id or stage_id
+	Description string        `json:"description"`
+	Impact      time.Duration `json:"impact_duration"`
+	Severity    string        `json:"severity"`
+}
+
+// WorkflowDependencies describes job dependencies in the workflow
+type WorkflowDependencies struct {
+	DependencyGraph map[string][]string `json:"dependency_graph"`
+	MaxDepth        int                 `json:"max_depth"`
+	MaxWidth        int                 `json:"max_width"`
+	TotalEdges      int                 `json:"total_edges"`
+}
+
+// WorkflowOptimization provides optimization suggestions for the workflow
+type WorkflowOptimization struct {
+	PotentialSpeedup      float64  `json:"potential_speedup"`
+	OptimizedDuration     time.Duration `json:"optimized_duration"`
+	OptimizedParallelism  int      `json:"optimized_parallelism"`
+	RecommendedChanges    []string `json:"recommended_changes"`
+	ResourceReallocation  map[string]ResourceChange `json:"resource_reallocation"`
+}
+
+// ResourceChange describes a recommended resource change
+type ResourceChange struct {
+	JobID           string `json:"job_id"`
+	CurrentCPUs     int    `json:"current_cpus"`
+	RecommendedCPUs int    `json:"recommended_cpus"`
+	CurrentMemory   int64  `json:"current_memory"`
+	RecommendedMemory int64 `json:"recommended_memory"`
+	Reason          string `json:"reason"`
+}
+
+// ReportOptions configures efficiency report generation
+type ReportOptions struct {
+	ReportType    string     `json:"report_type"` // summary, detailed, executive
+	TimeRange     TimeRange  `json:"time_range"`
+	Partitions    []string   `json:"partitions,omitempty"`
+	Users         []string   `json:"users,omitempty"`
+	IncludeCharts bool       `json:"include_charts"`
+	Format        string     `json:"format"` // json, html, pdf
+}
+
+// EfficiencyReport contains a comprehensive efficiency report
+type EfficiencyReport struct {
+	ReportID      string    `json:"report_id"`
+	GeneratedAt   time.Time `json:"generated_at"`
+	TimeRange     TimeRange `json:"time_range"`
+	ReportType    string    `json:"report_type"`
+	
+	// Executive summary
+	Summary ExecutiveSummary `json:"summary"`
+	
+	// Detailed sections
+	ClusterOverview   *ClusterOverview   `json:"cluster_overview,omitempty"`
+	PartitionAnalysis []PartitionAnalysis `json:"partition_analysis,omitempty"`
+	UserAnalysis      []UserAnalysis      `json:"user_analysis,omitempty"`
+	ResourceAnalysis  *ResourceAnalysis   `json:"resource_analysis,omitempty"`
+	
+	// Trends and patterns
+	TrendAnalysis *ReportTrendAnalysis `json:"trend_analysis,omitempty"`
+	
+	// Recommendations
+	Recommendations []ReportRecommendation `json:"recommendations"`
+	
+	// Charts and visualizations
+	Charts []ChartData `json:"charts,omitempty"`
+}
+
+// ExecutiveSummary provides high-level report summary
+type ExecutiveSummary struct {
+	TotalJobs           int           `json:"total_jobs"`
+	AverageEfficiency   float64       `json:"average_efficiency"`
+	TotalCPUHours       float64       `json:"total_cpu_hours"`
+	WastedCPUHours      float64       `json:"wasted_cpu_hours"`
+	EstimatedCostSavings float64      `json:"estimated_cost_savings"`
+	KeyFindings         []string      `json:"key_findings"`
+	ImprovementAreas    []string      `json:"improvement_areas"`
+}
+
+// ClusterOverview provides cluster-wide efficiency metrics
+type ClusterOverview struct {
+	ClusterUtilization float64 `json:"cluster_utilization"`
+	ClusterEfficiency  float64 `json:"cluster_efficiency"`
+	TotalNodes         int     `json:"total_nodes"`
+	ActiveNodes        int     `json:"active_nodes"`
+	TotalCPUCores      int     `json:"total_cpu_cores"`
+	TotalMemoryGB      float64 `json:"total_memory_gb"`
+	TotalGPUs          int     `json:"total_gpus"`
+}
+
+// PartitionAnalysis contains efficiency analysis for a partition
+type PartitionAnalysis struct {
+	PartitionName     string  `json:"partition_name"`
+	JobCount          int     `json:"job_count"`
+	Utilization       float64 `json:"utilization"`
+	Efficiency        float64 `json:"efficiency"`
+	TopUsers          []string `json:"top_users"`
+	CommonJobTypes    []string `json:"common_job_types"`
+	Issues            []string `json:"issues"`
+}
+
+// UserAnalysis contains efficiency analysis for a user
+type UserAnalysis struct {
+	UserID            string  `json:"user_id"`
+	JobCount          int     `json:"job_count"`
+	AverageEfficiency float64 `json:"average_efficiency"`
+	TotalCPUHours     float64 `json:"total_cpu_hours"`
+	WastedHours       float64 `json:"wasted_hours"`
+	Rank              int     `json:"rank"`
+	Trend             string  `json:"trend"` // improving, stable, declining
+}
+
+// ResourceAnalysis provides resource-specific efficiency analysis
+type ResourceAnalysis struct {
+	CPUAnalysis    ResourceTypeAnalysis `json:"cpu_analysis"`
+	MemoryAnalysis ResourceTypeAnalysis `json:"memory_analysis"`
+	GPUAnalysis    ResourceTypeAnalysis `json:"gpu_analysis"`
+	IOAnalysis     ResourceTypeAnalysis `json:"io_analysis"`
+}
+
+// ResourceTypeAnalysis contains analysis for a specific resource type
+type ResourceTypeAnalysis struct {
+	AverageUtilization float64  `json:"average_utilization"`
+	PeakUtilization    float64  `json:"peak_utilization"`
+	WastePercentage    float64  `json:"waste_percentage"`
+	TopWasters         []string `json:"top_waster_job_ids"`
+	OptimizationPotential float64 `json:"optimization_potential"`
+}
+
+// ReportTrendAnalysis contains trend analysis for the report
+type ReportTrendAnalysis struct {
+	EfficiencyTrend    TrendInfo `json:"efficiency_trend"`
+	UtilizationTrend   TrendInfo `json:"utilization_trend"`
+	JobVolumeTrend     TrendInfo `json:"job_volume_trend"`
+	PredictedEfficiency float64  `json:"predicted_efficiency_next_period"`
+}
+
+// ReportRecommendation provides actionable recommendations
+type ReportRecommendation struct {
+	Category         string   `json:"category"`
+	Priority         string   `json:"priority"`
+	Title            string   `json:"title"`
+	Description      string   `json:"description"`
+	ExpectedImpact   string   `json:"expected_impact"`
+	AffectedEntities []string `json:"affected_entities"`
+	Implementation   string   `json:"implementation_guidance"`
+}
+
+// ChartData represents data for visualization
+type ChartData struct {
+	ChartID     string                 `json:"chart_id"`
+	ChartType   string                 `json:"chart_type"` // line, bar, pie, heatmap
+	Title       string                 `json:"title"`
+	Description string                 `json:"description"`
+	Data        map[string]interface{} `json:"data"`
+	Options     map[string]interface{} `json:"options"`
 }
