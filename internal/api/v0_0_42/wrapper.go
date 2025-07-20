@@ -71,12 +71,12 @@ func (c *WrapperClient) QoS() interfaces.QoSManager {
 
 // Accounts returns the AccountManager
 func (c *WrapperClient) Accounts() interfaces.AccountManager {
-	return NewAccountManagerImpl(c)
+	return nil
 }
 
 // Users returns the UserManager
 func (c *WrapperClient) Users() interfaces.UserManager {
-	return NewUserManagerImpl(c)
+	return nil
 }
 
 // Close closes the client

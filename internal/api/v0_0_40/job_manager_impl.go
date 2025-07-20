@@ -2136,9 +2136,12 @@ func (m *JobManagerImpl) GetJobStepAPIData(ctx context.Context, jobID string, st
 }
 
 // ListJobStepsFromSacct queries job steps using SLURM's sacct command integration
-func (m *JobManagerImpl) ListJobStepsFromSacct(ctx context.Context, options *interfaces.SacctQueryOptions) ([]*interfaces.StepAccountingRecord, error) {
+func (j *JobManagerImpl) ListJobStepsFromSacct(ctx context.Context, jobID string, opts *interfaces.SacctQueryOptions) (*interfaces.SacctJobStepData, error) {
 	// v0.0.40 has no sacct integration support
-	return nil, fmt.Errorf("ListJobStepsFromSacct not implemented in v0.0.40")
+	return &interfaces.SacctJobStepData{
+		JobID: jobID,
+		Steps: []interfaces.SacctStepRecord{},
+	}, nil
 }
 
 // AnalyzeBatchJobs performs bulk analysis on a collection of jobs
@@ -2148,9 +2151,11 @@ func (m *JobManagerImpl) AnalyzeBatchJobs(ctx context.Context, jobIDs []string, 
 	}
 
 	analysis := &interfaces.BatchJobAnalysis{
-		TotalJobs:   len(jobIDs),
-		Timestamp:   time.Now(),
-		JobAnalyses: make([]interfaces.IndividualJobAnalysis, 0, len(jobIDs)),
+		JobCount:      len(jobIDs),
+		AnalyzedCount: 0,
+		FailedCount:   0,
+		TimeRange:     interfaces.TimeRange{Start: time.Now(), End: time.Now()},
+		JobAnalyses:   make([]interfaces.JobAnalysisSummary, 0, len(jobIDs)),
 	}
 
 	var totalEfficiency float64
@@ -2161,46 +2166,98 @@ func (m *JobManagerImpl) AnalyzeBatchJobs(ctx context.Context, jobIDs []string, 
 		utilization, err := m.GetJobUtilization(ctx, jobID)
 		if err != nil {
 			// Add failed analysis entry
-			analysis.JobAnalyses = append(analysis.JobAnalyses, interfaces.IndividualJobAnalysis{
+			analysis.JobAnalyses = append(analysis.JobAnalyses, interfaces.JobAnalysisSummary{
 				JobID:  jobID,
 				Status: "failed",
-				Error:  err.Error(),
+				Issues: []string{err.Error()},
 			})
+			analysis.FailedCount++
 			continue
 		}
 
 		efficiency, err := m.GetJobEfficiency(ctx, jobID)
 		if err != nil {
-			analysis.JobAnalyses = append(analysis.JobAnalyses, interfaces.IndividualJobAnalysis{
+			analysis.JobAnalyses = append(analysis.JobAnalyses, interfaces.JobAnalysisSummary{
 				JobID:  jobID,
 				Status: "failed",
-				Error:  err.Error(),
+				Issues: []string{err.Error()},
 			})
+			analysis.FailedCount++
 			continue
 		}
 
 		// Create individual job analysis
-		jobAnalysis := interfaces.IndividualJobAnalysis{
-			JobID:               jobID,
-			Status:             "completed",
-			EfficiencyScore:    efficiency.OverallEfficiencyScore,
-			CPUUtilization:     float64(utilization.CPUUtilization.UtilizationPercent),
-			MemoryUtilization:  float64(utilization.MemoryUtilization.UtilizationPercent),
-			ResourceWasteCPU:   float64(efficiency.ResourceWaste.CPUPercent),
-			ResourceWasteMemory: float64(efficiency.ResourceWaste.MemoryPercent),
+		jobAnalysis := interfaces.JobAnalysisSummary{
+			JobID:             jobID,
+			Status:            "completed",
+			Efficiency:        efficiency.Efficiency,
+			CPUUtilization:    utilization.CPUUtilization.Efficiency,
+			MemoryUtilization: utilization.MemoryUtilization.Efficiency,
+			Runtime:           time.Since(utilization.StartTime),
 		}
 
 		analysis.JobAnalyses = append(analysis.JobAnalyses, jobAnalysis)
-		totalEfficiency += efficiency.OverallEfficiencyScore
+		totalEfficiency += efficiency.Efficiency
+		analysis.AnalyzedCount++
 		completedAnalyses++
 	}
 
 	// Calculate summary statistics
 	if completedAnalyses > 0 {
-		analysis.AverageEfficiency = totalEfficiency / float64(completedAnalyses)
-		analysis.CompletedAnalyses = completedAnalyses
-		analysis.FailedAnalyses = len(jobIDs) - completedAnalyses
+		analysis.AggregateStats = interfaces.BatchStatistics{
+			AverageEfficiency: totalEfficiency / float64(completedAnalyses),
+			SuccessRate:      float64(completedAnalyses) / float64(len(jobIDs)),
+		}
+		analysis.TimeRange.End = time.Now()
 	}
 
 	return analysis, nil
+}
+
+// GetJobStepsFromAccounting retrieves job step data from SLURM's accounting database (v0.0.40 placeholder)
+func (j *JobManagerImpl) GetJobStepsFromAccounting(ctx context.Context, jobID string, opts *interfaces.AccountingQueryOptions) (*interfaces.AccountingJobSteps, error) {
+	return &interfaces.AccountingJobSteps{
+		JobID: jobID,
+		Steps: []interfaces.StepAccountingRecord{},
+	}, nil
+}
+
+// GetJobPerformanceHistory retrieves historical performance data for a job (v0.0.40 placeholder)
+func (j *JobManagerImpl) GetJobPerformanceHistory(ctx context.Context, jobID string, opts *interfaces.PerformanceHistoryOptions) (*interfaces.JobPerformanceHistory, error) {
+	return &interfaces.JobPerformanceHistory{
+		JobID: jobID,
+		TimeSeriesData: []interfaces.PerformanceSnapshot{},
+	}, nil
+}
+
+// GetPerformanceTrends analyzes cluster-wide performance trends (v0.0.40 placeholder)
+func (j *JobManagerImpl) GetPerformanceTrends(ctx context.Context, opts *interfaces.TrendAnalysisOptions) (*interfaces.PerformanceTrends, error) {
+	return &interfaces.PerformanceTrends{
+		ClusterUtilization: []interfaces.UtilizationPoint{},
+		ClusterEfficiency:  []interfaces.EfficiencyPoint{},
+	}, nil
+}
+
+// GetUserEfficiencyTrends tracks efficiency trends for a specific user (v0.0.40 placeholder)
+func (j *JobManagerImpl) GetUserEfficiencyTrends(ctx context.Context, userID string, opts *interfaces.EfficiencyTrendOptions) (*interfaces.UserEfficiencyTrends, error) {
+	return &interfaces.UserEfficiencyTrends{
+		UserID: userID,
+		EfficiencyHistory: []interfaces.EfficiencyDataPoint{},
+	}, nil
+}
+
+// GetWorkflowPerformance analyzes performance of multi-job workflows (v0.0.40 placeholder)
+func (j *JobManagerImpl) GetWorkflowPerformance(ctx context.Context, workflowID string, opts *interfaces.WorkflowAnalysisOptions) (*interfaces.WorkflowPerformance, error) {
+	return &interfaces.WorkflowPerformance{
+		WorkflowID: workflowID,
+		Stages: []interfaces.WorkflowStage{},
+	}, nil
+}
+
+// GenerateEfficiencyReport creates comprehensive efficiency reports (v0.0.40 placeholder)
+func (j *JobManagerImpl) GenerateEfficiencyReport(ctx context.Context, opts *interfaces.ReportOptions) (*interfaces.EfficiencyReport, error) {
+	return &interfaces.EfficiencyReport{
+		ReportID: "efficiency-report",
+		Summary: interfaces.ExecutiveSummary{},
+	}, nil
 }

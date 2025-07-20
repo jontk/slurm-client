@@ -149,12 +149,17 @@ func (c *WrapperClient) Accounts() interfaces.AccountManager {
 	%s
 }
 
+// Users returns the UserManager
+func (c *WrapperClient) Users() interfaces.UserManager {
+	%s
+}
+
 // Close closes the client
 func (c *WrapperClient) Close() error {
 	// No resources to close for HTTP client
 	return nil
 }
-`, normalizeVersion(version), version, version, version, getReservationsImplementation(version), getQoSImplementation(version), getAccountsImplementation(version))
+`, normalizeVersion(version), version, version, version, getReservationsImplementation(version), getQoSImplementation(version), getAccountsImplementation(version), getUsersImplementation(version))
 	
 	return os.WriteFile(wrapperFile, []byte(content), 0644)
 }
@@ -180,7 +185,7 @@ func normalizeVersion(version string) string {
 func getReservationsImplementation(version string) string {
 	// Only v0.0.43 and later support reservations
 	if version == "v0.0.43" {
-		return "return &ReservationManager{client: c}"
+		return "return NewReservationManagerImpl(c)"
 	}
 	// Earlier versions return nil
 	return "return nil"
@@ -189,19 +194,352 @@ func getReservationsImplementation(version string) string {
 func getQoSImplementation(version string) string {
 	// Only v0.0.43 and later support QoS
 	if version == "v0.0.43" {
-		return "return &QoSManager{client: c}"
+		return "return NewQoSManagerImpl(c)"
 	}
 	// Earlier versions return nil
 	return "return nil"
 }
 
 func getAccountsImplementation(version string) string {
-	// Only v0.0.43 and later support Accounts
-	if version == "v0.0.43" {
-		return "return &AccountManager{client: c}"
+	// v0.0.41 and v0.0.43 support Accounts with direct impl calls
+	if version == "v0.0.41" || version == "v0.0.43" {
+		return "return NewAccountManagerImpl(c)"
 	}
 	// Earlier versions return nil
 	return "return nil"
+}
+
+func getUsersImplementation(version string) string {
+	// v0.0.41 and v0.0.43 support Users with direct impl calls
+	if version == "v0.0.41" || version == "v0.0.43" {
+		return "return NewUserManagerImpl(c)"
+	}
+	// Earlier versions return nil
+	return "return nil"
+}
+
+func getReservationManagerCode(version string) string {
+	// Only v0.0.43 supports ReservationManager
+	if version != "v0.0.43" {
+		return ""
+	}
+	
+	return fmt.Sprintf(`// ReservationManager implements the ReservationManager interface for API version %s
+type ReservationManager struct {
+	client *WrapperClient
+	impl   *ReservationManagerImpl
+}
+
+// List reservations with optional filtering
+func (m *ReservationManager) List(ctx context.Context, opts *interfaces.ListReservationsOptions) (*interfaces.ReservationList, error) {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
+
+// Get retrieves a specific reservation by name
+func (m *ReservationManager) Get(ctx context.Context, reservationName string) (*interfaces.Reservation, error) {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, reservationName)
+}
+
+// Create creates a new reservation
+func (m *ReservationManager) Create(ctx context.Context, reservation *interfaces.ReservationCreate) (*interfaces.ReservationCreateResponse, error) {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Create(ctx, reservation)
+}
+
+// Update updates an existing reservation
+func (m *ReservationManager) Update(ctx context.Context, reservationName string, update *interfaces.ReservationUpdate) error {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, reservationName, update)
+}
+
+// Delete deletes a reservation
+func (m *ReservationManager) Delete(ctx context.Context, reservationName string) error {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Delete(ctx, reservationName)
+}`, version)
+}
+
+func getQoSManagerCode(version string) string {
+	// Only v0.0.43 supports QoSManager
+	if version != "v0.0.43" {
+		return ""
+	}
+	
+	return fmt.Sprintf(`// QoSManager implements the QoSManager interface for API version %s
+type QoSManager struct {
+	client *WrapperClient
+	impl   *QoSManagerImpl
+}
+
+// List QoS with optional filtering
+func (m *QoSManager) List(ctx context.Context, opts *interfaces.ListQoSOptions) (*interfaces.QoSList, error) {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
+
+// Get retrieves a specific QoS by name
+func (m *QoSManager) Get(ctx context.Context, qosName string) (*interfaces.QoS, error) {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, qosName)
+}
+
+// Create creates a new QoS
+func (m *QoSManager) Create(ctx context.Context, qos *interfaces.QoSCreate) (*interfaces.QoSCreateResponse, error) {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Create(ctx, qos)
+}
+
+// Update updates an existing QoS
+func (m *QoSManager) Update(ctx context.Context, qosName string, update *interfaces.QoSUpdate) error {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, qosName, update)
+}
+
+// Delete deletes a QoS
+func (m *QoSManager) Delete(ctx context.Context, qosName string) error {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Delete(ctx, qosName)
+}`, version)
+}
+
+func getAccountManagerCode(version string) string {
+	// v0.0.41 and v0.0.43 support AccountManager
+	if version != "v0.0.41" && version != "v0.0.43" {
+		return ""
+	}
+	
+	return fmt.Sprintf(`// AccountManager implements the AccountManager interface for API version %s
+type AccountManager struct {
+	client *WrapperClient
+	impl   *AccountManagerImpl
+}
+
+// List accounts with optional filtering
+func (m *AccountManager) List(ctx context.Context, opts *interfaces.ListAccountsOptions) (*interfaces.AccountList, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
+
+// Get retrieves a specific account by name
+func (m *AccountManager) Get(ctx context.Context, accountName string) (*interfaces.Account, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, accountName)
+}
+
+// Create creates a new account
+func (m *AccountManager) Create(ctx context.Context, account *interfaces.AccountCreate) (*interfaces.AccountCreateResponse, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.Create(ctx, account)
+}
+
+// Update updates an existing account
+func (m *AccountManager) Update(ctx context.Context, accountName string, update *interfaces.AccountUpdate) error {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, accountName, update)
+}
+
+// Delete deletes an account
+func (m *AccountManager) Delete(ctx context.Context, accountName string) error {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.Delete(ctx, accountName)
+}
+
+// GetAccountHierarchy retrieves account hierarchy
+func (m *AccountManager) GetAccountHierarchy(ctx context.Context, rootAccount string) (*interfaces.AccountHierarchy, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetAccountHierarchy(ctx, rootAccount)
+}
+
+// GetParentAccounts retrieves parent accounts
+func (m *AccountManager) GetParentAccounts(ctx context.Context, accountName string) ([]*interfaces.Account, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetParentAccounts(ctx, accountName)
+}
+
+// GetChildAccounts retrieves child accounts
+func (m *AccountManager) GetChildAccounts(ctx context.Context, accountName string, depth int) ([]*interfaces.Account, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetChildAccounts(ctx, accountName, depth)
+}
+
+// GetAccountQuotas retrieves account quotas
+func (m *AccountManager) GetAccountQuotas(ctx context.Context, accountName string) (*interfaces.AccountQuota, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetAccountQuotas(ctx, accountName)
+}
+
+// GetAccountQuotaUsage retrieves account quota usage
+func (m *AccountManager) GetAccountQuotaUsage(ctx context.Context, accountName string, timeframe string) (*interfaces.AccountUsage, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetAccountQuotaUsage(ctx, accountName, timeframe)
+}
+
+// GetAccountUsers retrieves users associated with account
+func (m *AccountManager) GetAccountUsers(ctx context.Context, accountName string, opts *interfaces.ListAccountUsersOptions) ([]*interfaces.UserAccountAssociation, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetAccountUsers(ctx, accountName, opts)
+}
+
+// ValidateUserAccess validates user access to account
+func (m *AccountManager) ValidateUserAccess(ctx context.Context, userName, accountName string) (*interfaces.UserAccessValidation, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.ValidateUserAccess(ctx, userName, accountName)
+}
+
+// GetAccountUsersWithPermissions retrieves account users with specific permissions
+func (m *AccountManager) GetAccountUsersWithPermissions(ctx context.Context, accountName string, permissions []string) ([]*interfaces.UserAccountAssociation, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetAccountUsersWithPermissions(ctx, accountName, permissions)
+}`, version)
+}
+
+func getUserManagerCode(version string) string {
+	// v0.0.41 and v0.0.43 support UserManager
+	if version != "v0.0.41" && version != "v0.0.43" {
+		return ""
+	}
+	
+	return fmt.Sprintf(`// UserManager implements the UserManager interface for API version %s
+type UserManager struct {
+	client *WrapperClient
+	impl   *UserManagerImpl
+}
+
+// List users with optional filtering
+func (m *UserManager) List(ctx context.Context, opts *interfaces.ListUsersOptions) (*interfaces.UserList, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
+
+// Get retrieves a specific user by name
+func (m *UserManager) Get(ctx context.Context, userName string) (*interfaces.User, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, userName)
+}
+
+// GetUserAccounts retrieves accounts associated with user
+func (m *UserManager) GetUserAccounts(ctx context.Context, userName string) ([]*interfaces.UserAccount, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.GetUserAccounts(ctx, userName)
+}
+
+// GetUserQuotas retrieves user quotas
+func (m *UserManager) GetUserQuotas(ctx context.Context, userName string) (*interfaces.UserQuota, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.GetUserQuotas(ctx, userName)
+}
+
+// GetUserDefaultAccount retrieves user default account
+func (m *UserManager) GetUserDefaultAccount(ctx context.Context, userName string) (*interfaces.Account, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.GetUserDefaultAccount(ctx, userName)
+}
+
+// GetUserFairShare retrieves user fair share information
+func (m *UserManager) GetUserFairShare(ctx context.Context, userName string) (*interfaces.UserFairShare, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.GetUserFairShare(ctx, userName)
+}
+
+// CalculateJobPriority calculates job priority for user
+func (m *UserManager) CalculateJobPriority(ctx context.Context, userName string, jobSubmission *interfaces.JobSubmission) (*interfaces.JobPriorityInfo, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.CalculateJobPriority(ctx, userName, jobSubmission)
+}
+
+// ValidateUserAccountAccess validates user access to account
+func (m *UserManager) ValidateUserAccountAccess(ctx context.Context, userName, accountName string) (*interfaces.UserAccessValidation, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.ValidateUserAccountAccess(ctx, userName, accountName)
+}
+
+// GetUserAccountAssociations retrieves user account associations
+func (m *UserManager) GetUserAccountAssociations(ctx context.Context, userName string, opts *interfaces.ListUserAccountAssociationsOptions) ([]*interfaces.UserAccountAssociation, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.GetUserAccountAssociations(ctx, userName, opts)
+}
+
+// GetBulkUserAccounts retrieves accounts for multiple users
+func (m *UserManager) GetBulkUserAccounts(ctx context.Context, userNames []string) (map[string][]*interfaces.UserAccount, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.GetBulkUserAccounts(ctx, userNames)
+}
+
+// GetBulkAccountUsers retrieves users for multiple accounts
+func (m *UserManager) GetBulkAccountUsers(ctx context.Context, accountNames []string) (map[string][]*interfaces.UserAccountAssociation, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.GetBulkAccountUsers(ctx, accountNames)
+}`, version)
 }
 
 func generateManagers(version, outputDir string) error {
@@ -277,6 +615,190 @@ func (m *JobManager) Watch(ctx context.Context, opts *interfaces.WatchJobsOption
 		m.impl = NewJobManagerImpl(m.client)
 	}
 	return m.impl.Watch(ctx, opts)
+}
+
+// GetJobUtilization retrieves comprehensive resource utilization metrics for a job
+func (m *JobManager) GetJobUtilization(ctx context.Context, jobID string) (*interfaces.JobUtilization, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobUtilization(ctx, jobID)
+}
+
+// GetJobEfficiency calculates efficiency metrics for a completed job
+func (m *JobManager) GetJobEfficiency(ctx context.Context, jobID string) (*interfaces.ResourceUtilization, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobEfficiency(ctx, jobID)
+}
+
+// GetJobPerformance retrieves detailed performance metrics for a job
+func (m *JobManager) GetJobPerformance(ctx context.Context, jobID string) (*interfaces.JobPerformance, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobPerformance(ctx, jobID)
+}
+
+// GetJobLiveMetrics retrieves real-time performance metrics for a running job
+func (m *JobManager) GetJobLiveMetrics(ctx context.Context, jobID string) (*interfaces.JobLiveMetrics, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobLiveMetrics(ctx, jobID)
+}
+
+// WatchJobMetrics provides streaming performance updates for a running job
+func (m *JobManager) WatchJobMetrics(ctx context.Context, jobID string, opts *interfaces.WatchMetricsOptions) (<-chan interfaces.JobMetricsEvent, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.WatchJobMetrics(ctx, jobID, opts)
+}
+
+// GetJobResourceTrends retrieves performance trends over specified time windows
+func (m *JobManager) GetJobResourceTrends(ctx context.Context, jobID string, opts *interfaces.ResourceTrendsOptions) (*interfaces.JobResourceTrends, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobResourceTrends(ctx, jobID, opts)
+}
+
+// GetJobStepDetails retrieves detailed information about a specific job step
+func (m *JobManager) GetJobStepDetails(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepDetails, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobStepDetails(ctx, jobID, stepID)
+}
+
+// GetJobStepUtilization retrieves resource utilization metrics for a specific job step
+func (m *JobManager) GetJobStepUtilization(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepUtilization, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobStepUtilization(ctx, jobID, stepID)
+}
+
+// ListJobStepsWithMetrics retrieves all job steps with their performance metrics
+func (m *JobManager) ListJobStepsWithMetrics(ctx context.Context, jobID string, opts *interfaces.ListJobStepsOptions) (*interfaces.JobStepMetricsList, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.ListJobStepsWithMetrics(ctx, jobID, opts)
+}
+
+// GetJobStepsFromAccounting retrieves job step data from SLURM's accounting database
+func (m *JobManager) GetJobStepsFromAccounting(ctx context.Context, jobID string, opts *interfaces.AccountingQueryOptions) (*interfaces.AccountingJobSteps, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobStepsFromAccounting(ctx, jobID, opts)
+}
+
+// GetStepAccountingData retrieves detailed accounting information for a specific job step
+func (m *JobManager) GetStepAccountingData(ctx context.Context, jobID string, stepID string) (*interfaces.StepAccountingRecord, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetStepAccountingData(ctx, jobID, stepID)
+}
+
+// GetJobStepAPIData integrates with SLURM's native job step APIs for real-time data
+func (m *JobManager) GetJobStepAPIData(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepAPIData, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobStepAPIData(ctx, jobID, stepID)
+}
+
+// ListJobStepsFromSacct queries job steps using SLURM's sacct command integration
+func (m *JobManager) ListJobStepsFromSacct(ctx context.Context, jobID string, opts *interfaces.SacctQueryOptions) (*interfaces.SacctJobStepData, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.ListJobStepsFromSacct(ctx, jobID, opts)
+}
+
+// GetJobCPUAnalytics retrieves detailed CPU performance metrics for a job
+func (m *JobManager) GetJobCPUAnalytics(ctx context.Context, jobID string) (*interfaces.CPUAnalytics, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobCPUAnalytics(ctx, jobID)
+}
+
+// GetJobMemoryAnalytics retrieves detailed memory performance metrics for a job
+func (m *JobManager) GetJobMemoryAnalytics(ctx context.Context, jobID string) (*interfaces.MemoryAnalytics, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobMemoryAnalytics(ctx, jobID)
+}
+
+// GetJobIOAnalytics retrieves detailed I/O performance metrics for a job
+func (m *JobManager) GetJobIOAnalytics(ctx context.Context, jobID string) (*interfaces.IOAnalytics, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobIOAnalytics(ctx, jobID)
+}
+
+// GetJobComprehensiveAnalytics retrieves all performance metrics for a job
+func (m *JobManager) GetJobComprehensiveAnalytics(ctx context.Context, jobID string) (*interfaces.JobComprehensiveAnalytics, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobComprehensiveAnalytics(ctx, jobID)
+}
+
+// GetJobPerformanceHistory retrieves historical performance data for a job
+func (m *JobManager) GetJobPerformanceHistory(ctx context.Context, jobID string, opts *interfaces.PerformanceHistoryOptions) (*interfaces.JobPerformanceHistory, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobPerformanceHistory(ctx, jobID, opts)
+}
+
+// GetPerformanceTrends analyzes cluster-wide performance trends
+func (m *JobManager) GetPerformanceTrends(ctx context.Context, opts *interfaces.TrendAnalysisOptions) (*interfaces.PerformanceTrends, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetPerformanceTrends(ctx, opts)
+}
+
+// GetUserEfficiencyTrends tracks efficiency trends for a specific user
+func (m *JobManager) GetUserEfficiencyTrends(ctx context.Context, userID string, opts *interfaces.EfficiencyTrendOptions) (*interfaces.UserEfficiencyTrends, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetUserEfficiencyTrends(ctx, userID, opts)
+}
+
+// AnalyzeBatchJobs performs bulk analysis on a collection of jobs
+func (m *JobManager) AnalyzeBatchJobs(ctx context.Context, jobIDs []string, opts *interfaces.BatchAnalysisOptions) (*interfaces.BatchJobAnalysis, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.AnalyzeBatchJobs(ctx, jobIDs, opts)
+}
+
+// GetWorkflowPerformance analyzes performance of multi-job workflows
+func (m *JobManager) GetWorkflowPerformance(ctx context.Context, workflowID string, opts *interfaces.WorkflowAnalysisOptions) (*interfaces.WorkflowPerformance, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetWorkflowPerformance(ctx, workflowID, opts)
+}
+
+// GenerateEfficiencyReport creates comprehensive efficiency reports
+func (m *JobManager) GenerateEfficiencyReport(ctx context.Context, opts *interfaces.ReportOptions) (*interfaces.EfficiencyReport, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GenerateEfficiencyReport(ctx, opts)
 }
 
 // NodeManager implements the NodeManager interface for API version %s
@@ -392,7 +914,15 @@ func (m *InfoManager) Version(ctx context.Context) (*interfaces.APIVersion, erro
 	}
 	return m.impl.Version(ctx)
 }
-`, normalizeVersion(version), version, version, version, version)
+
+%s
+
+%s
+
+%s
+
+%s
+`, normalizeVersion(version), version, version, version, version, getReservationManagerCode(version), getQoSManagerCode(version), getAccountManagerCode(version), getUserManagerCode(version))
 	
 	return os.WriteFile(managersFile, []byte(content), 0644)
 }

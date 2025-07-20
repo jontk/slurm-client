@@ -4,7 +4,7 @@ package v0_0_42
 
 import (
 	"context"
-
+	
 	"github.com/jontk/slurm-client/internal/interfaces"
 )
 
@@ -142,7 +142,39 @@ func (m *JobManager) ListJobStepsWithMetrics(ctx context.Context, jobID string, 
 	return m.impl.ListJobStepsWithMetrics(ctx, jobID, opts)
 }
 
-// GetJobCPUAnalytics retrieves detailed CPU performance analysis for a job
+// GetJobStepsFromAccounting retrieves job step data from SLURM's accounting database
+func (m *JobManager) GetJobStepsFromAccounting(ctx context.Context, jobID string, opts *interfaces.AccountingQueryOptions) (*interfaces.AccountingJobSteps, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobStepsFromAccounting(ctx, jobID, opts)
+}
+
+// GetStepAccountingData retrieves detailed accounting information for a specific job step
+func (m *JobManager) GetStepAccountingData(ctx context.Context, jobID string, stepID string) (*interfaces.StepAccountingRecord, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetStepAccountingData(ctx, jobID, stepID)
+}
+
+// GetJobStepAPIData integrates with SLURM's native job step APIs for real-time data
+func (m *JobManager) GetJobStepAPIData(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepAPIData, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobStepAPIData(ctx, jobID, stepID)
+}
+
+// ListJobStepsFromSacct queries job steps using SLURM's sacct command integration
+func (m *JobManager) ListJobStepsFromSacct(ctx context.Context, jobID string, opts *interfaces.SacctQueryOptions) (*interfaces.SacctJobStepData, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.ListJobStepsFromSacct(ctx, jobID, opts)
+}
+
+// GetJobCPUAnalytics retrieves detailed CPU performance metrics for a job
 func (m *JobManager) GetJobCPUAnalytics(ctx context.Context, jobID string) (*interfaces.CPUAnalytics, error) {
 	if m.impl == nil {
 		m.impl = NewJobManagerImpl(m.client)
@@ -150,7 +182,7 @@ func (m *JobManager) GetJobCPUAnalytics(ctx context.Context, jobID string) (*int
 	return m.impl.GetJobCPUAnalytics(ctx, jobID)
 }
 
-// GetJobMemoryAnalytics retrieves detailed memory performance analysis for a job
+// GetJobMemoryAnalytics retrieves detailed memory performance metrics for a job
 func (m *JobManager) GetJobMemoryAnalytics(ctx context.Context, jobID string) (*interfaces.MemoryAnalytics, error) {
 	if m.impl == nil {
 		m.impl = NewJobManagerImpl(m.client)
@@ -158,7 +190,7 @@ func (m *JobManager) GetJobMemoryAnalytics(ctx context.Context, jobID string) (*
 	return m.impl.GetJobMemoryAnalytics(ctx, jobID)
 }
 
-// GetJobIOAnalytics retrieves detailed I/O performance analysis for a job
+// GetJobIOAnalytics retrieves detailed I/O performance metrics for a job
 func (m *JobManager) GetJobIOAnalytics(ctx context.Context, jobID string) (*interfaces.IOAnalytics, error) {
 	if m.impl == nil {
 		m.impl = NewJobManagerImpl(m.client)
@@ -166,12 +198,60 @@ func (m *JobManager) GetJobIOAnalytics(ctx context.Context, jobID string) (*inte
 	return m.impl.GetJobIOAnalytics(ctx, jobID)
 }
 
-// GetJobComprehensiveAnalytics retrieves comprehensive performance analysis for a job
+// GetJobComprehensiveAnalytics retrieves all performance metrics for a job
 func (m *JobManager) GetJobComprehensiveAnalytics(ctx context.Context, jobID string) (*interfaces.JobComprehensiveAnalytics, error) {
 	if m.impl == nil {
 		m.impl = NewJobManagerImpl(m.client)
 	}
 	return m.impl.GetJobComprehensiveAnalytics(ctx, jobID)
+}
+
+// GetJobPerformanceHistory retrieves historical performance data for a job
+func (m *JobManager) GetJobPerformanceHistory(ctx context.Context, jobID string, opts *interfaces.PerformanceHistoryOptions) (*interfaces.JobPerformanceHistory, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetJobPerformanceHistory(ctx, jobID, opts)
+}
+
+// GetPerformanceTrends analyzes cluster-wide performance trends
+func (m *JobManager) GetPerformanceTrends(ctx context.Context, opts *interfaces.TrendAnalysisOptions) (*interfaces.PerformanceTrends, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetPerformanceTrends(ctx, opts)
+}
+
+// GetUserEfficiencyTrends tracks efficiency trends for a specific user
+func (m *JobManager) GetUserEfficiencyTrends(ctx context.Context, userID string, opts *interfaces.EfficiencyTrendOptions) (*interfaces.UserEfficiencyTrends, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetUserEfficiencyTrends(ctx, userID, opts)
+}
+
+// AnalyzeBatchJobs performs bulk analysis on a collection of jobs
+func (m *JobManager) AnalyzeBatchJobs(ctx context.Context, jobIDs []string, opts *interfaces.BatchAnalysisOptions) (*interfaces.BatchJobAnalysis, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.AnalyzeBatchJobs(ctx, jobIDs, opts)
+}
+
+// GetWorkflowPerformance analyzes performance of multi-job workflows
+func (m *JobManager) GetWorkflowPerformance(ctx context.Context, workflowID string, opts *interfaces.WorkflowAnalysisOptions) (*interfaces.WorkflowPerformance, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GetWorkflowPerformance(ctx, workflowID, opts)
+}
+
+// GenerateEfficiencyReport creates comprehensive efficiency reports
+func (m *JobManager) GenerateEfficiencyReport(ctx context.Context, opts *interfaces.ReportOptions) (*interfaces.EfficiencyReport, error) {
+	if m.impl == nil {
+		m.impl = NewJobManagerImpl(m.client)
+	}
+	return m.impl.GenerateEfficiencyReport(ctx, opts)
 }
 
 // NodeManager implements the NodeManager interface for API version v0.0.42
@@ -287,3 +367,11 @@ func (m *InfoManager) Version(ctx context.Context) (*interfaces.APIVersion, erro
 	}
 	return m.impl.Version(ctx)
 }
+
+
+
+
+
+
+
+
