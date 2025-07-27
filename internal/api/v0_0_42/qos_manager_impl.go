@@ -1,4 +1,4 @@
-package v0_0_43
+package v0_0_42
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
-// QoSManagerImpl implements the QoSManager interface for v0.0.43
+// QoSManagerImpl implements the QoSManager interface for v0.0.42
 type QoSManagerImpl struct {
 	client *WrapperClient
 }
@@ -28,13 +28,13 @@ func (q *QoSManagerImpl) List(ctx context.Context, opts *interfaces.ListQoSOptio
 	}
 
 	// Prepare parameters for the API call
-	params := &SlurmdbV0043GetQosParams{}
+	params := &SlurmdbV0042GetQosParams{}
 
 	// Call the generated OpenAPI client
-	resp, err := q.client.apiClient.SlurmdbV0043GetQosWithResponse(ctx, params)
+	resp, err := q.client.apiClient.SlurmdbV0042GetQosWithResponse(ctx, params)
 	if err != nil {
 		wrappedErr := errors.WrapError(err)
-		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.43")
+		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.42")
 	}
 
 	// Check HTTP status and handle API errors
@@ -69,13 +69,13 @@ func (q *QoSManagerImpl) List(ctx context.Context, opts *interfaces.ListQoSOptio
 						Description: description,
 					}
 				}
-				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors)
+				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.42", apiErrors)
 				return nil, apiError.SlurmError
 			}
 		}
 
 		// Fall back to HTTP error handling
-		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.43")
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.42")
 		return nil, httpErr
 	}
 
@@ -119,13 +119,13 @@ func (q *QoSManagerImpl) Get(ctx context.Context, qosName string) (*interfaces.Q
 	}
 
 	// Prepare parameters for the API call
-	params := &SlurmdbV0043GetSingleQosParams{}
+	params := &SlurmdbV0042GetSingleQosParams{}
 
 	// Call the generated OpenAPI client
-	resp, err := q.client.apiClient.SlurmdbV0043GetSingleQosWithResponse(ctx, qosName, params)
+	resp, err := q.client.apiClient.SlurmdbV0042GetSingleQosWithResponse(ctx, qosName, params)
 	if err != nil {
 		wrappedErr := errors.WrapError(err)
-		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.43")
+		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.42")
 	}
 
 	// Check HTTP status and handle API errors
@@ -160,13 +160,13 @@ func (q *QoSManagerImpl) Get(ctx context.Context, qosName string) (*interfaces.Q
 						Description: description,
 					}
 				}
-				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors)
+				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.42", apiErrors)
 				return nil, apiError.SlurmError
 			}
 		}
 
 		// Fall back to HTTP error handling
-		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.43")
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.42")
 		return nil, httpErr
 	}
 
@@ -211,18 +211,18 @@ func (q *QoSManagerImpl) Create(ctx context.Context, qos *interfaces.QoSCreate) 
 	}
 
 	// Prepare parameters
-	params := &SlurmdbV0043PostQosParams{}
+	params := &SlurmdbV0042PostQosParams{}
 
 	// Create the request body
-	requestBody := SlurmdbV0043PostQosJSONRequestBody{
-		Qos: []V0043Qos{*apiQoS},
+	requestBody := SlurmdbV0042PostQosJSONRequestBody{
+		Qos: []V0042Qos{*apiQoS},
 	}
 
 	// Call the generated OpenAPI client
-	resp, err := q.client.apiClient.SlurmdbV0043PostQosWithResponse(ctx, params, requestBody)
+	resp, err := q.client.apiClient.SlurmdbV0042PostQosWithResponse(ctx, params, requestBody)
 	if err != nil {
 		wrappedErr := errors.WrapError(err)
-		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.43")
+		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.42")
 	}
 
 	// Check HTTP status (200 and 201 for creation is success)
@@ -257,20 +257,22 @@ func (q *QoSManagerImpl) Create(ctx context.Context, qos *interfaces.QoSCreate) 
 						Description: description,
 					}
 				}
-				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors)
+				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.42", apiErrors)
 				return nil, apiError.SlurmError
 			}
 		}
 
 		// Fall back to HTTP error handling
-		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.43")
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.42")
 		return nil, httpErr
 	}
 
 	// Create successful response
-	return &interfaces.QoSCreateResponse{
+	response := &interfaces.QoSCreateResponse{
 		QoSName: qos.Name,
-	}, nil
+	}
+
+	return response, nil
 }
 
 // Update updates an existing QoS
@@ -299,18 +301,18 @@ func (q *QoSManagerImpl) Update(ctx context.Context, qosName string, update *int
 	apiUpdate.Name = &qosName
 
 	// Prepare parameters
-	params := &SlurmdbV0043PostQosParams{}
+	params := &SlurmdbV0042PostQosParams{}
 
 	// Create the request body
-	requestBody := SlurmdbV0043PostQosJSONRequestBody{
-		Qos: []V0043Qos{*apiUpdate},
+	requestBody := SlurmdbV0042PostQosJSONRequestBody{
+		Qos: []V0042Qos{*apiUpdate},
 	}
 
 	// Call the generated OpenAPI client (POST is used for updates in Slurm)
-	resp, err := q.client.apiClient.SlurmdbV0043PostQosWithResponse(ctx, params, requestBody)
+	resp, err := q.client.apiClient.SlurmdbV0042PostQosWithResponse(ctx, params, requestBody)
 	if err != nil {
 		wrappedErr := errors.WrapError(err)
-		return errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.43")
+		return errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.42")
 	}
 
 	// Check HTTP status
@@ -345,13 +347,13 @@ func (q *QoSManagerImpl) Update(ctx context.Context, qosName string, update *int
 						Description: description,
 					}
 				}
-				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors)
+				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.42", apiErrors)
 				return apiError.SlurmError
 			}
 		}
 
 		// Fall back to HTTP error handling
-		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.43")
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.42")
 		return httpErr
 	}
 
@@ -369,10 +371,10 @@ func (q *QoSManagerImpl) Delete(ctx context.Context, qosName string) error {
 	}
 
 	// Call the generated OpenAPI client
-	resp, err := q.client.apiClient.SlurmdbV0043DeleteSingleQosWithResponse(ctx, qosName)
+	resp, err := q.client.apiClient.SlurmdbV0042DeleteSingleQosWithResponse(ctx, qosName)
 	if err != nil {
 		wrappedErr := errors.WrapError(err)
-		return errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.43")
+		return errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.42")
 	}
 
 	// Check HTTP status (200 or 204 for successful deletion)
@@ -407,21 +409,21 @@ func (q *QoSManagerImpl) Delete(ctx context.Context, qosName string) error {
 						Description: description,
 					}
 				}
-				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors)
+				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.42", apiErrors)
 				return apiError.SlurmError
 			}
 		}
 
 		// Fall back to HTTP error handling
-		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.43")
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.42")
 		return httpErr
 	}
 
 	return nil
 }
 
-// convertAPIQoSToInterface converts V0043Qos to interfaces.QoS
-func convertAPIQoSToInterface(apiQoS V0043Qos) (*interfaces.QoS, error) {
+// convertAPIQoSToInterface converts V0042Qos to interfaces.QoS
+func convertAPIQoSToInterface(apiQoS V0042Qos) (*interfaces.QoS, error) {
 	qos := &interfaces.QoS{}
 
 	// Basic fields
@@ -447,10 +449,10 @@ func convertAPIQoSToInterface(apiQoS V0043Qos) (*interfaces.QoS, error) {
 		qos.Flags = flags
 	}
 
-	// Preempt mode
+	// Preempt mode - V0042QosPreemptModes is already a slice
 	if apiQoS.Preempt != nil && apiQoS.Preempt.Mode != nil && len(*apiQoS.Preempt.Mode) > 0 {
 		// Take the first preempt mode if multiple are set
-		qos.PreemptMode = string((*apiQoS.Preempt.Mode)[0])
+		qos.PreemptMode = (*apiQoS.Preempt.Mode)[0]
 	}
 
 	// Limits - extract from nested structure
@@ -589,8 +591,8 @@ func filterQoS(qosList []interfaces.QoS, opts *interfaces.ListQoSOptions) []inte
 }
 
 // convertQoSCreateToAPI converts interfaces.QoSCreate to API format
-func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
-	apiQoS := &V0043Qos{
+func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0042Qos, error) {
+	apiQoS := &V0042Qos{
 		Name: &create.Name,
 	}
 
@@ -602,7 +604,7 @@ func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
 	// Priority
 	if create.Priority != nil {
 		priority := uint32(*create.Priority)
-		apiQoS.Priority = &V0043Uint32NoValStruct{
+		apiQoS.Priority = &V0042Uint32NoValStruct{
 			Set:    &[]bool{true}[0],
 			Number: &priority,
 		}
@@ -610,21 +612,20 @@ func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
 
 	// Flags
 	if len(create.Flags) > 0 {
-		flags := make([]V0043QosFlags, 0, len(create.Flags))
+		flags := make([]V0042QosFlags, 0, len(create.Flags))
 		for _, flag := range create.Flags {
-			flags = append(flags, V0043QosFlags(flag))
+			flags = append(flags, V0042QosFlags(flag))
 		}
 		apiQoS.Flags = &flags
 	}
 
 	// Preempt mode
 	if create.PreemptMode != "" {
-		mode := V0043QosPreemptMode(create.PreemptMode)
-		modes := []V0043QosPreemptMode{mode}
+		modes := V0042QosPreemptModes{create.PreemptMode}
 		apiQoS.Preempt = &struct {
-			ExemptTime *V0043Uint32NoValStruct `json:"exempt_time,omitempty"`
-			List       *V0043QosPreemptList    `json:"list,omitempty"`
-			Mode       *[]V0043QosPreemptMode  `json:"mode,omitempty"`
+			ExemptTime *V0042Uint32NoValStruct `json:"exempt_time,omitempty"`
+			List       *V0042QosStringIdList   `json:"list,omitempty"`
+			Mode       *V0042QosPreemptModes   `json:"mode,omitempty"`
 		}{
 			Mode: &modes,
 		}
@@ -632,13 +633,13 @@ func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
 
 	// Limits
 	if create.Limits != nil {
-		limits := &V0043QosLimits{}
+		limits := &V0042QosLimits{}
 
 		// Max jobs
 		if create.Limits.MaxJobsTotal != nil {
 			maxJobs := uint32(*create.Limits.MaxJobsTotal)
-			limits.MaxJobs = &V0043QosLimitsMaxJobs{
-				Total: &V0043Uint32NoValStruct{
+			limits.MaxJobs = &V0042QosLimitsMaxJobs{
+				Total: &V0042Uint32NoValStruct{
 					Set:    &[]bool{true}[0],
 					Number: &maxJobs,
 				},
@@ -648,8 +649,8 @@ func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
 		// Max submit jobs
 		if create.Limits.MaxSubmitJobs != nil {
 			maxSubmit := uint32(*create.Limits.MaxSubmitJobs)
-			limits.MaxSubmitJobs = &V0043QosLimitsMaxSubmitJobs{
-				Total: &V0043Uint32NoValStruct{
+			limits.MaxSubmitJobs = &V0042QosLimitsMaxSubmitJobs{
+				Total: &V0042Uint32NoValStruct{
 					Set:    &[]bool{true}[0],
 					Number: &maxSubmit,
 				},
@@ -659,9 +660,9 @@ func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
 		// Max wall clock per job
 		if create.Limits.MaxWallClockPerJob != nil {
 			maxWallClock := uint32(*create.Limits.MaxWallClockPerJob)
-			limits.MaxWallClock = &V0043QosLimitsMaxWallClock{
-				Per: &V0043QosLimitsMaxWallClockPer{
-					Job: &V0043Uint32NoValStruct{
+			limits.MaxWallClock = &V0042QosLimitsMaxWallClock{
+				Per: &V0042QosLimitsMaxWallClockPer{
+					Job: &V0042Uint32NoValStruct{
 						Set:    &[]bool{true}[0],
 						Number: &maxWallClock,
 					},
@@ -672,9 +673,9 @@ func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
 		// Max nodes per job
 		if create.Limits.MaxNodesPerJob != nil {
 			maxNodes := uint32(*create.Limits.MaxNodesPerJob)
-			limits.MaxNodes = &V0043QosLimitsMaxNodes{
-				Per: &V0043QosLimitsMaxNodesPer{
-					Job: &V0043Uint32NoValStruct{
+			limits.MaxNodes = &V0042QosLimitsMaxNodes{
+				Per: &V0042QosLimitsMaxNodesPer{
+					Job: &V0042Uint32NoValStruct{
 						Set:    &[]bool{true}[0],
 						Number: &maxNodes,
 					},
@@ -685,9 +686,9 @@ func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
 		// Max CPUs per job
 		if create.Limits.MaxCPUsPerJob != nil {
 			maxCPUs := uint32(*create.Limits.MaxCPUsPerJob)
-			limits.MaxCPUs = &V0043QosLimitsMaxCPUs{
-				Per: &V0043QosLimitsMaxCPUsPer{
-					Job: &V0043Uint32NoValStruct{
+			limits.MaxCPUs = &V0042QosLimitsMaxCPUs{
+				Per: &V0042QosLimitsMaxCPUsPer{
+					Job: &V0042Uint32NoValStruct{
 						Set:    &[]bool{true}[0],
 						Number: &maxCPUs,
 					},
@@ -701,7 +702,7 @@ func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
 	// Usage threshold
 	if create.UsageThreshold != nil {
 		threshold := float32(*create.UsageThreshold)
-		apiQoS.UsageThreshold = &V0043Float64NoValStruct{
+		apiQoS.UsageThreshold = &V0042Float64NoValStruct{
 			Set:    &[]bool{true}[0],
 			Number: &threshold,
 		}
@@ -716,7 +717,7 @@ func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
 	// Usage factor
 	if create.UsageFactor != nil {
 		factor := float32(*create.UsageFactor)
-		apiQoS.UsageFactor = &V0043Float64NoValStruct{
+		apiQoS.UsageFactor = &V0042Float64NoValStruct{
 			Set:    &[]bool{true}[0],
 			Number: &factor,
 		}
@@ -725,7 +726,7 @@ func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
 	// Preemptable QoS
 	if len(create.PreemptableQoS) > 0 {
 		if apiQoS.Preempt == nil {
-			apiQoS.Preempt = &V0043QosPreempt{}
+			apiQoS.Preempt = &V0042QosPreempt{}
 		}
 		apiQoS.Preempt.List = &create.PreemptableQoS
 	}
@@ -734,8 +735,8 @@ func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
 }
 
 // convertQoSUpdateToAPI converts interfaces.QoSUpdate to API format
-func convertQoSUpdateToAPI(update *interfaces.QoSUpdate) (*V0043Qos, error) {
-	apiQoS := &V0043Qos{}
+func convertQoSUpdateToAPI(update *interfaces.QoSUpdate) (*V0042Qos, error) {
+	apiQoS := &V0042Qos{}
 
 	// Description
 	if update.Description != nil {
@@ -745,7 +746,7 @@ func convertQoSUpdateToAPI(update *interfaces.QoSUpdate) (*V0043Qos, error) {
 	// Priority
 	if update.Priority != nil {
 		priority := uint32(*update.Priority)
-		apiQoS.Priority = &V0043Uint32NoValStruct{
+		apiQoS.Priority = &V0042Uint32NoValStruct{
 			Set:    &[]bool{true}[0],
 			Number: &priority,
 		}
@@ -753,17 +754,17 @@ func convertQoSUpdateToAPI(update *interfaces.QoSUpdate) (*V0043Qos, error) {
 
 	// Flags
 	if update.Flags != nil {
-		flags := make([]V0043QosFlags, 0, len(*update.Flags))
+		flags := make([]V0042QosFlags, 0, len(*update.Flags))
 		for _, flag := range *update.Flags {
-			flags = append(flags, V0043QosFlags(flag))
+			flags = append(flags, V0042QosFlags(flag))
 		}
 		apiQoS.Flags = &flags
 	}
 
 	// Preempt mode
 	if update.PreemptMode != nil {
-		mode := V0043QosPreemptMode(*update.PreemptMode)
-		apiQoS.Preempt = &V0043QosPreempt{
+		mode := V0042QosPreemptMode(*update.PreemptMode)
+		apiQoS.Preempt = &V0042QosPreempt{
 			Mode: &mode,
 		}
 	}
@@ -775,7 +776,7 @@ func convertQoSUpdateToAPI(update *interfaces.QoSUpdate) (*V0043Qos, error) {
 }
 
 // convertTRESToMap converts TRES array to a map
-func convertTRESToMap(tres []V0043Tres) map[string]int64 {
+func convertTRESToMap(tres []V0042Tres) map[string]int64 {
 	result := make(map[string]int64)
 	for _, t := range tres {
 		if t.Type != nil && t.Count != nil {
@@ -783,73 +784,4 @@ func convertTRESToMap(tres []V0043Tres) map[string]int64 {
 		}
 	}
 	return result
-}
-
-// Example of how the implementation would look with actual API calls:
-/*
-func (q *QoSManagerImpl) List(ctx context.Context, opts *interfaces.ListQoSOptions) (*interfaces.QoSList, error) {
-	// Build request parameters
-	params := &GetQoSParams{}
-	if opts != nil {
-		if len(opts.Names) > 0 {
-			params.Names = &opts.Names
-		}
-		if len(opts.Accounts) > 0 {
-			params.Accounts = &opts.Accounts
-		}
-		// ... other filters
-	}
-
-	// Call API
-	resp, err := q.client.apiClient.GetQoS(ctx, params)
-	if err != nil {
-		return nil, errors.WrapAPIError(err, "failed to list QoS")
-	}
-
-	// Convert response
-	result := &interfaces.QoSList{
-		QoS:   make([]interfaces.QoS, 0),
-		Total: 0,
-	}
-
-	if resp.Body != nil && resp.Body.QoS != nil {
-		for _, qos := range *resp.Body.QoS {
-			converted := convertQoSFromAPI(&qos)
-			result.QoS = append(result.QoS, *converted)
-		}
-		result.Total = len(result.QoS)
-	}
-
-	return result, nil
-}
-*/
-
-// Helper function to convert API QoS to interface type
-func convertQoSFromAPI(apiQoS interface{}) *interfaces.QoS {
-	// This would convert the v0.0.43 API QoS type to our interface type
-	// Implementation depends on the actual API response structure
-	return &interfaces.QoS{
-		Name:               "example-qos",
-		Description:        "Example QoS configuration",
-		Priority:           1000,
-		PreemptMode:        "requeue",
-		GraceTime:          300, // 5 minutes
-		MaxJobs:            100,
-		MaxJobsPerUser:     10,
-		MaxJobsPerAccount:  50,
-		MaxSubmitJobs:      200,
-		MaxCPUs:            1000,
-		MaxCPUsPerUser:     100,
-		MaxNodes:           50,
-		MaxWallTime:        86400, // 24 hours
-		MinCPUs:            1,
-		MinNodes:           1,
-		UsageFactor:        1.0,
-		UsageThreshold:     0.8,
-		Flags:              []string{"DenyOnLimit", "RequireAssoc"},
-		AllowedAccounts:    []string{"research", "engineering"},
-		DeniedAccounts:     []string{},
-		AllowedUsers:       []string{},
-		DeniedUsers:        []string{},
-	}
 }

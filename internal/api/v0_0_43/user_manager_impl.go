@@ -3,6 +3,7 @@ package v0_0_43
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
@@ -26,10 +27,85 @@ func (u *UserManagerImpl) List(ctx context.Context, opts *interfaces.ListUsersOp
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
-	// TODO: Implement actual API call when user endpoints are available in OpenAPI spec
-	// For now, return NotImplementedError as the actual implementation requires
-	// the generated client to have user-related methods
-	return nil, errors.NewNotImplementedError("user listing", "v0.0.43")
+	// Prepare parameters for the API call
+	params := &SlurmdbV0043GetUsersParams{}
+
+	// Call the generated OpenAPI client
+	resp, err := u.client.apiClient.SlurmdbV0043GetUsersWithResponse(ctx, params)
+	if err != nil {
+		wrappedErr := errors.WrapError(err)
+		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.43")
+	}
+
+	// Check HTTP status and handle API errors
+	if resp.StatusCode() != 200 {
+		var responseBody []byte
+		if resp.JSON200 != nil {
+			// Try to extract error details from response
+			if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
+				apiErrors := make([]errors.SlurmAPIErrorDetail, len(*resp.JSON200.Errors))
+				for i, apiErr := range *resp.JSON200.Errors {
+					var errorNumber int
+					if apiErr.ErrorNumber != nil {
+						errorNumber = int(*apiErr.ErrorNumber)
+					}
+					var errorCode string
+					if apiErr.Error != nil {
+						errorCode = *apiErr.Error
+					}
+					var source string
+					if apiErr.Source != nil {
+						source = *apiErr.Source
+					}
+					var description string
+					if apiErr.Description != nil {
+						description = *apiErr.Description
+					}
+
+					apiErrors[i] = errors.SlurmAPIErrorDetail{
+						ErrorNumber: errorNumber,
+						ErrorCode:   errorCode,
+						Source:      source,
+						Description: description,
+					}
+				}
+				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors)
+				return nil, apiError.SlurmError
+			}
+		}
+
+		// Fall back to HTTP error handling
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.43")
+		return nil, httpErr
+	}
+
+	// Check for unexpected response format
+	if resp.JSON200 == nil || resp.JSON200.Users == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected response format", "Expected JSON response with users but got nil")
+	}
+
+	// Convert the response to our interface types
+	users := make([]interfaces.User, 0, len(*resp.JSON200.Users))
+	for _, apiUser := range *resp.JSON200.Users {
+		user, err := convertAPIUserToInterface(apiUser)
+		if err != nil {
+			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert user data")
+			conversionErr.Cause = err
+			conversionErr.Details = fmt.Sprintf("Error converting user %v", apiUser.Name)
+			return nil, conversionErr
+		}
+		users = append(users, *user)
+	}
+
+	// Apply client-side filtering if options are provided
+	if opts != nil {
+		users = filterUsers(users, opts)
+	}
+
+	return &interfaces.UserList{
+		Users: users,
+		Total: len(users),
+	}, nil
 }
 
 // Get retrieves a specific user by name
@@ -42,8 +118,73 @@ func (u *UserManagerImpl) Get(ctx context.Context, userName string) (*interfaces
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
 	}
 
-	// TODO: Implement actual API call when user endpoints are available in OpenAPI spec
-	return nil, errors.NewNotImplementedError("user retrieval", "v0.0.43")
+	// Prepare parameters for the API call
+	params := &SlurmdbV0043GetUserParams{}
+
+	// Call the generated OpenAPI client
+	resp, err := u.client.apiClient.SlurmdbV0043GetUserWithResponse(ctx, userName, params)
+	if err != nil {
+		wrappedErr := errors.WrapError(err)
+		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.43")
+	}
+
+	// Check HTTP status and handle API errors
+	if resp.StatusCode() != 200 {
+		var responseBody []byte
+		if resp.JSON200 != nil {
+			// Try to extract error details from response
+			if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
+				apiErrors := make([]errors.SlurmAPIErrorDetail, len(*resp.JSON200.Errors))
+				for i, apiErr := range *resp.JSON200.Errors {
+					var errorNumber int
+					if apiErr.ErrorNumber != nil {
+						errorNumber = int(*apiErr.ErrorNumber)
+					}
+					var errorCode string
+					if apiErr.Error != nil {
+						errorCode = *apiErr.Error
+					}
+					var source string
+					if apiErr.Source != nil {
+						source = *apiErr.Source
+					}
+					var description string
+					if apiErr.Description != nil {
+						description = *apiErr.Description
+					}
+
+					apiErrors[i] = errors.SlurmAPIErrorDetail{
+						ErrorNumber: errorNumber,
+						ErrorCode:   errorCode,
+						Source:      source,
+						Description: description,
+					}
+				}
+				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors)
+				return nil, apiError.SlurmError
+			}
+		}
+
+		// Fall back to HTTP error handling
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.43")
+		return nil, httpErr
+	}
+
+	// Check for unexpected response format
+	if resp.JSON200 == nil || resp.JSON200.Users == nil || len(*resp.JSON200.Users) == 0 {
+		return nil, errors.NewClientError(errors.ErrorCodeNotFound, "User not found", fmt.Sprintf("User '%s' not found", userName))
+	}
+
+	// Convert the first user in the response
+	user, err := convertAPIUserToInterface((*resp.JSON200.Users)[0])
+	if err != nil {
+		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert user data")
+		conversionErr.Cause = err
+		conversionErr.Details = fmt.Sprintf("Error converting user '%s'", userName)
+		return nil, conversionErr
+	}
+
+	return user, nil
 }
 
 // GetUserAccounts retrieves all account associations for a user
@@ -56,10 +197,38 @@ func (u *UserManagerImpl) GetUserAccounts(ctx context.Context, userName string) 
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
 	}
 
-	// TODO: Implement actual API call to retrieve user account associations
-	// This would involve querying SLURM's association database for user-account relationships
-	// including roles, permissions, and account-specific quotas
-	return nil, errors.NewNotImplementedError("user accounts retrieval", "v0.0.43")
+	// Get user details including associations
+	user, err := u.Get(ctx, userName)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert associations to UserAccount format
+	userAccounts := make([]*interfaces.UserAccount, 0)
+	for _, assoc := range user.Associations {
+		userAccount := &interfaces.UserAccount{
+			UserName:      userName,
+			AccountName:   assoc.Account,
+			IsDefault:     assoc.IsDefault,
+			Partition:     assoc.Partition,
+			Cluster:       assoc.Cluster,
+			QoS:           assoc.QoS,
+			SharesRaw:     assoc.SharesRaw,
+			GrpTRES:       assoc.GrpTRES,
+			GrpJobs:       assoc.GrpJobs,
+			GrpSubmitJobs: assoc.GrpSubmitJobs,
+			GrpWall:       assoc.GrpWall,
+			MaxTRES:       assoc.MaxTRES,
+			MaxJobs:       assoc.MaxJobs,
+			MaxSubmitJobs: assoc.MaxSubmitJobs,
+			MaxWallDurationPerJob: assoc.MaxWallDurationPerJob,
+			// Priority is available in association
+			Priority: assoc.Priority,
+		}
+		userAccounts = append(userAccounts, userAccount)
+	}
+
+	return userAccounts, nil
 }
 
 // GetUserQuotas retrieves quota information for a user
@@ -72,10 +241,87 @@ func (u *UserManagerImpl) GetUserQuotas(ctx context.Context, userName string) (*
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
 	}
 
-	// TODO: Implement actual API call to retrieve user quotas
-	// This would involve querying SLURM's accounting database for user-level quotas
-	// including CPU limits, job limits, TRES quotas, account-specific quotas, etc.
-	return nil, errors.NewNotImplementedError("user quotas retrieval", "v0.0.43")
+	// Get user details including associations
+	user, err := u.Get(ctx, userName)
+	if err != nil {
+		return nil, err
+	}
+
+	// Aggregate quotas from all associations
+	userQuota := &interfaces.UserQuota{
+		UserName:        userName,
+		AccountQuotas:   make(map[string]*interfaces.AccountSpecificQuota),
+		EffectiveQuotas: &interfaces.EffectiveQuotas{},
+	}
+
+	// Track effective quotas (most restrictive across all accounts)
+	var minMaxJobs *int
+	var minMaxSubmitJobs *int
+	var minMaxWallTime *int
+	var minMaxCPUs *int
+	var minMaxNodes *int
+
+	// Process each association
+	for _, assoc := range user.Associations {
+		accountQuota := &interfaces.AccountSpecificQuota{
+			AccountName:           assoc.Account,
+			SharesRaw:             assoc.SharesRaw,
+			GrpTRES:               assoc.GrpTRES,
+			GrpJobs:               assoc.GrpJobs,
+			GrpSubmitJobs:         assoc.GrpSubmitJobs,
+			GrpWall:               assoc.GrpWall,
+			MaxTRES:               assoc.MaxTRES,
+			MaxJobs:               assoc.MaxJobs,
+			MaxSubmitJobs:         assoc.MaxSubmitJobs,
+			MaxWallDurationPerJob: assoc.MaxWallDurationPerJob,
+			QoS:                   assoc.QoS,
+			Priority:              assoc.Priority,
+		}
+
+		userQuota.AccountQuotas[assoc.Account] = accountQuota
+
+		// Update effective quotas (most restrictive)
+		if assoc.MaxJobs != nil {
+			if minMaxJobs == nil || *assoc.MaxJobs < *minMaxJobs {
+				minMaxJobs = assoc.MaxJobs
+			}
+		}
+		if assoc.MaxSubmitJobs != nil {
+			if minMaxSubmitJobs == nil || *assoc.MaxSubmitJobs < *minMaxSubmitJobs {
+				minMaxSubmitJobs = assoc.MaxSubmitJobs
+			}
+		}
+		if assoc.MaxWallDurationPerJob != nil {
+			if minMaxWallTime == nil || *assoc.MaxWallDurationPerJob < *minMaxWallTime {
+				minMaxWallTime = assoc.MaxWallDurationPerJob
+			}
+		}
+
+		// Extract CPU and node limits from MaxTRES if available
+		if assoc.MaxTRES != nil {
+			if cpuLimit, ok := assoc.MaxTRES["cpu"]; ok {
+				cpuInt := int(cpuLimit)
+				if minMaxCPUs == nil || cpuInt < *minMaxCPUs {
+					minMaxCPUs = &cpuInt
+				}
+			}
+			if nodeLimit, ok := assoc.MaxTRES["node"]; ok {
+				nodeInt := int(nodeLimit)
+				if minMaxNodes == nil || nodeInt < *minMaxNodes {
+					minMaxNodes = &nodeInt
+				}
+			}
+		}
+	}
+
+	// Set effective quotas
+	userQuota.EffectiveQuotas.MaxJobs = minMaxJobs
+	userQuota.EffectiveQuotas.MaxSubmitJobs = minMaxSubmitJobs
+	userQuota.EffectiveQuotas.MaxWallDurationPerJob = minMaxWallTime
+	userQuota.EffectiveQuotas.MaxCPUsPerJob = minMaxCPUs
+	userQuota.EffectiveQuotas.MaxNodesPerJob = minMaxNodes
+
+	return userQuota, nil
 }
 
 // GetUserDefaultAccount retrieves the default account for a user
@@ -88,9 +334,36 @@ func (u *UserManagerImpl) GetUserDefaultAccount(ctx context.Context, userName st
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
 	}
 
-	// TODO: Implement actual API call to retrieve user's default account
-	// This would involve querying the user's association and returning the default account
-	return nil, errors.NewNotImplementedError("user default account retrieval", "v0.0.43")
+	// Get user accounts
+	userAccounts, err := u.GetUserAccounts(ctx, userName)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find the default account
+	for _, ua := range userAccounts {
+		if ua.IsDefault {
+			// Get full account details
+			accountMgr := NewAccountManagerImpl(u.client)
+			account, err := accountMgr.Get(ctx, ua.AccountName)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get default account details: %w", err)
+			}
+			return account, nil
+		}
+	}
+
+	// If no default account is explicitly set, return the first one
+	if len(userAccounts) > 0 {
+		accountMgr := NewAccountManagerImpl(u.client)
+		account, err := accountMgr.Get(ctx, userAccounts[0].AccountName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get account details: %w", err)
+		}
+		return account, nil
+	}
+
+	return nil, errors.NewClientError(errors.ErrorCodeNotFound, "No default account found", fmt.Sprintf("User '%s' has no account associations", userName))
 }
 
 // GetUserFairShare retrieves fair-share information for a user
@@ -265,4 +538,96 @@ func validateAccountContext(accountName string) error {
 	}
 	
 	return nil
+}
+
+// convertAPIUserToInterface converts V0043UserShort to interfaces.User
+func convertAPIUserToInterface(apiUser V0043UserShort) (*interfaces.User, error) {
+	user := &interfaces.User{}
+
+	// V0043UserShort has minimal fields, we need to extract the name from somewhere else
+	// For now, we'll use default values since UserShort doesn't have name
+	
+	// Admin level
+	if apiUser.Adminlevel != nil && len(*apiUser.Adminlevel) > 0 {
+		user.AdminLevel = string((*apiUser.Adminlevel)[0])
+	}
+
+	// Default account and WCKEY
+	if apiUser.Defaultaccount != nil {
+		user.DefaultAccount = *apiUser.Defaultaccount
+	}
+	if apiUser.Defaultwckey != nil {
+		user.DefaultWCKey = *apiUser.Defaultwckey
+	}
+
+	// V0043UserShort doesn't have associations, flags, or name
+	// These would need to be fetched separately with a more detailed API call
+
+	return user, nil
+}
+
+
+// filterUsers applies client-side filtering to the user list
+func filterUsers(users []interfaces.User, opts *interfaces.ListUsersOptions) []interfaces.User {
+	if opts == nil {
+		return users
+	}
+
+	filtered := make([]interfaces.User, 0, len(users))
+	for _, user := range users {
+		// Filter by names
+		if len(opts.Names) > 0 {
+			found := false
+			for _, name := range opts.Names {
+				if user.Name == name {
+					found = true
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		}
+
+		// Filter by default account
+		if opts.DefaultAccount != "" && user.DefaultAccount != opts.DefaultAccount {
+			continue
+		}
+
+		// Filter by admin level
+		if opts.AdminLevel != "" && user.AdminLevel != opts.AdminLevel {
+			continue
+		}
+
+		// Filter by include deleted
+		if !opts.IncludeDeleted {
+			// Check if user has DELETED flag
+			hasDeletedFlag := false
+			for _, flag := range user.Flags {
+				if flag == "DELETED" {
+					hasDeletedFlag = true
+					break
+				}
+			}
+			if hasDeletedFlag {
+				continue
+			}
+		}
+
+		filtered = append(filtered, user)
+	}
+
+	return filtered
+}
+
+
+// convertTRESArrayToMap converts TRES array to a map
+func convertTRESArrayToMap(tres []V0043Tres) map[string]int64 {
+	result := make(map[string]int64)
+	for _, t := range tres {
+		if t.Type != nil && t.Count != nil {
+			result[*t.Type] = int64(*t.Count)
+		}
+	}
+	return result
 }

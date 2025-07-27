@@ -101,12 +101,56 @@ func (a *AccountManagerImpl) Delete(ctx context.Context, accountName string) err
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
 	}
 
-	// TODO: Implement actual API call when account endpoints are available in OpenAPI spec
-	// Note: Account deletion may require special handling for:
-	// - Child accounts (cascade vs prevent)
-	// - Active users in the account
-	// - Running jobs associated with the account
-	return errors.NewNotImplementedError("account deletion", "v0.0.43")
+	// Call the generated OpenAPI client
+	resp, err := a.client.apiClient.SlurmdbV0043DeleteAccountWithResponse(ctx, accountName)
+	if err != nil {
+		wrappedErr := errors.WrapError(err)
+		return errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.43")
+	}
+
+	// Check HTTP status (200 or 204 for successful deletion)
+	if resp.StatusCode() != 200 && resp.StatusCode() != 204 {
+		var responseBody []byte
+		if resp.JSON200 != nil {
+			// Try to extract error details from response
+			if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
+				apiErrors := make([]errors.SlurmAPIErrorDetail, len(*resp.JSON200.Errors))
+				for i, apiErr := range *resp.JSON200.Errors {
+					var errorNumber int
+					if apiErr.ErrorNumber != nil {
+						errorNumber = int(*apiErr.ErrorNumber)
+					}
+					var errorCode string
+					if apiErr.Error != nil {
+						errorCode = *apiErr.Error
+					}
+					var source string
+					if apiErr.Source != nil {
+						source = *apiErr.Source
+					}
+					var description string
+					if apiErr.Description != nil {
+						description = *apiErr.Description
+					}
+
+					apiErrors[i] = errors.SlurmAPIErrorDetail{
+						ErrorNumber: errorNumber,
+						ErrorCode:   errorCode,
+						Source:      source,
+						Description: description,
+					}
+				}
+				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors)
+				return apiError.SlurmError
+			}
+		}
+
+		// Fall back to HTTP error handling
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.43")
+		return httpErr
+	}
+
+	return nil
 }
 
 // GetAccountHierarchy retrieves the complete account hierarchy starting from a root account
@@ -322,4 +366,166 @@ func validateTRES(tres map[string]int) error {
 		}
 	}
 	return nil
+}
+
+// convertAPIAccountToInterface converts V0043Account to interfaces.Account
+func convertAPIAccountToInterface(apiAccount V0043Account) (*interfaces.Account, error) {
+	account := &interfaces.Account{}
+
+	// Basic fields
+	account.Name = apiAccount.Name
+	account.Description = apiAccount.Description
+	account.Organization = apiAccount.Organization
+
+	// Flags
+	if apiAccount.Flags != nil {
+		flags := make([]string, 0, len(*apiAccount.Flags))
+		for _, flag := range *apiAccount.Flags {
+			flags = append(flags, string(flag))
+		}
+		account.Flags = flags
+	}
+
+	// Coordinators
+	if apiAccount.Coordinators != nil {
+		coordinators := make([]string, 0, len(*apiAccount.Coordinators))
+		for _, coord := range *apiAccount.Coordinators {
+			coordinators = append(coordinators, coord.Name)
+		}
+		account.CoordinatorUsers = coordinators
+	}
+
+	return account, nil
+}
+
+// filterAccounts applies client-side filtering to the account list
+func filterAccounts(accounts []interfaces.Account, opts *interfaces.ListAccountsOptions) []interfaces.Account {
+	if opts == nil {
+		return accounts
+	}
+
+	filtered := make([]interfaces.Account, 0, len(accounts))
+	for _, account := range accounts {
+		// Filter by names
+		if len(opts.Names) > 0 {
+			found := false
+			for _, name := range opts.Names {
+				if account.Name == name {
+					found = true
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		}
+
+		// Filter by organizations
+		if len(opts.Organizations) > 0 {
+			found := false
+			for _, org := range opts.Organizations {
+				if account.Organization == org {
+					found = true
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		}
+
+		// Filter by parent accounts
+		if len(opts.ParentAccounts) > 0 {
+			found := false
+			for _, parent := range opts.ParentAccounts {
+				if account.ParentAccount == parent {
+					found = true
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		}
+
+		// Filter by include deleted
+		if !opts.WithDeleted {
+			// Check if account has DELETED flag
+			hasDeletedFlag := false
+			for _, flag := range account.Flags {
+				if flag == "DELETED" {
+					hasDeletedFlag = true
+					break
+				}
+			}
+			if hasDeletedFlag {
+				continue
+			}
+		}
+
+		filtered = append(filtered, account)
+	}
+
+	return filtered
+}
+
+// convertAccountCreateToAPI converts interfaces.AccountCreate to API format
+func convertAccountCreateToAPI(create *interfaces.AccountCreate) (*V0043Account, error) {
+	apiAccount := &V0043Account{
+		Name:         create.Name,
+		Description:  create.Description,
+		Organization: create.Organization,
+	}
+
+	// Flags
+	if len(create.Flags) > 0 {
+		flags := make([]V0043AccountFlags, 0, len(create.Flags))
+		for _, flag := range create.Flags {
+			flags = append(flags, V0043AccountFlags(flag))
+		}
+		apiAccount.Flags = &flags
+	}
+
+	// Coordinators
+	if len(create.CoordinatorUsers) > 0 {
+		coords := make(V0043CoordList, 0, len(create.CoordinatorUsers))
+		for _, coordName := range create.CoordinatorUsers {
+			coords = append(coords, V0043Coord{
+				Name:   coordName,
+				Direct: &[]bool{true}[0],
+			})
+		}
+		apiAccount.Coordinators = &coords
+	}
+
+	return apiAccount, nil
+}
+
+// convertAccountUpdateToAPI converts interfaces.AccountUpdate to API format
+func convertAccountUpdateToAPI(update *interfaces.AccountUpdate) (*V0043Account, error) {
+	apiAccount := &V0043Account{}
+
+	// Description
+	if update.Description != nil {
+		apiAccount.Description = *update.Description
+	}
+
+	// Organization
+	if update.Organization != nil {
+		apiAccount.Organization = *update.Organization
+	}
+
+	// Coordinators
+	if len(update.CoordinatorUsers) > 0 {
+		coords := make(V0043CoordList, 0, len(update.CoordinatorUsers))
+		for _, coordName := range update.CoordinatorUsers {
+			coords = append(coords, V0043Coord{
+				Name:   coordName,
+				Direct: &[]bool{true}[0],
+			})
+		}
+		apiAccount.Coordinators = &coords
+	}
+
+	return apiAccount, nil
 }
