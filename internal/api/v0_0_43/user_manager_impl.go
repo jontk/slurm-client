@@ -85,8 +85,8 @@ func (u *UserManagerImpl) List(ctx context.Context, opts *interfaces.ListUsersOp
 	}
 
 	// Convert the response to our interface types
-	users := make([]interfaces.User, 0, len(*resp.JSON200.Users))
-	for _, apiUser := range *resp.JSON200.Users {
+	users := make([]interfaces.User, 0, len(resp.JSON200.Users))
+	for _, apiUser := range resp.JSON200.Users {
 		user, err := convertAPIUserToInterface(apiUser)
 		if err != nil {
 			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert user data")
@@ -171,12 +171,12 @@ func (u *UserManagerImpl) Get(ctx context.Context, userName string) (*interfaces
 	}
 
 	// Check for unexpected response format
-	if resp.JSON200 == nil || resp.JSON200.Users == nil || len(*resp.JSON200.Users) == 0 {
-		return nil, errors.NewClientError(errors.ErrorCodeNotFound, "User not found", fmt.Sprintf("User '%s' not found", userName))
+	if resp.JSON200 == nil || resp.JSON200.Users == nil || len(resp.JSON200.Users) == 0 {
+		return nil, errors.NewClientError(errors.ErrorCodeResourceNotFound, "User not found", fmt.Sprintf("User '%s' not found", userName))
 	}
 
 	// Convert the first user in the response
-	user, err := convertAPIUserToInterface((*resp.JSON200.Users)[0])
+	user, err := convertAPIUserToInterface(resp.JSON200.Users[0])
 	if err != nil {
 		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert user data")
 		conversionErr.Cause = err
