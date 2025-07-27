@@ -41,13 +41,13 @@ func TestAccountManagerImpl_GetAccountHierarchy(t *testing.T) {
 			errType:     "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			rootAccount: "root",
 			wantErr:     true,
-			errType:     "not implemented",
+			errType:     "client error",
 		},
 	}
 
@@ -74,10 +74,6 @@ func TestAccountManagerImpl_GetAccountHierarchy(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("GetAccountHierarchy() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("GetAccountHierarchy() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -118,13 +114,13 @@ func TestAccountManagerImpl_GetParentAccounts(t *testing.T) {
 			errType:     "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			accountName: "test",
 			wantErr:     true,
-			errType:     "not implemented",
+			errType:     "client error",
 		},
 	}
 
@@ -151,10 +147,6 @@ func TestAccountManagerImpl_GetParentAccounts(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("GetParentAccounts() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("GetParentAccounts() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -208,14 +200,14 @@ func TestAccountManagerImpl_GetChildAccounts(t *testing.T) {
 			errType:     "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			accountName: "test",
 			depth:       1,
 			wantErr:     true,
-			errType:     "not implemented",
+			errType:     "client error",
 		},
 	}
 
@@ -242,10 +234,6 @@ func TestAccountManagerImpl_GetChildAccounts(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("GetChildAccounts() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("GetChildAccounts() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -286,13 +274,13 @@ func TestAccountManagerImpl_GetAccountQuotas(t *testing.T) {
 			errType:     "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			accountName: "test",
 			wantErr:     true,
-			errType:     "not implemented",
+			errType:     "client error",
 		},
 	}
 
@@ -319,10 +307,6 @@ func TestAccountManagerImpl_GetAccountQuotas(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("GetAccountQuotas() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("GetAccountQuotas() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -376,14 +360,14 @@ func TestAccountManagerImpl_GetAccountQuotaUsage(t *testing.T) {
 			errType:     "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			accountName: "test",
 			timeframe:   "current",
 			wantErr:     true,
-			errType:     "not implemented",
+			errType:     "client error",
 		},
 		{
 			name: "empty timeframe defaults to current",
@@ -393,7 +377,7 @@ func TestAccountManagerImpl_GetAccountQuotaUsage(t *testing.T) {
 			accountName: "test",
 			timeframe:   "",
 			wantErr:     true,
-			errType:     "not implemented",
+			errType:     "client error",
 		},
 	}
 
@@ -420,10 +404,6 @@ func TestAccountManagerImpl_GetAccountQuotaUsage(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("GetAccountQuotaUsage() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("GetAccountQuotaUsage() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -528,13 +508,13 @@ func TestAccountManagerImpl_GetAccountFairShare(t *testing.T) {
 			errType:     "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			accountName: "testaccount",
 			wantErr:     true,
-			errType:     "not implemented",
+			errType:     "client error",
 		},
 	}
 
@@ -561,10 +541,6 @@ func TestAccountManagerImpl_GetAccountFairShare(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("GetAccountFairShare() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("GetAccountFairShare() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -614,13 +590,13 @@ func TestAccountManagerImpl_GetFairShareHierarchy(t *testing.T) {
 			errType:     "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			rootAccount: "root",
 			wantErr:     true,
-			errType:     "not implemented",
+			errType:     "client error",
 		},
 	}
 
@@ -647,10 +623,6 @@ func TestAccountManagerImpl_GetFairShareHierarchy(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("GetFairShareHierarchy() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("GetFairShareHierarchy() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {

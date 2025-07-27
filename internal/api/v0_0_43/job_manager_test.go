@@ -436,10 +436,6 @@ func TestJobManager_convertJobUpdateToAPI(t *testing.T) {
 }
 
 // Helper functions for pointer creation
-func intPtr(i int) *int {
-	return &i
-}
-
 func int32Ptr(i int32) *int32 {
 	return &i
 }

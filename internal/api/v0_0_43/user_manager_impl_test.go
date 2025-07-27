@@ -33,13 +33,13 @@ func TestUserManagerImpl_List(t *testing.T) {
 			errType: "client error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			opts:    &interfaces.ListUsersOptions{},
 			wantErr: true,
-			errType: "not implemented",
+			errType: "client error",
 		},
 	}
 
@@ -62,10 +62,6 @@ func TestUserManagerImpl_List(t *testing.T) {
 				case "client error":
 					if !errors.IsClientError(err) {
 						t.Errorf("List() expected client error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("List() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -106,13 +102,13 @@ func TestUserManagerImpl_Get(t *testing.T) {
 			errType:  "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			userName: "testuser",
 			wantErr:  true,
-			errType:  "not implemented",
+			errType:  "client error",
 		},
 	}
 
@@ -139,10 +135,6 @@ func TestUserManagerImpl_Get(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("Get() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("Get() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -183,13 +175,13 @@ func TestUserManagerImpl_GetUserAccounts(t *testing.T) {
 			errType:  "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			userName: "testuser",
 			wantErr:  true,
-			errType:  "not implemented",
+			errType:  "client error",
 		},
 	}
 
@@ -216,10 +208,6 @@ func TestUserManagerImpl_GetUserAccounts(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("GetUserAccounts() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("GetUserAccounts() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -260,13 +248,13 @@ func TestUserManagerImpl_GetUserQuotas(t *testing.T) {
 			errType:  "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			userName: "testuser",
 			wantErr:  true,
-			errType:  "not implemented",
+			errType:  "client error",
 		},
 	}
 
@@ -293,10 +281,6 @@ func TestUserManagerImpl_GetUserQuotas(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("GetUserQuotas() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("GetUserQuotas() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -337,13 +321,13 @@ func TestUserManagerImpl_GetUserDefaultAccount(t *testing.T) {
 			errType:  "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			userName: "testuser",
 			wantErr:  true,
-			errType:  "not implemented",
+			errType:  "client error",
 		},
 	}
 
@@ -370,10 +354,6 @@ func TestUserManagerImpl_GetUserDefaultAccount(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("GetUserDefaultAccount() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("GetUserDefaultAccount() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -414,13 +394,13 @@ func TestUserManagerImpl_GetUserFairShare(t *testing.T) {
 			errType:  "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			userName: "testuser",
 			wantErr:  true,
-			errType:  "not implemented",
+			errType:  "client error",
 		},
 	}
 
@@ -447,10 +427,6 @@ func TestUserManagerImpl_GetUserFairShare(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("GetUserFairShare() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("GetUserFairShare() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -514,24 +490,24 @@ func TestUserManagerImpl_CalculateJobPriority(t *testing.T) {
 			errType:       "validation error",
 		},
 		{
-			name: "valid input with script - not implemented",
+			name: "valid input with script - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			userName:      "testuser",
 			jobSubmission: &interfaces.JobSubmission{Script: "test.sh"},
 			wantErr:       true,
-			errType:       "not implemented",
+			errType:       "client error",
 		},
 		{
-			name: "valid input with command - not implemented",
+			name: "valid input with command - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			userName:      "testuser",
 			jobSubmission: &interfaces.JobSubmission{Command: "echo hello"},
 			wantErr:       true,
-			errType:       "not implemented",
+			errType:       "client error",
 		},
 	}
 
@@ -558,10 +534,6 @@ func TestUserManagerImpl_CalculateJobPriority(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("CalculateJobPriority() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("CalculateJobPriority() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -731,14 +703,14 @@ func TestUserManagerImpl_ValidateUserAccountAccess(t *testing.T) {
 			errType:     "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			userName:    "testuser",
 			accountName: "testaccount",
 			wantErr:     true,
-			errType:     "not implemented",
+			errType:     "client error",
 		},
 	}
 
@@ -765,10 +737,6 @@ func TestUserManagerImpl_ValidateUserAccountAccess(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("ValidateUserAccountAccess() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("ValidateUserAccountAccess() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -812,7 +780,7 @@ func TestUserManagerImpl_GetUserAccountAssociations(t *testing.T) {
 			errType:  "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
@@ -821,7 +789,7 @@ func TestUserManagerImpl_GetUserAccountAssociations(t *testing.T) {
 				ActiveOnly: false,
 			},
 			wantErr: true,
-			errType: "not implemented",
+			errType: "client error",
 		},
 	}
 
@@ -848,10 +816,6 @@ func TestUserManagerImpl_GetUserAccountAssociations(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("GetUserAccountAssociations() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("GetUserAccountAssociations() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -919,13 +883,13 @@ func TestUserManagerImpl_GetBulkUserAccounts(t *testing.T) {
 			errType:   "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			userNames: []string{"user1", "user2", "user_3", "user-4"},
 			wantErr:   true,
-			errType:   "not implemented",
+			errType:   "client error",
 		},
 	}
 
@@ -957,10 +921,6 @@ func TestUserManagerImpl_GetBulkUserAccounts(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("GetBulkUserAccounts() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("GetBulkUserAccounts() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -1028,13 +988,13 @@ func TestUserManagerImpl_GetBulkAccountUsers(t *testing.T) {
 			errType:      "validation error",
 		},
 		{
-			name: "valid input - not implemented",
+			name: "valid input - nil api response",
 			client: &WrapperClient{
 				apiClient: &ClientWithResponses{},
 			},
 			accountNames: []string{"account1", "account2", "account_3", "account-4"},
 			wantErr:      true,
-			errType:      "not implemented",
+			errType:      "client error",
 		},
 	}
 
@@ -1066,10 +1026,6 @@ func TestUserManagerImpl_GetBulkAccountUsers(t *testing.T) {
 				case "validation error":
 					if !errors.IsValidationError(err) {
 						t.Errorf("GetBulkAccountUsers() expected validation error, got %T: %v", err, err)
-					}
-				case "not implemented":
-					if !errors.IsNotImplementedError(err) {
-						t.Errorf("GetBulkAccountUsers() expected not implemented error, got %T: %v", err, err)
 					}
 				}
 			} else {
