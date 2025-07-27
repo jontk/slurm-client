@@ -183,39 +183,23 @@ func normalizeVersion(version string) string {
 }
 
 func getReservationsImplementation(version string) string {
-	// Only v0.0.43 and later support reservations
-	if version == "v0.0.43" {
-		return "return NewReservationManagerImpl(c)"
-	}
-	// Earlier versions return nil
-	return "return nil"
+	// All versions now have reservation manager implementations
+	return "return NewReservationManagerImpl(c)"
 }
 
 func getQoSImplementation(version string) string {
-	// Only v0.0.43 and later support QoS
-	if version == "v0.0.43" {
-		return "return NewQoSManagerImpl(c)"
-	}
-	// Earlier versions return nil
-	return "return nil"
+	// All versions now have QoS manager implementations
+	return "return NewQoSManagerImpl(c)"
 }
 
 func getAccountsImplementation(version string) string {
-	// v0.0.41 and v0.0.43 support Accounts with direct impl calls
-	if version == "v0.0.41" || version == "v0.0.43" {
-		return "return NewAccountManagerImpl(c)"
-	}
-	// Earlier versions return nil
-	return "return nil"
+	// All versions now have account manager implementations
+	return "return NewAccountManagerImpl(c)"
 }
 
 func getUsersImplementation(version string) string {
-	// v0.0.41 and v0.0.43 support Users with direct impl calls
-	if version == "v0.0.41" || version == "v0.0.43" {
-		return "return NewUserManagerImpl(c)"
-	}
-	// Earlier versions return nil
-	return "return nil"
+	// All versions now have user manager implementations
+	return "return NewUserManagerImpl(c)"
 }
 
 func getReservationManagerCode(version string) string {
