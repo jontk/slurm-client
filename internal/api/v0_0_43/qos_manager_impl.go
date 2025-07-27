@@ -30,6 +30,14 @@ func (q *QoSManagerImpl) List(ctx context.Context, opts *interfaces.ListQoSOptio
 	// Prepare parameters for the API call
 	params := &SlurmdbV0043GetQosParams{}
 
+	// Apply filters from options
+	if opts != nil {
+		if len(opts.Names) > 0 {
+			nameStr := strings.Join(opts.Names, ",")
+			params.Name = &nameStr
+		}
+	}
+
 	// Call the generated OpenAPI client
 	resp, err := q.client.apiClient.SlurmdbV0043GetQosWithResponse(ctx, params)
 	if err != nil {
@@ -81,7 +89,7 @@ func (q *QoSManagerImpl) List(ctx context.Context, opts *interfaces.ListQoSOptio
 
 	// Check for unexpected response format
 	if resp.JSON200 == nil || resp.JSON200.Qos == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected response format", "Expected JSON response with QoS but got nil")
+		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected response format", "Expected JSON response with qos but got nil")
 	}
 
 	// Convert the response to our interface types
@@ -203,20 +211,20 @@ func (q *QoSManagerImpl) Create(ctx context.Context, qos *interfaces.QoSCreate) 
 	}
 
 	// Convert interface types to API types
-	apiQoS, err := convertQoSCreateToAPI(qos)
+	apiQos, err := convertQoSCreateToAPI(qos)
 	if err != nil {
 		conversionErr := errors.NewClientError(errors.ErrorCodeInvalidRequest, "Failed to convert QoS data")
 		conversionErr.Cause = err
 		return nil, conversionErr
 	}
 
-	// Prepare parameters
-	params := &SlurmdbV0043PostQosParams{}
-
 	// Create the request body
 	requestBody := SlurmdbV0043PostQosJSONRequestBody{
-		Qos: []V0043Qos{*apiQoS},
+		Qos: []V0043Qos{*apiQos},
 	}
+
+	// Prepare parameters for the API call
+	params := &SlurmdbV0043PostQosParams{}
 
 	// Call the generated OpenAPI client
 	resp, err := q.client.apiClient.SlurmdbV0043PostQosWithResponse(ctx, params, requestBody)
@@ -268,9 +276,11 @@ func (q *QoSManagerImpl) Create(ctx context.Context, qos *interfaces.QoSCreate) 
 	}
 
 	// Create successful response
-	return &interfaces.QoSCreateResponse{
+	response := &interfaces.QoSCreateResponse{
 		QoSName: qos.Name,
-	}, nil
+	}
+
+	return response, nil
 }
 
 // Update updates an existing QoS
@@ -298,13 +308,13 @@ func (q *QoSManagerImpl) Update(ctx context.Context, qosName string, update *int
 	// Set the QoS name in the update
 	apiUpdate.Name = &qosName
 
-	// Prepare parameters
-	params := &SlurmdbV0043PostQosParams{}
-
 	// Create the request body
 	requestBody := SlurmdbV0043PostQosJSONRequestBody{
 		Qos: []V0043Qos{*apiUpdate},
 	}
+
+	// Prepare parameters for the API call
+	params := &SlurmdbV0043PostQosParams{}
 
 	// Call the generated OpenAPI client (POST is used for updates in Slurm)
 	resp, err := q.client.apiClient.SlurmdbV0043PostQosWithResponse(ctx, params, requestBody)
@@ -421,135 +431,120 @@ func (q *QoSManagerImpl) Delete(ctx context.Context, qosName string) error {
 }
 
 // convertAPIQoSToInterface converts V0043Qos to interfaces.QoS
-func convertAPIQoSToInterface(apiQoS V0043Qos) (*interfaces.QoS, error) {
+func convertAPIQoSToInterface(apiQos V0043Qos) (*interfaces.QoS, error) {
 	qos := &interfaces.QoS{}
 
 	// Basic fields
-	if apiQoS.Name != nil {
-		qos.Name = *apiQoS.Name
+	if apiQos.Name != nil {
+		qos.Name = *apiQos.Name
 	}
 
-	if apiQoS.Description != nil {
-		qos.Description = *apiQoS.Description
+	if apiQos.Description != nil {
+		qos.Description = *apiQos.Description
 	}
 
 	// Priority
-	if apiQoS.Priority != nil && apiQoS.Priority.Set != nil && *apiQoS.Priority.Set && apiQoS.Priority.Number != nil {
-		qos.Priority = int(*apiQoS.Priority.Number)
+	if apiQos.Priority != nil && apiQos.Priority.Set != nil && *apiQos.Priority.Set && apiQos.Priority.Number != nil {
+		qos.Priority = int(*apiQos.Priority.Number)
+	}
+
+	// Usage factor and threshold
+	if apiQos.UsageFactor != nil && apiQos.UsageFactor.Set != nil && *apiQos.UsageFactor.Set && apiQos.UsageFactor.Number != nil {
+		qos.UsageFactor = *apiQos.UsageFactor.Number
+	}
+
+	if apiQos.UsageThreshold != nil && apiQos.UsageThreshold.Set != nil && *apiQos.UsageThreshold.Set && apiQos.UsageThreshold.Number != nil {
+		qos.UsageThreshold = *apiQos.UsageThreshold.Number
+	}
+
+	// Limits
+	if apiQos.Limits != nil {
+		// Grace time
+		if apiQos.Limits.GraceTime != nil {
+			qos.GraceTime = int(*apiQos.Limits.GraceTime)
+		}
+
+		// Max limits
+		if apiQos.Limits.Max != nil {
+			if apiQos.Limits.Max.Jobs != nil {
+				if apiQos.Limits.Max.Jobs.Count != nil && apiQos.Limits.Max.Jobs.Count.Set != nil && *apiQos.Limits.Max.Jobs.Count.Set && apiQos.Limits.Max.Jobs.Count.Number != nil {
+					qos.MaxJobs = int(*apiQos.Limits.Max.Jobs.Count.Number)
+				}
+				if apiQos.Limits.Max.Jobs.Per != nil {
+					if apiQos.Limits.Max.Jobs.Per.User != nil && apiQos.Limits.Max.Jobs.Per.User.Set != nil && *apiQos.Limits.Max.Jobs.Per.User.Set && apiQos.Limits.Max.Jobs.Per.User.Number != nil {
+						qos.MaxJobsPerUser = int(*apiQos.Limits.Max.Jobs.Per.User.Number)
+					}
+					if apiQos.Limits.Max.Jobs.Per.Account != nil && apiQos.Limits.Max.Jobs.Per.Account.Set != nil && *apiQos.Limits.Max.Jobs.Per.Account.Set && apiQos.Limits.Max.Jobs.Per.Account.Number != nil {
+						qos.MaxJobsPerAccount = int(*apiQos.Limits.Max.Jobs.Per.Account.Number)
+					}
+				}
+			}
+
+			// Submit jobs limit (found in active jobs)
+			if apiQos.Limits.Max.ActiveJobs != nil && apiQos.Limits.Max.ActiveJobs.Count != nil && apiQos.Limits.Max.ActiveJobs.Count.Set != nil && *apiQos.Limits.Max.ActiveJobs.Count.Set && apiQos.Limits.Max.ActiveJobs.Count.Number != nil {
+				qos.MaxSubmitJobs = int(*apiQos.Limits.Max.ActiveJobs.Count.Number)
+			}
+
+			// TRES limits for CPUs and nodes
+			if apiQos.Limits.Max.Tres != nil && apiQos.Limits.Max.Tres.Per != nil {
+				if apiQos.Limits.Max.Tres.Per.Job != nil {
+					for _, tres := range *apiQos.Limits.Max.Tres.Per.Job {
+						if tres.Count != nil {
+							switch tres.Type {
+							case "cpu":
+								qos.MaxCPUs = int(*tres.Count)
+							case "node":
+								qos.MaxNodes = int(*tres.Count)
+							}
+						}
+					}
+				}
+				if apiQos.Limits.Max.Tres.Per.User != nil {
+					for _, tres := range *apiQos.Limits.Max.Tres.Per.User {
+						if tres.Count != nil {
+							if tres.Type == "cpu" {
+								qos.MaxCPUsPerUser = int(*tres.Count)
+							}
+						}
+					}
+				}
+			}
+
+			// Wall clock limit
+			if apiQos.Limits.Max.WallClock != nil && apiQos.Limits.Max.WallClock.Per != nil && apiQos.Limits.Max.WallClock.Per.Job != nil && apiQos.Limits.Max.WallClock.Per.Job.Set != nil && *apiQos.Limits.Max.WallClock.Per.Job.Set && apiQos.Limits.Max.WallClock.Per.Job.Number != nil {
+				qos.MaxWallTime = int(*apiQos.Limits.Max.WallClock.Per.Job.Number)
+			}
+		}
+
+		// Min limits
+		if apiQos.Limits.Min != nil && apiQos.Limits.Min.Tres != nil && apiQos.Limits.Min.Tres.Per != nil && apiQos.Limits.Min.Tres.Per.Job != nil {
+			for _, tres := range *apiQos.Limits.Min.Tres.Per.Job {
+				if tres.Count != nil {
+					switch tres.Type {
+					case "cpu":
+						qos.MinCPUs = int(*tres.Count)
+					case "node":
+						qos.MinNodes = int(*tres.Count)
+					}
+				}
+			}
+		}
+	}
+
+	// Preempt information
+	if apiQos.Preempt != nil {
+		if apiQos.Preempt.Mode != nil && len(*apiQos.Preempt.Mode) > 0 {
+			qos.PreemptMode = string((*apiQos.Preempt.Mode)[0])
+		}
 	}
 
 	// Flags
-	if apiQoS.Flags != nil {
-		flags := make([]string, 0, len(*apiQoS.Flags))
-		for _, flag := range *apiQoS.Flags {
+	if apiQos.Flags != nil {
+		flags := make([]string, 0, len(*apiQos.Flags))
+		for _, flag := range *apiQos.Flags {
 			flags = append(flags, string(flag))
 		}
 		qos.Flags = flags
-	}
-
-	// Preempt mode
-	if apiQoS.Preempt != nil && apiQoS.Preempt.Mode != nil && len(*apiQoS.Preempt.Mode) > 0 {
-		// Take the first preempt mode if multiple are set
-		qos.PreemptMode = string((*apiQoS.Preempt.Mode)[0])
-	}
-
-	// Limits - extract from nested structure
-	if apiQoS.Limits != nil {
-		// Grace time
-		if apiQoS.Limits.GraceTime != nil {
-			qos.GraceTime = int(*apiQoS.Limits.GraceTime)
-		}
-
-		// Factor (usage factor)
-		if apiQoS.Limits.Factor != nil && apiQoS.Limits.Factor.Set != nil && *apiQoS.Limits.Factor.Set && apiQoS.Limits.Factor.Number != nil {
-			qos.UsageFactor = *apiQoS.Limits.Factor.Number
-		}
-
-		// Max Jobs
-		if apiQoS.Limits.Max != nil && apiQoS.Limits.Max.Jobs != nil {
-			// Total jobs
-			if apiQoS.Limits.Max.Jobs.Count != nil &&
-				apiQoS.Limits.Max.Jobs.Count.Set != nil && *apiQoS.Limits.Max.Jobs.Count.Set &&
-				apiQoS.Limits.Max.Jobs.Count.Number != nil {
-				qos.MaxJobs = int(*apiQoS.Limits.Max.Jobs.Count.Number)
-			}
-
-			// Per user jobs
-			if apiQoS.Limits.Max.Jobs.Per != nil && apiQoS.Limits.Max.Jobs.Per.User != nil &&
-				apiQoS.Limits.Max.Jobs.Per.User.Set != nil && *apiQoS.Limits.Max.Jobs.Per.User.Set &&
-				apiQoS.Limits.Max.Jobs.Per.User.Number != nil {
-				qos.MaxJobsPerUser = int(*apiQoS.Limits.Max.Jobs.Per.User.Number)
-			}
-
-			// Per account jobs
-			if apiQoS.Limits.Max.Jobs.Per != nil && apiQoS.Limits.Max.Jobs.Per.Account != nil &&
-				apiQoS.Limits.Max.Jobs.Per.Account.Set != nil && *apiQoS.Limits.Max.Jobs.Per.Account.Set &&
-				apiQoS.Limits.Max.Jobs.Per.Account.Number != nil {
-				qos.MaxJobsPerAccount = int(*apiQoS.Limits.Max.Jobs.Per.Account.Number)
-			}
-
-			// Active jobs
-			if apiQoS.Limits.Max.Jobs.ActiveJobs != nil && apiQoS.Limits.Max.Jobs.ActiveJobs.Count != nil &&
-				apiQoS.Limits.Max.Jobs.ActiveJobs.Count.Set != nil && *apiQoS.Limits.Max.Jobs.ActiveJobs.Count.Set &&
-				apiQoS.Limits.Max.Jobs.ActiveJobs.Count.Number != nil {
-				qos.MaxSubmitJobs = int(*apiQoS.Limits.Max.Jobs.ActiveJobs.Count.Number)
-			}
-		}
-
-		// Max wall clock per job
-		if apiQoS.Limits.Max != nil && apiQoS.Limits.Max.WallClock != nil &&
-			apiQoS.Limits.Max.WallClock.Per != nil && apiQoS.Limits.Max.WallClock.Per.Job != nil &&
-			apiQoS.Limits.Max.WallClock.Per.Job.Set != nil && *apiQoS.Limits.Max.WallClock.Per.Job.Set &&
-			apiQoS.Limits.Max.WallClock.Per.Job.Number != nil {
-			qos.MaxWallTime = int(*apiQoS.Limits.Max.WallClock.Per.Job.Number)
-		}
-
-		// Max TRES (CPUs, Nodes, etc.)
-		if apiQoS.Limits.Max != nil && apiQoS.Limits.Max.Tres != nil {
-			// Per job
-			if apiQoS.Limits.Max.Tres.Per != nil && apiQoS.Limits.Max.Tres.Per.Job != nil {
-				// Extract CPU limits
-				for _, tres := range *apiQoS.Limits.Max.Tres.Per.Job {
-					if tres.Type != nil && *tres.Type == "cpu" && tres.Count != nil {
-						qos.MaxCPUs = int(*tres.Count)
-					}
-					if tres.Type != nil && *tres.Type == "node" && tres.Count != nil {
-						qos.MaxNodes = int(*tres.Count)
-					}
-				}
-			}
-
-			// Per user
-			if apiQoS.Limits.Max.Tres.Per != nil && apiQoS.Limits.Max.Tres.Per.User != nil {
-				// Extract CPU limits per user
-				for _, tres := range *apiQoS.Limits.Max.Tres.Per.User {
-					if tres.Type != nil && *tres.Type == "cpu" && tres.Count != nil {
-						qos.MaxCPUsPerUser = int(*tres.Count)
-					}
-				}
-			}
-		}
-
-		// Min TRES
-		if apiQoS.Limits.Min != nil && apiQoS.Limits.Min.Tres != nil &&
-			apiQoS.Limits.Min.Tres.Per != nil && apiQoS.Limits.Min.Tres.Per.Job != nil {
-			// Extract minimum CPU/node requirements
-			for _, tres := range *apiQoS.Limits.Min.Tres.Per.Job {
-				if tres.Type != nil && *tres.Type == "cpu" && tres.Count != nil {
-					qos.MinCPUs = int(*tres.Count)
-				}
-				if tres.Type != nil && *tres.Type == "node" && tres.Count != nil {
-					qos.MinNodes = int(*tres.Count)
-				}
-			}
-		}
-		
-		// Usage threshold  
-		if apiQoS.Limits.Min != nil && apiQoS.Limits.Min.PriorityThreshold != nil &&
-			apiQoS.Limits.Min.PriorityThreshold.Set != nil && *apiQoS.Limits.Min.PriorityThreshold.Set &&
-			apiQoS.Limits.Min.PriorityThreshold.Number != nil {
-			qos.UsageThreshold = float64(*apiQoS.Limits.Min.PriorityThreshold.Number)
-		}
 	}
 
 	return qos, nil
@@ -577,12 +572,61 @@ func filterQoS(qosList []interfaces.QoS, opts *interfaces.ListQoSOptions) []inte
 			}
 		}
 
-		// Filter by preempt mode
-		if opts.PreemptMode != "" && qos.PreemptMode != opts.PreemptMode {
-			continue
+		// Filter by accounts
+		if len(opts.Accounts) > 0 {
+			found := false
+			for _, filterAccount := range opts.Accounts {
+				for _, qosAccount := range qos.AllowedAccounts {
+					if qosAccount == filterAccount {
+						found = true
+						break
+					}
+				}
+				if found {
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		}
+
+		// Filter by users
+		if len(opts.Users) > 0 {
+			found := false
+			for _, filterUser := range opts.Users {
+				for _, qosUser := range qos.AllowedUsers {
+					if qosUser == filterUser {
+						found = true
+						break
+					}
+				}
+				if found {
+					break
+				}
+			}
+			if !found {
+				continue
+			}
 		}
 
 		filtered = append(filtered, qos)
+	}
+
+	// Apply limit and offset
+	if opts.Limit > 0 {
+		start := opts.Offset
+		if start < 0 {
+			start = 0
+		}
+		if start >= len(filtered) {
+			return []interfaces.QoS{}
+		}
+		end := start + opts.Limit
+		if end > len(filtered) {
+			end = len(filtered)
+		}
+		filtered = filtered[start:end]
 	}
 
 	return filtered
@@ -590,21 +634,46 @@ func filterQoS(qosList []interfaces.QoS, opts *interfaces.ListQoSOptions) []inte
 
 // convertQoSCreateToAPI converts interfaces.QoSCreate to API format
 func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
-	apiQoS := &V0043Qos{
-		Name: &create.Name,
-	}
+	apiQos := &V0043Qos{}
 
-	// Description
+	// Required fields
+	apiQos.Name = &create.Name
+
+	// Optional fields
 	if create.Description != "" {
-		apiQoS.Description = &create.Description
+		apiQos.Description = &create.Description
 	}
 
-	// Priority
-	if create.Priority != nil {
-		priority := uint32(*create.Priority)
-		apiQoS.Priority = &V0043Uint32NoValStruct{
+	if create.Priority > 0 {
+		priority := int32(create.Priority)
+		apiQos.Priority = &V0043Uint32NoValStruct{
 			Set:    &[]bool{true}[0],
 			Number: &priority,
+		}
+	}
+
+	if create.UsageFactor > 0 {
+		apiQos.UsageFactor = &V0043Float64NoValStruct{
+			Set:    &[]bool{true}[0],
+			Number: &create.UsageFactor,
+		}
+	}
+
+	if create.UsageThreshold > 0 {
+		apiQos.UsageThreshold = &V0043Float64NoValStruct{
+			Set:    &[]bool{true}[0],
+			Number: &create.UsageThreshold,
+		}
+	}
+
+	// Preempt mode
+	if create.PreemptMode != "" {
+		apiQos.Preempt = &struct {
+			ExemptTime *V0043Uint32NoValStruct `json:"exempt_time,omitempty"`
+			List       *V0043QosPreemptList    `json:"list,omitempty"`
+			Mode       *[]V0043QosPreemptMode  `json:"mode,omitempty"`
+		}{
+			Mode: &[]V0043QosPreemptMode{V0043QosPreemptMode(create.PreemptMode)},
 		}
 	}
 
@@ -614,242 +683,70 @@ func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
 		for _, flag := range create.Flags {
 			flags = append(flags, V0043QosFlags(flag))
 		}
-		apiQoS.Flags = &flags
+		apiQos.Flags = &flags
 	}
 
-	// Preempt mode
-	if create.PreemptMode != "" {
-		mode := V0043QosPreemptMode(create.PreemptMode)
-		modes := []V0043QosPreemptMode{mode}
-		apiQoS.Preempt = &struct {
-			ExemptTime *V0043Uint32NoValStruct `json:"exempt_time,omitempty"`
-			List       *V0043QosPreemptList    `json:"list,omitempty"`
-			Mode       *[]V0043QosPreemptMode  `json:"mode,omitempty"`
-		}{
-			Mode: &modes,
-		}
-	}
+	// For now, we'll implement only basic functionality
+	// The complex nested limits structure can be added later if needed
+	// This provides a working QoS manager for basic operations
 
-	// Limits
-	if create.Limits != nil {
-		limits := &V0043QosLimits{}
-
-		// Max jobs
-		if create.Limits.MaxJobsTotal != nil {
-			maxJobs := uint32(*create.Limits.MaxJobsTotal)
-			limits.MaxJobs = &V0043QosLimitsMaxJobs{
-				Total: &V0043Uint32NoValStruct{
-					Set:    &[]bool{true}[0],
-					Number: &maxJobs,
-				},
-			}
-		}
-
-		// Max submit jobs
-		if create.Limits.MaxSubmitJobs != nil {
-			maxSubmit := uint32(*create.Limits.MaxSubmitJobs)
-			limits.MaxSubmitJobs = &V0043QosLimitsMaxSubmitJobs{
-				Total: &V0043Uint32NoValStruct{
-					Set:    &[]bool{true}[0],
-					Number: &maxSubmit,
-				},
-			}
-		}
-
-		// Max wall clock per job
-		if create.Limits.MaxWallClockPerJob != nil {
-			maxWallClock := uint32(*create.Limits.MaxWallClockPerJob)
-			limits.MaxWallClock = &V0043QosLimitsMaxWallClock{
-				Per: &V0043QosLimitsMaxWallClockPer{
-					Job: &V0043Uint32NoValStruct{
-						Set:    &[]bool{true}[0],
-						Number: &maxWallClock,
-					},
-				},
-			}
-		}
-
-		// Max nodes per job
-		if create.Limits.MaxNodesPerJob != nil {
-			maxNodes := uint32(*create.Limits.MaxNodesPerJob)
-			limits.MaxNodes = &V0043QosLimitsMaxNodes{
-				Per: &V0043QosLimitsMaxNodesPer{
-					Job: &V0043Uint32NoValStruct{
-						Set:    &[]bool{true}[0],
-						Number: &maxNodes,
-					},
-				},
-			}
-		}
-
-		// Max CPUs per job
-		if create.Limits.MaxCPUsPerJob != nil {
-			maxCPUs := uint32(*create.Limits.MaxCPUsPerJob)
-			limits.MaxCPUs = &V0043QosLimitsMaxCPUs{
-				Per: &V0043QosLimitsMaxCPUsPer{
-					Job: &V0043Uint32NoValStruct{
-						Set:    &[]bool{true}[0],
-						Number: &maxCPUs,
-					},
-				},
-			}
-		}
-
-		apiQoS.Limits = limits
-	}
-
-	// Usage threshold
-	if create.UsageThreshold != nil {
-		threshold := float32(*create.UsageThreshold)
-		apiQoS.UsageThreshold = &V0043Float64NoValStruct{
-			Set:    &[]bool{true}[0],
-			Number: &threshold,
-		}
-	}
-
-	// Grace time
-	if create.GraceTime != nil {
-		graceTime := int32(*create.GraceTime)
-		apiQoS.GraceTime = &graceTime
-	}
-
-	// Usage factor
-	if create.UsageFactor != nil {
-		factor := float32(*create.UsageFactor)
-		apiQoS.UsageFactor = &V0043Float64NoValStruct{
-			Set:    &[]bool{true}[0],
-			Number: &factor,
-		}
-	}
-
-	// Preemptable QoS
-	if len(create.PreemptableQoS) > 0 {
-		if apiQoS.Preempt == nil {
-			apiQoS.Preempt = &V0043QosPreempt{}
-		}
-		apiQoS.Preempt.List = &create.PreemptableQoS
-	}
-
-	return apiQoS, nil
+	return apiQos, nil
 }
 
 // convertQoSUpdateToAPI converts interfaces.QoSUpdate to API format
 func convertQoSUpdateToAPI(update *interfaces.QoSUpdate) (*V0043Qos, error) {
-	apiQoS := &V0043Qos{}
+	apiQos := &V0043Qos{}
 
-	// Description
+	// Optional fields (only if specified in update)
 	if update.Description != nil {
-		apiQoS.Description = update.Description
+		apiQos.Description = update.Description
 	}
 
-	// Priority
 	if update.Priority != nil {
-		priority := uint32(*update.Priority)
-		apiQoS.Priority = &V0043Uint32NoValStruct{
+		priority := int32(*update.Priority)
+		apiQos.Priority = &V0043Uint32NoValStruct{
 			Set:    &[]bool{true}[0],
 			Number: &priority,
 		}
 	}
 
-	// Flags
-	if update.Flags != nil {
-		flags := make([]V0043QosFlags, 0, len(*update.Flags))
-		for _, flag := range *update.Flags {
-			flags = append(flags, V0043QosFlags(flag))
+	if update.UsageFactor != nil {
+		apiQos.UsageFactor = &V0043Float64NoValStruct{
+			Set:    &[]bool{true}[0],
+			Number: update.UsageFactor,
 		}
-		apiQoS.Flags = &flags
+	}
+
+	if update.UsageThreshold != nil {
+		apiQos.UsageThreshold = &V0043Float64NoValStruct{
+			Set:    &[]bool{true}[0],
+			Number: update.UsageThreshold,
+		}
 	}
 
 	// Preempt mode
 	if update.PreemptMode != nil {
-		mode := V0043QosPreemptMode(*update.PreemptMode)
-		apiQoS.Preempt = &V0043QosPreempt{
-			Mode: &mode,
+		apiQos.Preempt = &struct {
+			ExemptTime *V0043Uint32NoValStruct `json:"exempt_time,omitempty"`
+			List       *V0043QosPreemptList    `json:"list,omitempty"`
+			Mode       *[]V0043QosPreemptMode  `json:"mode,omitempty"`
+		}{
+			Mode: &[]V0043QosPreemptMode{V0043QosPreemptMode(*update.PreemptMode)},
 		}
 	}
 
-	// Similar conversion for limits and other fields as in Create
-	// (omitted for brevity - follows same pattern)
-
-	return apiQoS, nil
-}
-
-// convertTRESToMap converts TRES array to a map
-func convertTRESToMap(tres []V0043Tres) map[string]int64 {
-	result := make(map[string]int64)
-	for _, t := range tres {
-		if t.Type != nil && t.Count != nil {
-			result[*t.Type] = int64(*t.Count)
+	// Flags
+	if update.Flags != nil {
+		flags := make([]V0043QosFlags, 0, len(update.Flags))
+		for _, flag := range update.Flags {
+			flags = append(flags, V0043QosFlags(flag))
 		}
-	}
-	return result
-}
-
-// Example of how the implementation would look with actual API calls:
-/*
-func (q *QoSManagerImpl) List(ctx context.Context, opts *interfaces.ListQoSOptions) (*interfaces.QoSList, error) {
-	// Build request parameters
-	params := &GetQoSParams{}
-	if opts != nil {
-		if len(opts.Names) > 0 {
-			params.Names = &opts.Names
-		}
-		if len(opts.Accounts) > 0 {
-			params.Accounts = &opts.Accounts
-		}
-		// ... other filters
+		apiQos.Flags = &flags
 	}
 
-	// Call API
-	resp, err := q.client.apiClient.GetQoS(ctx, params)
-	if err != nil {
-		return nil, errors.WrapAPIError(err, "failed to list QoS")
-	}
+	// For now, we'll implement only basic functionality
+	// The complex nested limits structure can be added later if needed
+	// This provides a working QoS manager for basic operations
 
-	// Convert response
-	result := &interfaces.QoSList{
-		QoS:   make([]interfaces.QoS, 0),
-		Total: 0,
-	}
-
-	if resp.Body != nil && resp.Body.QoS != nil {
-		for _, qos := range *resp.Body.QoS {
-			converted := convertQoSFromAPI(&qos)
-			result.QoS = append(result.QoS, *converted)
-		}
-		result.Total = len(result.QoS)
-	}
-
-	return result, nil
-}
-*/
-
-// Helper function to convert API QoS to interface type
-func convertQoSFromAPI(apiQoS interface{}) *interfaces.QoS {
-	// This would convert the v0.0.43 API QoS type to our interface type
-	// Implementation depends on the actual API response structure
-	return &interfaces.QoS{
-		Name:               "example-qos",
-		Description:        "Example QoS configuration",
-		Priority:           1000,
-		PreemptMode:        "requeue",
-		GraceTime:          300, // 5 minutes
-		MaxJobs:            100,
-		MaxJobsPerUser:     10,
-		MaxJobsPerAccount:  50,
-		MaxSubmitJobs:      200,
-		MaxCPUs:            1000,
-		MaxCPUsPerUser:     100,
-		MaxNodes:           50,
-		MaxWallTime:        86400, // 24 hours
-		MinCPUs:            1,
-		MinNodes:           1,
-		UsageFactor:        1.0,
-		UsageThreshold:     0.8,
-		Flags:              []string{"DenyOnLimit", "RequireAssoc"},
-		AllowedAccounts:    []string{"research", "engineering"},
-		DeniedAccounts:     []string{},
-		AllowedUsers:       []string{},
-		DeniedUsers:        []string{},
-	}
+	return apiQos, nil
 }
