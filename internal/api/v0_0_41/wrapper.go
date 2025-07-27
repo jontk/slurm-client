@@ -61,12 +61,12 @@ func (c *WrapperClient) Info() interfaces.InfoManager {
 
 // Reservations returns the ReservationManager
 func (c *WrapperClient) Reservations() interfaces.ReservationManager {
-	return nil
+	return NewReservationManagerImpl(c)
 }
 
 // QoS returns the QoSManager
 func (c *WrapperClient) QoS() interfaces.QoSManager {
-	return nil
+	return NewQoSManagerImpl(c)
 }
 
 // Accounts returns the AccountManager
