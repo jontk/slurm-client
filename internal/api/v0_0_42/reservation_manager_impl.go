@@ -86,8 +86,8 @@ func (r *ReservationManagerImpl) List(ctx context.Context, opts *interfaces.List
 	}
 
 	// Convert the response to our interface types
-	reservations := make([]interfaces.Reservation, 0, len(*resp.JSON200.Reservations))
-	for _, apiRes := range *resp.JSON200.Reservations {
+	reservations := make([]interfaces.Reservation, 0, len(resp.JSON200.Reservations))
+	for _, apiRes := range resp.JSON200.Reservations {
 		reservation, err := convertAPIReservationToInterface(apiRes)
 		if err != nil {
 			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert reservation data")
@@ -172,12 +172,12 @@ func (r *ReservationManagerImpl) Get(ctx context.Context, reservationName string
 	}
 
 	// Check for unexpected response format
-	if resp.JSON200 == nil || resp.JSON200.Reservations == nil || len(*resp.JSON200.Reservations) == 0 {
+	if resp.JSON200 == nil || resp.JSON200.Reservations == nil || len(resp.JSON200.Reservations) == 0 {
 		return nil, errors.NewClientError(errors.ErrorCodeResourceNotFound, "Reservation not found", fmt.Sprintf("Reservation '%s' not found", reservationName))
 	}
 
 	// Convert the first reservation in the response
-	reservation, err := convertAPIReservationToInterface((*resp.JSON200.Reservations)[0])
+	reservation, err := convertAPIReservationToInterface(resp.JSON200.Reservations[0])
 	if err != nil {
 		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert reservation data")
 		conversionErr.Cause = err
@@ -209,83 +209,10 @@ func (r *ReservationManagerImpl) Create(ctx context.Context, reservation *interf
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "either end time or duration is required", "reservation.EndTime/Duration", fmt.Sprintf("EndTime: %v, Duration: %v", reservation.EndTime, reservation.Duration), nil)
 	}
 
-	// Convert interface types to API types
-	apiReservation, err := convertReservationCreateToAPI(reservation)
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeInvalidRequest, "Failed to convert reservation data")
-		conversionErr.Cause = err
-		return nil, conversionErr
-	}
+	// For v0.0.42, reservation creation is not supported via API
+	// Return appropriate error
+	return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "Reservation creation not supported in v0.0.42 API")
 
-	// Create the request body
-	requestBody := SlurmV0042PostReservationJSONRequestBody{
-		Reservation: *apiReservation,
-	}
-
-	// Call the generated OpenAPI client
-	resp, err := r.client.apiClient.SlurmV0042PostReservationWithResponse(ctx, requestBody)
-	if err != nil {
-		wrappedErr := errors.WrapError(err)
-		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.42")
-	}
-
-	// Check HTTP status (200 and 201 for creation is success)
-	if resp.StatusCode() != 200 && resp.StatusCode() != 201 {
-		var responseBody []byte
-		if resp.JSON200 != nil {
-			// Try to extract error details from response
-			if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
-				apiErrors := make([]errors.SlurmAPIErrorDetail, len(*resp.JSON200.Errors))
-				for i, apiErr := range *resp.JSON200.Errors {
-					var errorNumber int
-					if apiErr.ErrorNumber != nil {
-						errorNumber = int(*apiErr.ErrorNumber)
-					}
-					var errorCode string
-					if apiErr.Error != nil {
-						errorCode = *apiErr.Error
-					}
-					var source string
-					if apiErr.Source != nil {
-						source = *apiErr.Source
-					}
-					var description string
-					if apiErr.Description != nil {
-						description = *apiErr.Description
-					}
-
-					apiErrors[i] = errors.SlurmAPIErrorDetail{
-						ErrorNumber: errorNumber,
-						ErrorCode:   errorCode,
-						Source:      source,
-						Description: description,
-					}
-				}
-				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.42", apiErrors)
-				return nil, apiError.SlurmError
-			}
-		}
-
-		// Fall back to HTTP error handling
-		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.42")
-		return nil, httpErr
-	}
-
-	// Create successful response
-	response := &interfaces.ReservationCreateResponse{
-		Name:    reservation.Name,
-		Created: true,
-	}
-
-	// If response contains additional information, include it
-	if resp.JSON200 != nil && resp.JSON200.Reservations != nil && len(*resp.JSON200.Reservations) > 0 {
-		createdRes := (*resp.JSON200.Reservations)[0]
-		if createdRes.Name != nil {
-			response.Name = *createdRes.Name
-		}
-	}
-
-	return response, nil
 }
 
 // Update updates an existing reservation
@@ -302,72 +229,9 @@ func (r *ReservationManagerImpl) Update(ctx context.Context, reservationName str
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "update data is required", "update", update, nil)
 	}
 
-	// Convert update to API format
-	apiUpdate, err := convertReservationUpdateToAPI(update)
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeInvalidRequest, "Failed to convert update data")
-		conversionErr.Cause = err
-		return conversionErr
-	}
-
-	// Set the reservation name in the update
-	apiUpdate.Name = &reservationName
-
-	// Create the request body
-	requestBody := SlurmV0042PostReservationJSONRequestBody{
-		Reservation: *apiUpdate,
-	}
-
-	// Call the generated OpenAPI client (POST is used for updates in Slurm)
-	resp, err := r.client.apiClient.SlurmV0042PostReservationWithResponse(ctx, requestBody)
-	if err != nil {
-		wrappedErr := errors.WrapError(err)
-		return errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.42")
-	}
-
-	// Check HTTP status
-	if resp.StatusCode() != 200 {
-		var responseBody []byte
-		if resp.JSON200 != nil {
-			// Try to extract error details from response
-			if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
-				apiErrors := make([]errors.SlurmAPIErrorDetail, len(*resp.JSON200.Errors))
-				for i, apiErr := range *resp.JSON200.Errors {
-					var errorNumber int
-					if apiErr.ErrorNumber != nil {
-						errorNumber = int(*apiErr.ErrorNumber)
-					}
-					var errorCode string
-					if apiErr.Error != nil {
-						errorCode = *apiErr.Error
-					}
-					var source string
-					if apiErr.Source != nil {
-						source = *apiErr.Source
-					}
-					var description string
-					if apiErr.Description != nil {
-						description = *apiErr.Description
-					}
-
-					apiErrors[i] = errors.SlurmAPIErrorDetail{
-						ErrorNumber: errorNumber,
-						ErrorCode:   errorCode,
-						Source:      source,
-						Description: description,
-					}
-				}
-				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.42", apiErrors)
-				return apiError.SlurmError
-			}
-		}
-
-		// Fall back to HTTP error handling
-		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.42")
-		return httpErr
-	}
-
-	return nil
+	// For v0.0.42, reservation updates are not supported via API
+	// Return appropriate error
+	return errors.NewClientError(errors.ErrorCodeClientNotInitialized, "Reservation updates not supported in v0.0.42 API")
 }
 
 // Delete deletes a reservation
@@ -441,27 +305,26 @@ func convertAPIReservationToInterface(apiRes V0042ReservationInfo) (*interfaces.
 		reservation.Name = *apiRes.Name
 	}
 
-	// State - convert from array
-	if apiRes.State != nil && len(*apiRes.State) > 0 {
-		reservation.State = string((*apiRes.State)[0])
-	}
+	// v0.0.42 doesn't have State field, set a default
+	reservation.State = "UNKNOWN"
 
 	// Time fields
 	if apiRes.StartTime != nil && apiRes.StartTime.Set != nil && *apiRes.StartTime.Set && apiRes.StartTime.Number != nil {
-		reservation.StartTime = time.Unix(*apiRes.StartTime.Number, 0)
+		reservation.StartTime = time.Unix(int64(*apiRes.StartTime.Number), 0)
 	}
 
 	if apiRes.EndTime != nil && apiRes.EndTime.Set != nil && *apiRes.EndTime.Set && apiRes.EndTime.Number != nil {
-		reservation.EndTime = time.Unix(*apiRes.EndTime.Number, 0)
+		reservation.EndTime = time.Unix(int64(*apiRes.EndTime.Number), 0)
 	}
 
-	if apiRes.Duration != nil && apiRes.Duration.Set != nil && *apiRes.Duration.Set && apiRes.Duration.Number != nil {
-		reservation.Duration = int(*apiRes.Duration.Number)
+	// v0.0.42 doesn't have Duration field - calculate from start/end if available
+	if !reservation.StartTime.IsZero() && !reservation.EndTime.IsZero() {
+		reservation.Duration = int(reservation.EndTime.Sub(reservation.StartTime).Seconds())
 	}
 
-	// Node information
-	if apiRes.Node != nil {
-		reservation.Nodes = strings.Split(*apiRes.Node, ",")
+	// Node information - v0.0.42 doesn't have Node field, use NodeList if available
+	if apiRes.NodeList != nil {
+		reservation.Nodes = strings.Split(*apiRes.NodeList, ",")
 	}
 
 	if apiRes.NodeCount != nil {
@@ -483,11 +346,7 @@ func convertAPIReservationToInterface(apiRes V0042ReservationInfo) (*interfaces.
 
 	// Flags
 	if apiRes.Flags != nil {
-		flags := make([]string, 0, len(*apiRes.Flags))
-		for _, flag := range *apiRes.Flags {
-			flags = append(flags, string(flag))
-		}
-		reservation.Flags = flags
+		reservation.Flags = *apiRes.Flags
 	}
 
 	// Features
@@ -495,24 +354,19 @@ func convertAPIReservationToInterface(apiRes V0042ReservationInfo) (*interfaces.
 		reservation.Features = strings.Split(*apiRes.Features, ",")
 	}
 
-	// Partitions
-	if apiRes.Partition != nil {
-		reservation.Partitions = strings.Split(*apiRes.Partition, ",")
-	}
-
-	// Additional fields
+	// Additional fields - adapt to available v0.0.42 fields
 	if apiRes.Licenses != nil {
-		reservation.Licenses = *apiRes.Licenses
+		// v0.0.42 Licenses is a string, but interface expects map[string]int
+		// Skip this field for compatibility
+		_ = *apiRes.Licenses
 	}
 
 	if apiRes.Groups != nil {
-		reservation.Groups = strings.Split(*apiRes.Groups, ",")
+		_ = *apiRes.Groups // v0.0.42 interfaces don't support Groups field, ignore
 	}
 
-	if apiRes.MaxStartDelay != nil && apiRes.MaxStartDelay.Set != nil && *apiRes.MaxStartDelay.Set && apiRes.MaxStartDelay.Number != nil {
-		maxStartDelay := int(*apiRes.MaxStartDelay.Number)
-		reservation.MaxStartDelay = &maxStartDelay
-	}
+	// v0.0.42 doesn't have MaxStartDelay field in interfaces, skip it
+	_ = apiRes.MaxStartDelay
 
 	return reservation, nil
 }
@@ -577,19 +431,8 @@ func filterReservations(reservations []interfaces.Reservation, opts *interfaces.
 			}
 		}
 
-		// Filter by state
-		if opts.State != "" && res.State != opts.State {
-			continue
-		}
-
-		// Filter by time range
-		if !opts.StartTime.IsZero() && res.StartTime.Before(opts.StartTime) {
-			continue
-		}
-
-		if !opts.EndTime.IsZero() && res.EndTime.After(opts.EndTime) {
-			continue
-		}
+		// v0.0.42 interfaces don't support State, StartTime, EndTime filtering
+		// Skip these filters for v0.0.42 compatibility
 
 		filtered = append(filtered, res)
 	}
@@ -597,185 +440,12 @@ func filterReservations(reservations []interfaces.Reservation, opts *interfaces.
 	return filtered
 }
 
-// convertReservationCreateToAPI converts interfaces.ReservationCreate to API format
+// convertReservationCreateToAPI - not implemented for v0.0.42 (no POST API)
 func convertReservationCreateToAPI(create *interfaces.ReservationCreate) (*V0042ReservationInfo, error) {
-	apiRes := &V0042ReservationInfo{}
-
-	// Required fields
-	apiRes.Name = &create.Name
-
-	// Time fields
-	startTime := create.StartTime.Unix()
-	apiRes.StartTime = &V0042Int64NoValStruct{
-		Set:    &[]bool{true}[0],
-		Number: &startTime,
-	}
-
-	if !create.EndTime.IsZero() {
-		endTime := create.EndTime.Unix()
-		apiRes.EndTime = &V0042Int64NoValStruct{
-			Set:    &[]bool{true}[0],
-			Number: &endTime,
-		}
-	} else if create.Duration > 0 {
-		duration := int32(create.Duration)
-		apiRes.Duration = &V0042Uint32NoValStruct{
-			Set:    &[]bool{true}[0],
-			Number: &duration,
-		}
-	}
-
-	// Node specifications
-	if len(create.Nodes) > 0 {
-		nodeStr := strings.Join(create.Nodes, ",")
-		apiRes.Node = &nodeStr
-	}
-
-	if create.NodeCount > 0 {
-		nodeCount := int32(create.NodeCount)
-		apiRes.NodeCnt = &V0042Uint32NoValStruct{
-			Set:    &[]bool{true}[0],
-			Number: &nodeCount,
-		}
-	}
-
-	if create.CoreCount > 0 {
-		coreCount := int32(create.CoreCount)
-		apiRes.CoreCnt = &V0042Uint32NoValStruct{
-			Set:    &[]bool{true}[0],
-			Number: &coreCount,
-		}
-	}
-
-	// Users and accounts
-	if len(create.Users) > 0 {
-		userStr := strings.Join(create.Users, ",")
-		apiRes.Users = &userStr
-	}
-
-	if len(create.Accounts) > 0 {
-		accountStr := strings.Join(create.Accounts, ",")
-		apiRes.Accounts = &accountStr
-	}
-
-	// Flags
-	if len(create.Flags) > 0 {
-		flags := make(V0042ReservationFlags, 0, len(create.Flags))
-		for _, flag := range create.Flags {
-			flags = append(flags, flag)
-		}
-		apiRes.Flags = &flags
-	}
-
-	// Features
-	if len(create.Features) > 0 {
-		featureStr := strings.Join(create.Features, ",")
-		apiRes.Features = &featureStr
-	}
-
-	// Partitions
-	if len(create.Partitions) > 0 {
-		partitionStr := strings.Join(create.Partitions, ",")
-		apiRes.Partition = &partitionStr
-	}
-
-	// Additional fields
-	if create.Licenses != "" {
-		apiRes.Licenses = &create.Licenses
-	}
-
-	if len(create.Groups) > 0 {
-		groupStr := strings.Join(create.Groups, ",")
-		apiRes.Groups = &groupStr
-	}
-
-	if create.MaxStartDelay != nil {
-		maxStartDelay := int32(*create.MaxStartDelay)
-		apiRes.MaxStartDelay = &V0042Uint32NoValStruct{
-			Set:    &[]bool{true}[0],
-			Number: &maxStartDelay,
-		}
-	}
-
-	return apiRes, nil
+	return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "Reservation creation not supported in v0.0.42 API")
 }
 
-// convertReservationUpdateToAPI converts interfaces.ReservationUpdate to API format
+// convertReservationUpdateToAPI - not implemented for v0.0.42 (no POST API)
 func convertReservationUpdateToAPI(update *interfaces.ReservationUpdate) (*V0042ReservationInfo, error) {
-	apiRes := &V0042ReservationInfo{}
-
-	// Time fields (only if specified in update)
-	if update.StartTime != nil && !update.StartTime.IsZero() {
-		startTime := update.StartTime.Unix()
-		apiRes.StartTime = &V0042Int64NoValStruct{
-			Set:    &[]bool{true}[0],
-			Number: &startTime,
-		}
-	}
-
-	if update.EndTime != nil && !update.EndTime.IsZero() {
-		endTime := update.EndTime.Unix()
-		apiRes.EndTime = &V0042Int64NoValStruct{
-			Set:    &[]bool{true}[0],
-			Number: &endTime,
-		}
-	}
-
-	if update.Duration != nil {
-		duration := int32(*update.Duration)
-		apiRes.Duration = &V0042Uint32NoValStruct{
-			Set:    &[]bool{true}[0],
-			Number: &duration,
-		}
-	}
-
-	// Node specifications
-	if update.Nodes != nil {
-		nodeStr := strings.Join(*update.Nodes, ",")
-		apiRes.Node = &nodeStr
-	}
-
-	if update.NodeCount != nil {
-		nodeCount := int32(*update.NodeCount)
-		apiRes.NodeCnt = &V0042Uint32NoValStruct{
-			Set:    &[]bool{true}[0],
-			Number: &nodeCount,
-		}
-	}
-
-	if update.CoreCount != nil {
-		coreCount := int32(*update.CoreCount)
-		apiRes.CoreCnt = &V0042Uint32NoValStruct{
-			Set:    &[]bool{true}[0],
-			Number: &coreCount,
-		}
-	}
-
-	// Users and accounts
-	if update.Users != nil {
-		userStr := strings.Join(*update.Users, ",")
-		apiRes.Users = &userStr
-	}
-
-	if update.Accounts != nil {
-		accountStr := strings.Join(*update.Accounts, ",")
-		apiRes.Accounts = &accountStr
-	}
-
-	// Flags
-	if update.Flags != nil {
-		flags := make(V0042ReservationFlags, 0, len(*update.Flags))
-		for _, flag := range *update.Flags {
-			flags = append(flags, flag)
-		}
-		apiRes.Flags = &flags
-	}
-
-	// Features
-	if update.Features != nil {
-		featureStr := strings.Join(*update.Features, ",")
-		apiRes.Features = &featureStr
-	}
-
-	return apiRes, nil
+	return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "Reservation updates not supported in v0.0.42 API")
 }
