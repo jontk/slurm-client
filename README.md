@@ -812,6 +812,46 @@ slurm-cli info
 
 See the [CLI documentation](cmd/slurm-cli/README.md) for complete usage information.
 
+## 🧪 Testing
+
+### Unit Tests
+
+Run the comprehensive test suite:
+
+```bash
+# Run all tests
+make test
+
+# Run tests with coverage
+make coverage
+
+# Run tests for a specific version
+go test ./internal/api/v0_0_43/...
+```
+
+### Integration Tests
+
+The library includes integration tests that can be run against a real SLURM cluster:
+
+```bash
+# Set up environment
+export SLURM_REAL_SERVER_TEST=true
+export SLURM_SERVER_URL=http://your-slurm-server:6820
+export SLURM_JWT_TOKEN=<your-jwt-token>
+
+# Run real server tests
+go test -v ./tests/integration/...
+
+# Run diagnostic script
+./scripts/diagnose-slurm-auth.sh
+```
+
+See [Real Server Testing Guide](tests/integration/REAL_SERVER_TESTING.md) for detailed setup instructions.
+
+### Known Limitations
+
+When testing against real SLURM servers, some endpoints may return HTTP 502 if slurmdbd is not properly connected. This commonly occurs due to authentication plugin mismatches between slurmctld and slurmdbd (e.g., JWT vs munge). The client handles these scenarios gracefully.
+
 ## 🤝 Contributing
 
 We welcome contributions! This project follows enterprise development practices:

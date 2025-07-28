@@ -20,6 +20,7 @@ func TestHTTPExponentialBackoff_Default(t *testing.T) {
 	helpers.AssertEqual(t, 30*time.Second, policy.maxWaitTime)
 	helpers.AssertEqual(t, 2.0, policy.backoffFactor)
 	helpers.AssertEqual(t, true, policy.jitter)
+}
 
 func TestHTTPExponentialBackoff_WithMethods(t *testing.T) {
 	policy := NewHTTPExponentialBackoff().
@@ -106,7 +107,7 @@ func TestHTTPExponentialBackoff_ShouldRetry(t *testing.T) {
 	}
 }
 
-func TestExponentialBackoff_ShouldRetryWithCancelledContext(t *testing.T) {
+func TestHTTPExponentialBackoff_ShouldRetryWithCancelledContext(t *testing.T) {
 	policy := NewHTTPExponentialBackoff()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel the context
@@ -175,8 +176,8 @@ func TestHTTPExponentialBackoff_WaitTime(t *testing.T) {
 	}
 }
 
-func TestExponentialBackoff_WaitTimeWithJitter(t *testing.T) {
-	policy := NewExponentialBackoff().
+func TestHTTPExponentialBackoff_WaitTimeWithJitter(t *testing.T) {
+	policy := NewHTTPExponentialBackoff().
 		WithMinWaitTime(1 * time.Second).
 		WithMaxWaitTime(10 * time.Second).
 		WithBackoffFactor(2.0).
@@ -243,13 +244,13 @@ func TestNoRetry(t *testing.T) {
 
 func TestPolicyInterface(t *testing.T) {
 	// Test that all retry policies implement the Policy interface
-	var _ Policy = &ExponentialBackoff{}
+	var _ Policy = &HTTPExponentialBackoff{}
 	var _ Policy = &FixedDelay{}
 	var _ Policy = &NoRetry{}
 
 	// Test different policies
 	policies := []Policy{
-		NewExponentialBackoff(),
+		NewHTTPExponentialBackoff(),
 		NewFixedDelay(3, 1*time.Second),
 		NewNoRetry(),
 	}
@@ -273,7 +274,7 @@ func TestPolicyInterface(t *testing.T) {
 }
 
 func TestRetryableHTTPStatusCodes(t *testing.T) {
-	policy := NewExponentialBackoff()
+	policy := NewHTTPExponentialBackoff()
 	ctx := helpers.TestContext(t)
 
 	retryableStatusCodes := []int{
