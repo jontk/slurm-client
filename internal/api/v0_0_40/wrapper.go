@@ -85,6 +85,11 @@ func (c *WrapperClient) Clusters() interfaces.ClusterManager {
 	return &common.ClusterManagerStub{Version: "v0.0.40"}
 }
 
+// Associations returns the AssociationManager (stub - not supported in v0.0.40)
+func (c *WrapperClient) Associations() interfaces.AssociationManager {
+	return &common.AssociationManagerStub{Version: "v0.0.40"}
+}
+
 // Close closes the client
 func (c *WrapperClient) Close() error {
 	// No resources to close for HTTP client
