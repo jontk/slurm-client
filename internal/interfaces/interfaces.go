@@ -38,6 +38,9 @@ type SlurmClient interface {
 	// Clusters returns the ClusterManager for this version (v0.0.43+)
 	Clusters() ClusterManager
 
+	// Associations returns the AssociationManager for this version (v0.0.43+)
+	Associations() AssociationManager
+
 	// === Standalone Operations ===
 	
 	// GetLicenses retrieves license information
@@ -1244,6 +1247,204 @@ type ListClustersOptions struct {
 	Limit  int `json:"limit,omitempty"`
 }
 
+// Association represents a SLURM association (user-account-cluster relationship)
+type Association struct {
+	ID              uint32             `json:"id"`
+	User            string             `json:"user"`
+	Account         string             `json:"account"`
+	Cluster         string             `json:"cluster"`
+	Partition       string             `json:"partition,omitempty"`
+	ParentAccount   string             `json:"parent_account,omitempty"`
+	IsDefault       bool               `json:"is_default"`
+	Comment         string             `json:"comment,omitempty"`
+	// Resource limits
+	SharesRaw       int                `json:"shares_raw,omitempty"`
+	Priority        uint32             `json:"priority,omitempty"`
+	MaxJobs         *int               `json:"max_jobs,omitempty"`
+	MaxJobsAccrue   *int               `json:"max_jobs_accrue,omitempty"`
+	MaxSubmitJobs   *int               `json:"max_submit_jobs,omitempty"`
+	MaxWallDuration *int               `json:"max_wall_duration_per_job,omitempty"`
+	GrpJobs         *int               `json:"grp_jobs,omitempty"`
+	GrpJobsAccrue   *int               `json:"grp_jobs_accrue,omitempty"`
+	GrpSubmitJobs   *int               `json:"grp_submit_jobs,omitempty"`
+	GrpWall         *int               `json:"grp_wall,omitempty"`
+	// TRES limits (Trackable RESources)
+	MaxTRESPerJob   map[string]string  `json:"max_tres_per_job,omitempty"`
+	MaxTRESMins     map[string]string  `json:"max_tres_mins,omitempty"`
+	GrpTRES         map[string]string  `json:"grp_tres,omitempty"`
+	GrpTRESMins     map[string]string  `json:"grp_tres_mins,omitempty"`
+	GrpTRESRunMins  map[string]string  `json:"grp_tres_run_mins,omitempty"`
+	// QoS
+	DefaultQoS      string             `json:"default_qos,omitempty"`
+	QoSList         []string           `json:"qos_list,omitempty"`
+	// Flags
+	Flags           []string           `json:"flags,omitempty"`
+	// Usage information
+	FairShare       float64            `json:"fair_share,omitempty"`
+	UsageRaw        int64              `json:"usage_raw,omitempty"`
+	EffectiveUsage  float64            `json:"effective_usage,omitempty"`
+	// Timestamps
+	Created         time.Time          `json:"created"`
+	Modified        time.Time          `json:"modified"`
+	Deleted         *time.Time         `json:"deleted,omitempty"`
+	// Metadata
+	Metadata        map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// AssociationList represents a list of associations
+type AssociationList struct {
+	Associations []*Association         `json:"associations"`
+	Total        int                    `json:"total"`
+	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// AssociationCreate represents a request to create an association
+type AssociationCreate struct {
+	User            string             `json:"user"`
+	Account         string             `json:"account"`
+	Cluster         string             `json:"cluster,omitempty"`
+	Partition       string             `json:"partition,omitempty"`
+	ParentAccount   string             `json:"parent_account,omitempty"`
+	IsDefault       bool               `json:"is_default,omitempty"`
+	Comment         string             `json:"comment,omitempty"`
+	// Resource limits
+	SharesRaw       *int               `json:"shares_raw,omitempty"`
+	Priority        *uint32            `json:"priority,omitempty"`
+	MaxJobs         *int               `json:"max_jobs,omitempty"`
+	MaxJobsAccrue   *int               `json:"max_jobs_accrue,omitempty"`
+	MaxSubmitJobs   *int               `json:"max_submit_jobs,omitempty"`
+	MaxWallDuration *int               `json:"max_wall_duration_per_job,omitempty"`
+	GrpJobs         *int               `json:"grp_jobs,omitempty"`
+	GrpJobsAccrue   *int               `json:"grp_jobs_accrue,omitempty"`
+	GrpSubmitJobs   *int               `json:"grp_submit_jobs,omitempty"`
+	GrpWall         *int               `json:"grp_wall,omitempty"`
+	// TRES limits
+	MaxTRESPerJob   map[string]string  `json:"max_tres_per_job,omitempty"`
+	MaxTRESMins     map[string]string  `json:"max_tres_mins,omitempty"`
+	GrpTRES         map[string]string  `json:"grp_tres,omitempty"`
+	GrpTRESMins     map[string]string  `json:"grp_tres_mins,omitempty"`
+	GrpTRESRunMins  map[string]string  `json:"grp_tres_run_mins,omitempty"`
+	// QoS
+	DefaultQoS      string             `json:"default_qos,omitempty"`
+	QoSList         []string           `json:"qos_list,omitempty"`
+	// Flags
+	Flags           []string           `json:"flags,omitempty"`
+	// Metadata
+	Metadata        map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// AssociationCreateResponse represents the response from association creation
+type AssociationCreateResponse struct {
+	Associations []*Association         `json:"associations"`
+	Created      int                    `json:"created"`
+	Updated      int                    `json:"updated"`
+	Errors       []string               `json:"errors,omitempty"`
+	Warnings     []string               `json:"warnings,omitempty"`
+	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// AssociationUpdate represents an association update request
+type AssociationUpdate struct {
+	User            string             `json:"user"`
+	Account         string             `json:"account"`
+	Cluster         string             `json:"cluster,omitempty"`
+	Partition       string             `json:"partition,omitempty"`
+	// Fields that can be updated
+	IsDefault       *bool              `json:"is_default,omitempty"`
+	Comment         *string            `json:"comment,omitempty"`
+	SharesRaw       *int               `json:"shares_raw,omitempty"`
+	Priority        *uint32            `json:"priority,omitempty"`
+	MaxJobs         *int               `json:"max_jobs,omitempty"`
+	MaxJobsAccrue   *int               `json:"max_jobs_accrue,omitempty"`
+	MaxSubmitJobs   *int               `json:"max_submit_jobs,omitempty"`
+	MaxWallDuration *int               `json:"max_wall_duration_per_job,omitempty"`
+	GrpJobs         *int               `json:"grp_jobs,omitempty"`
+	GrpJobsAccrue   *int               `json:"grp_jobs_accrue,omitempty"`
+	GrpSubmitJobs   *int               `json:"grp_submit_jobs,omitempty"`
+	GrpWall         *int               `json:"grp_wall,omitempty"`
+	MaxTRESPerJob   map[string]string  `json:"max_tres_per_job,omitempty"`
+	MaxTRESMins     map[string]string  `json:"max_tres_mins,omitempty"`
+	GrpTRES         map[string]string  `json:"grp_tres,omitempty"`
+	GrpTRESMins     map[string]string  `json:"grp_tres_mins,omitempty"`
+	GrpTRESRunMins  map[string]string  `json:"grp_tres_run_mins,omitempty"`
+	DefaultQoS      *string            `json:"default_qos,omitempty"`
+	QoSList         []string           `json:"qos_list,omitempty"`
+	Flags           []string           `json:"flags,omitempty"`
+	Metadata        map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// ListAssociationsOptions provides filtering options for listing associations
+type ListAssociationsOptions struct {
+	// Filter by user
+	Users           []string `json:"users,omitempty"`
+	// Filter by account
+	Accounts        []string `json:"accounts,omitempty"`
+	// Filter by cluster
+	Clusters        []string `json:"clusters,omitempty"`
+	// Filter by partition
+	Partitions      []string `json:"partitions,omitempty"`
+	// Filter by parent account
+	ParentAccounts  []string `json:"parent_accounts,omitempty"`
+	// Filter by QoS
+	QoS             []string `json:"qos,omitempty"`
+	// Include deleted associations
+	WithDeleted     bool     `json:"with_deleted,omitempty"`
+	// Include usage information
+	WithUsage       bool     `json:"with_usage,omitempty"`
+	// Include TRES information
+	WithTRES        bool     `json:"with_tres,omitempty"`
+	// Include subaccounts
+	WithSubAccounts bool     `json:"with_sub_accounts,omitempty"`
+	// Only default associations
+	OnlyDefaults    bool     `json:"only_defaults,omitempty"`
+	// Pagination
+	Offset          int      `json:"offset,omitempty"`
+	Limit           int      `json:"limit,omitempty"`
+}
+
+// GetAssociationOptions provides options for retrieving a specific association
+type GetAssociationOptions struct {
+	User            string   `json:"user"`
+	Account         string   `json:"account"`
+	Cluster         string   `json:"cluster,omitempty"`
+	Partition       string   `json:"partition,omitempty"`
+	// Include usage information
+	WithUsage       bool     `json:"with_usage,omitempty"`
+	// Include TRES information
+	WithTRES        bool     `json:"with_tres,omitempty"`
+}
+
+// DeleteAssociationOptions provides options for deleting an association
+type DeleteAssociationOptions struct {
+	User            string   `json:"user"`
+	Account         string   `json:"account"`
+	Cluster         string   `json:"cluster,omitempty"`
+	Partition       string   `json:"partition,omitempty"`
+	// Force deletion even if jobs are running
+	Force           bool     `json:"force,omitempty"`
+}
+
+// BulkDeleteOptions provides options for bulk deleting associations
+type BulkDeleteOptions struct {
+	// Filter criteria for associations to delete
+	Users           []string `json:"users,omitempty"`
+	Accounts        []string `json:"accounts,omitempty"`
+	Clusters        []string `json:"clusters,omitempty"`
+	Partitions      []string `json:"partitions,omitempty"`
+	// Delete only if no jobs are running
+	OnlyIfIdle      bool     `json:"only_if_idle,omitempty"`
+	// Force deletion
+	Force           bool     `json:"force,omitempty"`
+}
+
+// BulkDeleteResponse represents the response from bulk delete operation
+type BulkDeleteResponse struct {
+	Deleted         int      `json:"deleted"`
+	Failed          int      `json:"failed"`
+	Errors          []string `json:"errors,omitempty"`
+	DeletedAssociations []*Association `json:"deleted_associations,omitempty"`
+}
+
 // Watch options for real-time updates
 
 // WatchJobsOptions provides options for watching job changes
@@ -1746,6 +1947,26 @@ type ClusterManager interface {
 	Update(ctx context.Context, clusterName string, update *ClusterUpdate) error
 	// Delete deletes a cluster configuration
 	Delete(ctx context.Context, clusterName string) error
+}
+
+// AssociationManager manages user-account-cluster relationships (v0.0.43+)
+type AssociationManager interface {
+	// List returns associations with optional filtering
+	List(ctx context.Context, opts *ListAssociationsOptions) (*AssociationList, error)
+	// Get retrieves a specific association
+	Get(ctx context.Context, opts *GetAssociationOptions) (*Association, error)
+	// Create creates new associations
+	Create(ctx context.Context, associations []*AssociationCreate) (*AssociationCreateResponse, error)
+	// Update updates existing associations
+	Update(ctx context.Context, associations []*AssociationUpdate) error
+	// Delete deletes a single association
+	Delete(ctx context.Context, opts *DeleteAssociationOptions) error
+	// BulkDelete deletes multiple associations
+	BulkDelete(ctx context.Context, opts *BulkDeleteOptions) (*BulkDeleteResponse, error)
+	// Helper methods
+	GetUserAssociations(ctx context.Context, userName string) ([]*Association, error)
+	GetAccountAssociations(ctx context.Context, accountName string) ([]*Association, error)
+	ValidateAssociation(ctx context.Context, user, account, cluster string) (bool, error)
 }
 
 // User represents a SLURM user
