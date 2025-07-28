@@ -368,11 +368,317 @@ func (m *InfoManager) Version(ctx context.Context) (*interfaces.APIVersion, erro
 	return m.impl.Version(ctx)
 }
 
+// ReservationManager implements the ReservationManager interface for API version v0.0.40
+type ReservationManager struct {
+	client *WrapperClient
+	impl   *ReservationManagerImpl
+}
 
+// List retrieves a list of reservations with optional filtering
+func (m *ReservationManager) List(ctx context.Context, opts *interfaces.ListReservationsOptions) (*interfaces.ReservationList, error) {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
 
+// Get retrieves a specific reservation by name
+func (m *ReservationManager) Get(ctx context.Context, reservationName string) (*interfaces.Reservation, error) {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, reservationName)
+}
 
+// Create creates a new reservation
+func (m *ReservationManager) Create(ctx context.Context, reservation *interfaces.ReservationCreate) (*interfaces.ReservationCreateResponse, error) {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Create(ctx, reservation)
+}
 
+// Update updates an existing reservation
+func (m *ReservationManager) Update(ctx context.Context, reservationName string, update *interfaces.ReservationUpdate) error {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, reservationName, update)
+}
 
+// Delete deletes a reservation
+func (m *ReservationManager) Delete(ctx context.Context, reservationName string) error {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Delete(ctx, reservationName)
+}
+
+// QoSManager implements the QoSManager interface for API version v0.0.40
+type QoSManager struct {
+	client *WrapperClient
+	impl   *QoSManagerImpl
+}
+
+// List retrieves a list of QoS with optional filtering
+func (m *QoSManager) List(ctx context.Context, opts *interfaces.ListQoSOptions) (*interfaces.QoSList, error) {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
+
+// Get retrieves a specific QoS by name
+func (m *QoSManager) Get(ctx context.Context, qosName string) (*interfaces.QoS, error) {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, qosName)
+}
+
+// Create creates a new QoS
+func (m *QoSManager) Create(ctx context.Context, qos *interfaces.QoSCreate) (*interfaces.QoSCreateResponse, error) {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Create(ctx, qos)
+}
+
+// Update updates an existing QoS
+func (m *QoSManager) Update(ctx context.Context, qosName string, update *interfaces.QoSUpdate) error {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, qosName, update)
+}
+
+// Delete deletes a QoS
+func (m *QoSManager) Delete(ctx context.Context, qosName string) error {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Delete(ctx, qosName)
+}
+
+// AccountManager implements the AccountManager interface for API version v0.0.40
+type AccountManager struct {
+	client *WrapperClient
+	impl   *AccountManagerImpl
+}
+
+// List retrieves a list of accounts with optional filtering
+func (m *AccountManager) List(ctx context.Context, opts *interfaces.ListAccountsOptions) (*interfaces.AccountList, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
+
+// Get retrieves a specific account by name
+func (m *AccountManager) Get(ctx context.Context, accountName string) (*interfaces.Account, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, accountName)
+}
+
+// Create creates a new account
+func (m *AccountManager) Create(ctx context.Context, account *interfaces.AccountCreate) (*interfaces.AccountCreateResponse, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.Create(ctx, account)
+}
+
+// Update updates an existing account
+func (m *AccountManager) Update(ctx context.Context, accountName string, update *interfaces.AccountUpdate) error {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, accountName, update)
+}
+
+// Delete deletes an account
+func (m *AccountManager) Delete(ctx context.Context, accountName string) error {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.Delete(ctx, accountName)
+}
+
+// GetAccountHierarchy retrieves account hierarchy
+func (m *AccountManager) GetAccountHierarchy(ctx context.Context, rootAccount string) (*interfaces.AccountHierarchy, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetAccountHierarchy(ctx, rootAccount)
+}
+
+// GetParentAccounts retrieves parent accounts
+func (m *AccountManager) GetParentAccounts(ctx context.Context, accountName string) ([]*interfaces.Account, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetParentAccounts(ctx, accountName)
+}
+
+// GetChildAccounts retrieves child accounts
+func (m *AccountManager) GetChildAccounts(ctx context.Context, accountName string, depth int) ([]*interfaces.Account, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetChildAccounts(ctx, accountName, depth)
+}
+
+// GetAccountQuotas retrieves account quotas
+func (m *AccountManager) GetAccountQuotas(ctx context.Context, accountName string) (*interfaces.AccountQuota, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetAccountQuotas(ctx, accountName)
+}
+
+// GetAccountQuotaUsage retrieves account quota usage
+func (m *AccountManager) GetAccountQuotaUsage(ctx context.Context, accountName string, timeframe string) (*interfaces.AccountUsage, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetAccountQuotaUsage(ctx, accountName, timeframe)
+}
+
+// GetAccountUsers retrieves users associated with account
+func (m *AccountManager) GetAccountUsers(ctx context.Context, accountName string, opts *interfaces.ListAccountUsersOptions) ([]*interfaces.UserAccountAssociation, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetAccountUsers(ctx, accountName, opts)
+}
+
+// ValidateUserAccess validates user access to account
+func (m *AccountManager) ValidateUserAccess(ctx context.Context, userName, accountName string) (*interfaces.UserAccessValidation, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.ValidateUserAccess(ctx, userName, accountName)
+}
+
+// GetAccountUsersWithPermissions retrieves account users with specific permissions
+func (m *AccountManager) GetAccountUsersWithPermissions(ctx context.Context, accountName string, permissions []string) ([]*interfaces.UserAccountAssociation, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetAccountUsersWithPermissions(ctx, accountName, permissions)
+}
+
+// GetAccountFairShare retrieves fair share information for an account
+func (m *AccountManager) GetAccountFairShare(ctx context.Context, accountName string) (*interfaces.AccountFairShare, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetAccountFairShare(ctx, accountName)
+}
+
+// GetFairShareHierarchy retrieves fair share hierarchy for a root account
+func (m *AccountManager) GetFairShareHierarchy(ctx context.Context, rootAccount string) (*interfaces.FairShareHierarchy, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetFairShareHierarchy(ctx, rootAccount)
+}
+
+// UserManager implements the UserManager interface for API version v0.0.40
+type UserManager struct {
+	client *WrapperClient
+	impl   *UserManagerImpl
+}
+
+// List retrieves a list of users with optional filtering
+func (m *UserManager) List(ctx context.Context, opts *interfaces.ListUsersOptions) (*interfaces.UserList, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
+
+// Get retrieves a specific user by name
+func (m *UserManager) Get(ctx context.Context, userName string) (*interfaces.User, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, userName)
+}
+
+// GetUserAccounts retrieves accounts associated with user
+func (m *UserManager) GetUserAccounts(ctx context.Context, userName string) ([]*interfaces.UserAccount, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.GetUserAccounts(ctx, userName)
+}
+
+// GetUserQuotas retrieves user quotas
+func (m *UserManager) GetUserQuotas(ctx context.Context, userName string) (*interfaces.UserQuota, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.GetUserQuotas(ctx, userName)
+}
+
+// GetUserDefaultAccount retrieves user default account
+func (m *UserManager) GetUserDefaultAccount(ctx context.Context, userName string) (*interfaces.Account, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.GetUserDefaultAccount(ctx, userName)
+}
+
+// GetUserFairShare retrieves user fair share information
+func (m *UserManager) GetUserFairShare(ctx context.Context, userName string) (*interfaces.UserFairShare, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.GetUserFairShare(ctx, userName)
+}
+
+// CalculateJobPriority calculates job priority for user
+func (m *UserManager) CalculateJobPriority(ctx context.Context, userName string, jobSubmission *interfaces.JobSubmission) (*interfaces.JobPriorityInfo, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.CalculateJobPriority(ctx, userName, jobSubmission)
+}
+
+// ValidateUserAccountAccess validates user access to account
+func (m *UserManager) ValidateUserAccountAccess(ctx context.Context, userName, accountName string) (*interfaces.UserAccessValidation, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.ValidateUserAccountAccess(ctx, userName, accountName)
+}
+
+// GetUserAccountAssociations retrieves user account associations
+func (m *UserManager) GetUserAccountAssociations(ctx context.Context, userName string, opts *interfaces.ListUserAccountAssociationsOptions) ([]*interfaces.UserAccountAssociation, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.GetUserAccountAssociations(ctx, userName, opts)
+}
+
+// GetBulkUserAccounts retrieves accounts for multiple users
+func (m *UserManager) GetBulkUserAccounts(ctx context.Context, userNames []string) (map[string][]*interfaces.UserAccount, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.GetBulkUserAccounts(ctx, userNames)
+}
+
+// GetBulkAccountUsers retrieves users for multiple accounts
+func (m *UserManager) GetBulkAccountUsers(ctx context.Context, accountNames []string) (map[string][]*interfaces.UserAccountAssociation, error) {
+	if m.impl == nil {
+		m.impl = NewUserManagerImpl(m.client)
+	}
+	return m.impl.GetBulkAccountUsers(ctx, accountNames)
+}
 
 
 

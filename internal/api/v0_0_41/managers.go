@@ -368,9 +368,97 @@ func (m *InfoManager) Version(ctx context.Context) (*interfaces.APIVersion, erro
 	return m.impl.Version(ctx)
 }
 
+// ReservationManager implements the ReservationManager interface for API version v0.0.41
+type ReservationManager struct {
+	client *WrapperClient
+	impl   *ReservationManagerImpl
+}
 
+// List retrieves a list of reservations with optional filtering
+func (m *ReservationManager) List(ctx context.Context, opts *interfaces.ListReservationsOptions) (*interfaces.ReservationList, error) {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
 
+// Get retrieves a specific reservation by name
+func (m *ReservationManager) Get(ctx context.Context, reservationName string) (*interfaces.Reservation, error) {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, reservationName)
+}
 
+// Create creates a new reservation
+func (m *ReservationManager) Create(ctx context.Context, reservation *interfaces.ReservationCreate) (*interfaces.ReservationCreateResponse, error) {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Create(ctx, reservation)
+}
+
+// Update updates an existing reservation
+func (m *ReservationManager) Update(ctx context.Context, reservationName string, update *interfaces.ReservationUpdate) error {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, reservationName, update)
+}
+
+// Delete deletes a reservation
+func (m *ReservationManager) Delete(ctx context.Context, reservationName string) error {
+	if m.impl == nil {
+		m.impl = NewReservationManagerImpl(m.client)
+	}
+	return m.impl.Delete(ctx, reservationName)
+}
+
+// QoSManager implements the QoSManager interface for API version v0.0.41
+type QoSManager struct {
+	client *WrapperClient
+	impl   *QoSManagerImpl
+}
+
+// List retrieves a list of QoS with optional filtering
+func (m *QoSManager) List(ctx context.Context, opts *interfaces.ListQoSOptions) (*interfaces.QoSList, error) {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
+
+// Get retrieves a specific QoS by name
+func (m *QoSManager) Get(ctx context.Context, qosName string) (*interfaces.QoS, error) {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, qosName)
+}
+
+// Create creates a new QoS
+func (m *QoSManager) Create(ctx context.Context, qos *interfaces.QoSCreate) (*interfaces.QoSCreateResponse, error) {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Create(ctx, qos)
+}
+
+// Update updates an existing QoS
+func (m *QoSManager) Update(ctx context.Context, qosName string, update *interfaces.QoSUpdate) error {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, qosName, update)
+}
+
+// Delete deletes a QoS
+func (m *QoSManager) Delete(ctx context.Context, qosName string) error {
+	if m.impl == nil {
+		m.impl = NewQoSManagerImpl(m.client)
+	}
+	return m.impl.Delete(ctx, qosName)
+}
 
 // AccountManager implements the AccountManager interface for API version v0.0.41
 type AccountManager struct {
@@ -378,7 +466,7 @@ type AccountManager struct {
 	impl   *AccountManagerImpl
 }
 
-// List accounts with optional filtering
+// List retrieves a list of accounts with optional filtering
 func (m *AccountManager) List(ctx context.Context, opts *interfaces.ListAccountsOptions) (*interfaces.AccountList, error) {
 	if m.impl == nil {
 		m.impl = NewAccountManagerImpl(m.client)
@@ -482,13 +570,29 @@ func (m *AccountManager) GetAccountUsersWithPermissions(ctx context.Context, acc
 	return m.impl.GetAccountUsersWithPermissions(ctx, accountName, permissions)
 }
 
+// GetAccountFairShare retrieves fair share information for an account
+func (m *AccountManager) GetAccountFairShare(ctx context.Context, accountName string) (*interfaces.AccountFairShare, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetAccountFairShare(ctx, accountName)
+}
+
+// GetFairShareHierarchy retrieves fair share hierarchy for a root account
+func (m *AccountManager) GetFairShareHierarchy(ctx context.Context, rootAccount string) (*interfaces.FairShareHierarchy, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetFairShareHierarchy(ctx, rootAccount)
+}
+
 // UserManager implements the UserManager interface for API version v0.0.41
 type UserManager struct {
 	client *WrapperClient
 	impl   *UserManagerImpl
 }
 
-// List users with optional filtering
+// List retrieves a list of users with optional filtering
 func (m *UserManager) List(ctx context.Context, opts *interfaces.ListUsersOptions) (*interfaces.UserList, error) {
 	if m.impl == nil {
 		m.impl = NewUserManagerImpl(m.client)
@@ -575,5 +679,7 @@ func (m *UserManager) GetBulkAccountUsers(ctx context.Context, accountNames []st
 	}
 	return m.impl.GetBulkAccountUsers(ctx, accountNames)
 }
+
+
 
 
