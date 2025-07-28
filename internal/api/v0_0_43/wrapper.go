@@ -79,6 +79,11 @@ func (c *WrapperClient) Users() interfaces.UserManager {
 	return NewUserManagerImpl(c)
 }
 
+// Clusters returns the ClusterManager
+func (c *WrapperClient) Clusters() interfaces.ClusterManager {
+	return NewClusterManagerImpl(c)
+}
+
 // Close closes the client
 func (c *WrapperClient) Close() error {
 	// No resources to close for HTTP client

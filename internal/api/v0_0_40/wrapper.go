@@ -5,6 +5,7 @@ package v0_0_40
 import (
 	"net/http"
 	
+	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/interfaces"
 )
 
@@ -77,6 +78,11 @@ func (c *WrapperClient) Accounts() interfaces.AccountManager {
 // Users returns the UserManager
 func (c *WrapperClient) Users() interfaces.UserManager {
 	return NewUserManagerImpl(c)
+}
+
+// Clusters returns the ClusterManager
+func (c *WrapperClient) Clusters() interfaces.ClusterManager {
+	return &common.ClusterManagerStub{Version: "v0.0.40"}
 }
 
 // Close closes the client

@@ -35,6 +35,41 @@ type SlurmClient interface {
 	// Users returns the UserManager for this version (v0.0.43+)
 	Users() UserManager
 
+	// Clusters returns the ClusterManager for this version (v0.0.43+)
+	Clusters() ClusterManager
+
+	// === Standalone Operations ===
+	
+	// GetLicenses retrieves license information
+	GetLicenses(ctx context.Context) (*LicenseList, error)
+
+	// GetShares retrieves fairshare information with optional filtering
+	GetShares(ctx context.Context, opts *GetSharesOptions) (*SharesList, error)
+
+	// GetConfig retrieves SLURM configuration
+	GetConfig(ctx context.Context) (*Config, error)
+
+	// GetDiagnostics retrieves SLURM diagnostics information
+	GetDiagnostics(ctx context.Context) (*Diagnostics, error)
+
+	// GetDBDiagnostics retrieves SLURM database diagnostics information
+	GetDBDiagnostics(ctx context.Context) (*Diagnostics, error)
+
+	// GetInstance retrieves a specific database instance
+	GetInstance(ctx context.Context, opts *GetInstanceOptions) (*Instance, error)
+
+	// GetInstances retrieves multiple database instances with filtering
+	GetInstances(ctx context.Context, opts *GetInstancesOptions) (*InstanceList, error)
+
+	// GetTRES retrieves all TRES (Trackable RESources)
+	GetTRES(ctx context.Context) (*TRESList, error)
+
+	// CreateTRES creates a new TRES entry
+	CreateTRES(ctx context.Context, req *CreateTRESRequest) (*TRES, error)
+
+	// Reconfigure triggers a SLURM reconfiguration
+	Reconfigure(ctx context.Context) (*ReconfigureResponse, error)
+
 	// Close closes the client and any resources
 	Close() error
 }
@@ -1125,6 +1160,90 @@ type AccountHierarchy struct {
 	AggregateUsage   *AccountUsage       `json:"aggregate_usage,omitempty"`
 }
 
+// Cluster represents a SLURM cluster configuration
+type Cluster struct {
+	Name               string                 `json:"name"`
+	ControlHost        string                 `json:"control_host,omitempty"`
+	ControlPort        int                    `json:"control_port,omitempty"`
+	RPCVersion         int                    `json:"rpc_version,omitempty"`
+	PluginIDSelect     int                    `json:"plugin_id_select,omitempty"`
+	PluginIDAuth       int                    `json:"plugin_id_auth,omitempty"`
+	PluginIDAcct       int                    `json:"plugin_id_acct,omitempty"`
+	TRESList           []string               `json:"tres_list,omitempty"`
+	Features           []string               `json:"features,omitempty"`
+	FederationFeatures []string               `json:"federation_features,omitempty"`
+	FederationState    string                 `json:"federation_state,omitempty"`
+	Created            time.Time              `json:"created"`
+	Modified           time.Time              `json:"modified"`
+	Metadata           map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// ClusterList represents a list of clusters
+type ClusterList struct {
+	Clusters []*Cluster             `json:"clusters"`
+	Total    int                    `json:"total"`
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// ClusterCreate represents a request to create a cluster
+type ClusterCreate struct {
+	Name               string            `json:"name"`
+	ControlHost        string            `json:"control_host,omitempty"`
+	ControlPort        int               `json:"control_port,omitempty"`
+	RPCVersion         int               `json:"rpc_version,omitempty"`
+	PluginIDSelect     int               `json:"plugin_id_select,omitempty"`
+	PluginIDAuth       int               `json:"plugin_id_auth,omitempty"`
+	PluginIDAcct       int               `json:"plugin_id_acct,omitempty"`
+	TRESList           []string          `json:"tres_list,omitempty"`
+	Features           []string          `json:"features,omitempty"`
+	FederationFeatures []string          `json:"federation_features,omitempty"`
+	FederationState    string            `json:"federation_state,omitempty"`
+	Metadata           map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// ClusterCreateResponse represents the response from cluster creation
+type ClusterCreateResponse struct {
+	Name     string                 `json:"name"`
+	Created  time.Time              `json:"created"`
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// ClusterUpdate represents a cluster update request
+type ClusterUpdate struct {
+	ControlHost        *string           `json:"control_host,omitempty"`
+	ControlPort        *int              `json:"control_port,omitempty"`
+	RPCVersion         *int              `json:"rpc_version,omitempty"`
+	PluginIDSelect     *int              `json:"plugin_id_select,omitempty"`
+	PluginIDAuth       *int              `json:"plugin_id_auth,omitempty"`
+	PluginIDAcct       *int              `json:"plugin_id_acct,omitempty"`
+	TRESList           []string          `json:"tres_list,omitempty"`
+	Features           []string          `json:"features,omitempty"`
+	FederationFeatures []string          `json:"federation_features,omitempty"`
+	FederationState    *string           `json:"federation_state,omitempty"`
+	Metadata           map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// ListClustersOptions provides options for listing clusters
+type ListClustersOptions struct {
+	// Cluster name filtering
+	Names []string `json:"names,omitempty"`
+	// Federation state filtering
+	FederationStates []string `json:"federation_states,omitempty"`
+	// Feature filtering
+	Features []string `json:"features,omitempty"`
+	// Control host filtering
+	ControlHosts []string `json:"control_hosts,omitempty"`
+	// Include federation information
+	WithFederation bool `json:"with_federation,omitempty"`
+	// Include TRES information
+	WithTRES bool `json:"with_tres,omitempty"`
+	// Include detailed plugin information
+	WithPlugins bool `json:"with_plugins,omitempty"`
+	// Pagination
+	Offset int `json:"offset,omitempty"`
+	Limit  int `json:"limit,omitempty"`
+}
+
 // Watch options for real-time updates
 
 // WatchJobsOptions provides options for watching job changes
@@ -1613,6 +1732,20 @@ type UserManager interface {
 	GetUserAccountAssociations(ctx context.Context, userName string, opts *ListUserAccountAssociationsOptions) ([]*UserAccountAssociation, error)
 	GetBulkUserAccounts(ctx context.Context, userNames []string) (map[string][]*UserAccount, error)
 	GetBulkAccountUsers(ctx context.Context, accountNames []string) (map[string][]*UserAccountAssociation, error)
+}
+
+// ClusterManager provides cluster configuration and management operations (v0.0.43+)
+type ClusterManager interface {
+	// List clusters with optional filtering
+	List(ctx context.Context, opts *ListClustersOptions) (*ClusterList, error)
+	// Get retrieves a specific cluster by name
+	Get(ctx context.Context, clusterName string) (*Cluster, error)
+	// Create creates a new cluster configuration
+	Create(ctx context.Context, cluster *ClusterCreate) (*ClusterCreateResponse, error)
+	// Update updates an existing cluster configuration
+	Update(ctx context.Context, clusterName string, update *ClusterUpdate) error
+	// Delete deletes a cluster configuration
+	Delete(ctx context.Context, clusterName string) error
 }
 
 // User represents a SLURM user
@@ -3077,4 +3210,236 @@ type ChartData struct {
 	Description string                 `json:"description"`
 	Data        map[string]interface{} `json:"data"`
 	Options     map[string]interface{} `json:"options"`
+}
+
+// === Standalone Operation Types ===
+
+// License represents a SLURM license
+type License struct {
+	Name        string    `json:"name"`
+	Total       int       `json:"total"`
+	Used        int       `json:"used"`
+	Available   int       `json:"available"`
+	Reserved    int       `json:"reserved,omitempty"`
+	Remote      bool      `json:"remote"`
+	Server      string    `json:"server,omitempty"`
+	LastUpdate  time.Time `json:"last_update"`
+	Percent     float64   `json:"percent"`
+}
+
+// LicenseList represents a list of licenses
+type LicenseList struct {
+	Licenses []License              `json:"licenses"`
+	Meta     map[string]interface{} `json:"meta,omitempty"`
+}
+
+// Share represents a SLURM fair share entry
+type Share struct {
+	Name         string    `json:"name"`
+	User         string    `json:"user,omitempty"`
+	Account      string    `json:"account,omitempty"`
+	Cluster      string    `json:"cluster,omitempty"`
+	Partition    string    `json:"partition,omitempty"`
+	Shares       int       `json:"shares"`
+	RawShares    int       `json:"raw_shares"`
+	NormShares   float64   `json:"norm_shares"`
+	RawUsage     int       `json:"raw_usage"`
+	NormUsage    float64   `json:"norm_usage"`
+	EffectUsage  float64   `json:"effect_usage"`
+	FairShare    float64   `json:"fair_share"`
+	LevelFS      float64   `json:"level_fs"`
+	Priority     float64   `json:"priority"`
+	Level        int       `json:"level"`
+	LastUpdate   time.Time `json:"last_update"`
+}
+
+// SharesList represents a list of shares
+type SharesList struct {
+	Shares []Share                `json:"shares"`
+	Meta   map[string]interface{} `json:"meta,omitempty"`
+}
+
+// GetSharesOptions provides filtering options for shares
+type GetSharesOptions struct {
+	Users     []string `json:"users,omitempty"`
+	Accounts  []string `json:"accounts,omitempty"`
+	Clusters  []string `json:"clusters,omitempty"`
+	UpdateTime *time.Time `json:"update_time,omitempty"`
+}
+
+// Config represents SLURM configuration
+type Config struct {
+	AccountingStorageType      string                 `json:"accounting_storage_type,omitempty"`
+	AccountingStorageHost      string                 `json:"accounting_storage_host,omitempty"`
+	AccountingStoragePort      int                    `json:"accounting_storage_port,omitempty"`
+	AccountingStorageUser      string                 `json:"accounting_storage_user,omitempty"`
+	ClusterName               string                 `json:"cluster_name,omitempty"`
+	ControlMachine            string                 `json:"control_machine,omitempty"`
+	AuthType                  string                 `json:"auth_type,omitempty"`
+	BackupController          string                 `json:"backup_controller,omitempty"`
+	DefaultPartition          string                 `json:"default_partition,omitempty"`
+	MaxJobCount               int                    `json:"max_job_count,omitempty"`
+	MaxStepCount              int                    `json:"max_step_count,omitempty"`
+	MaxTasksPerNode           int                    `json:"max_tasks_per_node,omitempty"`
+	PluginDir                 string                 `json:"plugin_dir,omitempty"`
+	ReturnToService           int                    `json:"return_to_service,omitempty"`
+	SlurmUser                 string                 `json:"slurm_user,omitempty"`
+	SlurmctldLogFile          string                 `json:"slurmctld_log_file,omitempty"`
+	SlurmdLogFile             string                 `json:"slurmd_log_file,omitempty"`
+	StateSaveLocation         string                 `json:"state_save_location,omitempty"`
+	TmpFS                     string                 `json:"tmp_fs,omitempty"`
+	UnkillableStepProgram     string                 `json:"unkillable_step_program,omitempty"`
+	Version                   string                 `json:"version,omitempty"`
+	Parameters                map[string]interface{} `json:"parameters,omitempty"`
+	Nodes                     []ConfigNode           `json:"nodes,omitempty"`
+	Partitions                []ConfigPartition      `json:"partitions,omitempty"`
+}
+
+// ConfigNode represents a node configuration
+type ConfigNode struct {
+	NodeName     string   `json:"node_name"`
+	NodeAddr     string   `json:"node_addr,omitempty"`
+	NodeHostname string   `json:"node_hostname,omitempty"`
+	CPUs         int      `json:"cpus"`
+	Boards       int      `json:"boards,omitempty"`
+	SocketsPerBoard int   `json:"sockets_per_board,omitempty"`
+	CoresPerSocket  int   `json:"cores_per_socket,omitempty"`
+	ThreadsPerCore  int   `json:"threads_per_core,omitempty"`
+	RealMemory   int      `json:"real_memory"`
+	TmpDisk      int      `json:"tmp_disk,omitempty"`
+	Weight       int      `json:"weight,omitempty"`
+	Features     []string `json:"features,omitempty"`
+	Gres         string   `json:"gres,omitempty"`
+	State        string   `json:"state,omitempty"`
+	Reason       string   `json:"reason,omitempty"`
+}
+
+// ConfigPartition represents a partition configuration
+type ConfigPartition struct {
+	Name             string   `json:"name"`
+	Nodes            []string `json:"nodes,omitempty"`
+	AllowGroups      []string `json:"allow_groups,omitempty"`
+	AllowAccounts    []string `json:"allow_accounts,omitempty"`
+	AllowQos         []string `json:"allow_qos,omitempty"`
+	AllocNodes       []string `json:"alloc_nodes,omitempty"`
+	Default          bool     `json:"default"`
+	MaxTime          int      `json:"max_time,omitempty"`
+	DefaultTime      int      `json:"default_time,omitempty"`
+	MaxNodes         int      `json:"max_nodes,omitempty"`
+	MinNodes         int      `json:"min_nodes,omitempty"`
+	Priority         int      `json:"priority,omitempty"`
+	State            string   `json:"state,omitempty"`
+	TotalCPUs        int      `json:"total_cpus,omitempty"`
+	TotalNodes       int      `json:"total_nodes,omitempty"`
+}
+
+// Diagnostics represents SLURM diagnostics information
+type Diagnostics struct {
+	DataCollected    time.Time              `json:"data_collected"`
+	ReqTime          int64                  `json:"req_time"`
+	ReqTimeStart     int64                  `json:"req_time_start"`
+	ServerThreadCount int                   `json:"server_thread_count"`
+	AgentCount       int                    `json:"agent_count"`
+	AgentThreadCount int                    `json:"agent_thread_count"`
+	DBDAgentCount    int                    `json:"dbd_agent_count,omitempty"`
+	JobsSubmitted    int                    `json:"jobs_submitted"`
+	JobsStarted      int                    `json:"jobs_started"`
+	JobsCompleted    int                    `json:"jobs_completed"`
+	JobsCanceled     int                    `json:"jobs_canceled"`
+	JobsFailed       int                    `json:"jobs_failed"`
+	ScheduleCycleMax int                    `json:"schedule_cycle_max"`
+	ScheduleCycleLast int                   `json:"schedule_cycle_last"`
+	ScheduleCycleTotal int64                `json:"schedule_cycle_total"`
+	ScheduleCycleCounter int                `json:"schedule_cycle_counter"`
+	ScheduleCycleMean float64              `json:"schedule_cycle_mean"`
+	BackfillCycleMax  int                   `json:"backfill_cycle_max"`
+	BackfillCycleLast int                   `json:"backfill_cycle_last"`
+	BackfillCycleTotal int64                `json:"backfill_cycle_total"`
+	BackfillCycleCounter int                `json:"backfill_cycle_counter"`
+	BackfillCycleMean    float64            `json:"backfill_cycle_mean"`
+	BfBackfilledJobs     int                `json:"bf_backfilled_jobs"`
+	BfLastBackfilledJobs int                `json:"bf_last_backfilled_jobs"`
+	BfCycleSum           int64              `json:"bf_cycle_sum"`
+	BfQueueLen           int                `json:"bf_queue_len"`
+	BfQueueLenSum        int64              `json:"bf_queue_len_sum"`
+	BfWhenLastCycle      int64              `json:"bf_when_last_cycle"`
+	BfActive             bool               `json:"bf_active"`
+	RPCsByMessageType    map[string]int     `json:"rpcs_by_message_type,omitempty"`
+	RPCsByUser           map[string]int     `json:"rpcs_by_user,omitempty"`
+	PendingRPCs          int                `json:"pending_rpcs"`
+	Statistics           map[string]interface{} `json:"statistics,omitempty"`
+}
+
+// Instance represents a SLURM database instance
+type Instance struct {
+	Cluster     string    `json:"cluster"`
+	ExtraInfo   string    `json:"extra,omitempty"`
+	Instance    string    `json:"instance"`
+	NodeName    string    `json:"node_name"`
+	TimeEnd     int64     `json:"time_end"`
+	TimeStart   int64     `json:"time_start"`
+	TRES        string    `json:"tres,omitempty"`
+	Created     time.Time `json:"created"`
+	Modified    time.Time `json:"modified"`
+}
+
+// InstanceList represents a list of instances
+type InstanceList struct {
+	Instances []Instance             `json:"instances"`
+	Meta      map[string]interface{} `json:"meta,omitempty"`
+}
+
+// GetInstanceOptions provides filtering options for instances
+type GetInstanceOptions struct {
+	Cluster   string     `json:"cluster,omitempty"`
+	Extra     string     `json:"extra,omitempty"`
+	Instance  string     `json:"instance,omitempty"`
+	NodeList  []string   `json:"node_list,omitempty"`
+	TimeStart *time.Time `json:"time_start,omitempty"`
+	TimeEnd   *time.Time `json:"time_end,omitempty"`
+}
+
+// GetInstancesOptions provides filtering options for multiple instances
+type GetInstancesOptions struct {
+	Clusters  []string   `json:"clusters,omitempty"`
+	Extra     string     `json:"extra,omitempty"`
+	Instances []string   `json:"instances,omitempty"`
+	NodeList  []string   `json:"node_list,omitempty"`
+	TimeStart *time.Time `json:"time_start,omitempty"`
+	TimeEnd   *time.Time `json:"time_end,omitempty"`
+}
+
+// TRES represents a Trackable RESources entry
+type TRES struct {
+	ID          uint64    `json:"id"`
+	Type        string    `json:"type"`
+	Name        string    `json:"name"`
+	Count       int64     `json:"count,omitempty"`
+	AllocSecs   int64     `json:"alloc_secs,omitempty"`
+	Created     time.Time `json:"created"`
+	Modified    time.Time `json:"modified"`
+	Description string    `json:"description,omitempty"`
+}
+
+// TRESList represents a list of TRES
+type TRESList struct {
+	TRES []TRES                 `json:"tres"`
+	Meta map[string]interface{} `json:"meta,omitempty"`
+}
+
+// CreateTRESRequest represents a request to create TRES
+type CreateTRESRequest struct {
+	Type        string `json:"type"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+// ReconfigureResponse represents the response from a reconfigure operation
+type ReconfigureResponse struct {
+	Status   string                 `json:"status"`
+	Message  string                 `json:"message,omitempty"`
+	Changes  []string               `json:"changes,omitempty"`
+	Warnings []string               `json:"warnings,omitempty"`
+	Errors   []string               `json:"errors,omitempty"`
+	Meta     map[string]interface{} `json:"meta,omitempty"`
 }

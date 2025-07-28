@@ -663,3 +663,49 @@ func (m *UserManager) GetBulkAccountUsers(ctx context.Context, accountNames []st
 	}
 	return m.impl.GetBulkAccountUsers(ctx, accountNames)
 }
+
+// ClusterManager implements the ClusterManager interface for API version v0.0.43
+type ClusterManager struct {
+	client *WrapperClient
+	impl   *ClusterManagerImpl
+}
+
+// List clusters with optional filtering
+func (m *ClusterManager) List(ctx context.Context, opts *interfaces.ListClustersOptions) (*interfaces.ClusterList, error) {
+	if m.impl == nil {
+		m.impl = NewClusterManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
+
+// Get retrieves a specific cluster by name
+func (m *ClusterManager) Get(ctx context.Context, clusterName string) (*interfaces.Cluster, error) {
+	if m.impl == nil {
+		m.impl = NewClusterManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, clusterName)
+}
+
+// Create creates a new cluster
+func (m *ClusterManager) Create(ctx context.Context, cluster *interfaces.ClusterCreate) (*interfaces.ClusterCreateResponse, error) {
+	if m.impl == nil {
+		m.impl = NewClusterManagerImpl(m.client)
+	}
+	return m.impl.Create(ctx, cluster)
+}
+
+// Update updates an existing cluster
+func (m *ClusterManager) Update(ctx context.Context, clusterName string, update *interfaces.ClusterUpdate) error {
+	if m.impl == nil {
+		m.impl = NewClusterManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, clusterName, update)
+}
+
+// Delete deletes a cluster
+func (m *ClusterManager) Delete(ctx context.Context, clusterName string) error {
+	if m.impl == nil {
+		m.impl = NewClusterManagerImpl(m.client)
+	}
+	return m.impl.Delete(ctx, clusterName)
+}
