@@ -29,6 +29,9 @@ type ClientFactory struct {
 	// Version detection cache
 	detectedVersion *versioning.APIVersion
 	compatibility   *versioning.VersionCompatibilityMatrix
+	
+	// Enhanced options for new features
+	enhanced *EnhancedOptions
 }
 
 // NewClientFactory creates a new client factory
@@ -263,10 +266,12 @@ func (f *ClientFactory) createClient(version *versioning.APIVersion) (SlurmClien
 // Version-specific client creation methods (to be implemented with generated code)
 
 func (f *ClientFactory) createV0_0_40Client() (SlurmClient, error) {
-	// Create authenticated HTTP client
-	httpClient := f.httpClient
+	// Create enhanced HTTP client with all features
+	httpClient := f.buildEnhancedHTTPClient()
+	
+	// Apply authentication if needed
 	if f.auth != nil {
-		httpClient = createAuthenticatedHTTPClient(f.httpClient, f.auth)
+		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
 	}
 
 	config := &ClientConfig{
@@ -285,10 +290,12 @@ func (f *ClientFactory) createV0_0_40Client() (SlurmClient, error) {
 }
 
 func (f *ClientFactory) createV0_0_41Client() (SlurmClient, error) {
-	// Create authenticated HTTP client
-	httpClient := f.httpClient
+	// Create enhanced HTTP client with all features
+	httpClient := f.buildEnhancedHTTPClient()
+	
+	// Apply authentication if needed
 	if f.auth != nil {
-		httpClient = createAuthenticatedHTTPClient(f.httpClient, f.auth)
+		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
 	}
 
 	config := &ClientConfig{
@@ -307,10 +314,12 @@ func (f *ClientFactory) createV0_0_41Client() (SlurmClient, error) {
 }
 
 func (f *ClientFactory) createV0_0_42Client() (SlurmClient, error) {
-	// Create authenticated HTTP client
-	httpClient := f.httpClient
+	// Create enhanced HTTP client with all features
+	httpClient := f.buildEnhancedHTTPClient()
+	
+	// Apply authentication if needed
 	if f.auth != nil {
-		httpClient = createAuthenticatedHTTPClient(f.httpClient, f.auth)
+		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
 	}
 
 	config := &ClientConfig{
@@ -329,10 +338,12 @@ func (f *ClientFactory) createV0_0_42Client() (SlurmClient, error) {
 }
 
 func (f *ClientFactory) createV0_0_43Client() (SlurmClient, error) {
-	// Create authenticated HTTP client
-	httpClient := f.httpClient
+	// Create enhanced HTTP client with all features
+	httpClient := f.buildEnhancedHTTPClient()
+	
+	// Apply authentication if needed
 	if f.auth != nil {
-		httpClient = createAuthenticatedHTTPClient(f.httpClient, f.auth)
+		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
 	}
 
 	config := &ClientConfig{
