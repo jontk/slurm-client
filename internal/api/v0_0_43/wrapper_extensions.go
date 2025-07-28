@@ -11,11 +11,7 @@ import (
 )
 
 // === Manager Methods ===
-
-// Associations returns the AssociationManager
-func (c *WrapperClient) Associations() interfaces.AssociationManager {
-	return &AssociationManager{client: c}
-}
+// Note: All manager methods are now generated in wrapper.go
 
 // === Standalone Operations Implementation ===
 

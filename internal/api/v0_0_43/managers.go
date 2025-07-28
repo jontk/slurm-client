@@ -374,7 +374,7 @@ type ReservationManager struct {
 	impl   *ReservationManagerImpl
 }
 
-// List reservations with optional filtering
+// List retrieves a list of reservations with optional filtering
 func (m *ReservationManager) List(ctx context.Context, opts *interfaces.ListReservationsOptions) (*interfaces.ReservationList, error) {
 	if m.impl == nil {
 		m.impl = NewReservationManagerImpl(m.client)
@@ -420,7 +420,7 @@ type QoSManager struct {
 	impl   *QoSManagerImpl
 }
 
-// List QoS with optional filtering
+// List retrieves a list of QoS with optional filtering
 func (m *QoSManager) List(ctx context.Context, opts *interfaces.ListQoSOptions) (*interfaces.QoSList, error) {
 	if m.impl == nil {
 		m.impl = NewQoSManagerImpl(m.client)
@@ -466,7 +466,7 @@ type AccountManager struct {
 	impl   *AccountManagerImpl
 }
 
-// List accounts with optional filtering
+// List retrieves a list of accounts with optional filtering
 func (m *AccountManager) List(ctx context.Context, opts *interfaces.ListAccountsOptions) (*interfaces.AccountList, error) {
 	if m.impl == nil {
 		m.impl = NewAccountManagerImpl(m.client)
@@ -570,13 +570,29 @@ func (m *AccountManager) GetAccountUsersWithPermissions(ctx context.Context, acc
 	return m.impl.GetAccountUsersWithPermissions(ctx, accountName, permissions)
 }
 
+// GetAccountFairShare retrieves fair share information for an account
+func (m *AccountManager) GetAccountFairShare(ctx context.Context, accountName string) (*interfaces.AccountFairShare, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetAccountFairShare(ctx, accountName)
+}
+
+// GetFairShareHierarchy retrieves fair share hierarchy for a root account
+func (m *AccountManager) GetFairShareHierarchy(ctx context.Context, rootAccount string) (*interfaces.FairShareHierarchy, error) {
+	if m.impl == nil {
+		m.impl = NewAccountManagerImpl(m.client)
+	}
+	return m.impl.GetFairShareHierarchy(ctx, rootAccount)
+}
+
 // UserManager implements the UserManager interface for API version v0.0.43
 type UserManager struct {
 	client *WrapperClient
 	impl   *UserManagerImpl
 }
 
-// List users with optional filtering
+// List retrieves a list of users with optional filtering
 func (m *UserManager) List(ctx context.Context, opts *interfaces.ListUsersOptions) (*interfaces.UserList, error) {
 	if m.impl == nil {
 		m.impl = NewUserManagerImpl(m.client)
@@ -664,6 +680,52 @@ func (m *UserManager) GetBulkAccountUsers(ctx context.Context, accountNames []st
 	return m.impl.GetBulkAccountUsers(ctx, accountNames)
 }
 
+// ClusterManager implements the ClusterManager interface for API version v0.0.43
+type ClusterManager struct {
+	client *WrapperClient
+	impl   *ClusterManagerImpl
+}
+
+// List clusters with optional filtering
+func (m *ClusterManager) List(ctx context.Context, opts *interfaces.ListClustersOptions) (*interfaces.ClusterList, error) {
+	if m.impl == nil {
+		m.impl = NewClusterManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
+
+// Get retrieves a specific cluster by name
+func (m *ClusterManager) Get(ctx context.Context, clusterName string) (*interfaces.Cluster, error) {
+	if m.impl == nil {
+		m.impl = NewClusterManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, clusterName)
+}
+
+// Create creates a new cluster
+func (m *ClusterManager) Create(ctx context.Context, cluster *interfaces.ClusterCreate) (*interfaces.ClusterCreateResponse, error) {
+	if m.impl == nil {
+		m.impl = NewClusterManagerImpl(m.client)
+	}
+	return m.impl.Create(ctx, cluster)
+}
+
+// Update updates an existing cluster
+func (m *ClusterManager) Update(ctx context.Context, clusterName string, update *interfaces.ClusterUpdate) error {
+	if m.impl == nil {
+		m.impl = NewClusterManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, clusterName, update)
+}
+
+// Delete deletes a cluster
+func (m *ClusterManager) Delete(ctx context.Context, clusterName string) error {
+	if m.impl == nil {
+		m.impl = NewClusterManagerImpl(m.client)
+	}
+	return m.impl.Delete(ctx, clusterName)
+}
+
 // AssociationManager implements the AssociationManager interface for API version v0.0.43
 type AssociationManager struct {
 	client *WrapperClient
@@ -740,50 +802,4 @@ func (m *AssociationManager) ValidateAssociation(ctx context.Context, user, acco
 		m.impl = NewAssociationManagerImpl(m.client)
 	}
 	return m.impl.ValidateAssociation(ctx, user, account, cluster)
-}
-
-// ClusterManager implements the ClusterManager interface for API version v0.0.43
-type ClusterManager struct {
-	client *WrapperClient
-	impl   *ClusterManagerImpl
-}
-
-// List clusters with optional filtering
-func (m *ClusterManager) List(ctx context.Context, opts *interfaces.ListClustersOptions) (*interfaces.ClusterList, error) {
-	if m.impl == nil {
-		m.impl = NewClusterManagerImpl(m.client)
-	}
-	return m.impl.List(ctx, opts)
-}
-
-// Get retrieves a specific cluster by name
-func (m *ClusterManager) Get(ctx context.Context, clusterName string) (*interfaces.Cluster, error) {
-	if m.impl == nil {
-		m.impl = NewClusterManagerImpl(m.client)
-	}
-	return m.impl.Get(ctx, clusterName)
-}
-
-// Create creates a new cluster
-func (m *ClusterManager) Create(ctx context.Context, cluster *interfaces.ClusterCreate) (*interfaces.ClusterCreateResponse, error) {
-	if m.impl == nil {
-		m.impl = NewClusterManagerImpl(m.client)
-	}
-	return m.impl.Create(ctx, cluster)
-}
-
-// Update updates an existing cluster
-func (m *ClusterManager) Update(ctx context.Context, clusterName string, update *interfaces.ClusterUpdate) error {
-	if m.impl == nil {
-		m.impl = NewClusterManagerImpl(m.client)
-	}
-	return m.impl.Update(ctx, clusterName, update)
-}
-
-// Delete deletes a cluster
-func (m *ClusterManager) Delete(ctx context.Context, clusterName string) error {
-	if m.impl == nil {
-		m.impl = NewClusterManagerImpl(m.client)
-	}
-	return m.impl.Delete(ctx, clusterName)
 }

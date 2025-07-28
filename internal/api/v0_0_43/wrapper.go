@@ -61,27 +61,33 @@ func (c *WrapperClient) Info() interfaces.InfoManager {
 
 // Reservations returns the ReservationManager
 func (c *WrapperClient) Reservations() interfaces.ReservationManager {
-	return NewReservationManagerImpl(c)
+	return &ReservationManager{client: c}
 }
 
 // QoS returns the QoSManager
 func (c *WrapperClient) QoS() interfaces.QoSManager {
-	return NewQoSManagerImpl(c)
+	return &QoSManager{client: c}
 }
 
 // Accounts returns the AccountManager
 func (c *WrapperClient) Accounts() interfaces.AccountManager {
-	return NewAccountManagerImpl(c)
+	return &AccountManager{client: c}
 }
 
 // Users returns the UserManager
 func (c *WrapperClient) Users() interfaces.UserManager {
-	return NewUserManagerImpl(c)
+	return &UserManager{client: c}
 }
 
 // Clusters returns the ClusterManager
 func (c *WrapperClient) Clusters() interfaces.ClusterManager {
-	return NewClusterManagerImpl(c)
+	return &ClusterManager{client: c}
+}
+
+
+// Associations returns the AssociationManager
+func (c *WrapperClient) Associations() interfaces.AssociationManager {
+	return &AssociationManager{client: c}
 }
 
 // Close closes the client
