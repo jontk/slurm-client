@@ -41,7 +41,7 @@ func NewClientFactory(options ...FactoryOption) (*ClientFactory, error) {
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-		retryPolicy:   retry.NewExponentialBackoff(),
+		retryPolicy:   retry.NewHTTPExponentialBackoff(),
 		compatibility: versioning.DefaultCompatibilityMatrix(),
 	}
 

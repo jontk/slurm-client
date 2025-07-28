@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestExponentialBackoff_Default(t *testing.T) {
-	policy := NewExponentialBackoff()
+func TestHTTPExponentialBackoff_Default(t *testing.T) {
+	policy := NewHTTPExponentialBackoff()
 
 	// Test default values
 	helpers.AssertEqual(t, 3, policy.MaxRetries())
@@ -20,10 +20,9 @@ func TestExponentialBackoff_Default(t *testing.T) {
 	helpers.AssertEqual(t, 30*time.Second, policy.maxWaitTime)
 	helpers.AssertEqual(t, 2.0, policy.backoffFactor)
 	helpers.AssertEqual(t, true, policy.jitter)
-}
 
-func TestExponentialBackoff_WithMethods(t *testing.T) {
-	policy := NewExponentialBackoff().
+func TestHTTPExponentialBackoff_WithMethods(t *testing.T) {
+	policy := NewHTTPExponentialBackoff().
 		WithMaxRetries(5).
 		WithMinWaitTime(2 * time.Second).
 		WithMaxWaitTime(60 * time.Second).
@@ -37,8 +36,8 @@ func TestExponentialBackoff_WithMethods(t *testing.T) {
 	helpers.AssertEqual(t, false, policy.jitter)
 }
 
-func TestExponentialBackoff_ShouldRetry(t *testing.T) {
-	policy := NewExponentialBackoff().WithMaxRetries(3)
+func TestHTTPExponentialBackoff_ShouldRetry(t *testing.T) {
+	policy := NewHTTPExponentialBackoff().WithMaxRetries(3)
 	ctx := helpers.TestContext(t)
 
 	tests := []struct {
@@ -108,7 +107,7 @@ func TestExponentialBackoff_ShouldRetry(t *testing.T) {
 }
 
 func TestExponentialBackoff_ShouldRetryWithCancelledContext(t *testing.T) {
-	policy := NewExponentialBackoff()
+	policy := NewHTTPExponentialBackoff()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel the context
 
@@ -117,8 +116,8 @@ func TestExponentialBackoff_ShouldRetryWithCancelledContext(t *testing.T) {
 	helpers.AssertEqual(t, false, result)
 }
 
-func TestExponentialBackoff_WaitTime(t *testing.T) {
-	policy := NewExponentialBackoff().
+func TestHTTPExponentialBackoff_WaitTime(t *testing.T) {
+	policy := NewHTTPExponentialBackoff().
 		WithMinWaitTime(1 * time.Second).
 		WithMaxWaitTime(10 * time.Second).
 		WithBackoffFactor(2.0).

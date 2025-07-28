@@ -20,8 +20,8 @@ type Policy interface {
 	MaxRetries() int
 }
 
-// ExponentialBackoff implements exponential backoff retry policy
-type ExponentialBackoff struct {
+// HTTPExponentialBackoff implements exponential backoff retry policy for HTTP requests
+type HTTPExponentialBackoff struct {
 	maxRetries    int
 	minWaitTime   time.Duration
 	maxWaitTime   time.Duration
@@ -29,9 +29,9 @@ type ExponentialBackoff struct {
 	jitter        bool
 }
 
-// NewExponentialBackoff creates a new exponential backoff retry policy
-func NewExponentialBackoff() *ExponentialBackoff {
-	return &ExponentialBackoff{
+// NewHTTPExponentialBackoff creates a new exponential backoff retry policy for HTTP requests
+func NewHTTPExponentialBackoff() *HTTPExponentialBackoff {
+	return &HTTPExponentialBackoff{
 		maxRetries:    3,
 		minWaitTime:   1 * time.Second,
 		maxWaitTime:   30 * time.Second,
@@ -41,37 +41,37 @@ func NewExponentialBackoff() *ExponentialBackoff {
 }
 
 // WithMaxRetries sets the maximum number of retries
-func (e *ExponentialBackoff) WithMaxRetries(maxRetries int) *ExponentialBackoff {
+func (e *HTTPExponentialBackoff) WithMaxRetries(maxRetries int) *HTTPExponentialBackoff {
 	e.maxRetries = maxRetries
 	return e
 }
 
 // WithMinWaitTime sets the minimum wait time
-func (e *ExponentialBackoff) WithMinWaitTime(minWaitTime time.Duration) *ExponentialBackoff {
+func (e *HTTPExponentialBackoff) WithMinWaitTime(minWaitTime time.Duration) *HTTPExponentialBackoff {
 	e.minWaitTime = minWaitTime
 	return e
 }
 
 // WithMaxWaitTime sets the maximum wait time
-func (e *ExponentialBackoff) WithMaxWaitTime(maxWaitTime time.Duration) *ExponentialBackoff {
+func (e *HTTPExponentialBackoff) WithMaxWaitTime(maxWaitTime time.Duration) *HTTPExponentialBackoff {
 	e.maxWaitTime = maxWaitTime
 	return e
 }
 
 // WithBackoffFactor sets the backoff factor
-func (e *ExponentialBackoff) WithBackoffFactor(backoffFactor float64) *ExponentialBackoff {
+func (e *HTTPExponentialBackoff) WithBackoffFactor(backoffFactor float64) *HTTPExponentialBackoff {
 	e.backoffFactor = backoffFactor
 	return e
 }
 
 // WithJitter enables or disables jitter
-func (e *ExponentialBackoff) WithJitter(jitter bool) *ExponentialBackoff {
+func (e *HTTPExponentialBackoff) WithJitter(jitter bool) *HTTPExponentialBackoff {
 	e.jitter = jitter
 	return e
 }
 
 // ShouldRetry determines if a request should be retried
-func (e *ExponentialBackoff) ShouldRetry(ctx context.Context, resp *http.Response, err error, attempt int) bool {
+func (e *HTTPExponentialBackoff) ShouldRetry(ctx context.Context, resp *http.Response, err error, attempt int) bool {
 	if attempt >= e.maxRetries {
 		return false
 	}
@@ -104,7 +104,7 @@ func (e *ExponentialBackoff) ShouldRetry(ctx context.Context, resp *http.Respons
 }
 
 // WaitTime returns the wait time before the next retry
-func (e *ExponentialBackoff) WaitTime(attempt int) time.Duration {
+func (e *HTTPExponentialBackoff) WaitTime(attempt int) time.Duration {
 	if attempt <= 0 {
 		return e.minWaitTime
 	}
@@ -127,7 +127,7 @@ func (e *ExponentialBackoff) WaitTime(attempt int) time.Duration {
 }
 
 // MaxRetries returns the maximum number of retries
-func (e *ExponentialBackoff) MaxRetries() int {
+func (e *HTTPExponentialBackoff) MaxRetries() int {
 	return e.maxRetries
 }
 

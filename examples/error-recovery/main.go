@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/jontk/slurm-client"
@@ -117,11 +118,11 @@ func handleJobSubmissionError(err error, job *interfaces.JobSubmission) {
 			fmt.Println("  - Verify token hasn't expired")
 			fmt.Println("  - Ensure you have submit permissions")
 
-		case errors.ErrorCodeQuotaExceeded:
-			fmt.Println("\nQuota Exceeded:")
-			fmt.Println("  - Check your current job count")
-			fmt.Println("  - Review resource usage")
-			fmt.Println("  - Contact administrator if needed")
+		case errors.ErrorCodeRateLimited:
+			fmt.Println("\nRate Limited:")
+			fmt.Println("  - Too many requests in a short time")
+			fmt.Println("  - Wait before retrying")
+			fmt.Println("  - Consider implementing rate limiting")
 
 		default:
 			fmt.Printf("\nUnhandled error code: %s\n", slurmErr.Code)
@@ -165,7 +166,7 @@ func demonstrateRetryStrategies(ctx context.Context, cfg *config.Config, auth au
 	// Strategy 1: Exponential backoff with jitter
 	fmt.Println("1. Exponential Backoff with Jitter:")
 	
-	exponentialRetry := retry.NewExponentialBackoff().
+	exponentialRetry := retry.NewHTTPExponentialBackoff().
 		WithMaxRetries(5).
 		WithMinWaitTime(100 * time.Millisecond).
 		WithMaxWaitTime(10 * time.Second).
@@ -188,9 +189,13 @@ func demonstrateRetryStrategies(ctx context.Context, cfg *config.Config, auth au
 	// Strategy 2: Linear backoff for predictable delays
 	fmt.Println("\n2. Linear Backoff:")
 	
-	linearRetry := retry.NewLinearBackoff().
+	// Create a simple retry policy with fixed delay
+	// LinearBackoff is not available in the current implementation
+	// Using HTTPExponentialBackoff with minimal settings
+	linearRetry := retry.NewHTTPExponentialBackoff().
 		WithMaxRetries(3).
-		WithWaitTime(1 * time.Second)
+		WithMinWaitTime(1 * time.Second).
+		WithMaxWaitTime(1 * time.Second)
 
 	client2, err := slurm.NewClient(ctx,
 		slurm.WithConfig(cfg),
@@ -417,9 +422,9 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 				}
 				fmt.Printf("  Adapting: Changed partition to '%s'\n", job.Partition)
 				
-			case errors.ErrorCodeQuotaExceeded:
+			case errors.ErrorCodeRateLimited:
 				// Wait and retry
-				fmt.Println("  Adapting: Waiting 5 seconds for quota refresh...")
+				fmt.Println("  Adapting: Waiting 5 seconds due to rate limit...")
 				time.Sleep(5 * time.Second)
 				
 			default:
@@ -496,7 +501,7 @@ type customRetryPolicy struct {
 	shouldRetry func(error, int) bool
 }
 
-func (c *customRetryPolicy) ShouldRetry(err error, attempt int) bool {
+func (c *customRetryPolicy) ShouldRetry(ctx context.Context, resp *http.Response, err error, attempt int) bool {
 	if attempt >= c.maxRetries {
 		return false
 	}
@@ -505,6 +510,10 @@ func (c *customRetryPolicy) ShouldRetry(err error, attempt int) bool {
 
 func (c *customRetryPolicy) WaitTime(attempt int) time.Duration {
 	return time.Duration(attempt) * time.Second
+}
+
+func (c *customRetryPolicy) MaxRetries() int {
+	return c.maxRetries
 }
 
 type circuitBreaker struct {

@@ -3,6 +3,7 @@ package logging
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"runtime"
@@ -206,7 +207,7 @@ func getErrorType(err error) string {
 		return "SyscallError"
 	default:
 		// Use reflection to get the actual type
-		return runtime.FuncForPC(runtime.Callers(0, 1)[0]).Name()
+		return fmt.Sprintf("%T", err)
 	}
 }
 

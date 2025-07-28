@@ -1,7 +1,6 @@
 package factory
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 

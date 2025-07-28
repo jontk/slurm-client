@@ -120,8 +120,8 @@ func analyzeUserFairShare(ctx context.Context, client interfaces.SlurmClient, us
 		for _, acc := range accounts {
 			// In a real implementation, this would get per-account fair-share
 			fmt.Fprintf(w, "%s\t%s\t%.4f\t%.4f\t%.4f\n",
-				acc.Name,
-				acc.Role,
+				acc.AccountName,
+				acc.Partition,
 				fairShare.FairShareFactor,
 				fairShare.NormalizedShares,
 				fairShare.EffectiveUsage)
@@ -174,7 +174,7 @@ func analyzeAccountFairShare(ctx context.Context, client interfaces.SlurmClient,
 				user.UserName,
 				user.Role,
 				sharePercent,
-				user.Active)
+				user.IsActive)
 		}
 		w.Flush()
 	}
@@ -260,7 +260,12 @@ func compareUserFairShare(ctx context.Context, client interfaces.SlurmClient) {
 		
 		data.fairShare, data.err = userManager.GetUserFairShare(ctx, userName)
 		if data.err == nil {
-			data.accounts, _ = userManager.GetUserAccounts(ctx, userName)
+			pointerAccounts, _ := userManager.GetUserAccounts(ctx, userName)
+			// Convert from []*UserAccount to []UserAccount
+			data.accounts = make([]interfaces.UserAccount, len(pointerAccounts))
+			for i, acc := range pointerAccounts {
+				data.accounts[i] = *acc
+			}
 		}
 		
 		results = append(results, data)
@@ -294,7 +299,7 @@ func compareUserFairShare(ctx context.Context, client interfaces.SlurmClient) {
 
 		primaryAccount := data.fairShare.Account
 		if len(data.accounts) > 0 {
-			primaryAccount = data.accounts[0].Name
+			primaryAccount = data.accounts[0].AccountName
 		}
 
 		fmt.Fprintf(w, "%d\t%s\t%.4f\t%.4f\t%.4f\t%d\t%s\n",
@@ -391,44 +396,40 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 			name: "Small Job (1 CPU, 1GB, 1 hour)",
 			job: interfaces.JobSubmission{
 				Script:    "#!/bin/bash\necho 'Small job'",
-				Account:   "",
 				Partition: "compute",
 				CPUs:      1,
 				Memory:    1024 * 1024 * 1024,
-				TimeLimit: "01:00:00",
+				TimeLimit: 60, // 1 hour
 			},
 		},
 		{
 			name: "Medium Job (8 CPUs, 16GB, 4 hours)",
 			job: interfaces.JobSubmission{
 				Script:    "#!/bin/bash\necho 'Medium job'",
-				Account:   "",
 				Partition: "compute",
 				CPUs:      8,
 				Memory:    16 * 1024 * 1024 * 1024,
-				TimeLimit: "04:00:00",
+				TimeLimit: 240, // 4 hours
 			},
 		},
 		{
 			name: "Large Job (32 CPUs, 64GB, 24 hours)",
 			job: interfaces.JobSubmission{
 				Script:    "#!/bin/bash\necho 'Large job'",
-				Account:   "",
 				Partition: "compute",
 				CPUs:      32,
 				Memory:    64 * 1024 * 1024 * 1024,
-				TimeLimit: "24:00:00",
+				TimeLimit: 1440, // 24 hours
 			},
 		},
 		{
 			name: "GPU Job (4 CPUs, 16GB, 2 GPUs)",
 			job: interfaces.JobSubmission{
 				Script:    "#!/bin/bash\necho 'GPU job'",
-				Account:   "",
 				Partition: "gpu",
 				CPUs:      4,
 				Memory:    16 * 1024 * 1024 * 1024,
-				TimeLimit: "12:00:00",
+				TimeLimit: 720, // 12 hours
 				GRES:      "gpu:2",
 			},
 		},
@@ -452,14 +453,14 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 		// Test with each account
 		if len(accounts) > 0 {
 			for _, acc := range accounts {
-				scenario.job.Account = acc.Name
+				scenario.job.Partition = acc.AccountName
 				priority, err := userManager.CalculateJobPriority(ctx, userName, &scenario.job)
 				
 				if err != nil {
 					if errors.IsNotImplementedError(err) {
-						fmt.Fprintf(w, "%s\t%s\tN/A\t-\t-\t-\n", scenario.name, acc.Name)
+						fmt.Fprintf(w, "%s\t%s\tN/A\t-\t-\t-\n", scenario.name, acc.AccountName)
 					} else {
-						fmt.Fprintf(w, "%s\t%s\tERROR\t-\t-\t-\n", scenario.name, acc.Name)
+						fmt.Fprintf(w, "%s\t%s\tERROR\t-\t-\t-\n", scenario.name, acc.AccountName)
 					}
 					continue
 				}
@@ -472,7 +473,7 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 					
 					fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\t%d\n",
 						scenario.name,
-						acc.Name,
+						acc.AccountName,
 						priority.Priority,
 						priority.PriorityTier,
 						estStart,

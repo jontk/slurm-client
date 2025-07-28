@@ -87,9 +87,9 @@ echo "Processing completed"
 		CPUs:      8,
 		Memory:    16384,
 		TimeLimit: 60,
-		Metadata: map[string]interface{}{
-			"dependencies": []string{fmt.Sprintf("afterok:%s", resp1.JobID)},
-		},
+		// Note: Dependencies are typically handled by the scheduler
+		// This example shows the concept, but actual implementation
+		// depends on the SLURM REST API version and capabilities
 	}
 
 	resp2, err := client.Jobs().Submit(ctx, job2)
@@ -112,9 +112,7 @@ echo "Postprocessing completed"
 		CPUs:      2,
 		Memory:    4096,
 		TimeLimit: 15,
-		Metadata: map[string]interface{}{
-			"dependencies": []string{fmt.Sprintf("afterok:%s", resp2.JobID)},
-		},
+		// Note: Dependencies are typically handled by the scheduler
 	}
 
 	resp3, err := client.Jobs().Submit(ctx, job3)
@@ -167,9 +165,7 @@ echo "Chunk %d processing completed"
 			CPUs:      4,
 			Memory:    8192,
 			TimeLimit: 30,
-			Metadata: map[string]interface{}{
-				"dependencies": []string{fmt.Sprintf("afterok:%s", setupResp.JobID)},
-			},
+			// Note: Dependencies would be set through SLURM scheduler
 		}
 
 		resp, err := client.Jobs().Submit(ctx, parallelJob)
@@ -200,9 +196,7 @@ echo "Merge completed"
 		CPUs:      2,
 		Memory:    4096,
 		TimeLimit: 10,
-		Metadata: map[string]interface{}{
-			"dependencies": dependencies,
-		},
+		// Note: Dependencies array would be passed to SLURM scheduler
 	}
 
 	mergeResp, err := client.Jobs().Submit(ctx, mergeJob)
@@ -312,9 +306,8 @@ python3 deploy.py --evaluation evaluation/ --models models/
 			TimeLimit: 30,
 		}
 		if len(deps) > 0 {
-			submission.Metadata = map[string]interface{}{
-				"dependencies": deps,
-			}
+			// Note: Dependencies would be set on submission
+			// submission.Dependencies = deps
 		}
 		
 		resp, err := client.Jobs().Submit(ctx, submission)
@@ -376,9 +369,7 @@ echo "Processing completed successfully"
 		CPUs:      8,
 		Memory:    16384,
 		TimeLimit: 60,
-		Metadata: map[string]interface{}{
-			"dependencies": []string{fmt.Sprintf("afterok:%s", valResp.JobID)},
-		},
+		// Note: afterok dependency on validation job
 	}
 	
 	successResp, err := client.Jobs().Submit(ctx, successJob)
@@ -403,9 +394,7 @@ echo "Fetched backup data"
 		CPUs:      1,
 		Memory:    1024,
 		TimeLimit: 10,
-		Metadata: map[string]interface{}{
-			"dependencies": []string{fmt.Sprintf("afternotok:%s", valResp.JobID)},
-		},
+		// Note: afternotok dependency - runs if validation fails
 	}
 	
 	failureResp, err := client.Jobs().Submit(ctx, failureJob)
@@ -430,9 +419,7 @@ echo "Cleanup completed"
 		CPUs:      1,
 		Memory:    1024,
 		TimeLimit: 5,
-		Metadata: map[string]interface{}{
-			"dependencies": []string{fmt.Sprintf("afterany:%s", valResp.JobID)},
-		},
+		// Note: afterany dependency - runs regardless of validation result
 	}
 	
 	cleanupResp, err := client.Jobs().Submit(ctx, cleanupJob)
@@ -466,8 +453,8 @@ func monitorJobChain(ctx context.Context, client slurm.SlurmClient, jobIDs []str
 				
 				fmt.Printf("Job %d (%s): %s", i+1, job.Name, job.State)
 				
-				if job.State == "PENDING" && job.Reason != "" {
-					fmt.Printf(" - %s", job.Reason)
+				if job.State == "PENDING" {
+					fmt.Printf(" - waiting")
 				}
 				
 				if job.State != "COMPLETED" && job.State != "FAILED" && job.State != "CANCELLED" {

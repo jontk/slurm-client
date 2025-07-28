@@ -16,7 +16,7 @@ type Collector interface {
 	RecordResponse(method, path string, statusCode int, duration time.Duration)
 	
 	// RecordError records an API error
-	RecordError(method, path string, errorType string)
+	RecordError(method, path string, err error)
 	
 	// RecordCacheHit records a cache hit
 	RecordCacheHit(key string)
@@ -115,7 +115,7 @@ func (c *InMemoryCollector) RecordRequest(method, path string) {
 	atomic.AddInt64(&c.activeRequests, 1)
 	
 	key := method + " " + path
-	c.incrementMapCounter(c.requestsByPath, key)
+	incrementMapCounter(&c.mu, c.requestsByPath, key)
 }
 
 // RecordResponse records an API response
@@ -124,7 +124,7 @@ func (c *InMemoryCollector) RecordResponse(method, path string, statusCode int, 
 	atomic.AddInt64(&c.activeRequests, -1)
 	
 	// Record status code
-	c.incrementMapCounter(c.responsesByStatus, statusCode)
+	incrementMapCounterInt(&c.mu, c.responsesByStatus, statusCode)
 	
 	// Record duration
 	c.responseTimes.add(duration)
@@ -142,14 +142,18 @@ func (c *InMemoryCollector) RecordResponse(method, path string, statusCode int, 
 }
 
 // RecordError records an API error
-func (c *InMemoryCollector) RecordError(method, path string, errorType string) {
+func (c *InMemoryCollector) RecordError(method, path string, err error) {
+	errorType := "unknown"
+	if err != nil {
+		errorType = err.Error()
+	}
 	atomic.AddInt64(&c.totalErrors, 1)
 	atomic.AddInt64(&c.activeRequests, -1)
 	
-	c.incrementMapCounter(c.errorsByType, errorType)
+	incrementMapCounter(&c.mu, c.errorsByType, errorType)
 	
 	key := method + " " + path
-	c.incrementMapCounter(c.errorsByPath, key)
+	incrementMapCounter(&c.mu, c.errorsByPath, key)
 }
 
 // RecordCacheHit records a cache hit
@@ -215,15 +219,29 @@ func (c *InMemoryCollector) Reset() {
 }
 
 // incrementMapCounter safely increments a counter in a map
-func (c *InMemoryCollector) incrementMapCounter[K comparable](m map[K]*int64, key K) {
-	c.mu.Lock()
+func incrementMapCounter(mu *sync.RWMutex, m map[string]*int64, key string) {
+	mu.Lock()
 	counter, exists := m[key]
 	if !exists {
 		var v int64
 		counter = &v
 		m[key] = counter
 	}
-	c.mu.Unlock()
+	mu.Unlock()
+	
+	atomic.AddInt64(counter, 1)
+}
+
+// incrementMapCounterInt safely increments a counter in a map with int keys
+func incrementMapCounterInt(mu *sync.RWMutex, m map[int]*int64, key int) {
+	mu.Lock()
+	counter, exists := m[key]
+	if !exists {
+		var v int64
+		counter = &v
+		m[key] = counter
+	}
+	mu.Unlock()
 	
 	atomic.AddInt64(counter, 1)
 }
@@ -322,7 +340,7 @@ type NoOpCollector struct{}
 
 func (NoOpCollector) RecordRequest(method, path string) {}
 func (NoOpCollector) RecordResponse(method, path string, statusCode int, duration time.Duration) {}
-func (NoOpCollector) RecordError(method, path string, errorType string) {}
+func (NoOpCollector) RecordError(method, path string, err error) {}
 func (NoOpCollector) RecordCacheHit(key string) {}
 func (NoOpCollector) RecordCacheMiss(key string) {}
 func (NoOpCollector) GetStats() *Stats { return &Stats{} }

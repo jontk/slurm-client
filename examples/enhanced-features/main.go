@@ -77,7 +77,7 @@ func main() {
 	fmt.Printf("   - Max connections per host: %d\n", poolConfig.MaxConnsPerHost)
 	
 	// 5. Setup retry with exponential backoff
-	retryBackoff := &retry.ExponentialBackoff{
+	retryBackoff := &retry.ExponentialBackoffStrategy{
 		InitialDelay: 100 * time.Millisecond,
 		MaxDelay:     10 * time.Second,
 		Multiplier:   2.0,
