@@ -664,6 +664,84 @@ func (m *UserManager) GetBulkAccountUsers(ctx context.Context, accountNames []st
 	return m.impl.GetBulkAccountUsers(ctx, accountNames)
 }
 
+// AssociationManager implements the AssociationManager interface for API version v0.0.43
+type AssociationManager struct {
+	client *WrapperClient
+	impl   *AssociationManagerImpl
+}
+
+// List associations with optional filtering
+func (m *AssociationManager) List(ctx context.Context, opts *interfaces.ListAssociationsOptions) (*interfaces.AssociationList, error) {
+	if m.impl == nil {
+		m.impl = NewAssociationManagerImpl(m.client)
+	}
+	return m.impl.List(ctx, opts)
+}
+
+// Get retrieves a specific association
+func (m *AssociationManager) Get(ctx context.Context, opts *interfaces.GetAssociationOptions) (*interfaces.Association, error) {
+	if m.impl == nil {
+		m.impl = NewAssociationManagerImpl(m.client)
+	}
+	return m.impl.Get(ctx, opts)
+}
+
+// Create creates new associations
+func (m *AssociationManager) Create(ctx context.Context, associations []*interfaces.AssociationCreate) (*interfaces.AssociationCreateResponse, error) {
+	if m.impl == nil {
+		m.impl = NewAssociationManagerImpl(m.client)
+	}
+	return m.impl.Create(ctx, associations)
+}
+
+// Update updates existing associations
+func (m *AssociationManager) Update(ctx context.Context, associations []*interfaces.AssociationUpdate) error {
+	if m.impl == nil {
+		m.impl = NewAssociationManagerImpl(m.client)
+	}
+	return m.impl.Update(ctx, associations)
+}
+
+// Delete deletes a single association
+func (m *AssociationManager) Delete(ctx context.Context, opts *interfaces.DeleteAssociationOptions) error {
+	if m.impl == nil {
+		m.impl = NewAssociationManagerImpl(m.client)
+	}
+	return m.impl.Delete(ctx, opts)
+}
+
+// BulkDelete deletes multiple associations
+func (m *AssociationManager) BulkDelete(ctx context.Context, opts *interfaces.BulkDeleteOptions) (*interfaces.BulkDeleteResponse, error) {
+	if m.impl == nil {
+		m.impl = NewAssociationManagerImpl(m.client)
+	}
+	return m.impl.BulkDelete(ctx, opts)
+}
+
+// GetUserAssociations retrieves all associations for a specific user
+func (m *AssociationManager) GetUserAssociations(ctx context.Context, userName string) ([]*interfaces.Association, error) {
+	if m.impl == nil {
+		m.impl = NewAssociationManagerImpl(m.client)
+	}
+	return m.impl.GetUserAssociations(ctx, userName)
+}
+
+// GetAccountAssociations retrieves all associations for a specific account
+func (m *AssociationManager) GetAccountAssociations(ctx context.Context, accountName string) ([]*interfaces.Association, error) {
+	if m.impl == nil {
+		m.impl = NewAssociationManagerImpl(m.client)
+	}
+	return m.impl.GetAccountAssociations(ctx, accountName)
+}
+
+// ValidateAssociation checks if a user-account-cluster association exists and is valid
+func (m *AssociationManager) ValidateAssociation(ctx context.Context, user, account, cluster string) (bool, error) {
+	if m.impl == nil {
+		m.impl = NewAssociationManagerImpl(m.client)
+	}
+	return m.impl.ValidateAssociation(ctx, user, account, cluster)
+}
+
 // ClusterManager implements the ClusterManager interface for API version v0.0.43
 type ClusterManager struct {
 	client *WrapperClient

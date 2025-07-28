@@ -10,6 +10,13 @@ import (
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
+// === Manager Methods ===
+
+// Associations returns the AssociationManager
+func (c *WrapperClient) Associations() interfaces.AssociationManager {
+	return &AssociationManager{client: c}
+}
+
 // === Standalone Operations Implementation ===
 
 // GetLicenses retrieves license information
