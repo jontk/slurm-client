@@ -688,10 +688,25 @@ make check             # Run all quality checks
 
 ### Code Generation
 
+The project uses code generation to maintain consistency across API versions:
+
 ```bash
 make install-tools     # Install development tools
 make download-specs    # Download OpenAPI specifications
 make generate          # Generate all version-specific clients
+make generate-version VERSION=v0.0.43  # Generate specific version
+```
+
+**Important**: Never edit generated files (marked with "DO NOT EDIT"). See [Code Generation Guide](docs/CODE_GENERATION.md) for details.
+
+### Development Setup
+
+```bash
+# Install git hooks for code quality checks
+./scripts/install-hooks.sh
+
+# Check generated files haven't been manually edited
+./scripts/check-generated-files.sh
 ```
 
 ## 📊 API Compatibility Matrix
