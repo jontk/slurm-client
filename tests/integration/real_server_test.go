@@ -168,6 +168,66 @@ func (suite *RealServerTestSuite) TestListPartitions() {
 	}
 }
 
+// TestListQoS tests QoS listing with our new adapter pattern
+func (suite *RealServerTestSuite) TestListQoS() {
+	ctx := context.Background()
+	
+	// List QoS entries
+	qosList, err := suite.client.QoS().List(ctx, &interfaces.ListQoSOptions{
+		Limit: 10,
+	})
+	suite.Require().NoError(err)
+	suite.NotNil(qosList)
+	
+	suite.T().Logf("Found %d QoS entries", len(qosList.QoS))
+	for i, qos := range qosList.QoS {
+		if i < 5 { // Log first 5 QoS entries
+			suite.T().Logf("  QoS %d: Name=%s, Priority=%d, UsageFactor=%.2f", 
+				i+1, qos.Name, qos.Priority, qos.UsageFactor)
+			if qos.Limits != nil {
+				suite.T().Logf("    Grace Time: %d seconds", qos.GraceTime)
+				if qos.Limits.MaxJobsPerUser != nil {
+					suite.T().Logf("    Max Jobs Per User: %d", *qos.Limits.MaxJobsPerUser)
+				}
+				if qos.Limits.MaxJobsPerAccount != nil {
+					suite.T().Logf("    Max Jobs Per Account: %d", *qos.Limits.MaxJobsPerAccount)
+				}
+			}
+		}
+	}
+}
+
+// TestGetQoS tests retrieving a specific QoS
+func (suite *RealServerTestSuite) TestGetQoS() {
+	ctx := context.Background()
+	
+	// First list QoS to get a valid name
+	qosList, err := suite.client.QoS().List(ctx, &interfaces.ListQoSOptions{
+		Limit: 1,
+	})
+	suite.Require().NoError(err)
+	
+	if len(qosList.QoS) == 0 {
+		suite.T().Skip("No QoS entries found to test")
+		return
+	}
+	
+	qosName := qosList.QoS[0].Name
+	suite.T().Logf("Testing Get with QoS: %s", qosName)
+	
+	// Get specific QoS
+	qos, err := suite.client.QoS().Get(ctx, qosName)
+	suite.Require().NoError(err)
+	suite.NotNil(qos)
+	suite.Equal(qosName, qos.Name)
+	
+	suite.T().Logf("Retrieved QoS: %s", qos.Name)
+	suite.T().Logf("  Description: %s", qos.Description)
+	suite.T().Logf("  Priority: %d", qos.Priority)
+	suite.T().Logf("  UsageFactor: %.2f", qos.UsageFactor)
+	suite.T().Logf("  GraceTime: %d", qos.GraceTime)
+}
+
 // TestJobSubmission tests submitting and canceling a job
 func (suite *RealServerTestSuite) TestJobSubmission() {
 	ctx := context.Background()
