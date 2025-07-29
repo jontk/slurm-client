@@ -7,6 +7,7 @@ import (
 
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_42"
 )
 
@@ -57,25 +58,19 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 			partitionStr := strings.Join(opts.Partitions, ",")
 			params.Partition = &partitionStr
 		}
-		if opts.WithSubAccounts {
-			withSubAccts := "true"
-			params.WithSubAccts = &withSubAccts
-		}
-		if opts.WithDeleted {
-			withDeleted := "true"
-			params.WithDeleted = &withDeleted
-		}
+		// Note: v0.0.42 API doesn't support WithSubAccounts or WithDeleted parameters
+		// These would be filtered client-side if needed
 	}
 
 	// Call the API
 	resp, err := a.client.SlurmdbV0042GetAssociationsWithResponse(ctx, params)
 	if err != nil {
-		return nil, a.WrapError(err, "failed to list associations")
+		return nil, fmt.Errorf("failed to list associations: %w", err)
 	}
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return nil, a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, a.HandleAPIError(fmt.Errorf("API error: status %d", resp.StatusCode()))
 	}
 
 	// Check for API response
@@ -85,17 +80,17 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 
 	// Convert the response to common types
 	assocList := &types.AssociationList{
-		Associations: make([]*types.Association, 0),
+		Associations: make([]types.Association, 0),
 	}
 
 	if resp.JSON200.Associations != nil {
-		for _, apiAssoc := range *resp.JSON200.Associations {
+		for _, apiAssoc := range resp.JSON200.Associations {
 			assoc, err := a.convertAPIAssociationToCommon(apiAssoc)
 			if err != nil {
 				// Log conversion error but continue
 				continue
 			}
-			assocList.Associations = append(assocList.Associations, assoc)
+			assocList.Associations = append(assocList.Associations, *assoc)
 		}
 	}
 
@@ -103,7 +98,7 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 }
 
 // Get retrieves a specific association
-func (a *AssociationAdapter) Get(ctx context.Context, account, user, cluster, partition string) (*types.Association, error) {
+func (a *AssociationAdapter) Get(ctx context.Context, associationID string) (*types.Association, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
@@ -114,82 +109,79 @@ func (a *AssociationAdapter) Get(ctx context.Context, account, user, cluster, pa
 		return nil, err
 	}
 
-	// v0.0.42 doesn't have a single association get endpoint, use list with filters
-	params := &api.SlurmdbV0042GetAssociationsParams{
-		Account: &account,
-		User:    &user,
-	}
-	if cluster != "" {
-		params.Cluster = &cluster
-	}
-	if partition != "" {
-		params.Partition = &partition
-	}
+	// v0.0.42 doesn't have a single association get endpoint, use list to find by ID
+	params := &api.SlurmdbV0042GetAssociationsParams{}
 
 	// Call the API
 	resp, err := a.client.SlurmdbV0042GetAssociationsWithResponse(ctx, params)
 	if err != nil {
-		return nil, a.WrapError(err, "failed to get association")
+		return nil, fmt.Errorf("failed to get association: %w", err)
 	}
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return nil, a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, a.HandleAPIError(fmt.Errorf("API error: status %d", resp.StatusCode()))
 	}
 
 	// Check for API response
-	if resp.JSON200 == nil || resp.JSON200.Associations == nil || len(*resp.JSON200.Associations) == 0 {
+	if resp.JSON200 == nil || resp.JSON200.Associations == nil {
 		return nil, fmt.Errorf("association not found")
 	}
 
-	// Find the matching association
-	for _, apiAssoc := range *resp.JSON200.Associations {
-		if apiAssoc.Account != nil && *apiAssoc.Account == account &&
-			apiAssoc.User != nil && *apiAssoc.User == user {
-			if (cluster == "" || (apiAssoc.Cluster != nil && *apiAssoc.Cluster == cluster)) &&
-				(partition == "" || (apiAssoc.Partition != nil && *apiAssoc.Partition == partition)) {
-				return a.convertAPIAssociationToCommon(apiAssoc)
-			}
+	// Find the matching association by ID
+	for _, apiAssoc := range resp.JSON200.Associations {
+		assoc, err := a.convertAPIAssociationToCommon(apiAssoc)
+		if err != nil {
+			continue
+		}
+		if assoc.ID == associationID {
+			return assoc, nil
 		}
 	}
 
-	return nil, fmt.Errorf("association not found")
+	return nil, fmt.Errorf("association %s not found", associationID)
 }
 
 // Create creates a new association
-func (a *AssociationAdapter) Create(ctx context.Context, assoc *types.AssociationCreateRequest) error {
+func (a *AssociationAdapter) Create(ctx context.Context, assoc *types.AssociationCreate) (*types.AssociationCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Convert common association to API format
 	apiAssoc, err := a.convertCommonAssociationCreateToAPI(assoc)
 	if err != nil {
-		return a.WrapError(err, "failed to convert association create request")
+		return nil, fmt.Errorf("failed to convert association create request: %w", err)
 	}
 
 	// Call the API
-	resp, err := a.client.SlurmdbV0042PostAssociationsWithResponse(ctx, apiAssoc)
+	resp, err := a.client.SlurmdbV0042PostAssociationsWithResponse(ctx, *apiAssoc)
 	if err != nil {
-		return a.WrapError(err, "failed to create association")
+		return nil, fmt.Errorf("failed to create association: %w", err)
 	}
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, a.HandleAPIError(fmt.Errorf("API error: status %d", resp.StatusCode()))
 	}
 
-	return nil
+	// Return success response - for v0.0.42, we can't get specific association details from create response
+	return &types.AssociationCreateResponse{
+		AssociationID: fmt.Sprintf("%s_%s", assoc.AccountName, assoc.UserName),
+		AccountName:   assoc.AccountName,
+		UserName:      assoc.UserName,
+		Cluster:       assoc.Cluster,
+	}, nil
 }
 
 // Update updates an existing association
-func (a *AssociationAdapter) Update(ctx context.Context, assoc *types.AssociationUpdateRequest) error {
+func (a *AssociationAdapter) Update(ctx context.Context, associationID string, update *types.AssociationUpdate) error {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
@@ -202,27 +194,27 @@ func (a *AssociationAdapter) Update(ctx context.Context, assoc *types.Associatio
 
 	// v0.0.42 doesn't have a direct association update endpoint
 	// Updates are done through the create endpoint with update semantics
-	apiAssoc, err := a.convertCommonAssociationUpdateToAPI(assoc)
+	apiAssoc, err := a.convertCommonAssociationUpdateToAPI(update)
 	if err != nil {
-		return a.WrapError(err, "failed to convert association update request")
+		return fmt.Errorf("failed to convert association update request: %w", err)
 	}
 
 	// Call the API
-	resp, err := a.client.SlurmdbV0042PostAssociationsWithResponse(ctx, apiAssoc)
+	resp, err := a.client.SlurmdbV0042PostAssociationsWithResponse(ctx, *apiAssoc)
 	if err != nil {
-		return a.WrapError(err, "failed to update association")
+		return fmt.Errorf("failed to update association: %w", err)
 	}
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return a.HandleAPIError(fmt.Errorf("API error: status %d", resp.StatusCode()))
 	}
 
 	return nil
 }
 
 // Delete deletes an association
-func (a *AssociationAdapter) Delete(ctx context.Context, account, user, cluster, partition string) error {
+func (a *AssociationAdapter) Delete(ctx context.Context, associationID string) error {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
@@ -233,27 +225,33 @@ func (a *AssociationAdapter) Delete(ctx context.Context, account, user, cluster,
 		return err
 	}
 
-	// Build parameters
+	// First get the association to extract the required fields
+	assoc, err := a.Get(ctx, associationID)
+	if err != nil {
+		return err
+	}
+
+	// Build parameters using the association details
 	params := &api.SlurmdbV0042DeleteAssociationParams{
-		Account: &account,
-		User:    &user,
+		Account: &assoc.AccountName,
+		User:    &assoc.UserName,
 	}
-	if cluster != "" {
-		params.Cluster = &cluster
+	if assoc.Cluster != "" {
+		params.Cluster = &assoc.Cluster
 	}
-	if partition != "" {
-		params.Partition = &partition
+	if assoc.Partition != "" {
+		params.Partition = &assoc.Partition
 	}
 
 	// Call the API
 	resp, err := a.client.SlurmdbV0042DeleteAssociationWithResponse(ctx, params)
 	if err != nil {
-		return a.WrapError(err, "failed to delete association")
+		return fmt.Errorf("failed to delete association: %w", err)
 	}
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return a.HandleAPIError(fmt.Errorf("API error: status %d", resp.StatusCode()))
 	}
 
 	return nil

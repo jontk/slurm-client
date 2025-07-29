@@ -105,8 +105,9 @@ func (a *ReservationAdapter) convertAPIReservationToCommon(apiReservation api.V0
 }
 
 // convertCommonReservationCreateToAPI converts common reservation create request to v0.0.42 API format
-func (a *ReservationAdapter) convertCommonReservationCreateToAPI(req *types.ReservationCreateRequest) (*api.SlurmV0042PostReservationJSONRequestBody, error) {
-	apiReq := &api.SlurmV0042PostReservationJSONRequestBody{
+// Note: v0.0.42 API doesn't have a reservation POST endpoint, using placeholder
+func (a *ReservationAdapter) convertCommonReservationCreateToAPI(req *types.ReservationCreateRequest) (*api.V0042ReservationInfo, error) {
+	apiReq := &api.V0042ReservationInfo{
 		Reservations: &[]api.V0042ReservationInfo{
 			{
 				Name: &req.Name,

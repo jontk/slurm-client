@@ -7,6 +7,7 @@ import (
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
@@ -194,22 +195,22 @@ func (a *UserAdapter) Get(ctx context.Context, userName string) (*types.User, er
 }
 
 // Create creates a new user
-func (a *UserAdapter) Create(ctx context.Context, user *types.UserCreate) error {
+func (a *UserAdapter) Create(ctx context.Context, user *types.UserCreate) (*types.UserCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 	if err := a.validateUserCreate(user); err != nil {
-		return err
+		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Convert to API format
 	apiUser, err := a.convertCommonUserCreateToAPI(user)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create request body
@@ -220,7 +221,7 @@ func (a *UserAdapter) Create(ctx context.Context, user *types.UserCreate) error 
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmdbV0040PostUsersWithResponse(ctx, reqBody)
 	if err != nil {
-		return a.HandleAPIError(err)
+		return nil, a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
@@ -230,7 +231,17 @@ func (a *UserAdapter) Create(ctx context.Context, user *types.UserCreate) error 
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
+		return nil, err
+	}
+
+	// Create response object with created user information
+	createResponse := &types.UserCreateResponse{
+		Name: user.Name,
+		// Add any additional response fields from API if available
+	}
+
+	return createResponse, nil
 }
 
 // Update updates an existing user

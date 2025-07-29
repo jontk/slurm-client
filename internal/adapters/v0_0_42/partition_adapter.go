@@ -137,20 +137,20 @@ func (a *PartitionAdapter) Get(ctx context.Context, name string) (*types.Partiti
 }
 
 // Create creates a new partition
-func (a *PartitionAdapter) Create(ctx context.Context, partition *types.PartitionCreateRequest) error {
+func (a *PartitionAdapter) Create(ctx context.Context, partition *types.PartitionCreate) (*types.PartitionCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
+		return nil, err
 	}
 
 	// v0.0.42 doesn't have a direct partition create endpoint
 	// This would typically be done through slurmctld configuration
-	return fmt.Errorf("partition creation not supported via v0.0.42 API")
+	return nil, fmt.Errorf("partition creation not supported via v0.0.42 API")
 }
 
 // Update updates an existing partition

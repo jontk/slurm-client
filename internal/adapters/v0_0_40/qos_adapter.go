@@ -3,9 +3,9 @@ package v0_0_40
 import (
 	"context"
 
-	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
@@ -50,18 +50,18 @@ func (a *QoSAdapter) Get(ctx context.Context, qosName string) (*types.QoS, error
 	}
 
 	// v0.0.40 may not have QoS endpoints
-	return nil, common.NewResourceNotFoundError("QoS", qosName)
+	return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, "QoS '"+qosName+"' not found")
 }
 
 // Create creates a new QoS
-func (a *QoSAdapter) Create(ctx context.Context, qos *types.QoSCreate) error {
+func (a *QoSAdapter) Create(ctx context.Context, qos *types.QoSCreate) (*types.QoSCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	// v0.0.40 may not have QoS endpoints
-	return common.NewNotImplementedError("Create QoS is not implemented for v0.0.40")
+	return nil, errors.NewNotImplementedError("Create QoS", "v0.0.40")
 }
 
 // Update updates an existing QoS
@@ -75,7 +75,7 @@ func (a *QoSAdapter) Update(ctx context.Context, qosName string, update *types.Q
 	}
 
 	// v0.0.40 may not have QoS endpoints
-	return common.NewNotImplementedError("Update QoS is not implemented for v0.0.40")
+	return errors.NewNotImplementedError("Update QoS", "v0.0.40")
 }
 
 // Delete deletes a QoS
@@ -89,5 +89,5 @@ func (a *QoSAdapter) Delete(ctx context.Context, qosName string) error {
 	}
 
 	// v0.0.40 may not have QoS endpoints
-	return common.NewNotImplementedError("Delete QoS is not implemented for v0.0.40")
+	return errors.NewNotImplementedError("Delete QoS", "v0.0.40")
 }

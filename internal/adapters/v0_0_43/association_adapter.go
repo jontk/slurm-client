@@ -2,11 +2,13 @@ package v0_0_43
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 )
 
@@ -61,7 +63,7 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 		}
 		if opts.WithDeleted {
 			withDeleted := "true"
-			params.WithDeleted = &withDeleted
+			params.IncludeDeletedAssociations = &withDeleted
 		}
 	}
 
@@ -91,8 +93,8 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 	}
 
 	// Convert the response to common types
-	associationList := make([]types.Association, 0, len(*resp.JSON200.Associations))
-	for _, apiAssociation := range *resp.JSON200.Associations {
+	associationList := make([]types.Association, 0, len(resp.JSON200.Associations))
+	for _, apiAssociation := range resp.JSON200.Associations {
 		association, err := a.convertAPIAssociationToCommon(apiAssociation)
 		if err != nil {
 			return nil, a.HandleConversionError(err, apiAssociation.Id)
@@ -147,10 +149,10 @@ func (a *AssociationAdapter) Get(ctx context.Context, associationID string) (*ty
 	}
 
 	// Prepare parameters for the API call
-	params := &api.SlurmdbV0043GetSingleAssociationParams{}
+	params := &api.SlurmdbV0043GetAssociationParams{}
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmdbV0043GetSingleAssociationWithResponse(ctx, associationID, params)
+	resp, err := a.client.SlurmdbV0043GetAssociationWithResponse(ctx, params)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
@@ -175,12 +177,12 @@ func (a *AssociationAdapter) Get(ctx context.Context, associationID string) (*ty
 	}
 
 	// Check if we got any association entries
-	if len(*resp.JSON200.Associations) == 0 {
-		return nil, common.NewResourceNotFoundError("Association", associationID)
+	if len(resp.JSON200.Associations) == 0 {
+		return nil, errors.NewClientError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("Association with ID %s not found", associationID))
 	}
 
 	// Convert the first association (should be the only one)
-	association, err := a.convertAPIAssociationToCommon((*resp.JSON200.Associations)[0])
+	association, err := a.convertAPIAssociationToCommon(resp.JSON200.Associations[0])
 	if err != nil {
 		return nil, a.HandleConversionError(err, associationID)
 	}
@@ -212,11 +214,8 @@ func (a *AssociationAdapter) Create(ctx context.Context, association *types.Asso
 		Associations: []api.V0043Assoc{*apiAssociation},
 	}
 
-	// Prepare parameters for the API call
-	params := &api.SlurmdbV0043PostAssociationsParams{}
-
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmdbV0043PostAssociationsWithResponse(ctx, params, reqBody)
+	resp, err := a.client.SlurmdbV0043PostAssociationsWithResponse(ctx, reqBody)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
@@ -233,7 +232,10 @@ func (a *AssociationAdapter) Create(ctx context.Context, association *types.Asso
 	}
 
 	return &types.AssociationCreateResponse{
-		AssociationID: association.Account + ":" + association.User + ":" + association.Cluster,
+		AssociationID: association.AccountName + ":" + association.UserName + ":" + association.Cluster,
+		AccountName:   association.AccountName,
+		UserName:      association.UserName,
+		Cluster:       association.Cluster,
 	}, nil
 }
 
@@ -270,11 +272,8 @@ func (a *AssociationAdapter) Update(ctx context.Context, associationID string, u
 		Associations: []api.V0043Assoc{*apiAssociation},
 	}
 
-	// Prepare parameters for the API call
-	params := &api.SlurmdbV0043PostAssociationsParams{}
-
 	// Call the generated OpenAPI client (POST is used for updates in SLURM API)
-	resp, err := a.client.SlurmdbV0043PostAssociationsWithResponse(ctx, params, reqBody)
+	resp, err := a.client.SlurmdbV0043PostAssociationsWithResponse(ctx, reqBody)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
@@ -303,7 +302,7 @@ func (a *AssociationAdapter) Delete(ctx context.Context, associationID string) e
 	}
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmdbV0043DeleteSingleAssociationWithResponse(ctx, associationID)
+	resp, err := a.client.SlurmdbV0043DeleteAssociationWithResponse(ctx, &api.SlurmdbV0043DeleteAssociationParams{})
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
@@ -328,16 +327,16 @@ func (a *AssociationAdapter) Delete(ctx context.Context, associationID string) e
 // validateAssociationCreate validates association creation request
 func (a *AssociationAdapter) validateAssociationCreate(association *types.AssociationCreate) error {
 	if association == nil {
-		return common.NewValidationError("association creation data is required", "association", nil)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "association creation data is required", "association", nil, nil)
 	}
-	if association.Account == "" {
-		return common.NewValidationError("account is required", "account", association.Account)
+	if association.AccountName == "" {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account is required", "account", association.AccountName, nil)
 	}
-	if association.User == "" {
-		return common.NewValidationError("user is required", "user", association.User)
+	if association.UserName == "" {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "user is required", "user", association.UserName, nil)
 	}
 	if association.Cluster == "" {
-		return common.NewValidationError("cluster is required", "cluster", association.Cluster)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "cluster is required", "cluster", association.Cluster, nil)
 	}
 	return nil
 }
@@ -345,12 +344,12 @@ func (a *AssociationAdapter) validateAssociationCreate(association *types.Associ
 // validateAssociationUpdate validates association update request
 func (a *AssociationAdapter) validateAssociationUpdate(update *types.AssociationUpdate) error {
 	if update == nil {
-		return common.NewValidationError("association update data is required", "update", nil)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "association update data is required", "update", nil, nil)
 	}
 	// At least one field should be provided for update
-	if update.DefaultQoS == nil && len(update.QoSList) == 0 && update.FairShare == nil &&
+	if update.DefaultQoS == nil && len(update.QoSList) == 0 &&
 	   update.MaxJobs == nil && update.MaxWallTime == nil {
-		return common.NewValidationError("at least one field must be provided for update", "update", update)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one field must be provided for update", "update", update, nil)
 	}
 	return nil
 }
@@ -359,10 +358,10 @@ func (a *AssociationAdapter) validateAssociationUpdate(update *types.Association
 func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0043Assoc) (*types.Association, error) {
 	association := &types.Association{}
 	if apiAssociation.Account != nil {
-		association.Account = *apiAssociation.Account
+		association.AccountName = *apiAssociation.Account
 	}
-	if apiAssociation.User != nil {
-		association.User = *apiAssociation.User
+	if apiAssociation.User != "" {
+		association.UserName = apiAssociation.User
 	}
 	if apiAssociation.Cluster != nil {
 		association.Cluster = *apiAssociation.Cluster
@@ -370,14 +369,17 @@ func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0
 	if apiAssociation.Partition != nil {
 		association.Partition = *apiAssociation.Partition
 	}
+	if apiAssociation.Id != nil {
+		association.ID = fmt.Sprintf("%d", *apiAssociation.Id)
+	}
 	// TODO: Add more field conversions as needed
 	return association, nil
 }
 
 func (a *AssociationAdapter) convertCommonAssociationCreateToAPI(create *types.AssociationCreate) (*api.V0043Assoc, error) {
 	apiAssociation := &api.V0043Assoc{}
-	apiAssociation.Account = &create.Account
-	apiAssociation.User = &create.User
+	apiAssociation.Account = &create.AccountName
+	apiAssociation.User = create.UserName
 	apiAssociation.Cluster = &create.Cluster
 	if create.Partition != "" {
 		apiAssociation.Partition = &create.Partition
@@ -388,8 +390,8 @@ func (a *AssociationAdapter) convertCommonAssociationCreateToAPI(create *types.A
 
 func (a *AssociationAdapter) convertCommonAssociationUpdateToAPI(existing *types.Association, update *types.AssociationUpdate) (*api.V0043Assoc, error) {
 	apiAssociation := &api.V0043Assoc{}
-	apiAssociation.Account = &existing.Account
-	apiAssociation.User = &existing.User
+	apiAssociation.Account = &existing.AccountName
+	apiAssociation.User = existing.UserName
 	apiAssociation.Cluster = &existing.Cluster
 	if existing.Partition != "" {
 		apiAssociation.Partition = &existing.Partition

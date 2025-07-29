@@ -154,9 +154,9 @@ func (a *ReservationAdapter) Get(ctx context.Context, name string) (*types.Reser
 }
 
 // Create creates a new reservation
-func (a *ReservationAdapter) Create(ctx context.Context, reservation *types.Reservation) error {
+func (a *ReservationAdapter) Create(ctx context.Context, req *types.ReservationCreate) (*types.ReservationCreateResponse, error) {
 	// v0.0.41 doesn't support reservation creation through the API
-	return fmt.Errorf("reservation creation is not supported in API v0.0.41")
+	return nil, fmt.Errorf("reservation creation is not supported in API v0.0.41")
 }
 
 // Update updates an existing reservation

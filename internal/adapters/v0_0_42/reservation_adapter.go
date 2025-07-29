@@ -132,35 +132,39 @@ func (a *ReservationAdapter) Get(ctx context.Context, name string) (*types.Reser
 }
 
 // Create creates a new reservation
-func (a *ReservationAdapter) Create(ctx context.Context, reservation *types.ReservationCreateRequest) error {
+func (a *ReservationAdapter) Create(ctx context.Context, reservation *types.ReservationCreate) (*types.ReservationCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Convert common reservation to API format
 	apiReservation, err := a.convertCommonReservationCreateToAPI(reservation)
 	if err != nil {
-		return a.WrapError(err, "failed to convert reservation create request")
+		return nil, a.WrapError(err, "failed to convert reservation create request")
 	}
 
 	// Call the API
 	resp, err := a.client.SlurmV0042PostReservationWithResponse(ctx, apiReservation)
 	if err != nil {
-		return a.WrapError(err, "failed to create reservation")
+		return nil, a.WrapError(err, "failed to create reservation")
 	}
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, a.HandleAPIError(resp.StatusCode(), resp.Body)
 	}
 
-	return nil
+	// Return success response
+	return &types.ReservationCreateResponse{
+		Success: true,
+		Message: "Reservation created successfully",
+	}, nil
 }
 
 // Update updates an existing reservation

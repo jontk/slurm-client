@@ -344,8 +344,9 @@ func (a *JobAdapter) convertAPIJobSubmitResponseToCommon(resp *api.V0042OpenapiJ
 }
 
 // convertCommonJobUpdateToAPI converts common job update request to v0.0.42 API format
-func (a *JobAdapter) convertCommonJobUpdateToAPI(req *types.JobUpdateRequest) (*api.SlurmV0042PostJobUpdateJSONRequestBody, error) {
-	apiReq := &api.SlurmV0042PostJobUpdateJSONRequestBody{
+// Note: v0.0.42 uses SlurmV0042PostJobJSONRequestBody for job updates
+func (a *JobAdapter) convertCommonJobUpdateToAPI(req *types.JobUpdateRequest) (*api.SlurmV0042PostJobJSONRequestBody, error) {
+	apiReq := &api.SlurmV0042PostJobJSONRequestBody{
 		Jobs: &[]api.V0042JobInfo{
 			{},
 		},

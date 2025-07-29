@@ -7,6 +7,7 @@ import (
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
@@ -141,29 +142,29 @@ func (a *ReservationAdapter) Get(ctx context.Context, reservationName string) (*
 	}
 
 	if len(list.Reservations) == 0 {
-		return nil, common.NewResourceNotFoundError("Reservation", reservationName)
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, "Reservation '"+reservationName+"' not found")
 	}
 
 	return &list.Reservations[0], nil
 }
 
 // Create creates a new reservation
-func (a *ReservationAdapter) Create(ctx context.Context, reservation *types.ReservationCreate) error {
+func (a *ReservationAdapter) Create(ctx context.Context, reservation *types.ReservationCreate) (*types.ReservationCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 	if err := a.validateReservationCreate(reservation); err != nil {
-		return err
+		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Convert to API format
 	apiReservation, err := a.convertCommonReservationCreateToAPI(reservation)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create request body
@@ -174,7 +175,7 @@ func (a *ReservationAdapter) Create(ctx context.Context, reservation *types.Rese
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmV0040PostReservationWithResponse(ctx, reqBody)
 	if err != nil {
-		return a.HandleAPIError(err)
+		return nil, a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
@@ -184,7 +185,13 @@ func (a *ReservationAdapter) Create(ctx context.Context, reservation *types.Rese
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
+		return nil, err
+	}
+
+	return &types.ReservationCreateResponse{
+		ReservationName: reservation.Name,
+	}, nil
 }
 
 // Update updates an existing reservation
