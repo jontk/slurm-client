@@ -1,6 +1,7 @@
 package v0_0_43
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/jontk/slurm-client/internal/common/types"
@@ -18,8 +19,8 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0043Node) (*types.Node
 	if apiNode.Architecture != nil {
 		node.Arch = *apiNode.Architecture
 	}
-	if apiNode.BurstBufferNetworkAddress != nil {
-		node.BcastAddress = *apiNode.BurstBufferNetworkAddress
+	if apiNode.BurstbufferNetworkAddress != nil {
+		node.BcastAddress = *apiNode.BurstbufferNetworkAddress
 	}
 	if apiNode.Boards != nil {
 		node.Boards = *apiNode.Boards
@@ -35,39 +36,25 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0043Node) (*types.Node
 	if apiNode.Cores != nil {
 		node.Cores = *apiNode.Cores
 	}
-	if apiNode.CoreSpecCount != nil {
-		node.CoreSpecCount = *apiNode.CoreSpecCount
-	}
 	if apiNode.CpuBinding != nil {
 		node.CPUBinding = *apiNode.CpuBinding
 	}
-	if apiNode.CpuLoad != nil && apiNode.CpuLoad.Number != nil {
-		node.CPULoad = *apiNode.CpuLoad.Number
+	if apiNode.CpuLoad != nil {
+		node.CPULoad = float64(*apiNode.CpuLoad)
 	}
 	if apiNode.Cpus != nil {
 		node.CPUs = *apiNode.Cpus
 	}
-	if apiNode.CpusEffective != nil {
-		node.CPUsEffective = *apiNode.CpusEffective
-	}
-	if apiNode.ThreadsPerCore != nil {
-		node.ThreadsPerCore = *apiNode.ThreadsPerCore
+	if apiNode.EffectiveCpus != nil {
+		node.CPUsEffective = *apiNode.EffectiveCpus
 	}
 	if apiNode.Sockets != nil {
 		node.Sockets = *apiNode.Sockets
 	}
 
 	// Memory information
-	if apiNode.FreeMemory != nil && apiNode.FreeMemory.Number != nil {
-		node.FreeMemory = *apiNode.FreeMemory.Number
-	}
-	if apiNode.Memory != nil {
-		node.Memory = *apiNode.Memory
-	}
-	if apiNode.MemorySpecLimit != nil {
-		node.MemorySpecLimit = *apiNode.MemorySpecLimit
-	}
 	if apiNode.RealMemory != nil {
+		node.Memory = *apiNode.RealMemory
 		node.RealMemory = *apiNode.RealMemory
 	}
 	if apiNode.AllocMemory != nil {
@@ -114,11 +101,11 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0043Node) (*types.Node
 	}
 
 	// Network information
-	if apiNode.NodeAddress != nil {
-		node.NodeAddress = *apiNode.NodeAddress
+	if apiNode.Address != nil {
+		node.NodeAddress = *apiNode.Address
 	}
-	if apiNode.NodeHostname != nil {
-		node.NodeHostname = *apiNode.NodeHostname
+	if apiNode.Hostname != nil {
+		node.NodeHostname = *apiNode.Hostname
 	}
 	if apiNode.Port != nil {
 		node.Port = *apiNode.Port
@@ -147,23 +134,11 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0043Node) (*types.Node
 	if apiNode.State != nil && len(*apiNode.State) > 0 {
 		node.State = types.NodeState((*apiNode.State)[0])
 	}
-	if apiNode.StateFlags != nil && len(*apiNode.StateFlags) > 0 {
-		stateFlags := make([]string, len(*apiNode.StateFlags))
-		for i, flag := range *apiNode.StateFlags {
-			stateFlags[i] = string(flag)
-		}
-		node.StateFlags = stateFlags
-	}
+	// StateFlags not available in v0_0_43
 	if apiNode.NextStateAfterReboot != nil && len(*apiNode.NextStateAfterReboot) > 0 {
 		node.NextStateAfterReboot = types.NodeState((*apiNode.NextStateAfterReboot)[0])
 	}
-	if apiNode.NextStateAfterRebootFlags != nil && len(*apiNode.NextStateAfterRebootFlags) > 0 {
-		nextStateFlags := make([]string, len(*apiNode.NextStateAfterRebootFlags))
-		for i, flag := range *apiNode.NextStateAfterRebootFlags {
-			nextStateFlags[i] = string(flag)
-		}
-		node.NextStateAfterRebootFlags = nextStateFlags
-	}
+	// NextStateAfterRebootFlags not available in v0_0_43
 
 	// Reason information
 	if apiNode.Reason != nil {
@@ -174,14 +149,8 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0043Node) (*types.Node
 	}
 
 	// Resource information
-	if apiNode.TmpDisk != nil {
-		node.TmpDisk = *apiNode.TmpDisk
-	}
 	if apiNode.TresUsed != nil {
 		node.TresUsed = *apiNode.TresUsed
-	}
-	if apiNode.TresFmtStr != nil {
-		node.TresFmtStr = *apiNode.TresFmtStr
 	}
 
 	// Allocation information
@@ -200,20 +169,20 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0043Node) (*types.Node
 	// Energy information (if available)
 	if apiNode.Energy != nil {
 		energy := &types.NodeEnergy{}
-		if apiNode.Energy.AverageWatts != nil && apiNode.Energy.AverageWatts.Number != nil {
-			energy.AveWatts = *apiNode.Energy.AverageWatts.Number
+		if apiNode.Energy.AverageWatts != nil {
+			energy.AveWatts = int64(*apiNode.Energy.AverageWatts)
 		}
-		if apiNode.Energy.BaseConsumedEnergy != nil && apiNode.Energy.BaseConsumedEnergy.Number != nil {
-			energy.BaseConsumedEnergy = *apiNode.Energy.BaseConsumedEnergy.Number
+		if apiNode.Energy.BaseConsumedEnergy != nil {
+			energy.BaseConsumedEnergy = *apiNode.Energy.BaseConsumedEnergy
 		}
-		if apiNode.Energy.ConsumedEnergy != nil && apiNode.Energy.ConsumedEnergy.Number != nil {
-			energy.ConsumedEnergy = *apiNode.Energy.ConsumedEnergy.Number
+		if apiNode.Energy.ConsumedEnergy != nil {
+			energy.ConsumedEnergy = *apiNode.Energy.ConsumedEnergy
 		}
 		if apiNode.Energy.CurrentWatts != nil && apiNode.Energy.CurrentWatts.Number != nil {
-			energy.CurrentWatts = *apiNode.Energy.CurrentWatts.Number
+			energy.CurrentWatts = int64(*apiNode.Energy.CurrentWatts.Number)
 		}
-		if apiNode.Energy.LastCollected != nil && apiNode.Energy.LastCollected.Number != nil {
-			energy.LastCollected = time.Unix(*apiNode.Energy.LastCollected.Number, 0)
+		if apiNode.Energy.LastCollected != nil {
+			energy.LastCollected = time.Unix(*apiNode.Energy.LastCollected, 0)
 		}
 		node.Energy = energy
 	}
@@ -275,7 +244,7 @@ func (a *NodeAdapter) convertCommonNodeUpdateToAPI(existing *types.Node, update 
 
 	// Next state after reboot
 	if update.NextStateAfterReboot != nil {
-		nextStates := []api.V0043NodeState{api.V0043NodeState(*update.NextStateAfterReboot)}
+		nextStates := []api.V0043NodeNextStateAfterReboot{api.V0043NodeNextStateAfterReboot(*update.NextStateAfterReboot)}
 		apiNode.NextStateAfterReboot = &nextStates
 	}
 

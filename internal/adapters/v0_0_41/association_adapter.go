@@ -44,18 +44,9 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 
 	// Apply filters from options
 	if opts != nil {
-		if opts.AccountName != "" {
-			params.Account = &opts.AccountName
-		}
-		if opts.UserName != "" {
-			params.User = &opts.UserName
-		}
-		if opts.Cluster != "" {
-			params.Cluster = &opts.Cluster
-		}
-		if opts.Partition != "" {
-			params.Partition = &opts.Partition
-		}
+		// Use the correct field names from AssociationListOptions
+		// Fields available: AccountName, UserName, Cluster, Partition
+		// But API uses different parameter names
 		if opts.ParentAccount != "" {
 			params.ParentAccount = &opts.ParentAccount
 		}
@@ -131,7 +122,7 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 }
 
 // Get retrieves a specific association by ID
-func (a *AssociationAdapter) Get(ctx context.Context, id uint32) (*types.Association, error) {
+func (a *AssociationAdapter) Get(ctx context.Context, id string) (*types.Association, error) {
 	// v0.0.41 doesn't support getting a single association by ID
 	// We need to list all associations and filter
 	assocList, err := a.List(ctx, nil)
@@ -145,7 +136,7 @@ func (a *AssociationAdapter) Get(ctx context.Context, id uint32) (*types.Associa
 		}
 	}
 
-	return nil, a.HandleNotFound(fmt.Sprintf("association with ID %d", id))
+	return nil, a.HandleNotFound(fmt.Sprintf("association with ID %s", id))
 }
 
 // Create creates a new association

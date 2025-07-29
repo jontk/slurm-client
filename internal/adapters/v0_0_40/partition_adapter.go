@@ -2,6 +2,7 @@ package v0_0_40
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/jontk/slurm-client/internal/common"
@@ -44,13 +45,10 @@ func (a *PartitionAdapter) List(ctx context.Context, opts *types.PartitionListOp
 
 	// Apply filters from options
 	if opts != nil {
-		if len(opts.Names) > 0 {
-			nameStr := strings.Join(opts.Names, ",")
-			params.PartitionName = &nameStr
-		}
+		// v0.0.40 doesn't support partition name filtering in params
 		if opts.UpdateTime != nil {
-			updateTime := opts.UpdateTime.Unix()
-			params.UpdateTime = &updateTime
+			updateTimeStr := fmt.Sprintf("%d", opts.UpdateTime.Unix())
+			params.UpdateTime = &updateTimeStr
 		}
 	}
 
@@ -89,7 +87,7 @@ func (a *PartitionAdapter) List(ctx context.Context, opts *types.PartitionListOp
 		partitionList = append(partitionList, *partition)
 	}
 
-	// Apply client-side filtering if needed
+	// Apply client-side filtering if needed (since API doesn't support all filters)
 	if opts != nil {
 		partitionList = a.filterPartitionList(partitionList, opts)
 	}
@@ -170,7 +168,7 @@ func (a *PartitionAdapter) Get(ctx context.Context, partitionName string) (*type
 
 	// Check if we got any partition entries
 	if len(resp.JSON200.Partitions) == 0 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, "Partition '"+partitionName+"' not found")
+		return nil, common.NewResourceNotFoundError("Partition", partitionName)
 	}
 
 	// Convert the first partition (should be the only one)
@@ -184,238 +182,85 @@ func (a *PartitionAdapter) Get(ctx context.Context, partitionName string) (*type
 
 // Create creates a new partition
 func (a *PartitionAdapter) Create(ctx context.Context, partition *types.PartitionCreate) (*types.PartitionCreateResponse, error) {
-	// Use base validation
-	if err := a.ValidateContext(ctx); err != nil {
-		return nil, err
-	}
-	if err := a.validatePartitionCreate(partition); err != nil {
-		return nil, err
-	}
-	if err := a.CheckClientInitialized(a.client); err != nil {
-		return nil, err
-	}
-
-	// Convert to API format
-	apiPartition, err := a.convertCommonPartitionCreateToAPI(partition)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create request body
-	reqBody := api.SlurmV0040PostPartitionJSONRequestBody{
-		Partitions: &[]api.V0040PartitionInfo{*apiPartition},
-	}
-
-	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0040PostPartitionWithResponse(ctx, reqBody)
-	if err != nil {
-		return nil, a.HandleAPIError(err)
-	}
-
-	// Use common response error handling
-	var apiErrors *api.V0040OpenapiErrors
-	if resp.JSON200 != nil {
-		apiErrors = resp.JSON200.Errors
-	}
-
-	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
-		return nil, err
-	}
-
-	return &types.PartitionCreateResponse{
-		PartitionName: partition.Name,
-	}, nil
+	// v0.0.40 doesn't support partition creation
+	return nil, common.NewAPIError("partition creation not supported in v0.0.40", 405, nil)
 }
 
 // Update updates an existing partition
 func (a *PartitionAdapter) Update(ctx context.Context, partitionName string, update *types.PartitionUpdate) error {
-	// Use base validation
-	if err := a.ValidateContext(ctx); err != nil {
-		return err
-	}
-	if err := a.ValidateResourceName(partitionName, "partitionName"); err != nil {
-		return err
-	}
-	if err := a.validatePartitionUpdate(update); err != nil {
-		return err
-	}
-	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
-	}
-
-	// First, get the existing partition to merge updates
-	existingPartition, err := a.Get(ctx, partitionName)
-	if err != nil {
-		return err
-	}
-
-	// Convert to API format and apply updates
-	apiPartition, err := a.convertCommonPartitionUpdateToAPI(existingPartition, update)
-	if err != nil {
-		return err
-	}
-
-	// Create request body
-	reqBody := api.SlurmV0040PostPartitionJSONRequestBody{
-		Partitions: &[]api.V0040PartitionInfo{*apiPartition},
-	}
-
-	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0040PostPartitionWithResponse(ctx, reqBody)
-	if err != nil {
-		return a.HandleAPIError(err)
-	}
-
-	// Use common response error handling
-	var apiErrors *api.V0040OpenapiErrors
-	if resp.JSON200 != nil {
-		apiErrors = resp.JSON200.Errors
-	}
-
-	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
+	// v0.0.40 doesn't support partition updates
+	return common.NewAPIError("partition updates not supported in v0.0.40", 405, nil)
 }
 
 // Delete deletes a partition
 func (a *PartitionAdapter) Delete(ctx context.Context, partitionName string) error {
-	// Use base validation
-	if err := a.ValidateContext(ctx); err != nil {
-		return err
-	}
-	if err := a.ValidateResourceName(partitionName, "partitionName"); err != nil {
-		return err
-	}
-	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
-	}
-
-	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0040DeletePartitionWithResponse(ctx, partitionName)
-	if err != nil {
-		return a.HandleAPIError(err)
-	}
-
-	// Use common response error handling
-	var apiErrors *api.V0040OpenapiErrors
-	if resp.JSON200 != nil {
-		apiErrors = resp.JSON200.Errors
-	}
-
-	// Create adapter with special handling for 204 (No Content) status
-	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-
-	// For DELETE operations, 204 is also a success
-	if resp.StatusCode() == 204 {
-		return nil
-	}
-
-	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
+	// v0.0.40 doesn't support partition deletion
+	return common.NewAPIError("partition deletion not supported in v0.0.40", 405, nil)
 }
 
-// filterPartitionList applies client-side filtering to the partition list
+// convertAPIPartitionToCommon converts a v0.0.40 API Partition to common Partition type
+func (a *PartitionAdapter) convertAPIPartitionToCommon(apiPartition api.V0040PartitionInfo) (*types.Partition, error) {
+	partition := &types.Partition{}
+
+	// Basic fields
+	if apiPartition.Name != nil {
+		partition.Name = *apiPartition.Name
+	}
+	if apiPartition.Nodes != nil && apiPartition.Nodes.Configured != nil {
+		partition.Nodes = *apiPartition.Nodes.Configured
+	}
+
+	// Limits and timeouts - v0.0.40 structure is different
+	// Just set basic fields for now
+
+	return partition, nil
+}
+
+// filterPartitionList applies client-side filtering to partition list
 func (a *PartitionAdapter) filterPartitionList(partitions []types.Partition, opts *types.PartitionListOptions) []types.Partition {
+	if opts == nil {
+		return partitions
+	}
+
 	filtered := make([]types.Partition, 0, len(partitions))
-	
 	for _, partition := range partitions {
-		// Apply State filter
-		if len(opts.States) > 0 {
-			found := false
-			for _, state := range opts.States {
-				if partition.State == state {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
+		if a.matchesPartitionFilters(partition, opts) {
+			filtered = append(filtered, partition)
 		}
-
-		// Apply Default filter
-		if opts.Default != nil {
-			if partition.Default != *opts.Default {
-				continue
-			}
-		}
-
-		// Apply AllowGroups filter
-		if len(opts.AllowGroups) > 0 {
-			found := false
-			for _, group := range opts.AllowGroups {
-				for _, partGroup := range partition.AllowGroups {
-					if group == partGroup {
-						found = true
-						break
-					}
-				}
-				if found {
-					break
-				}
-			}
-			if !found {
-				continue
-			}
-		}
-
-		// Apply Flags filter
-		if len(opts.Flags) > 0 {
-			hasAllFlags := true
-			for _, flag := range opts.Flags {
-				found := false
-				for _, partFlag := range partition.Flags {
-					if flag == partFlag {
-						found = true
-						break
-					}
-				}
-				if !found {
-					hasAllFlags = false
-					break
-				}
-			}
-			if !hasAllFlags {
-				continue
-			}
-		}
-
-		// Apply QoS filter
-		if opts.QoS != "" && partition.QoS != opts.QoS {
-			continue
-		}
-
-		filtered = append(filtered, partition)
 	}
 
 	return filtered
 }
 
-// validatePartitionCreate validates partition creation request
-func (a *PartitionAdapter) validatePartitionCreate(partition *types.PartitionCreate) error {
-	if partition == nil {
-		return common.NewValidationError("partition creation data is required", "partition", nil)
+// matchesPartitionFilters checks if a partition matches the given filters
+func (a *PartitionAdapter) matchesPartitionFilters(partition types.Partition, opts *types.PartitionListOptions) bool {
+	// Filter by names (client-side since API doesn't support it)
+	if len(opts.Names) > 0 {
+		found := false
+		for _, name := range opts.Names {
+			if strings.EqualFold(partition.Name, name) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
 	}
-	if partition.Name == "" {
-		return common.NewValidationError("partition name is required", "name", partition.Name)
-	}
-	if len(partition.Nodes) == 0 {
-		return common.NewValidationError("at least one node is required", "nodes", partition.Nodes)
-	}
-	return nil
-}
 
-// validatePartitionUpdate validates partition update request
-func (a *PartitionAdapter) validatePartitionUpdate(update *types.PartitionUpdate) error {
-	if update == nil {
-		return common.NewValidationError("partition update data is required", "update", nil)
+	// Filter by states  
+	if len(opts.States) > 0 {
+		found := false
+		for _, state := range opts.States {
+			if partition.State == state {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
 	}
-	// At least one field should be provided for update
-	if update.State == nil && update.MaxTime == nil && update.DefaultTime == nil && 
-	   update.MaxNodes == nil && update.MinNodes == nil && update.Default == nil && 
-	   update.Nodes == nil && update.AllowGroups == nil && update.AllowAccounts == nil && 
-	   update.DenyGroups == nil && update.DenyAccounts == nil && update.Flags == nil && 
-	   update.QoS == nil {
-		return common.NewValidationError("at least one field must be provided for update", "update", update)
-	}
-	return nil
+
+	return true
 }

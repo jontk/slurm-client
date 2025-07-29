@@ -2,6 +2,7 @@ package v0_0_43
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/jontk/slurm-client/internal/common"
@@ -43,21 +44,9 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 
 	// Apply filters from options
 	if opts != nil {
-		if len(opts.Names) > 0 {
-			nameStr := strings.Join(opts.Names, ",")
-			params.NodeName = &nameStr
-		}
-		if len(opts.States) > 0 {
-			stateStrs := make([]string, len(opts.States))
-			for i, state := range opts.States {
-				stateStrs[i] = string(state)
-			}
-			stateStr := strings.Join(stateStrs, ",")
-			params.States = &stateStr
-		}
 		if opts.UpdateTime != nil {
-			updateTime := opts.UpdateTime.Unix()
-			params.UpdateTime = &updateTime
+			updateTimeStr := fmt.Sprintf("%d", opts.UpdateTime.Unix())
+			params.UpdateTime = &updateTimeStr
 		}
 	}
 
@@ -87,8 +76,8 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 	}
 
 	// Convert the response to common types
-	nodeList := make([]types.Node, 0, len(*resp.JSON200.Nodes))
-	for _, apiNode := range *resp.JSON200.Nodes {
+	nodeList := make([]types.Node, 0, len(resp.JSON200.Nodes))
+	for _, apiNode := range resp.JSON200.Nodes {
 		node, err := a.convertAPINodeToCommon(apiNode)
 		if err != nil {
 			return nil, a.HandleConversionError(err, apiNode.Name)
@@ -176,12 +165,12 @@ func (a *NodeAdapter) Get(ctx context.Context, nodeName string) (*types.Node, er
 	}
 
 	// Check if we got any node entries
-	if len(*resp.JSON200.Nodes) == 0 {
+	if len(resp.JSON200.Nodes) == 0 {
 		return nil, common.NewResourceNotFoundError("Node", nodeName)
 	}
 
 	// Convert the first node (should be the only one)
-	node, err := a.convertAPINodeToCommon((*resp.JSON200.Nodes)[0])
+	node, err := a.convertAPINodeToCommon(resp.JSON200.Nodes[0])
 	if err != nil {
 		return nil, a.HandleConversionError(err, nodeName)
 	}
@@ -217,16 +206,19 @@ func (a *NodeAdapter) Update(ctx context.Context, nodeName string, update *types
 		return err
 	}
 
-	// Create request body
+	// Create request body - convert Node to UpdateNodeMsg
 	reqBody := api.SlurmV0043PostNodeJSONRequestBody{
-		Nodes: []api.V0043Node{*apiNode},
+		Comment: apiNode.Comment,
+	}
+	if apiNode.CpuBinding != nil {
+		reqBody.CpuBind = apiNode.CpuBinding
+	}
+	if apiNode.Gres != nil {
+		reqBody.Gres = apiNode.Gres
 	}
 
-	// Prepare parameters for the API call
-	params := &api.SlurmV0043PostNodeParams{}
-
 	// Call the generated OpenAPI client (POST is used for updates in SLURM API)
-	resp, err := a.client.SlurmV0043PostNodeWithResponse(ctx, params, reqBody)
+	resp, err := a.client.SlurmV0043PostNodeWithResponse(ctx, existingNode.Name, reqBody)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}

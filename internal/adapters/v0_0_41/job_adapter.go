@@ -129,15 +129,15 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 }
 
 // Get retrieves a specific job by ID
-func (a *JobAdapter) Get(ctx context.Context, jobID uint32) (*types.Job, error) {
+func (a *JobAdapter) Get(ctx context.Context, jobID int32) (*types.Job, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
 
 	// Validate job ID
-	if err := a.ValidateResourceID("jobID", jobID); err != nil {
-		return nil, err
+	if jobID <= 0 {
+		return nil, common.NewValidationError("job ID must be positive", "jobID", jobID)
 	}
 
 	// Check client initialization
@@ -279,7 +279,7 @@ func (a *JobAdapter) Cancel(ctx context.Context, jobID int32, opts *types.JobCan
 }
 
 // Update updates job properties
-func (a *JobAdapter) Update(ctx context.Context, jobID uint32, update *types.JobUpdate) error {
+func (a *JobAdapter) Update(ctx context.Context, jobID int32, update *types.JobUpdate) error {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
