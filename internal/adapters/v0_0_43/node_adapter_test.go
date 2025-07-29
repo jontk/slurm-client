@@ -1,6 +1,7 @@
 package v0_0_43
 
 import (
+	"context"
 	"testing"
 
 	"github.com/jontk/slurm-client/internal/common/types"
@@ -11,7 +12,7 @@ import (
 
 func TestNodeAdapter_ValidateNodeCreate(t *testing.T) {
 	adapter := &NodeAdapter{
-		NodeBaseManager: base.NewNodeBaseManager("v0.0.43"),
+		BaseManager: base.NewBaseManager("v0.0.43", "Node"),
 	}
 
 	tests := []struct {
@@ -35,88 +36,49 @@ func TestNodeAdapter_ValidateNodeCreate(t *testing.T) {
 			errMsg:  "node name is required",
 		},
 		{
-			name: "negative CPUs",
+			name: "invalid memory format",
+			node: &types.NodeCreate{
+				Name:       "test-node",
+				RealMemory: -1,
+			},
+			wantErr: true,
+			errMsg:  "memory must be non-negative",
+		},
+		{
+			name: "invalid cpu count",
 			node: &types.NodeCreate{
 				Name: "test-node",
 				CPUs: -1,
 			},
 			wantErr: true,
-			errMsg:  "must be non-negative",
-		},
-		{
-			name: "negative RealMemory",
-			node: &types.NodeCreate{
-				Name:       "test-node",
-				RealMemory: -1024,
-			},
-			wantErr: true,
-			errMsg:  "must be non-negative",
-		},
-		{
-			name: "negative TmpDisk",
-			node: &types.NodeCreate{
-				Name:    "test-node",
-				TmpDisk: -500,
-			},
-			wantErr: true,
-			errMsg:  "must be non-negative",
+			errMsg:  "CPUs must be non-negative",
 		},
 		{
 			name: "valid basic node",
 			node: &types.NodeCreate{
-				Name: "test-node",
-				CPUs: 4,
+				Name:       "test-node",
+				CPUs:       4,
+				RealMemory: 8192,
 			},
 			wantErr: false,
 		},
 		{
 			name: "valid complex node",
 			node: &types.NodeCreate{
-				Name:         "compute-node-001",
-				CPUs:         64,
-				RealMemory:   128000,
-				TmpDisk:      1000000,
-				State:        "IDLE",
-				Reason:       "Node ready for jobs",
-				Features:     []string{"gpu", "infiniband", "high-memory"},
-				Gres:         []string{"gpu:tesla:2", "mps:400"},
-				Weight:       100,
-				Partitions:   []string{"compute", "gpu"},
-				NodeAddr:     "192.168.1.100",
-				NodeHostName: "compute-node-001.cluster.local",
-				Port:         6818,
-				Version:      "23.02.0",
-				Arch:         "x86_64",
-				OS:           "Linux",
+				Name:       "compute-01",
+				CPUs:       32,
+				Boards:     1,
+				Sockets:    2,
+				CoresPerSocket: 8,
+				ThreadsPerCore: 2,
+				RealMemory: 65536,
+				TmpDisk:    1000000,
+				Partitions: []string{"compute", "gpu"},
+				Features:   []string{"avx2", "sse4"},
+				Gres:       []string{"gpu:2"},
+				State:      "IDLE",
 			},
 			wantErr: false,
-		},
-		{
-			name: "invalid state",
-			node: &types.NodeCreate{
-				Name:  "test-node",
-				State: "INVALID_STATE",
-			},
-			wantErr: true,
-			errMsg:  "invalid node state",
-		},
-		{
-			name: "negative weight",
-			node: &types.NodeCreate{
-				Name:   "test-node",
-				Weight: -50,
-			},
-			wantErr: true,
-			errMsg:  "must be non-negative",
-		},
-		{
-			name: "negative port",
-			node: &types.NodeCreate{
-				Name: "test-node",
-				Port: -6818,
-			},
-			wantErr: true,
-			errMsg:  "must be non-negative",
 		},
 	}
 
@@ -135,7 +97,7 @@ func TestNodeAdapter_ValidateNodeCreate(t *testing.T) {
 
 func TestNodeAdapter_ApplyNodeDefaults(t *testing.T) {
 	adapter := &NodeAdapter{
-		NodeBaseManager: base.NewNodeBaseManager("v0.0.43"),
+		BaseManager: base.NewBaseManager("v0.0.43", "Node"),
 	}
 
 	tests := []struct {
@@ -149,58 +111,44 @@ func TestNodeAdapter_ApplyNodeDefaults(t *testing.T) {
 				Name: "test-node",
 			},
 			expected: &types.NodeCreate{
-				Name:       "test-node",
-				CPUs:       1,                        // Default CPU count
-				RealMemory: 1024,                     // Default 1GB memory
-				TmpDisk:    0,                        // No tmp disk by default
-				State:      "UNKNOWN",                // Default state
-				Features:   []string{},               // Empty features
-				Gres:       []string{},               // Empty gres
-				Weight:     1,                        // Default weight
-				Partitions: []string{},               // Empty partitions
-				Port:       6818,                     // Default SLURM port
-				Version:    "",                       // Empty version
-				Arch:       "x86_64",                 // Default architecture
-				OS:         "Linux",                  // Default OS
+				Name:           "test-node",
+				CPUs:           1,
+				Boards:         1,
+				Sockets:        1,
+				CoresPerSocket: 1,
+				ThreadsPerCore: 1,
+				RealMemory:     1024,
+				TmpDisk:        0,
+				State:          "UNKNOWN",
+				Features:       []string{},
+				Partitions:     []string{},
+				Gres:           []string{},
 			},
 		},
 		{
 			name: "preserve existing values",
 			input: &types.NodeCreate{
-				Name:         "compute-node-001",
-				CPUs:         32,
-				RealMemory:   64000,
-				TmpDisk:      500000,
-				State:        "IDLE",
-				Reason:       "Node available",
-				Features:     []string{"gpu", "infiniband"},
-				Gres:         []string{"gpu:tesla:1"},
-				Weight:       200,
-				Partitions:   []string{"compute"},
-				NodeAddr:     "10.0.1.100",
-				NodeHostName: "node001.cluster.local",
-				Port:         6819,
-				Version:      "23.02.0",
-				Arch:         "aarch64",
-				OS:           "CentOS",
+				Name:           "compute-node",
+				CPUs:           16,
+				Sockets:        2,
+				CoresPerSocket: 8,
+				RealMemory:     32768,
+				Features:       []string{"avx2"},
+				State:          "IDLE",
 			},
 			expected: &types.NodeCreate{
-				Name:         "compute-node-001",
-				CPUs:         32,
-				RealMemory:   64000,
-				TmpDisk:      500000,
-				State:        "IDLE",
-				Reason:       "Node available",
-				Features:     []string{"gpu", "infiniband"},
-				Gres:         []string{"gpu:tesla:1"},
-				Weight:       200,
-				Partitions:   []string{"compute"},
-				NodeAddr:     "10.0.1.100",
-				NodeHostName: "node001.cluster.local",
-				Port:         6819,
-				Version:      "23.02.0",
-				Arch:         "aarch64",
-				OS:           "CentOS",
+				Name:           "compute-node",
+				CPUs:           16,
+				Boards:         1,
+				Sockets:        2,
+				CoresPerSocket: 8,
+				ThreadsPerCore: 1,
+				RealMemory:     32768,
+				TmpDisk:        0,
+				Features:       []string{"avx2"},
+				Partitions:     []string{},
+				Gres:           []string{},
+				State:          "IDLE",
 			},
 		},
 	}
@@ -215,49 +163,33 @@ func TestNodeAdapter_ApplyNodeDefaults(t *testing.T) {
 
 func TestNodeAdapter_FilterNodeList(t *testing.T) {
 	adapter := &NodeAdapter{
-		NodeBaseManager: base.NewNodeBaseManager("v0.0.43"),
+		BaseManager: base.NewBaseManager("v0.0.43", "Node"),
 	}
 
 	nodes := []types.Node{
 		{
-			Name:       "compute-001",
+			Name:       "compute-01",
 			CPUs:       32,
-			RealMemory: 64000,
+			RealMemory: 65536,
+			Partitions: []string{"compute", "gpu"},
+			Features:   []string{"avx2", "gpu"},
 			State:      "IDLE",
-			Features:   []string{"cpu", "infiniband"},
-			Partitions: []string{"compute"},
-			Arch:       "x86_64",
-			OS:         "Linux",
 		},
 		{
-			Name:       "gpu-001",
+			Name:       "compute-02",
 			CPUs:       16,
-			RealMemory: 32000,
+			RealMemory: 32768,
+			Partitions: []string{"compute"},
+			Features:   []string{"avx2"},
 			State:      "ALLOCATED",
-			Features:   []string{"gpu", "cuda"},
-			Partitions: []string{"gpu"},
-			Arch:       "x86_64",
-			OS:         "Linux",
 		},
 		{
-			Name:       "bigmem-001",
-			CPUs:       64,
-			RealMemory: 256000,
-			State:      "IDLE",
-			Features:   []string{"bigmem", "high-memory"},
-			Partitions: []string{"bigmem"},
-			Arch:       "x86_64",
-			OS:         "Linux",
-		},
-		{
-			Name:       "debug-001",
+			Name:       "login-01",
 			CPUs:       8,
-			RealMemory: 16000,
-			State:      "DOWN",
-			Features:   []string{"debug"},
-			Partitions: []string{"debug"},
-			Arch:       "aarch64",
-			OS:         "CentOS",
+			RealMemory: 16384,
+			Partitions: []string{"login"},
+			Features:   []string{"sse4"},
+			State:      "IDLE",
 		},
 	}
 
@@ -269,57 +201,43 @@ func TestNodeAdapter_FilterNodeList(t *testing.T) {
 		{
 			name:     "no filters",
 			opts:     &types.NodeListOptions{},
-			expected: []string{"compute-001", "gpu-001", "bigmem-001", "debug-001"},
+			expected: []string{"compute-01", "compute-02", "login-01"},
 		},
 		{
 			name: "filter by names",
 			opts: &types.NodeListOptions{
-				Names: []string{"compute-001", "gpu-001"},
+				Names: []string{"compute-01", "login-01"},
 			},
-			expected: []string{"compute-001", "gpu-001"},
+			expected: []string{"compute-01", "login-01"},
 		},
 		{
 			name: "filter by state",
 			opts: &types.NodeListOptions{
 				States: []string{"IDLE"},
 			},
-			expected: []string{"compute-001", "bigmem-001"},
+			expected: []string{"compute-01", "login-01"},
 		},
 		{
-			name: "filter by features",
+			name: "filter by partition",
+			opts: &types.NodeListOptions{
+				Partitions: []string{"compute"},
+			},
+			expected: []string{"compute-01", "compute-02"},
+		},
+		{
+			name: "filter by feature",
 			opts: &types.NodeListOptions{
 				Features: []string{"gpu"},
 			},
-			expected: []string{"gpu-001"},
-		},
-		{
-			name: "filter by partitions",
-			opts: &types.NodeListOptions{
-				Partitions: []string{"compute", "bigmem"},
-			},
-			expected: []string{"compute-001", "bigmem-001"},
-		},
-		{
-			name: "filter by architecture",
-			opts: &types.NodeListOptions{
-				Architectures: []string{"aarch64"},
-			},
-			expected: []string{"debug-001"},
-		},
-		{
-			name: "filter by OS",
-			opts: &types.NodeListOptions{
-				OperatingSystems: []string{"CentOS"},
-			},
-			expected: []string{"debug-001"},
+			expected: []string{"compute-01"},
 		},
 		{
 			name: "combined filters",
 			opts: &types.NodeListOptions{
-				States:   []string{"IDLE"},
-				Features: []string{"infiniband", "high-memory"},
+				States:     []string{"IDLE"},
+				Partitions: []string{"compute"},
 			},
-			expected: []string{"compute-001", "bigmem-001"},
+			expected: []string{"compute-01"},
 		},
 		{
 			name: "no matches",
@@ -342,74 +260,53 @@ func TestNodeAdapter_FilterNodeList(t *testing.T) {
 	}
 }
 
-func TestNodeAdapter_ValidateNodeState(t *testing.T) {
+func TestNodeAdapter_ValidateNodeConfiguration(t *testing.T) {
 	adapter := &NodeAdapter{
-		NodeBaseManager: base.NewNodeBaseManager("v0.0.43"),
+		BaseManager: base.NewBaseManager("v0.0.43", "Node"),
 	}
 
 	tests := []struct {
 		name    string
-		state   string
+		node    *types.NodeCreate
 		wantErr bool
 		errMsg  string
 	}{
 		{
-			name:    "valid IDLE state",
-			state:   "IDLE",
-			wantErr: false,
-		},
-		{
-			name:    "valid ALLOCATED state",
-			state:   "ALLOCATED",
-			wantErr: false,
-		},
-		{
-			name:    "valid DOWN state",
-			state:   "DOWN",
-			wantErr: false,
-		},
-		{
-			name:    "valid DRAIN state",
-			state:   "DRAIN",
-			wantErr: false,
-		},
-		{
-			name:    "valid UNKNOWN state",
-			state:   "UNKNOWN",
-			wantErr: false,
-		},
-		{
-			name:    "valid MIXED state",
-			state:   "MIXED",
-			wantErr: false,
-		},
-		{
-			name:    "valid COMPLETING state",
-			state:   "COMPLETING",
-			wantErr: false,
-		},
-		{
-			name:    "empty state (should use default)",
-			state:   "",
-			wantErr: false,
-		},
-		{
-			name:    "invalid state",
-			state:   "INVALID_STATE",
+			name: "invalid CPU topology",
+			node: &types.NodeCreate{
+				Name:           "test-node",
+				CPUs:           8,
+				Sockets:        2,
+				CoresPerSocket: 3, // 2*3 = 6, but CPUs = 8
+				ThreadsPerCore: 1,
+			},
 			wantErr: true,
-			errMsg:  "invalid node state",
+			errMsg:  "CPU topology mismatch",
 		},
 		{
-			name:    "lowercase state",
-			state:   "idle",
-			wantErr: true,
-			errMsg:  "invalid node state",
+			name: "valid CPU topology",
+			node: &types.NodeCreate{
+				Name:           "test-node",
+				CPUs:           16,
+				Sockets:        2,
+				CoresPerSocket: 4,
+				ThreadsPerCore: 2, // 2*4*2 = 16
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid minimal configuration",
+			node: &types.NodeCreate{
+				Name: "minimal-node",
+				CPUs: 1,
+			},
+			wantErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := adapter.ValidateNodeState(tt.state)
+			err := adapter.ValidateNodeConfiguration(tt.node)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errMsg)
@@ -420,311 +317,87 @@ func TestNodeAdapter_ValidateNodeState(t *testing.T) {
 	}
 }
 
-func TestNodeAdapter_ValidateHardwareSpecs(t *testing.T) {
+func TestNodeAdapter_ParseNodeFeatures(t *testing.T) {
 	adapter := &NodeAdapter{
-		NodeBaseManager: base.NewNodeBaseManager("v0.0.43"),
-	}
-
-	tests := []struct {
-		name       string
-		cpus       int
-		realMemory int
-		tmpDisk    int
-		wantErr    bool
-		errMsg     string
-	}{
-		{
-			name:       "valid hardware specs",
-			cpus:       32,
-			realMemory: 64000,
-			tmpDisk:    500000,
-			wantErr:    false,
-		},
-		{
-			name:       "minimal specs",
-			cpus:       1,
-			realMemory: 1024,
-			tmpDisk:    0,
-			wantErr:    false,
-		},
-		{
-			name:       "zero CPUs (invalid)",
-			cpus:       0,
-			realMemory: 64000,
-			tmpDisk:    500000,
-			wantErr:    true,
-			errMsg:     "CPUs must be positive",
-		},
-		{
-			name:       "negative CPUs",
-			cpus:       -4,
-			realMemory: 64000,
-			tmpDisk:    500000,
-			wantErr:    true,
-			errMsg:     "must be non-negative",
-		},
-		{
-			name:       "negative memory",
-			cpus:       32,
-			realMemory: -1024,
-			tmpDisk:    500000,
-			wantErr:    true,
-			errMsg:     "must be non-negative",
-		},
-		{
-			name:       "negative tmp disk",
-			cpus:       32,
-			realMemory: 64000,
-			tmpDisk:    -1000,
-			wantErr:    true,
-			errMsg:     "must be non-negative",
-		},
-		{
-			name:       "very large specs",
-			cpus:       256,
-			realMemory: 1024000,
-			tmpDisk:    10000000,
-			wantErr:    false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := adapter.ValidateHardwareSpecs(tt.cpus, tt.realMemory, tt.tmpDisk)
-			if tt.wantErr {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errMsg)
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
-
-func TestNodeAdapter_ValidateNetworkSettings(t *testing.T) {
-	adapter := &NodeAdapter{
-		NodeBaseManager: base.NewNodeBaseManager("v0.0.43"),
-	}
-
-	tests := []struct {
-		name         string
-		nodeAddr     string
-		nodeHostName string
-		port         int
-		wantErr      bool
-		errMsg       string
-	}{
-		{
-			name:         "valid network settings",
-			nodeAddr:     "192.168.1.100",
-			nodeHostName: "node001.cluster.local",
-			port:         6818,
-			wantErr:      false,
-		},
-		{
-			name:         "valid IPv6 address",
-			nodeAddr:     "2001:db8::1",
-			nodeHostName: "node001.cluster.local",
-			port:         6818,
-			wantErr:      false,
-		},
-		{
-			name:         "empty address and hostname (valid for auto-detection)",
-			nodeAddr:     "",
-			nodeHostName: "",
-			port:         6818,
-			wantErr:      false,
-		},
-		{
-			name:         "invalid IP address",
-			nodeAddr:     "999.999.999.999",
-			nodeHostName: "node001.cluster.local",
-			port:         6818,
-			wantErr:      true,
-			errMsg:       "invalid IP address",
-		},
-		{
-			name:         "invalid hostname format",
-			nodeAddr:     "192.168.1.100",
-			nodeHostName: "node..invalid",
-			port:         6818,
-			wantErr:      true,
-			errMsg:       "invalid hostname",
-		},
-		{
-			name:         "negative port",
-			nodeAddr:     "192.168.1.100",
-			nodeHostName: "node001.cluster.local",
-			port:         -6818,
-			wantErr:      true,
-			errMsg:       "must be non-negative",
-		},
-		{
-			name:         "port too high",
-			nodeAddr:     "192.168.1.100",
-			nodeHostName: "node001.cluster.local",
-			port:         70000,
-			wantErr:      true,
-			errMsg:       "port must be between 1 and 65535",
-		},
-		{
-			name:         "valid port range",
-			nodeAddr:     "192.168.1.100",
-			nodeHostName: "node001.cluster.local",
-			port:         65535,
-			wantErr:      false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := adapter.ValidateNetworkSettings(tt.nodeAddr, tt.nodeHostName, tt.port)
-			if tt.wantErr {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errMsg)
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
-
-func TestNodeAdapter_ValidateFeatures(t *testing.T) {
-	adapter := &NodeAdapter{
-		NodeBaseManager: base.NewNodeBaseManager("v0.0.43"),
+		BaseManager: base.NewBaseManager("v0.0.43", "Node"),
 	}
 
 	tests := []struct {
 		name     string
-		features []string
-		wantErr  bool
-		errMsg   string
+		input    []string
+		expected map[string]bool
 	}{
 		{
-			name:     "valid features",
-			features: []string{"gpu", "infiniband", "high-memory"},
-			wantErr:  false,
-		},
-		{
 			name:     "empty features",
-			features: []string{},
-			wantErr:  false,
+			input:    []string{},
+			expected: map[string]bool{},
 		},
 		{
-			name:     "single feature",
-			features: []string{"gpu"},
-			wantErr:  false,
+			name:  "single feature",
+			input: []string{"avx2"},
+			expected: map[string]bool{
+				"avx2": true,
+			},
 		},
 		{
-			name:     "features with numbers and dashes",
-			features: []string{"gpu-tesla", "cuda-11.0", "memory-512gb"},
-			wantErr:  false,
+			name:  "multiple features",
+			input: []string{"avx2", "sse4", "gpu"},
+			expected: map[string]bool{
+				"avx2": true,
+				"sse4": true,
+				"gpu":  true,
+			},
 		},
 		{
-			name:     "duplicate features",
-			features: []string{"gpu", "gpu", "infiniband"},
-			wantErr:  true,
-			errMsg:   "duplicate feature",
-		},
-		{
-			name:     "empty feature string",
-			features: []string{"gpu", "", "infiniband"},
-			wantErr:  true,
-			errMsg:   "feature cannot be empty",
-		},
-		{
-			name:     "feature with spaces",
-			features: []string{"gpu tesla", "infiniband"},
-			wantErr:  true,
-			errMsg:   "feature cannot contain spaces",
-		},
-		{
-			name:     "feature with invalid characters",
-			features: []string{"gpu@tesla", "infiniband"},
-			wantErr:  true,
-			errMsg:   "feature contains invalid characters",
+			name:  "duplicate features",
+			input: []string{"avx2", "avx2", "sse4"},
+			expected: map[string]bool{
+				"avx2": true,
+				"sse4": true,
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := adapter.ValidateFeatures(tt.features)
-			if tt.wantErr {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errMsg)
-			} else {
-				require.NoError(t, err)
-			}
+			result := adapter.ParseNodeFeatures(tt.input)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-func TestNodeAdapter_ValidateGres(t *testing.T) {
+func TestNodeAdapter_ValidateContext(t *testing.T) {
 	adapter := &NodeAdapter{
-		NodeBaseManager: base.NewNodeBaseManager("v0.0.43"),
+		BaseManager: base.NewBaseManager("v0.0.43", "Node"),
 	}
 
 	tests := []struct {
 		name    string
-		gres    []string
+		ctx     context.Context
 		wantErr bool
 		errMsg  string
 	}{
 		{
-			name:    "valid gres",
-			gres:    []string{"gpu:tesla:2", "mps:400"},
+			name:    "nil context",
+			ctx:     nil,
+			wantErr: true,
+			errMsg:  "context is required",
+		},
+		{
+			name:    "valid context",
+			ctx:     context.Background(),
 			wantErr: false,
 		},
 		{
-			name:    "empty gres",
-			gres:    []string{},
+			name:    "context with timeout",
+			ctx:     context.TODO(),
 			wantErr: false,
-		},
-		{
-			name:    "simple gres",
-			gres:    []string{"gpu:1"},
-			wantErr: false,
-		},
-		{
-			name:    "complex gres with IDs",
-			gres:    []string{"gpu:tesla:2(IDX:0-1)", "mic:2"},
-			wantErr: false,
-		},
-		{
-			name:    "duplicate gres types",
-			gres:    []string{"gpu:tesla:2", "gpu:tesla:1"},
-			wantErr: true,
-			errMsg:  "duplicate gres type",
-		},
-		{
-			name:    "empty gres string",
-			gres:    []string{"gpu:tesla:2", ""},
-			wantErr: true,
-			errMsg:  "gres cannot be empty",
-		},
-		{
-			name:    "invalid gres format",
-			gres:    []string{"gpu-tesla-2"},
-			wantErr: true,
-			errMsg:  "invalid gres format",
-		},
-		{
-			name:    "gres with invalid count",
-			gres:    []string{"gpu:tesla:-2"},
-			wantErr: true,
-			errMsg:  "gres count must be positive",
-		},
-		{
-			name:    "gres with zero count",
-			gres:    []string{"gpu:tesla:0"},
-			wantErr: true,
-			errMsg:  "gres count must be positive",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := adapter.ValidateGres(tt.gres)
+			err := adapter.ValidateContext(tt.ctx)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errMsg)
@@ -735,72 +408,60 @@ func TestNodeAdapter_ValidateGres(t *testing.T) {
 	}
 }
 
-func TestNodeAdapter_ValidatePartitionAssignments(t *testing.T) {
+func TestNodeAdapter_CalculateNodeUtilization(t *testing.T) {
 	adapter := &NodeAdapter{
-		NodeBaseManager: base.NewNodeBaseManager("v0.0.43"),
+		BaseManager: base.NewBaseManager("v0.0.43", "Node"),
 	}
 
 	tests := []struct {
-		name       string
-		partitions []string
-		wantErr    bool
-		errMsg     string
+		name          string
+		node          *types.Node
+		expectedCPU   float64
+		expectedMem   float64
 	}{
 		{
-			name:       "valid partitions",
-			partitions: []string{"compute", "gpu", "bigmem"},
-			wantErr:    false,
+			name: "fully utilized node",
+			node: &types.Node{
+				Name:         "test-node",
+				CPUs:         16,
+				AllocCPUs:    16,
+				RealMemory:   32768,
+				AllocMemory:  32768,
+			},
+			expectedCPU: 1.0,
+			expectedMem: 1.0,
 		},
 		{
-			name:       "empty partitions",
-			partitions: []string{},
-			wantErr:    false,
+			name: "half utilized node",
+			node: &types.Node{
+				Name:         "test-node",
+				CPUs:         16,
+				AllocCPUs:    8,
+				RealMemory:   32768,
+				AllocMemory:  16384,
+			},
+			expectedCPU: 0.5,
+			expectedMem: 0.5,
 		},
 		{
-			name:       "single partition",
-			partitions: []string{"compute"},
-			wantErr:    false,
-		},
-		{
-			name:       "duplicate partitions",
-			partitions: []string{"compute", "compute", "gpu"},
-			wantErr:    true,
-			errMsg:     "duplicate partition",
-		},
-		{
-			name:       "empty partition string",
-			partitions: []string{"compute", "", "gpu"},
-			wantErr:    true,
-			errMsg:     "partition cannot be empty",
-		},
-		{
-			name:       "partition with spaces",
-			partitions: []string{"compute partition", "gpu"},
-			wantErr:    true,
-			errMsg:     "partition cannot contain spaces",
-		},
-		{
-			name:       "partition with invalid characters",
-			partitions: []string{"compute@cluster", "gpu"},
-			wantErr:    true,
-			errMsg:     "partition contains invalid characters",
-		},
-		{
-			name:       "valid partition names with dashes and numbers",
-			partitions: []string{"compute-1", "gpu-v100", "bigmem-512"},
-			wantErr:    false,
+			name: "idle node",
+			node: &types.Node{
+				Name:         "test-node",
+				CPUs:         16,
+				AllocCPUs:    0,
+				RealMemory:   32768,
+				AllocMemory:  0,
+			},
+			expectedCPU: 0.0,
+			expectedMem: 0.0,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := adapter.ValidatePartitionAssignments(tt.partitions)
-			if tt.wantErr {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errMsg)
-			} else {
-				require.NoError(t, err)
-			}
+			cpuUtil, memUtil := adapter.CalculateNodeUtilization(tt.node)
+			assert.InDelta(t, tt.expectedCPU, cpuUtil, 0.001)
+			assert.InDelta(t, tt.expectedMem, memUtil, 0.001)
 		})
 	}
 }

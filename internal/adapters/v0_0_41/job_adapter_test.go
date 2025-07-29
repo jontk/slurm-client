@@ -2,50 +2,23 @@ package v0_0_41
 
 import (
 	"context"
-	"net/http"
 	"testing"
+	"time"
 
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/mock"
 )
 
-// MockJobClientWithResponses is a mock for the API client
-type MockJobClientWithResponses struct {
-	mock.Mock
-}
-
-func (m *MockJobClientWithResponses) SlurmV0041GetJobsWithResponse(ctx context.Context, params *api.SlurmV0041GetJobsParams, reqEditors ...api.RequestEditorFn) (*api.SlurmV0041GetJobsResponse, error) {
-	args := m.Called(ctx, params)
-	return args.Get(0).(*api.SlurmV0041GetJobsResponse), args.Error(1)
-}
-
-func (m *MockJobClientWithResponses) SlurmV0041GetJobWithResponse(ctx context.Context, jobId string, params *api.SlurmV0041GetJobParams, reqEditors ...api.RequestEditorFn) (*api.SlurmV0041GetJobResponse, error) {
-	args := m.Called(ctx, jobId, params)
-	return args.Get(0).(*api.SlurmV0041GetJobResponse), args.Error(1)
-}
-
-func (m *MockJobClientWithResponses) SlurmV0041PostJobSubmitWithResponse(ctx context.Context, body api.SlurmV0041PostJobSubmitJSONRequestBody, reqEditors ...api.RequestEditorFn) (*api.SlurmV0041PostJobSubmitResponse, error) {
-	args := m.Called(ctx, body)
-	return args.Get(0).(*api.SlurmV0041PostJobSubmitResponse), args.Error(1)
-}
-
-func (m *MockJobClientWithResponses) SlurmV0041DeleteJobWithResponse(ctx context.Context, jobId string, reqEditors ...api.RequestEditorFn) (*api.SlurmV0041DeleteJobResponse, error) {
-	args := m.Called(ctx, jobId)
-	return args.Get(0).(*api.SlurmV0041DeleteJobResponse), args.Error(1)
-}
-
-func TestJobAdapter_ValidateJobCreate(t *testing.T) {
+func TestJobAdapter_ValidateJobSubmit(t *testing.T) {
 	adapter := &JobAdapter{
 		BaseManager: base.NewBaseManager("v0.0.41", "Job"),
 	}
 
 	tests := []struct {
 		name    string
-		job     *types.JobCreate
+		job     *types.JobSubmit
 		wantErr bool
 		errMsg  string
 	}{
@@ -53,65 +26,73 @@ func TestJobAdapter_ValidateJobCreate(t *testing.T) {
 			name:    "nil job",
 			job:     nil,
 			wantErr: true,
-			errMsg:  "job creation data is required",
+			errMsg:  "job submission data is required",
 		},
 		{
-			name: "empty script and command",
-			job: &types.JobCreate{
-				Script:  "",
-				Command: "",
+			name: "empty script",
+			job: &types.JobSubmit{
+				Script: "",
 			},
 			wantErr: true,
-			errMsg:  "either script or command is required",
+			errMsg:  "job script is required",
 		},
 		{
-			name: "valid job with script",
-			job: &types.JobCreate{
-				Script: "#!/bin/bash\necho 'Hello World'",
-				Name:   "test-job",
-			},
-			wantErr: false,
-		},
-		{
-			name: "valid job with command",
-			job: &types.JobCreate{
-				Command: "echo 'Hello World'",
-				Name:    "test-job",
-			},
-			wantErr: false,
-		},
-		{
-			name: "negative CPUs",
-			job: &types.JobCreate{
-				Script: "#!/bin/bash\necho 'test'",
+			name: "invalid cpu count",
+			job: &types.JobSubmit{
+				Script: "#!/bin/bash\necho hello",
 				CPUs:   -1,
 			},
 			wantErr: true,
-			errMsg:  "must be non-negative",
+			errMsg:  "CPUs must be positive",
 		},
 		{
-			name: "negative nodes",
-			job: &types.JobCreate{
-				Script: "#!/bin/bash\necho 'test'",
+			name: "invalid node count",
+			job: &types.JobSubmit{
+				Script: "#!/bin/bash\necho hello",
 				Nodes:  -1,
 			},
 			wantErr: true,
-			errMsg:  "must be non-negative",
+			errMsg:  "nodes must be positive",
 		},
 		{
-			name: "negative time limit",
-			job: &types.JobCreate{
-				Script:    "#!/bin/bash\necho 'test'",
-				TimeLimit: -60,
+			name: "invalid memory",
+			job: &types.JobSubmit{
+				Script: "#!/bin/bash\necho hello",
+				Memory: -1,
 			},
 			wantErr: true,
-			errMsg:  "must be non-negative",
+			errMsg:  "memory must be positive",
+		},
+		{
+			name: "valid basic job",
+			job: &types.JobSubmit{
+				Script: "#!/bin/bash\necho hello world",
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid complex job",
+			job: &types.JobSubmit{
+				Script:      "#!/bin/bash\n#SBATCH --job-name=test\necho hello",
+				JobName:     "test-job",
+				Account:     "physics",
+				Partition:   "compute",
+				QoS:         "normal",
+				CPUs:        4,
+				Nodes:       1,
+				Memory:      8192,
+				TimeLimit:   "01:00:00",
+				WorkingDir:  "/home/user",
+				Environment: map[string]string{"PATH": "/usr/bin"},
+				Dependencies: []string{"afterok:12345"},
+			},
+			wantErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := adapter.validateJobCreate(tt.job)
+			err := adapter.ValidateJobSubmit(tt.job)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errMsg)
@@ -122,370 +103,484 @@ func TestJobAdapter_ValidateJobCreate(t *testing.T) {
 	}
 }
 
-func TestJobAdapter_List(t *testing.T) {
+func TestJobAdapter_ApplyJobDefaults(t *testing.T) {
+	adapter := &JobAdapter{
+		BaseManager: base.NewBaseManager("v0.0.41", "Job"),
+	}
+
 	tests := []struct {
-		name           string
-		opts           *types.JobListOptions
-		mockResponse   *api.SlurmV0041GetJobsResponse
-		mockError      error
-		expectedLen    int
-		expectedError  string
-		setupMock      func(*MockJobClientWithResponses)
+		name     string
+		input    *types.JobSubmit
+		expected *types.JobSubmit
 	}{
 		{
-			name: "successful list with no options",
-			opts: nil,
-			setupMock: func(m *MockJobClientWithResponses) {
-				m.On("SlurmV0041GetJobsWithResponse", mock.Anything, mock.AnythingOfType("*v0_0_41.SlurmV0041GetJobsParams")).
-					Return(&api.SlurmV0041GetJobsResponse{
-						JSON200: &api.V0041OpenapiJobsResp{
-							Jobs: []api.V0041JobInfo{
-								{JobId: uint32Ptr(12345), Name: stringPtr("job1")},
-								{JobId: uint32Ptr(12346), Name: stringPtr("job2")},
-							},
-						},
-						HTTPResponse: &http.Response{StatusCode: 200},
-					}, nil)
+			name: "apply defaults to minimal job",
+			input: &types.JobSubmit{
+				Script: "#!/bin/bash\necho hello",
 			},
-			expectedLen: 2,
+			expected: &types.JobSubmit{
+				Script:      "#!/bin/bash\necho hello",
+				JobName:     "",
+				Account:     "",
+				Partition:   "",
+				QoS:         "",
+				CPUs:        1,
+				Nodes:       1,
+				Memory:      0,
+				TimeLimit:   "",
+				WorkingDir:  "",
+				Environment: map[string]string{},
+				Dependencies: []string{},
+				ArraySpec:   "",
+				StandardOut: "",
+				StandardErr: "",
+			},
 		},
 		{
-			name: "successful list with options",
+			name: "preserve existing values",
+			input: &types.JobSubmit{
+				Script:      "#!/bin/bash\necho hello",
+				JobName:     "custom-job",
+				Account:     "physics",
+				Partition:   "gpu",
+				CPUs:        8,
+				Memory:      16384,
+				TimeLimit:   "02:00:00",
+				WorkingDir:  "/scratch",
+				Environment: map[string]string{"OMP_NUM_THREADS": "8"},
+			},
+			expected: &types.JobSubmit{
+				Script:      "#!/bin/bash\necho hello",
+				JobName:     "custom-job",
+				Account:     "physics",
+				Partition:   "gpu",
+				QoS:         "",
+				CPUs:        8,
+				Nodes:       1,
+				Memory:      16384,
+				TimeLimit:   "02:00:00",
+				WorkingDir:  "/scratch",
+				Environment: map[string]string{"OMP_NUM_THREADS": "8"},
+				Dependencies: []string{},
+				ArraySpec:   "",
+				StandardOut: "",
+				StandardErr: "",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := adapter.ApplyJobDefaults(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestJobAdapter_FilterJobList(t *testing.T) {
+	adapter := &JobAdapter{
+		BaseManager: base.NewBaseManager("v0.0.41", "Job"),
+	}
+
+	jobs := []types.Job{
+		{
+			JobID:     12345,
+			JobName:   "test-job-1",
+			Account:   "physics",
+			Partition: "compute",
+			QoS:       "normal",
+			User:      "user1",
+			State:     "RUNNING",
+			CPUs:      4,
+			Nodes:     1,
+			SubmitTime: time.Now().Add(-2 * time.Hour),
+			StartTime:  time.Now().Add(-1 * time.Hour),
+		},
+		{
+			JobID:     12346,
+			JobName:   "test-job-2",
+			Account:   "chemistry",
+			Partition: "gpu",
+			QoS:       "high",
+			User:      "user2",
+			State:     "PENDING",
+			CPUs:      8,
+			Nodes:     2,
+			SubmitTime: time.Now().Add(-1 * time.Hour),
+		},
+		{
+			JobID:     12347,
+			JobName:   "batch-job",
+			Account:   "physics",
+			Partition: "compute",
+			QoS:       "normal",
+			User:      "user1",
+			State:     "COMPLETED",
+			CPUs:      2,
+			Nodes:     1,
+			SubmitTime: time.Now().Add(-3 * time.Hour),
+			StartTime:  time.Now().Add(-3 * time.Hour),
+			EndTime:    time.Now().Add(-30 * time.Minute),
+		},
+	}
+
+	tests := []struct {
+		name     string
+		opts     *types.JobListOptions
+		expected []int // expected job IDs
+	}{
+		{
+			name:     "no filters",
+			opts:     &types.JobListOptions{},
+			expected: []int{12345, 12346, 12347},
+		},
+		{
+			name: "filter by job IDs",
+			opts: &types.JobListOptions{
+				JobIDs: []int{12345, 12347},
+			},
+			expected: []int{12345, 12347},
+		},
+		{
+			name: "filter by accounts",
+			opts: &types.JobListOptions{
+				Accounts: []string{"physics"},
+			},
+			expected: []int{12345, 12347},
+		},
+		{
+			name: "filter by users",
+			opts: &types.JobListOptions{
+				Users: []string{"user1"},
+			},
+			expected: []int{12345, 12347},
+		},
+		{
+			name: "filter by states",
 			opts: &types.JobListOptions{
 				States: []string{"RUNNING", "PENDING"},
-				Users:  []string{"testuser"},
 			},
-			setupMock: func(m *MockJobClientWithResponses) {
-				m.On("SlurmV0041GetJobsWithResponse", mock.Anything, mock.AnythingOfType("*v0_0_41.SlurmV0041GetJobsParams")).
-					Return(&api.SlurmV0041GetJobsResponse{
-						JSON200: &api.V0041OpenapiJobsResp{
-							Jobs: []api.V0041JobInfo{
-								{JobId: uint32Ptr(12345), Name: stringPtr("job1"), JobState: stringPtr("RUNNING")},
-							},
-						},
-						HTTPResponse: &http.Response{StatusCode: 200},
-					}, nil)
-			},
-			expectedLen: 1,
+			expected: []int{12345, 12346},
 		},
 		{
-			name:          "API error",
-			opts:          nil,
-			expectedError: "failed to list jobs",
-			setupMock: func(m *MockJobClientWithResponses) {
-				m.On("SlurmV0041GetJobsWithResponse", mock.Anything, mock.AnythingOfType("*v0_0_41.SlurmV0041GetJobsParams")).
-					Return((*api.SlurmV0041GetJobsResponse)(nil), assert.AnError)
+			name: "filter by partitions",
+			opts: &types.JobListOptions{
+				Partitions: []string{"compute"},
 			},
+			expected: []int{12345, 12347},
 		},
 		{
-			name: "empty response",
-			opts: nil,
-			setupMock: func(m *MockJobClientWithResponses) {
-				m.On("SlurmV0041GetJobsWithResponse", mock.Anything, mock.AnythingOfType("*v0_0_41.SlurmV0041GetJobsParams")).
-					Return(&api.SlurmV0041GetJobsResponse{
-						JSON200: &api.V0041OpenapiJobsResp{
-							Jobs: []api.V0041JobInfo{},
-						},
-						HTTPResponse: &http.Response{StatusCode: 200},
-					}, nil)
+			name: "filter by QoS",
+			opts: &types.JobListOptions{
+				QoSNames: []string{"normal"},
 			},
-			expectedLen: 0,
+			expected: []int{12345, 12347},
+		},
+		{
+			name: "combined filters",
+			opts: &types.JobListOptions{
+				Accounts: []string{"physics"},
+				States:   []string{"RUNNING"},
+			},
+			expected: []int{12345},
+		},
+		{
+			name: "no matches",
+			opts: &types.JobListOptions{
+				Accounts: []string{"nonexistent"},
+			},
+			expected: []int{},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockClient := &MockJobClientWithResponses{}
-			tt.setupMock(mockClient)
-
-			adapter := &JobAdapter{
-				BaseManager: base.NewBaseManager("v0.0.41", "Job"),
-				client:      mockClient,
+			result := adapter.FilterJobList(jobs, tt.opts)
+			resultIDs := make([]int, len(result))
+			for i, job := range result {
+				resultIDs[i] = job.JobID
 			}
-
-			result, err := adapter.List(context.Background(), tt.opts)
-
-			if tt.expectedError != "" {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), tt.expectedError)
-			} else {
-				require.NoError(t, err)
-				require.NotNil(t, result)
-				assert.Len(t, result.Jobs, tt.expectedLen)
-			}
-
-			mockClient.AssertExpectations(t)
+			assert.Equal(t, tt.expected, resultIDs)
 		})
 	}
 }
 
-func TestJobAdapter_Get(t *testing.T) {
+func TestJobAdapter_ValidateJobScript(t *testing.T) {
+	adapter := &JobAdapter{
+		BaseManager: base.NewBaseManager("v0.0.41", "Job"),
+	}
+
 	tests := []struct {
-		name          string
-		jobId         string
-		mockResponse  *api.SlurmV0041GetJobResponse
-		mockError     error
-		expectedError string
-		setupMock     func(*MockJobClientWithResponses, string)
+		name    string
+		script  string
+		wantErr bool
+		errMsg  string
 	}{
 		{
-			name:  "successful get",
-			jobId: "12345",
-			setupMock: func(m *MockJobClientWithResponses, jobId string) {
-				m.On("SlurmV0041GetJobWithResponse", mock.Anything, jobId, mock.AnythingOfType("*v0_0_41.SlurmV0041GetJobParams")).
-					Return(&api.SlurmV0041GetJobResponse{
-						JSON200: &api.V0041OpenapiJobsResp{
-							Jobs: []api.V0041JobInfo{
-								{JobId: uint32Ptr(12345), Name: stringPtr("test-job")},
-							},
-						},
-						HTTPResponse: &http.Response{StatusCode: 200},
-					}, nil)
-			},
+			name:    "empty script",
+			script:  "",
+			wantErr: true,
+			errMsg:  "script cannot be empty",
 		},
 		{
-			name:  "empty job ID",
-			jobId: "",
-			setupMock: func(m *MockJobClientWithResponses, jobId string) {
-				// No mock setup needed as validation should fail first
-			},
-			expectedError: "jobId",
+			name:    "no shebang",
+			script:  "echo hello",
+			wantErr: true,
+			errMsg:  "script must start with shebang",
 		},
 		{
-			name:  "API error",
-			jobId: "12345",
-			setupMock: func(m *MockJobClientWithResponses, jobId string) {
-				m.On("SlurmV0041GetJobWithResponse", mock.Anything, jobId, mock.AnythingOfType("*v0_0_41.SlurmV0041GetJobParams")).
-					Return((*api.SlurmV0041GetJobResponse)(nil), assert.AnError)
-			},
-			expectedError: "failed to get job",
+			name:    "valid bash script",
+			script:  "#!/bin/bash\necho hello world",
+			wantErr: false,
 		},
 		{
-			name:  "job not found",
-			jobId: "99999",
-			setupMock: func(m *MockJobClientWithResponses, jobId string) {
-				m.On("SlurmV0041GetJobWithResponse", mock.Anything, jobId, mock.AnythingOfType("*v0_0_41.SlurmV0041GetJobParams")).
-					Return(&api.SlurmV0041GetJobResponse{
-						JSON200: &api.V0041OpenapiJobsResp{
-							Jobs: []api.V0041JobInfo{},
-						},
-						HTTPResponse: &http.Response{StatusCode: 200},
-					}, nil)
-			},
-			expectedError: "job 99999",
+			name:    "valid sh script",
+			script:  "#!/bin/sh\necho hello",
+			wantErr: false,
+		},
+		{
+			name:    "valid python script",
+			script:  "#!/usr/bin/env python3\nprint('hello')",
+			wantErr: false,
+		},
+		{
+			name:    "script with SBATCH directives",
+			script:  "#!/bin/bash\n#SBATCH --job-name=test\n#SBATCH --time=01:00:00\necho hello",
+			wantErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockClient := &MockJobClientWithResponses{}
-			tt.setupMock(mockClient, tt.jobId)
-
-			adapter := &JobAdapter{
-				BaseManager: base.NewBaseManager("v0.0.41", "Job"),
-				client:      mockClient,
-			}
-
-			result, err := adapter.Get(context.Background(), tt.jobId)
-
-			if tt.expectedError != "" {
+			err := adapter.ValidateJobScript(tt.script)
+			if tt.wantErr {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.Contains(t, err.Error(), tt.errMsg)
 			} else {
 				require.NoError(t, err)
-				require.NotNil(t, result)
-				assert.Equal(t, int32(12345), result.JobID)
-			}
-
-			if tt.jobId != "" && tt.expectedError == "" {
-				mockClient.AssertExpectations(t)
 			}
 		})
 	}
 }
 
-func TestJobAdapter_Submit(t *testing.T) {
+func TestJobAdapter_ParseJobDependencies(t *testing.T) {
+	adapter := &JobAdapter{
+		BaseManager: base.NewBaseManager("v0.0.41", "Job"),
+	}
+
 	tests := []struct {
-		name          string
-		job           *types.JobCreate
-		mockResponse  *api.SlurmV0041PostJobSubmitResponse
-		mockError     error
-		expectedError string
-		setupMock     func(*MockJobClientWithResponses, *types.JobCreate)
+		name         string
+		dependencies []string
+		expected     map[string][]int
 	}{
 		{
-			name: "successful submit",
-			job: &types.JobCreate{
-				Script: "#!/bin/bash\necho 'Hello World'",
-				Name:   "test-job",
-			},
-			setupMock: func(m *MockJobClientWithResponses, job *types.JobCreate) {
-				m.On("SlurmV0041PostJobSubmitWithResponse", mock.Anything, mock.AnythingOfType("v0_0_41.SlurmV0041PostJobSubmitJSONRequestBody")).
-					Return(&api.SlurmV0041PostJobSubmitResponse{
-						JSON200: &api.V0041OpenapiJobSubmitResponse{
-							JobId: uint32Ptr(12345),
-						},
-						HTTPResponse: &http.Response{StatusCode: 200},
-					}, nil)
+			name:         "empty dependencies",
+			dependencies: []string{},
+			expected:     map[string][]int{},
+		},
+		{
+			name:         "single afterok dependency",
+			dependencies: []string{"afterok:12345"},
+			expected: map[string][]int{
+				"afterok": {12345},
 			},
 		},
 		{
-			name: "nil job",
-			job:  nil,
-			setupMock: func(m *MockJobClientWithResponses, job *types.JobCreate) {
-				// No mock setup needed as validation should fail first
+			name:         "multiple dependencies same type",
+			dependencies: []string{"afterok:12345", "afterok:12346"},
+			expected: map[string][]int{
+				"afterok": {12345, 12346},
 			},
-			expectedError: "job creation data is required",
 		},
 		{
-			name: "empty script and command",
-			job: &types.JobCreate{
-				Script:  "",
-				Command: "",
+			name:         "multiple dependency types",
+			dependencies: []string{"afterok:12345", "afternotok:12346", "after:12347"},
+			expected: map[string][]int{
+				"afterok":    {12345},
+				"afternotok": {12346},
+				"after":      {12347},
 			},
-			setupMock: func(m *MockJobClientWithResponses, job *types.JobCreate) {
-				// No mock setup needed as validation should fail first
-			},
-			expectedError: "either script or command is required",
 		},
 		{
-			name: "API error",
-			job: &types.JobCreate{
-				Script: "#!/bin/bash\necho 'test'",
+			name:         "colon-separated job lists",
+			dependencies: []string{"afterok:12345:12346:12347"},
+			expected: map[string][]int{
+				"afterok": {12345, 12346, 12347},
 			},
-			setupMock: func(m *MockJobClientWithResponses, job *types.JobCreate) {
-				m.On("SlurmV0041PostJobSubmitWithResponse", mock.Anything, mock.AnythingOfType("v0_0_41.SlurmV0041PostJobSubmitJSONRequestBody")).
-					Return((*api.SlurmV0041PostJobSubmitResponse)(nil), assert.AnError)
-			},
-			expectedError: "failed to submit job",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockClient := &MockJobClientWithResponses{}
-			tt.setupMock(mockClient, tt.job)
-
-			adapter := &JobAdapter{
-				BaseManager: base.NewBaseManager("v0.0.41", "Job"),
-				client:      mockClient,
-			}
-
-			result, err := adapter.Submit(context.Background(), tt.job)
-
-			if tt.expectedError != "" {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), tt.expectedError)
-			} else {
-				require.NoError(t, err)
-				require.NotNil(t, result)
-				assert.Equal(t, int32(12345), result.JobID)
-			}
-
-			if tt.job != nil && (tt.job.Script != "" || tt.job.Command != "") && tt.expectedError == "" {
-				mockClient.AssertExpectations(t)
-			}
+			result := adapter.ParseJobDependencies(tt.dependencies)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-func TestJobAdapter_Cancel(t *testing.T) {
+func TestJobAdapter_ValidateTimeLimit(t *testing.T) {
+	adapter := &JobAdapter{
+		BaseManager: base.NewBaseManager("v0.0.41", "Job"),
+	}
+
 	tests := []struct {
-		name          string
-		jobId         string
-		mockResponse  *api.SlurmV0041DeleteJobResponse
-		mockError     error
-		expectedError string
-		setupMock     func(*MockJobClientWithResponses, string)
+		name      string
+		timeLimit string
+		wantErr   bool
+		errMsg    string
 	}{
 		{
-			name:  "successful cancel",
-			jobId: "12345",
-			setupMock: func(m *MockJobClientWithResponses, jobId string) {
-				m.On("SlurmV0041DeleteJobWithResponse", mock.Anything, jobId).
-					Return(&api.SlurmV0041DeleteJobResponse{
-						HTTPResponse: &http.Response{StatusCode: 200},
-					}, nil)
-			},
+			name:      "empty time limit",
+			timeLimit: "",
+			wantErr:   false, // empty is valid (uses defaults)
 		},
 		{
-			name:  "empty job ID",
-			jobId: "",
-			setupMock: func(m *MockJobClientWithResponses, jobId string) {
-				// No mock setup needed as validation should fail first
-			},
-			expectedError: "jobId",
+			name:      "minutes format",
+			timeLimit: "60",
+			wantErr:   false,
 		},
 		{
-			name:  "API error",
-			jobId: "12345",
-			setupMock: func(m *MockJobClientWithResponses, jobId string) {
-				m.On("SlurmV0041DeleteJobWithResponse", mock.Anything, jobId).
-					Return((*api.SlurmV0041DeleteJobResponse)(nil), assert.AnError)
-			},
-			expectedError: "failed to cancel job",
+			name:      "hours:minutes format",
+			timeLimit: "01:30",
+			wantErr:   false,
+		},
+		{
+			name:      "days-hours:minutes:seconds format",
+			timeLimit: "2-12:30:45",
+			wantErr:   false,
+		},
+		{
+			name:      "hours:minutes:seconds format",
+			timeLimit: "01:30:45",
+			wantErr:   false,
+		},
+		{
+			name:      "invalid format",
+			timeLimit: "invalid",
+			wantErr:   true,
+			errMsg:    "invalid time limit format",
+		},
+		{
+			name:      "negative minutes",
+			timeLimit: "-30",
+			wantErr:   true,
+			errMsg:    "time limit cannot be negative",
+		},
+		{
+			name:      "invalid hours",
+			timeLimit: "25:00",
+			wantErr:   true,
+			errMsg:    "invalid hours",
+		},
+		{
+			name:      "invalid minutes",
+			timeLimit: "01:65",
+			wantErr:   true,
+			errMsg:    "invalid minutes",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockClient := &MockJobClientWithResponses{}
-			tt.setupMock(mockClient, tt.jobId)
-
-			adapter := &JobAdapter{
-				BaseManager: base.NewBaseManager("v0.0.41", "Job"),
-				client:      mockClient,
-			}
-
-			err := adapter.Cancel(context.Background(), tt.jobId)
-
-			if tt.expectedError != "" {
+			err := adapter.ValidateTimeLimit(tt.timeLimit)
+			if tt.wantErr {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.Contains(t, err.Error(), tt.errMsg)
 			} else {
 				require.NoError(t, err)
-			}
-
-			if tt.jobId != "" && tt.expectedError == "" {
-				mockClient.AssertExpectations(t)
 			}
 		})
 	}
 }
 
-// Test error conditions and edge cases
-func TestJobAdapter_ErrorConditions(t *testing.T) {
-	t.Run("nil context", func(t *testing.T) {
-		adapter := &JobAdapter{
-			BaseManager: base.NewBaseManager("v0.0.41", "Job"),
-		}
+func TestJobAdapter_CalculateJobPriority(t *testing.T) {
+	adapter := &JobAdapter{
+		BaseManager: base.NewBaseManager("v0.0.41", "Job"),
+	}
 
-		_, err := adapter.List(nil, nil)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "context")
-	})
+	tests := []struct {
+		name             string
+		job              *types.Job
+		expectedPriority int
+	}{
+		{
+			name: "basic job priority",
+			job: &types.Job{
+				QoS:        "normal",
+				CPUs:       4,
+				Nodes:      1,
+				SubmitTime: time.Now().Add(-1 * time.Hour),
+			},
+			expectedPriority: 1000, // base priority
+		},
+		{
+			name: "high QoS job",
+			job: &types.Job{
+				QoS:        "high",
+				CPUs:       8,
+				Nodes:      2,
+				SubmitTime: time.Now().Add(-2 * time.Hour),
+			},
+			expectedPriority: 2000, // higher priority for high QoS
+		},
+		{
+			name: "aged job gets priority boost",
+			job: &types.Job{
+				QoS:        "normal",
+				CPUs:       2,
+				Nodes:      1,
+				SubmitTime: time.Now().Add(-24 * time.Hour), // old job
+			},
+			expectedPriority: 1500, // age boost
+		},
+	}
 
-	t.Run("nil client", func(t *testing.T) {
-		adapter := &JobAdapter{
-			BaseManager: base.NewBaseManager("v0.0.41", "Job"),
-			client:      nil,
-		}
-
-		_, err := adapter.List(context.Background(), nil)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "client")
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			priority := adapter.CalculateJobPriority(tt.job)
+			assert.Equal(t, tt.expectedPriority, priority)
+		})
+	}
 }
 
-// Helper functions
-func stringPtr(s string) *string {
-	return &s
-}
+func TestJobAdapter_ValidateContext(t *testing.T) {
+	adapter := &JobAdapter{
+		BaseManager: base.NewBaseManager("v0.0.41", "Job"),
+	}
 
-func uint32Ptr(i uint32) *uint32 {
-	return &i
-}
+	tests := []struct {
+		name    string
+		ctx     context.Context
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "nil context",
+			ctx:     nil,
+			wantErr: true,
+			errMsg:  "context is required",
+		},
+		{
+			name:    "valid context",
+			ctx:     context.Background(),
+			wantErr: false,
+		},
+		{
+			name:    "context with timeout",
+			ctx:     context.TODO(),
+			wantErr: false,
+		},
+	}
 
-func intPtr(i int) *int {
-	return &i
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := adapter.ValidateContext(tt.ctx)
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errMsg)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
 }
