@@ -11,7 +11,7 @@ import (
 )
 
 // convertAPIJobToCommon converts a v0.0.43 API Job to common Job type
-func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0043JobInfo) (*types.Job, error) {
+func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0043Job) (*types.Job, error) {
 	job := &types.Job{}
 
 	// Basic fields
@@ -178,8 +178,8 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0043JobInfo) (*types.Job,
 }
 
 // convertCommonJobCreateToAPI converts common JobCreate type to v0.0.43 API format
-func (a *JobAdapter) convertCommonJobCreateToAPI(create *types.JobCreate) (*api.V0043JobProperties, error) {
-	apiJob := &api.V0043JobProperties{}
+func (a *JobAdapter) convertCommonJobCreateToAPI(create *types.JobCreate) (*api.V0043Job, error) {
+	apiJob := &api.V0043Job{}
 
 	// Basic fields
 	if create.Name != "" {
@@ -400,8 +400,8 @@ func (a *JobAdapter) convertCommonJobCreateToAPI(create *types.JobCreate) (*api.
 }
 
 // convertCommonJobUpdateToAPI converts common JobUpdate to v0.0.43 API format
-func (a *JobAdapter) convertCommonJobUpdateToAPI(existing *types.Job, update *types.JobUpdate) (*api.V0043JobProperties, error) {
-	apiJob := &api.V0043JobProperties{}
+func (a *JobAdapter) convertCommonJobUpdateToAPI(existing *types.Job, update *types.JobUpdate) (*api.V0043Job, error) {
+	apiJob := &api.V0043Job{}
 
 	// Always include the job ID for updates
 	apiJob.JobId = &existing.JobID

@@ -9,7 +9,7 @@ import (
 )
 
 // convertAPIAccountToCommon converts a v0.0.43 API Account to common Account type
-func (a *AccountAdapter) convertAPIAccountToCommon(apiAccount api.V0043AccountInfo) (*types.Account, error) {
+func (a *AccountAdapter) convertAPIAccountToCommon(apiAccount api.V0043Account) (*types.Account, error) {
 	account := &types.Account{}
 
 	// Basic fields
@@ -100,9 +100,9 @@ func (a *AccountAdapter) convertAPIAccountToCommon(apiAccount api.V0043AccountIn
 	if apiAccount.Flags != nil {
 		for _, flag := range *apiAccount.Flags {
 			switch flag {
-			case api.V0043AccountInfoFlagsDELETED:
+			case api.V0043AccountFlagsDELETED:
 				account.Deleted = true
-			case api.V0043AccountInfoFlagsDEFAULT:
+			case api.V0043AccountFlagsDEFAULT:
 				account.IsDefault = true
 			}
 		}
@@ -112,8 +112,8 @@ func (a *AccountAdapter) convertAPIAccountToCommon(apiAccount api.V0043AccountIn
 }
 
 // convertCommonAccountCreateToAPI converts common AccountCreate type to v0.0.43 API format
-func (a *AccountAdapter) convertCommonAccountCreateToAPI(create *types.AccountCreate) (*api.V0043AccountInfo, error) {
-	apiAccount := &api.V0043AccountInfo{}
+func (a *AccountAdapter) convertCommonAccountCreateToAPI(create *types.AccountCreate) (*api.V0043Account, error) {
+	apiAccount := &api.V0043Account{}
 
 	// Required fields
 	apiAccount.Name = &create.Name
@@ -263,8 +263,8 @@ func (a *AccountAdapter) convertCommonAccountCreateToAPI(create *types.AccountCr
 }
 
 // convertCommonAccountUpdateToAPI converts common AccountUpdate to v0.0.43 API format
-func (a *AccountAdapter) convertCommonAccountUpdateToAPI(existing *types.Account, update *types.AccountUpdate) (*api.V0043AccountInfo, error) {
-	apiAccount := &api.V0043AccountInfo{}
+func (a *AccountAdapter) convertCommonAccountUpdateToAPI(existing *types.Account, update *types.AccountUpdate) (*api.V0043Account, error) {
+	apiAccount := &api.V0043Account{}
 
 	// Always include the account name for updates
 	apiAccount.Name = &existing.Name

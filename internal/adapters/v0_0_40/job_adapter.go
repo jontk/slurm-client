@@ -1,4 +1,4 @@
-package v0_0_43
+package v0_0_40
 
 import (
 	"context"
@@ -9,20 +9,20 @@ import (
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
+	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
-// JobAdapter implements the JobAdapter interface for v0.0.43
+// JobAdapter implements the JobAdapter interface for v0.0.40
 type JobAdapter struct {
 	*base.BaseManager
 	client  *api.ClientWithResponses
 	wrapper *api.WrapperClient
 }
 
-// NewJobAdapter creates a new Job adapter for v0.0.43
+// NewJobAdapter creates a new Job adapter for v0.0.40
 func NewJobAdapter(client *api.ClientWithResponses) *JobAdapter {
 	return &JobAdapter{
-		BaseManager: base.NewBaseManager("v0.0.43", "Job"),
+		BaseManager: base.NewBaseManager("v0.0.40", "Job"),
 		client:      client,
 		wrapper:     nil, // We'll implement this later
 	}
@@ -41,7 +41,7 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 	}
 
 	// Prepare parameters for the API call
-	params := &api.SlurmV0043GetJobsParams{}
+	params := &api.SlurmV0040GetJobsParams{}
 
 	// Apply filters from options
 	if opts != nil {
@@ -59,7 +59,7 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 				stateStrs[i] = string(state)
 			}
 			stateStr := strings.Join(stateStrs, ",")
-			params.States = &stateStr
+			params.State = &stateStr
 		}
 		if len(opts.Partitions) > 0 {
 			partitionStr := strings.Join(opts.Partitions, ",")
@@ -75,7 +75,7 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 		}
 		if len(opts.JobNames) > 0 {
 			nameStr := strings.Join(opts.JobNames, ",")
-			params.Name = &nameStr
+			params.JobName = &nameStr
 		}
 		if opts.StartTime != nil {
 			startTime := fmt.Sprintf("%d", opts.StartTime.Unix())
@@ -88,19 +88,19 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 	}
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0043GetJobsWithResponse(ctx, params)
+	resp, err := a.client.SlurmV0040GetJobsWithResponse(ctx, params)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
+	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
 		return nil, err
 	}
 
@@ -169,22 +169,22 @@ func (a *JobAdapter) Get(ctx context.Context, jobID int32) (*types.Job, error) {
 	}
 
 	// Prepare parameters for the API call
-	params := &api.SlurmV0043GetJobParams{}
+	params := &api.SlurmV0040GetJobParams{}
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0043GetJobWithResponse(ctx, jobID, params)
+	resp, err := a.client.SlurmV0040GetJobWithResponse(ctx, strconv.Itoa(int(jobID)), params)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
+	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
 		return nil, err
 	}
 
@@ -230,27 +230,25 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 	}
 
 	// Create request body
-	reqBody := api.SlurmV0043PostJobJSONRequestBody{
-		Jobs: []api.V0043Job{*apiJob},
+	reqBody := api.SlurmV0040PostJobSubmitRequestJSONRequestBody{
+		Job:  apiJob.Job,
+		Jobs: apiJob.Jobs,
 	}
 
-	// Prepare parameters for the API call
-	params := &api.SlurmV0043PostJobParams{}
-
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0043PostJobWithResponse(ctx, params, reqBody)
+	resp, err := a.client.SlurmV0040PostJobSubmitRequestWithResponse(ctx, reqBody)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
+	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
 		return nil, err
 	}
 
@@ -264,17 +262,16 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 	var warnings []string
 	var errors []string
 
-	if resp.JSON200.Results != nil && len(*resp.JSON200.Results) > 0 {
-		result := (*resp.JSON200.Results)[0]
+	if resp.JSON200.Result != nil && len(*resp.JSON200.Result) > 0 {
+		result := (*resp.JSON200.Result)[0]
 		if result.JobId != nil {
 			jobID = *result.JobId
 		}
-		if result.Warnings != nil {
-			for _, warning := range *result.Warnings {
-				if warning.Warning != nil {
-					warnings = append(warnings, *warning.Warning)
-				}
-			}
+		if result.Warning != nil {
+			warnings = append(warnings, *result.Warning)
+		}
+		if result.Error != nil {
+			errors = append(errors, *result.Error)
 		}
 	}
 
@@ -323,27 +320,24 @@ func (a *JobAdapter) Update(ctx context.Context, jobID int32, update *types.JobU
 	}
 
 	// Create request body
-	reqBody := api.SlurmV0043PostJobJSONRequestBody{
-		Jobs: []api.V0043Job{*apiJob},
+	reqBody := api.SlurmV0040PostJobUpdateJSONRequestBody{
+		Job: *apiJob,
 	}
 
-	// Prepare parameters for the API call
-	params := &api.SlurmV0043PostJobParams{}
-
-	// Call the generated OpenAPI client (POST is used for updates in SLURM API)
-	resp, err := a.client.SlurmV0043PostJobWithResponse(ctx, params, reqBody)
+	// Call the generated OpenAPI client
+	resp, err := a.client.SlurmV0040PostJobUpdateWithResponse(ctx, strconv.Itoa(int(jobID)), reqBody)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
+	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
+	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
 }
 
 // Cancel cancels a job
@@ -360,25 +354,27 @@ func (a *JobAdapter) Cancel(ctx context.Context, jobID int32, opts *types.JobCan
 	}
 
 	// Prepare parameters for the API call
-	params := &api.SlurmV0043DeleteJobParams{}
+	params := &api.SlurmV0040DeleteJobParams{}
 
 	if opts != nil {
 		if opts.Signal != "" {
 			params.Signal = &opts.Signal
 		}
 		if opts.Message != "" {
-			params.Flags = &opts.Message
+			// Convert message to flags enum if needed
+			flags := api.SlurmV0040DeleteJobParamsFlags(opts.Message)
+			params.Flags = &flags
 		}
 	}
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0043DeleteJobWithResponse(ctx, jobID, params)
+	resp, err := a.client.SlurmV0040DeleteJobWithResponse(ctx, strconv.Itoa(int(jobID)), params)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
+	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
@@ -391,7 +387,7 @@ func (a *JobAdapter) Cancel(ctx context.Context, jobID int32, opts *types.JobCan
 		return nil
 	}
 
-	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
+	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
 }
 
 // Signal sends a signal to a job
@@ -407,31 +403,12 @@ func (a *JobAdapter) Signal(ctx context.Context, req *types.JobSignalRequest) er
 		return err
 	}
 
-	// Create request body
-	reqBody := api.SlurmV0043PostJobSignalJSONRequestBody{
+	// v0.0.40 doesn't have a dedicated signal endpoint, so we use cancel with signal
+	cancelReq := &types.JobCancelRequest{
 		Signal: req.Signal,
 	}
 
-	// Prepare parameters for the API call
-	params := &api.SlurmV0043PostJobSignalParams{}
-	if req.StepID != "" {
-		params.StepId = &req.StepID
-	}
-
-	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0043PostJobSignalWithResponse(ctx, req.JobID, params, reqBody)
-	if err != nil {
-		return a.HandleAPIError(err)
-	}
-
-	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
-	if resp.JSON200 != nil {
-		apiErrors = resp.JSON200.Errors
-	}
-
-	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
+	return a.Cancel(ctx, req.JobID, cancelReq)
 }
 
 // Hold holds or releases a job
@@ -447,53 +424,24 @@ func (a *JobAdapter) Hold(ctx context.Context, req *types.JobHoldRequest) error 
 		return err
 	}
 
-	// Create request body
-	var holdState string
-	if req.Hold {
-		holdState = "USER_HOLD"
-	} else {
-		holdState = "RELEASE"
-	}
-
-	reqBody := api.SlurmV0043PostJobJSONRequestBody{
-		Jobs: []api.V0043Job{
-			{
-				JobId: &req.JobID,
-				JobState: &[]api.V0043JobState{
-					api.V0043JobState(holdState),
-				},
-				Priority: func() *api.V0043Uint32NoValStruct {
-					if req.Priority != 0 {
-						setTrue := true
-						priority := int32(req.Priority)
-						return &api.V0043Uint32NoValStruct{
-							Set:    &setTrue,
-							Number: &priority,
-						}
-					}
-					return nil
-				}(),
-			},
-		},
-	}
-
-	// Prepare parameters for the API call
-	params := &api.SlurmV0043PostJobParams{}
-
-	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0043PostJobWithResponse(ctx, params, reqBody)
+	// Get the job first to get current state
+	job, err := a.Get(ctx, req.JobID)
 	if err != nil {
-		return a.HandleAPIError(err)
+		return err
 	}
 
-	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
-	if resp.JSON200 != nil {
-		apiErrors = resp.JSON200.Errors
+	// Prepare update with hold state
+	update := &types.JobUpdate{
+		Priority: func() *int32 {
+			if req.Priority != 0 {
+				priority := int32(req.Priority)
+				return &priority
+			}
+			return nil
+		}(),
 	}
 
-	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
+	return a.Update(ctx, req.JobID, update)
 }
 
 // Notify sends a notification to a job
@@ -509,7 +457,7 @@ func (a *JobAdapter) Notify(ctx context.Context, req *types.JobNotifyRequest) er
 		return err
 	}
 
-	// For v0.0.43, we simulate notification by updating the job comment
+	// For v0.0.40, we simulate notification by updating the job comment
 	// This is a workaround as the API might not have dedicated notification endpoints
 	update := &types.JobUpdate{
 		Comment: &req.Message,

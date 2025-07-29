@@ -1,4 +1,4 @@
-package v0_0_43
+package v0_0_40
 
 import (
 	"context"
@@ -7,20 +7,20 @@ import (
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
+	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
-// NodeAdapter implements the NodeAdapter interface for v0.0.43
+// NodeAdapter implements the NodeAdapter interface for v0.0.40
 type NodeAdapter struct {
 	*base.BaseManager
 	client  *api.ClientWithResponses
 	wrapper *api.WrapperClient
 }
 
-// NewNodeAdapter creates a new Node adapter for v0.0.43
+// NewNodeAdapter creates a new Node adapter for v0.0.40
 func NewNodeAdapter(client *api.ClientWithResponses) *NodeAdapter {
 	return &NodeAdapter{
-		BaseManager: base.NewBaseManager("v0.0.43", "Node"),
+		BaseManager: base.NewBaseManager("v0.0.40", "Node"),
 		client:      client,
 		wrapper:     nil, // We'll implement this later
 	}
@@ -39,7 +39,7 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 	}
 
 	// Prepare parameters for the API call
-	params := &api.SlurmV0043GetNodesParams{}
+	params := &api.SlurmV0040GetNodesParams{}
 
 	// Apply filters from options
 	if opts != nil {
@@ -62,19 +62,19 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 	}
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0043GetNodesWithResponse(ctx, params)
+	resp, err := a.client.SlurmV0040GetNodesWithResponse(ctx, params)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
+	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
 		return nil, err
 	}
 
@@ -87,8 +87,8 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 	}
 
 	// Convert the response to common types
-	nodeList := make([]types.Node, 0, len(*resp.JSON200.Nodes))
-	for _, apiNode := range *resp.JSON200.Nodes {
+	nodeList := make([]types.Node, 0, len(resp.JSON200.Nodes))
+	for _, apiNode := range resp.JSON200.Nodes {
 		node, err := a.convertAPINodeToCommon(apiNode)
 		if err != nil {
 			return nil, a.HandleConversionError(err, apiNode.Name)
@@ -148,22 +148,22 @@ func (a *NodeAdapter) Get(ctx context.Context, nodeName string) (*types.Node, er
 	}
 
 	// Prepare parameters for the API call
-	params := &api.SlurmV0043GetNodeParams{}
+	params := &api.SlurmV0040GetNodeParams{}
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0043GetNodeWithResponse(ctx, nodeName, params)
+	resp, err := a.client.SlurmV0040GetNodeWithResponse(ctx, nodeName, params)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
+	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
 		return nil, err
 	}
 
@@ -176,12 +176,12 @@ func (a *NodeAdapter) Get(ctx context.Context, nodeName string) (*types.Node, er
 	}
 
 	// Check if we got any node entries
-	if len(*resp.JSON200.Nodes) == 0 {
+	if len(resp.JSON200.Nodes) == 0 {
 		return nil, common.NewResourceNotFoundError("Node", nodeName)
 	}
 
 	// Convert the first node (should be the only one)
-	node, err := a.convertAPINodeToCommon((*resp.JSON200.Nodes)[0])
+	node, err := a.convertAPINodeToCommon(resp.JSON200.Nodes[0])
 	if err != nil {
 		return nil, a.HandleConversionError(err, nodeName)
 	}
@@ -189,7 +189,7 @@ func (a *NodeAdapter) Get(ctx context.Context, nodeName string) (*types.Node, er
 	return node, nil
 }
 
-// Update updates an existing node
+// Update updates a node state or properties
 func (a *NodeAdapter) Update(ctx context.Context, nodeName string, update *types.NodeUpdate) error {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
@@ -205,43 +205,34 @@ func (a *NodeAdapter) Update(ctx context.Context, nodeName string, update *types
 		return err
 	}
 
-	// First, get the existing node to merge updates
-	existingNode, err := a.Get(ctx, nodeName)
-	if err != nil {
-		return err
-	}
-
-	// Convert to API format and apply updates
-	apiNode, err := a.convertCommonNodeUpdateToAPI(existingNode, update)
+	// Convert to API format
+	apiNode, err := a.convertCommonNodeUpdateToAPI(nodeName, update)
 	if err != nil {
 		return err
 	}
 
 	// Create request body
-	reqBody := api.SlurmV0043PostNodeJSONRequestBody{
-		Nodes: []api.V0043Node{*apiNode},
+	reqBody := api.SlurmV0040PostNodeJSONRequestBody{
+		Nodes: &[]api.V0040Node{*apiNode},
 	}
 
-	// Prepare parameters for the API call
-	params := &api.SlurmV0043PostNodeParams{}
-
-	// Call the generated OpenAPI client (POST is used for updates in SLURM API)
-	resp, err := a.client.SlurmV0043PostNodeWithResponse(ctx, params, reqBody)
+	// Call the generated OpenAPI client
+	resp, err := a.client.SlurmV0040PostNodeWithResponse(ctx, nodeName, reqBody)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
+	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
+	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
 }
 
-// Delete deletes a node
+// Delete removes a node from the cluster
 func (a *NodeAdapter) Delete(ctx context.Context, nodeName string) error {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
@@ -255,13 +246,13 @@ func (a *NodeAdapter) Delete(ctx context.Context, nodeName string) error {
 	}
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0043DeleteNodeWithResponse(ctx, nodeName)
+	resp, err := a.client.SlurmV0040DeleteNodeWithResponse(ctx, nodeName)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
+	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
@@ -274,7 +265,81 @@ func (a *NodeAdapter) Delete(ctx context.Context, nodeName string) error {
 		return nil
 	}
 
-	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
+	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
+}
+
+// filterNodeList applies client-side filtering to the node list
+func (a *NodeAdapter) filterNodeList(nodes []types.Node, opts *types.NodeListOptions) []types.Node {
+	filtered := make([]types.Node, 0, len(nodes))
+	
+	for _, node := range nodes {
+		// Apply Partition filter
+		if len(opts.Partitions) > 0 {
+			found := false
+			for _, partition := range opts.Partitions {
+				for _, nodePartition := range node.Partitions {
+					if partition == nodePartition {
+						found = true
+						break
+					}
+				}
+				if found {
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		}
+
+		// Apply Features filter
+		if len(opts.Features) > 0 {
+			hasAllFeatures := true
+			for _, feature := range opts.Features {
+				found := false
+				nodeFeatures := strings.Split(node.Features, ",")
+				for _, nodeFeature := range nodeFeatures {
+					if feature == strings.TrimSpace(nodeFeature) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					hasAllFeatures = false
+					break
+				}
+			}
+			if !hasAllFeatures {
+				continue
+			}
+		}
+
+		// Apply GRES filter
+		if opts.GRES != "" {
+			if !strings.Contains(node.GRES, opts.GRES) {
+				continue
+			}
+		}
+
+		// Apply CPUs filter
+		if opts.MinCPUs > 0 && node.CPUs < opts.MinCPUs {
+			continue
+		}
+
+		// Apply Memory filter
+		if opts.MinMemory > 0 && (node.RealMemory == nil || *node.RealMemory < opts.MinMemory) {
+			continue
+		}
+
+		// Apply TmpDisk filter
+		if opts.MinTmpDisk > 0 && (node.TmpDisk == nil || *node.TmpDisk < opts.MinTmpDisk) {
+			continue
+		}
+
+		filtered = append(filtered, node)
+	}
+
+	return filtered
 }
 
 // validateNodeUpdate validates node update request
@@ -283,101 +348,9 @@ func (a *NodeAdapter) validateNodeUpdate(update *types.NodeUpdate) error {
 		return common.NewValidationError("node update data is required", "update", nil)
 	}
 	// At least one field should be provided for update
-	if update.Comment == nil && update.CPUBinding == nil && len(update.Features) == 0 &&
-	   len(update.ActiveFeatures) == 0 && update.Gres == nil && update.NextStateAfterReboot == nil &&
-	   update.Reason == nil && update.ResumeAfter == nil && update.State == nil && 
-	   update.Weight == nil && len(update.Extra) == 0 {
+	if update.State == nil && update.Reason == nil && update.Comment == nil && 
+	   update.Features == nil && update.GRES == nil && update.Weight == nil {
 		return common.NewValidationError("at least one field must be provided for update", "update", update)
 	}
-	
-	// Validate numeric fields if provided
-	if update.CPUBinding != nil && *update.CPUBinding < 0 {
-		return common.NewValidationError("CPU binding must be non-negative", "cpuBinding", *update.CPUBinding)
-	}
-	if update.Weight != nil && *update.Weight < 0 {
-		return common.NewValidationError("weight must be non-negative", "weight", *update.Weight)
-	}
 	return nil
-}
-
-// filterNodeList applies client-side filtering to node list
-func (a *NodeAdapter) filterNodeList(nodes []types.Node, opts *types.NodeListOptions) []types.Node {
-	if opts == nil {
-		return nodes
-	}
-
-	filtered := make([]types.Node, 0, len(nodes))
-	for _, node := range nodes {
-		if a.matchesNodeFilters(node, opts) {
-			filtered = append(filtered, node)
-		}
-	}
-
-	return filtered
-}
-
-// matchesNodeFilters checks if a node matches the given filters
-func (a *NodeAdapter) matchesNodeFilters(node types.Node, opts *types.NodeListOptions) bool {
-	// Filter by names (already handled by API, but included for completeness)
-	if len(opts.Names) > 0 {
-		found := false
-		for _, name := range opts.Names {
-			if strings.EqualFold(node.Name, name) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-
-	// Filter by states (already handled by API, but included for completeness) 
-	if len(opts.States) > 0 {
-		found := false
-		for _, state := range opts.States {
-			if node.State == state {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-
-	// Filter by partitions
-	if len(opts.Partitions) > 0 {
-		found := false
-		for _, partition := range opts.Partitions {
-			for _, nodePartition := range node.Partitions {
-				if strings.EqualFold(nodePartition, partition) {
-					found = true
-					break
-				}
-			}
-			if found {
-				break
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-
-	// Filter by reasons
-	if len(opts.Reasons) > 0 {
-		found := false
-		for _, reason := range opts.Reasons {
-			if strings.Contains(strings.ToLower(node.Reason), strings.ToLower(reason)) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-
-	return true
 }

@@ -1,4 +1,4 @@
-package v0_0_43
+package v0_0_40
 
 import (
 	"context"
@@ -7,20 +7,20 @@ import (
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
+	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
-// AccountAdapter implements the AccountAdapter interface for v0.0.43
+// AccountAdapter implements the AccountAdapter interface for v0.0.40
 type AccountAdapter struct {
 	*base.BaseManager
 	client  *api.ClientWithResponses
 	wrapper *api.WrapperClient
 }
 
-// NewAccountAdapter creates a new Account adapter for v0.0.43
+// NewAccountAdapter creates a new Account adapter for v0.0.40
 func NewAccountAdapter(client *api.ClientWithResponses) *AccountAdapter {
 	return &AccountAdapter{
-		BaseManager: base.NewBaseManager("v0.0.43", "Account"),
+		BaseManager: base.NewBaseManager("v0.0.40", "Account"),
 		client:      client,
 		wrapper:     nil, // We'll implement this later
 	}
@@ -39,7 +39,7 @@ func (a *AccountAdapter) List(ctx context.Context, opts *types.AccountListOption
 	}
 
 	// Prepare parameters for the API call
-	params := &api.SlurmdbV0043GetAccountsParams{}
+	params := &api.SlurmdbV0040GetAccountsParams{}
 
 	// Apply filters from options
 	if opts != nil {
@@ -70,19 +70,19 @@ func (a *AccountAdapter) List(ctx context.Context, opts *types.AccountListOption
 	}
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmdbV0043GetAccountsWithResponse(ctx, params)
+	resp, err := a.client.SlurmdbV0040GetAccountsWithResponse(ctx, params)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
+	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
 		return nil, err
 	}
 
@@ -95,8 +95,8 @@ func (a *AccountAdapter) List(ctx context.Context, opts *types.AccountListOption
 	}
 
 	// Convert the response to common types
-	accountList := make([]types.Account, 0, len(*resp.JSON200.Accounts))
-	for _, apiAccount := range *resp.JSON200.Accounts {
+	accountList := make([]types.Account, 0, len(resp.JSON200.Accounts))
+	for _, apiAccount := range resp.JSON200.Accounts {
 		account, err := a.convertAPIAccountToCommon(apiAccount)
 		if err != nil {
 			return nil, a.HandleConversionError(err, apiAccount.Name)
@@ -151,22 +151,22 @@ func (a *AccountAdapter) Get(ctx context.Context, accountName string) (*types.Ac
 	}
 
 	// Prepare parameters for the API call
-	params := &api.SlurmdbV0043GetSingleAccountParams{}
+	params := &api.SlurmdbV0040GetAccountParams{}
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmdbV0043GetSingleAccountWithResponse(ctx, accountName, params)
+	resp, err := a.client.SlurmdbV0040GetAccountWithResponse(ctx, accountName, params)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
+	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
 		return nil, err
 	}
 
@@ -179,12 +179,12 @@ func (a *AccountAdapter) Get(ctx context.Context, accountName string) (*types.Ac
 	}
 
 	// Check if we got any account entries
-	if len(*resp.JSON200.Accounts) == 0 {
+	if len(resp.JSON200.Accounts) == 0 {
 		return nil, common.NewResourceNotFoundError("Account", accountName)
 	}
 
 	// Convert the first account (should be the only one)
-	account, err := a.convertAPIAccountToCommon((*resp.JSON200.Accounts)[0])
+	account, err := a.convertAPIAccountToCommon(resp.JSON200.Accounts[0])
 	if err != nil {
 		return nil, a.HandleConversionError(err, accountName)
 	}
@@ -193,52 +193,43 @@ func (a *AccountAdapter) Get(ctx context.Context, accountName string) (*types.Ac
 }
 
 // Create creates a new account
-func (a *AccountAdapter) Create(ctx context.Context, account *types.AccountCreate) (*types.AccountCreateResponse, error) {
+func (a *AccountAdapter) Create(ctx context.Context, account *types.AccountCreate) error {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return nil, err
+		return err
 	}
 	if err := a.validateAccountCreate(account); err != nil {
-		return nil, err
+		return err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Convert to API format
 	apiAccount, err := a.convertCommonAccountCreateToAPI(account)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Create request body
-	reqBody := api.SlurmdbV0043PostAccountsJSONRequestBody{
-		Accounts: []api.V0043Account{*apiAccount},
+	reqBody := api.SlurmdbV0040PostAccountsJSONRequestBody{
+		Accounts: &[]api.V0040Account{*apiAccount},
 	}
 
-	// Prepare parameters for the API call
-	params := &api.SlurmdbV0043PostAccountsParams{}
-
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmdbV0043PostAccountsWithResponse(ctx, params, reqBody)
+	resp, err := a.client.SlurmdbV0040PostAccountsWithResponse(ctx, reqBody)
 	if err != nil {
-		return nil, a.HandleAPIError(err)
+		return a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
+	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
-		return nil, err
-	}
-
-	return &types.AccountCreateResponse{
-		AccountName: account.Name,
-	}, nil
+	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
 }
 
 // Update updates an existing account
@@ -270,27 +261,24 @@ func (a *AccountAdapter) Update(ctx context.Context, accountName string, update 
 	}
 
 	// Create request body
-	reqBody := api.SlurmdbV0043PostAccountsJSONRequestBody{
-		Accounts: []api.V0043Account{*apiAccount},
+	reqBody := api.SlurmdbV0040PostAccountsJSONRequestBody{
+		Accounts: &[]api.V0040Account{*apiAccount},
 	}
 
-	// Prepare parameters for the API call
-	params := &api.SlurmdbV0043PostAccountsParams{}
-
-	// Call the generated OpenAPI client (POST is used for updates in SLURM API)
-	resp, err := a.client.SlurmdbV0043PostAccountsWithResponse(ctx, params, reqBody)
+	// Call the generated OpenAPI client
+	resp, err := a.client.SlurmdbV0040PostAccountsWithResponse(ctx, reqBody)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
+	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
+	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
 }
 
 // Delete deletes an account
@@ -307,13 +295,13 @@ func (a *AccountAdapter) Delete(ctx context.Context, accountName string) error {
 	}
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmdbV0043DeleteSingleAccountWithResponse(ctx, accountName)
+	resp, err := a.client.SlurmdbV0040DeleteAccountWithResponse(ctx, accountName)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
+	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
@@ -326,7 +314,7 @@ func (a *AccountAdapter) Delete(ctx context.Context, accountName string) error {
 		return nil
 	}
 
-	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
+	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
 }
 
 // validateAccountCreate validates account creation request
@@ -337,19 +325,6 @@ func (a *AccountAdapter) validateAccountCreate(account *types.AccountCreate) err
 	if account.Name == "" {
 		return common.NewValidationError("account name is required", "name", account.Name)
 	}
-	// Validate numeric fields
-	if account.FairShare < 0 {
-		return common.NewValidationError("fair share must be non-negative", "fairShare", account.FairShare)
-	}
-	if account.Priority < 0 {
-		return common.NewValidationError("priority must be non-negative", "priority", account.Priority)
-	}
-	if account.MaxJobs < 0 {
-		return common.NewValidationError("max jobs must be non-negative", "maxJobs", account.MaxJobs)
-	}
-	if account.MaxWallTime < 0 {
-		return common.NewValidationError("max wall time must be non-negative", "maxWallTime", account.MaxWallTime)
-	}
 	return nil
 }
 
@@ -359,25 +334,8 @@ func (a *AccountAdapter) validateAccountUpdate(update *types.AccountUpdate) erro
 		return common.NewValidationError("account update data is required", "update", nil)
 	}
 	// At least one field should be provided for update
-	if update.Description == nil && update.Organization == nil && len(update.Coordinators) == 0 &&
-	   update.DefaultQoS == nil && len(update.QoSList) == 0 && len(update.AllowedPartitions) == 0 &&
-	   update.DefaultPartition == nil && update.FairShare == nil && update.Priority == nil &&
-	   update.MaxJobs == nil && update.MaxWallTime == nil {
+	if update.Description == nil && update.Organization == nil && update.Flags == nil {
 		return common.NewValidationError("at least one field must be provided for update", "update", update)
-	}
-	
-	// Validate numeric fields if provided
-	if update.FairShare != nil && *update.FairShare < 0 {
-		return common.NewValidationError("fair share must be non-negative", "fairShare", *update.FairShare)
-	}
-	if update.Priority != nil && *update.Priority < 0 {
-		return common.NewValidationError("priority must be non-negative", "priority", *update.Priority)
-	}
-	if update.MaxJobs != nil && *update.MaxJobs < 0 {
-		return common.NewValidationError("max jobs must be non-negative", "maxJobs", *update.MaxJobs)
-	}
-	if update.MaxWallTime != nil && *update.MaxWallTime < 0 {
-		return common.NewValidationError("max wall time must be non-negative", "maxWallTime", *update.MaxWallTime)
 	}
 	return nil
 }

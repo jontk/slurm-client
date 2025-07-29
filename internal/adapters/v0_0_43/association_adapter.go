@@ -209,7 +209,7 @@ func (a *AssociationAdapter) Create(ctx context.Context, association *types.Asso
 
 	// Create request body
 	reqBody := api.SlurmdbV0043PostAssociationsJSONRequestBody{
-		Associations: []api.V0043AssociationInfo{*apiAssociation},
+		Associations: []api.V0043Assoc{*apiAssociation},
 	}
 
 	// Prepare parameters for the API call
@@ -267,7 +267,7 @@ func (a *AssociationAdapter) Update(ctx context.Context, associationID string, u
 
 	// Create request body
 	reqBody := api.SlurmdbV0043PostAssociationsJSONRequestBody{
-		Associations: []api.V0043AssociationInfo{*apiAssociation},
+		Associations: []api.V0043Assoc{*apiAssociation},
 	}
 
 	// Prepare parameters for the API call
@@ -356,7 +356,7 @@ func (a *AssociationAdapter) validateAssociationUpdate(update *types.Association
 }
 
 // Simplified converter methods for association management
-func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0043AssociationInfo) (*types.Association, error) {
+func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0043Assoc) (*types.Association, error) {
 	association := &types.Association{}
 	if apiAssociation.Account != nil {
 		association.Account = *apiAssociation.Account
@@ -374,8 +374,8 @@ func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0
 	return association, nil
 }
 
-func (a *AssociationAdapter) convertCommonAssociationCreateToAPI(create *types.AssociationCreate) (*api.V0043AssociationInfo, error) {
-	apiAssociation := &api.V0043AssociationInfo{}
+func (a *AssociationAdapter) convertCommonAssociationCreateToAPI(create *types.AssociationCreate) (*api.V0043Assoc, error) {
+	apiAssociation := &api.V0043Assoc{}
 	apiAssociation.Account = &create.Account
 	apiAssociation.User = &create.User
 	apiAssociation.Cluster = &create.Cluster
@@ -386,8 +386,8 @@ func (a *AssociationAdapter) convertCommonAssociationCreateToAPI(create *types.A
 	return apiAssociation, nil
 }
 
-func (a *AssociationAdapter) convertCommonAssociationUpdateToAPI(existing *types.Association, update *types.AssociationUpdate) (*api.V0043AssociationInfo, error) {
-	apiAssociation := &api.V0043AssociationInfo{}
+func (a *AssociationAdapter) convertCommonAssociationUpdateToAPI(existing *types.Association, update *types.AssociationUpdate) (*api.V0043Assoc, error) {
+	apiAssociation := &api.V0043Assoc{}
 	apiAssociation.Account = &existing.Account
 	apiAssociation.User = &existing.User
 	apiAssociation.Cluster = &existing.Cluster

@@ -8,7 +8,7 @@ import (
 )
 
 // convertAPINodeToCommon converts a v0.0.43 API Node to common Node type
-func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0043NodeInfo) (*types.Node, error) {
+func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0043Node) (*types.Node, error) {
 	node := &types.Node{}
 
 	// Basic fields
@@ -222,8 +222,8 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0043NodeInfo) (*types.
 }
 
 // convertCommonNodeUpdateToAPI converts common NodeUpdate to v0.0.43 API format
-func (a *NodeAdapter) convertCommonNodeUpdateToAPI(existing *types.Node, update *types.NodeUpdate) (*api.V0043NodeInfo, error) {
-	apiNode := &api.V0043NodeInfo{}
+func (a *NodeAdapter) convertCommonNodeUpdateToAPI(existing *types.Node, update *types.NodeUpdate) (*api.V0043Node, error) {
+	apiNode := &api.V0043Node{}
 
 	// Always include the node name for updates
 	apiNode.Name = &existing.Name
