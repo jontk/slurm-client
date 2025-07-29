@@ -9,60 +9,33 @@ import (
 func (a *AccountAdapter) convertAPIAccountToCommon(apiAccount api.V0040Account) (*types.Account, error) {
 	account := &types.Account{}
 
-	// Basic fields
-	if apiAccount.Name != nil {
-		account.Name = *apiAccount.Name
-	}
-	if apiAccount.Description != nil {
-		account.Description = *apiAccount.Description
-	}
-	if apiAccount.Organization != nil {
-		account.Organization = *apiAccount.Organization
-	}
+	// Basic fields (v0.0.40 has direct string fields, not pointers)
+	account.Name = apiAccount.Name
+	account.Description = apiAccount.Description
+	account.Organization = apiAccount.Organization
 
-	// Flags
+	// Set deleted flag if account has DELETED flag
 	if apiAccount.Flags != nil && len(*apiAccount.Flags) > 0 {
-		account.Flags = make([]string, len(*apiAccount.Flags))
-		for i, flag := range *apiAccount.Flags {
-			account.Flags[i] = string(flag)
+		for _, flag := range *apiAccount.Flags {
+			if flag == "DELETED" {
+				account.Deleted = true
+				break
+			}
 		}
 	}
 
-	// Coordinators
+	// Coordinators - v0.0.40 API has complex coordinator structure, but common type just uses names
 	if apiAccount.Coordinators != nil {
-		account.Coordinators = make([]types.Coordinator, 0, len(*apiAccount.Coordinators))
+		account.Coordinators = make([]string, 0, len(*apiAccount.Coordinators))
 		for _, apiCoord := range *apiAccount.Coordinators {
-			coord := types.Coordinator{}
-			if apiCoord.Name != nil {
-				coord.Name = *apiCoord.Name
-			}
-			if apiCoord.Direct != nil && apiCoord.Direct.Count != nil {
-				coord.DirectCount = int32(*apiCoord.Direct.Count)
-			}
-			account.Coordinators = append(account.Coordinators, coord)
+			// V0040Coord has Name field as a direct string
+			account.Coordinators = append(account.Coordinators, apiCoord.Name)
 		}
 	}
 
-	// Associations
-	if apiAccount.Associations != nil {
-		account.Associations = make([]types.AssociationShort, 0, len(*apiAccount.Associations))
-		for _, apiAssoc := range *apiAccount.Associations {
-			assoc := types.AssociationShort{}
-			if apiAssoc.User != nil {
-				assoc.User = *apiAssoc.User
-			}
-			if apiAssoc.Cluster != nil {
-				assoc.Cluster = *apiAssoc.Cluster
-			}
-			if apiAssoc.Partition != nil {
-				assoc.Partition = *apiAssoc.Partition
-			}
-			if apiAssoc.Account != nil {
-				assoc.Account = *apiAssoc.Account
-			}
-			account.Associations = append(account.Associations, assoc)
-		}
-	}
+	// Associations - Common Account type doesn't include associations
+	// Associations would be handled separately via the Association manager
+	// Skip this field for v0.0.40 basic account conversion
 
 	return account, nil
 }
@@ -71,45 +44,30 @@ func (a *AccountAdapter) convertAPIAccountToCommon(apiAccount api.V0040Account) 
 func (a *AccountAdapter) convertCommonAccountCreateToAPI(account *types.AccountCreate) (*api.V0040Account, error) {
 	apiAccount := &api.V0040Account{}
 
-	// Basic fields
-	apiAccount.Name = &account.Name
-	
-	if account.Description != "" {
-		apiAccount.Description = &account.Description
-	}
-	if account.Organization != "" {
-		apiAccount.Organization = &account.Organization
-	}
+	// Basic fields (v0.0.40 expects direct strings, not pointers)
+	apiAccount.Name = account.Name
+	apiAccount.Description = account.Description
+	apiAccount.Organization = account.Organization
 
-	// Parent account
-	if account.Parent != "" {
+	// Parent account - AccountCreate uses ParentName, not Parent
+	if account.ParentName != "" {
 		// v0.0.40 may handle parent differently, might need to set via associations
 		// For now, we'll skip this as it's typically handled by the accounting system
+		// TODO: Implement parent account handling for v0.0.40
 	}
 
-	// Flags
-	if len(account.Flags) > 0 {
-		flags := make([]api.V0040AccountFlags, len(account.Flags))
-		for i, flag := range account.Flags {
-			flags[i] = api.V0040AccountFlags(flag)
-		}
-		apiAccount.Flags = &flags
-	}
+	// Flags - Common AccountCreate type doesn't have Flags field
+	// Skip flags for create operation in v0.0.40
 
-	// Coordinators
+	// Coordinators - convert string names to V0040Coord structs
 	if len(account.Coordinators) > 0 {
-		coords := make([]api.V0040Coordinator, len(account.Coordinators))
-		for i, coord := range account.Coordinators {
-			apiCoord := api.V0040Coordinator{
-				Name: &coord.Name,
+		coords := make([]api.V0040Coord, len(account.Coordinators))
+		for i, coordName := range account.Coordinators {
+			coords[i] = api.V0040Coord{
+				Name: coordName,
+				// Direct can be set to true for explicitly assigned coordinators
+				Direct: boolPtr(true),
 			}
-			if coord.DirectCount > 0 {
-				count := int(coord.DirectCount)
-				apiCoord.Direct = &api.V0040CoordinatorDirect{
-					Count: &count,
-				}
-			}
-			coords[i] = apiCoord
 		}
 		apiAccount.Coordinators = &coords
 	}
@@ -121,25 +79,23 @@ func (a *AccountAdapter) convertCommonAccountCreateToAPI(account *types.AccountC
 func (a *AccountAdapter) convertCommonAccountUpdateToAPI(existingAccount *types.Account, update *types.AccountUpdate) (*api.V0040Account, error) {
 	apiAccount := &api.V0040Account{}
 
-	// Name (required)
-	apiAccount.Name = &existingAccount.Name
+	// Name (required) - v0.0.40 expects direct string
+	apiAccount.Name = existingAccount.Name
 
 	// Apply updates
 	if update.Description != nil {
-		apiAccount.Description = update.Description
+		apiAccount.Description = *update.Description
+	} else {
+		apiAccount.Description = existingAccount.Description
 	}
 	if update.Organization != nil {
-		apiAccount.Organization = update.Organization
+		apiAccount.Organization = *update.Organization
+	} else {
+		apiAccount.Organization = existingAccount.Organization
 	}
 
-	// Flags
-	if update.Flags != nil {
-		flags := make([]api.V0040AccountFlags, len(*update.Flags))
-		for i, flag := range *update.Flags {
-			flags[i] = api.V0040AccountFlags(flag)
-		}
-		apiAccount.Flags = &flags
-	}
+	// Flags - Common AccountUpdate type doesn't have Flags field
+	// Skip flags for update operation in v0.0.40
 
 	return apiAccount, nil
 }

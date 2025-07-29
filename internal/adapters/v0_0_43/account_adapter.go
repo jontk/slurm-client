@@ -2,11 +2,13 @@ package v0_0_43
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 )
 
@@ -43,29 +45,22 @@ func (a *AccountAdapter) List(ctx context.Context, opts *types.AccountListOption
 
 	// Apply filters from options
 	if opts != nil {
-		if len(opts.Names) > 0 {
-			nameStr := strings.Join(opts.Names, ",")
-			params.Account = &nameStr
-		}
+		// Note: v0.0.43 API has limited query parameters
 		if len(opts.Descriptions) > 0 {
 			descStr := strings.Join(opts.Descriptions, ",")
 			params.Description = &descStr
 		}
-		if len(opts.Organizations) > 0 {
-			orgStr := strings.Join(opts.Organizations, ",")
-			params.Organization = &orgStr
-		}
 		if opts.WithDeleted {
 			withDeleted := "true"
-			params.WithDeleted = &withDeleted
+			params.DELETED = &withDeleted
 		}
 		if opts.WithAssocs {
 			withAssocs := "true"
-			params.WithAssocs = &withAssocs
+			params.WithAssociations = &withAssocs
 		}
 		if opts.WithCoords {
 			withCoords := "true"
-			params.WithCoords = &withCoords
+			params.WithCoordinators = &withCoords
 		}
 	}
 
@@ -90,13 +85,12 @@ func (a *AccountAdapter) List(ctx context.Context, opts *types.AccountListOption
 	if err := a.CheckNilResponse(resp.JSON200, "List Accounts"); err != nil {
 		return nil, err
 	}
-	if err := a.CheckNilResponse(resp.JSON200.Accounts, "List Accounts - accounts field"); err != nil {
-		return nil, err
-	}
+	// V0043AccountList is already a slice, not a pointer
+	// No need to check for nil
 
 	// Convert the response to common types
-	accountList := make([]types.Account, 0, len(*resp.JSON200.Accounts))
-	for _, apiAccount := range *resp.JSON200.Accounts {
+	accountList := make([]types.Account, 0, len(resp.JSON200.Accounts))
+	for _, apiAccount := range resp.JSON200.Accounts {
 		account, err := a.convertAPIAccountToCommon(apiAccount)
 		if err != nil {
 			return nil, a.HandleConversionError(err, apiAccount.Name)
@@ -151,10 +145,10 @@ func (a *AccountAdapter) Get(ctx context.Context, accountName string) (*types.Ac
 	}
 
 	// Prepare parameters for the API call
-	params := &api.SlurmdbV0043GetSingleAccountParams{}
+	params := &api.SlurmdbV0043GetAccountParams{}
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmdbV0043GetSingleAccountWithResponse(ctx, accountName, params)
+	resp, err := a.client.SlurmdbV0043GetAccountWithResponse(ctx, accountName, params)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
@@ -174,17 +168,16 @@ func (a *AccountAdapter) Get(ctx context.Context, accountName string) (*types.Ac
 	if err := a.CheckNilResponse(resp.JSON200, "Get Account"); err != nil {
 		return nil, err
 	}
-	if err := a.CheckNilResponse(resp.JSON200.Accounts, "Get Account - accounts field"); err != nil {
-		return nil, err
-	}
+	// V0043AccountList is already a slice, not a pointer
+	// No need to check for nil
 
 	// Check if we got any account entries
-	if len(*resp.JSON200.Accounts) == 0 {
-		return nil, common.NewResourceNotFoundError("Account", accountName)
+	if len(resp.JSON200.Accounts) == 0 {
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("Account %s not found", accountName))
 	}
 
 	// Convert the first account (should be the only one)
-	account, err := a.convertAPIAccountToCommon((*resp.JSON200.Accounts)[0])
+	account, err := a.convertAPIAccountToCommon(resp.JSON200.Accounts[0])
 	if err != nil {
 		return nil, a.HandleConversionError(err, accountName)
 	}
@@ -216,11 +209,8 @@ func (a *AccountAdapter) Create(ctx context.Context, account *types.AccountCreat
 		Accounts: []api.V0043Account{*apiAccount},
 	}
 
-	// Prepare parameters for the API call
-	params := &api.SlurmdbV0043PostAccountsParams{}
-
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmdbV0043PostAccountsWithResponse(ctx, params, reqBody)
+	resp, err := a.client.SlurmdbV0043PostAccountsWithResponse(ctx, reqBody)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
@@ -274,11 +264,8 @@ func (a *AccountAdapter) Update(ctx context.Context, accountName string, update 
 		Accounts: []api.V0043Account{*apiAccount},
 	}
 
-	// Prepare parameters for the API call
-	params := &api.SlurmdbV0043PostAccountsParams{}
-
 	// Call the generated OpenAPI client (POST is used for updates in SLURM API)
-	resp, err := a.client.SlurmdbV0043PostAccountsWithResponse(ctx, params, reqBody)
+	resp, err := a.client.SlurmdbV0043PostAccountsWithResponse(ctx, reqBody)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
@@ -307,7 +294,7 @@ func (a *AccountAdapter) Delete(ctx context.Context, accountName string) error {
 	}
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmdbV0043DeleteSingleAccountWithResponse(ctx, accountName)
+	resp, err := a.client.SlurmdbV0043DeleteAccountWithResponse(ctx, accountName)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
@@ -332,23 +319,23 @@ func (a *AccountAdapter) Delete(ctx context.Context, accountName string) error {
 // validateAccountCreate validates account creation request
 func (a *AccountAdapter) validateAccountCreate(account *types.AccountCreate) error {
 	if account == nil {
-		return common.NewValidationError("account creation data is required", "account", nil)
+		return errors.NewValidationErrorf("account", nil, "account creation data is required")
 	}
 	if account.Name == "" {
-		return common.NewValidationError("account name is required", "name", account.Name)
+		return errors.NewValidationErrorf("name", account.Name, "account name is required")
 	}
 	// Validate numeric fields
 	if account.FairShare < 0 {
-		return common.NewValidationError("fair share must be non-negative", "fairShare", account.FairShare)
+		return errors.NewValidationErrorf("fairShare", account.FairShare, "fair share must be non-negative")
 	}
 	if account.Priority < 0 {
-		return common.NewValidationError("priority must be non-negative", "priority", account.Priority)
+		return errors.NewValidationErrorf("priority", account.Priority, "priority must be non-negative")
 	}
 	if account.MaxJobs < 0 {
-		return common.NewValidationError("max jobs must be non-negative", "maxJobs", account.MaxJobs)
+		return errors.NewValidationErrorf("maxJobs", account.MaxJobs, "max jobs must be non-negative")
 	}
 	if account.MaxWallTime < 0 {
-		return common.NewValidationError("max wall time must be non-negative", "maxWallTime", account.MaxWallTime)
+		return errors.NewValidationErrorf("maxWallTime", account.MaxWallTime, "max wall time must be non-negative")
 	}
 	return nil
 }
@@ -356,28 +343,28 @@ func (a *AccountAdapter) validateAccountCreate(account *types.AccountCreate) err
 // validateAccountUpdate validates account update request
 func (a *AccountAdapter) validateAccountUpdate(update *types.AccountUpdate) error {
 	if update == nil {
-		return common.NewValidationError("account update data is required", "update", nil)
+		return errors.NewValidationErrorf("update", nil, "account update data is required")
 	}
 	// At least one field should be provided for update
 	if update.Description == nil && update.Organization == nil && len(update.Coordinators) == 0 &&
 	   update.DefaultQoS == nil && len(update.QoSList) == 0 && len(update.AllowedPartitions) == 0 &&
 	   update.DefaultPartition == nil && update.FairShare == nil && update.Priority == nil &&
 	   update.MaxJobs == nil && update.MaxWallTime == nil {
-		return common.NewValidationError("at least one field must be provided for update", "update", update)
+		return errors.NewValidationErrorf("update", update, "at least one field must be provided for update")
 	}
 	
 	// Validate numeric fields if provided
 	if update.FairShare != nil && *update.FairShare < 0 {
-		return common.NewValidationError("fair share must be non-negative", "fairShare", *update.FairShare)
+		return errors.NewValidationErrorf("fairShare", *update.FairShare, "fair share must be non-negative")
 	}
 	if update.Priority != nil && *update.Priority < 0 {
-		return common.NewValidationError("priority must be non-negative", "priority", *update.Priority)
+		return errors.NewValidationErrorf("priority", *update.Priority, "priority must be non-negative")
 	}
 	if update.MaxJobs != nil && *update.MaxJobs < 0 {
-		return common.NewValidationError("max jobs must be non-negative", "maxJobs", *update.MaxJobs)
+		return errors.NewValidationErrorf("maxJobs", *update.MaxJobs, "max jobs must be non-negative")
 	}
 	if update.MaxWallTime != nil && *update.MaxWallTime < 0 {
-		return common.NewValidationError("max wall time must be non-negative", "maxWallTime", *update.MaxWallTime)
+		return errors.NewValidationErrorf("maxWallTime", *update.MaxWallTime, "max wall time must be non-negative")
 	}
 	return nil
 }

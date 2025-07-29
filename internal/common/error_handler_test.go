@@ -3,6 +3,7 @@ package common
 import (
 	"testing"
 
+	"github.com/jontk/slurm-client/internal/testutil"
 	"github.com/jontk/slurm-client/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -63,10 +64,10 @@ func TestHandleAPIResponse(t *testing.T) {
 				errorResponse: mockErrorResponse{
 					errors: []ErrorDetail{
 						mockErrorDetail{
-							errorNumber: intPtr(1001),
-							errorCode:   strPtr("INVALID_REQUEST"),
-							source:      strPtr("job_manager"),
-							description: strPtr("Invalid job parameters"),
+							errorNumber: testutil.IntPtr(1001),
+							errorCode:   testutil.StringPtr("INVALID_REQUEST"),
+							source:      testutil.StringPtr("job_manager"),
+							description: testutil.StringPtr("Invalid job parameters"),
 						},
 					},
 				},
@@ -276,6 +277,3 @@ func TestCheckClientInitialized(t *testing.T) {
 	}
 }
 
-// Helper functions for creating pointers
-func intPtr(i int) *int       { return &i }
-func strPtr(s string) *string { return &s }

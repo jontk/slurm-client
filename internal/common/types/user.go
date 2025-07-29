@@ -203,6 +203,15 @@ type UserUsage struct {
 	SuccessRate      float64            `json:"success_rate,omitempty"`
 }
 
+// WCKey represents a Workload Characterization Key
+type WCKey struct {
+	Name      string   `json:"name"`
+	Cluster   string   `json:"cluster"`
+	UserName  string   `json:"user_name"`
+	ID        int32    `json:"id,omitempty"`
+	Flags     []string `json:"flags,omitempty"`
+}
+
 // UserPermissions represents permissions for a user
 type UserPermissions struct {
 	UserName            string   `json:"user_name"`

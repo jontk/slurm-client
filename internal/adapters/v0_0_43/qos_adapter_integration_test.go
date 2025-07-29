@@ -6,6 +6,7 @@ import (
 
 	"github.com/jontk/slurm-client/internal/common/builders"
 	"github.com/jontk/slurm-client/internal/common/types"
+	"github.com/jontk/slurm-client/internal/testutil"
 	"github.com/jontk/slurm-client/internal/testutil/mocks"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 	"github.com/stretchr/testify/assert"
@@ -268,7 +269,7 @@ func TestQoSAdapterWithMockAdapter(t *testing.T) {
 	t.Run("Update QoS", func(t *testing.T) {
 		update := &types.QoSUpdate{
 			Description: stringPtr("Updated description"),
-			Priority:    intPtr(150),
+			Priority:    testutil.IntPtr(150),
 		}
 
 		err := qosAdapter.Update(ctx, "normal", update)
@@ -315,6 +316,3 @@ func stringPtr(s string) *string {
 	return &s
 }
 
-func intPtr(i int) *int {
-	return &i
-}
