@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jontk/slurm-client/internal/common/types"
+	"github.com/jontk/slurm-client/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -89,7 +90,7 @@ func TestQoSBaseManager_ValidateQoSCreate(t *testing.T) {
 			name: "negative grace time",
 			qos: &types.QoSCreate{
 				Name:      "test-qos",
-				GraceTime: intPtr(-1),
+				GraceTime: testutil.IntPtr(-1),
 			},
 			wantErr: true,
 			errMsg:  "Grace time must be non-negative",
@@ -98,7 +99,7 @@ func TestQoSBaseManager_ValidateQoSCreate(t *testing.T) {
 			name: "negative preempt exempt time",
 			qos: &types.QoSCreate{
 				Name:               "test-qos",
-				PreemptExemptTime: intPtr(-1),
+				PreemptExemptTime: testutil.IntPtr(-1),
 			},
 			wantErr: true,
 			errMsg:  "Preempt exempt time must be non-negative",
@@ -120,8 +121,8 @@ func TestQoSBaseManager_ValidateQoSCreate(t *testing.T) {
 				PreemptMode:        []string{"cluster"},
 				UsageFactor:        1.5,
 				UsageThreshold:     0.8,
-				GraceTime:          intPtr(300),
-				PreemptExemptTime: intPtr(60),
+				GraceTime:          testutil.IntPtr(300),
+				PreemptExemptTime: testutil.IntPtr(60),
 			},
 			wantErr: false,
 		},
@@ -130,9 +131,9 @@ func TestQoSBaseManager_ValidateQoSCreate(t *testing.T) {
 			qos: &types.QoSCreate{
 				Name: "test-qos",
 				Limits: &types.QoSLimits{
-					MaxCPUsPerUser:  intPtr(100),
-					MaxJobsPerUser:  intPtr(10),
-					MaxNodesPerUser: intPtr(5),
+					MaxCPUsPerUser:  testutil.IntPtr(100),
+					MaxJobsPerUser:  testutil.IntPtr(10),
+					MaxNodesPerUser: testutil.IntPtr(5),
 				},
 			},
 			wantErr: false,
@@ -142,7 +143,7 @@ func TestQoSBaseManager_ValidateQoSCreate(t *testing.T) {
 			qos: &types.QoSCreate{
 				Name: "test-qos",
 				Limits: &types.QoSLimits{
-					MaxCPUsPerUser: intPtr(-1),
+					MaxCPUsPerUser: testutil.IntPtr(-1),
 				},
 			},
 			wantErr: true,
@@ -186,7 +187,7 @@ func TestQoSBaseManager_ValidateQoSUpdate(t *testing.T) {
 		{
 			name: "negative priority",
 			update: &types.QoSUpdate{
-				Priority: intPtr(-1),
+				Priority: testutil.IntPtr(-1),
 			},
 			wantErr: true,
 			errMsg:  "Priority must be non-negative",
@@ -194,7 +195,7 @@ func TestQoSBaseManager_ValidateQoSUpdate(t *testing.T) {
 		{
 			name: "negative usage factor",
 			update: &types.QoSUpdate{
-				UsageFactor: float64Ptr(-1.0),
+				UsageFactor: testutil.Float64Ptr(-1.0),
 			},
 			wantErr: true,
 			errMsg:  "Usage factor must be non-negative",
@@ -202,7 +203,7 @@ func TestQoSBaseManager_ValidateQoSUpdate(t *testing.T) {
 		{
 			name: "usage threshold out of range",
 			update: &types.QoSUpdate{
-				UsageThreshold: float64Ptr(1.5),
+				UsageThreshold: testutil.Float64Ptr(1.5),
 			},
 			wantErr: true,
 			errMsg:  "Usage threshold must be between 0 and 1",
@@ -210,12 +211,12 @@ func TestQoSBaseManager_ValidateQoSUpdate(t *testing.T) {
 		{
 			name: "valid update with all fields",
 			update: &types.QoSUpdate{
-				Description:    stringPtr("Updated description"),
-				Priority:       intPtr(200),
+				Description:    testutil.StringPtr("Updated description"),
+				Priority:       testutil.IntPtr(200),
 				Flags:          []string{"DenyOnLimit", "RequiresReservation"},
-				PreemptMode:    stringPtr("suspend"),
-				UsageFactor:    float64Ptr(2.0),
-				UsageThreshold: float64Ptr(0.9),
+				PreemptMode:    testutil.StringPtr("suspend"),
+				UsageFactor:    testutil.Float64Ptr(2.0),
+				UsageThreshold: testutil.Float64Ptr(0.9),
 			},
 			wantErr: false,
 		},
@@ -223,8 +224,8 @@ func TestQoSBaseManager_ValidateQoSUpdate(t *testing.T) {
 			name: "valid update with limits",
 			update: &types.QoSUpdate{
 				Limits: &types.QoSLimits{
-					MaxCPUsPerUser: intPtr(200),
-					MaxJobsPerUser: intPtr(20),
+					MaxCPUsPerUser: testutil.IntPtr(200),
+					MaxJobsPerUser: testutil.IntPtr(20),
 				},
 			},
 			wantErr: false,
@@ -233,7 +234,7 @@ func TestQoSBaseManager_ValidateQoSUpdate(t *testing.T) {
 			name: "invalid update with negative limits",
 			update: &types.QoSUpdate{
 				Limits: &types.QoSLimits{
-					MaxJobsPerUser: intPtr(-1),
+					MaxJobsPerUser: testutil.IntPtr(-1),
 				},
 			},
 			wantErr: true,
@@ -276,27 +277,27 @@ func TestQoSBaseManager_ValidateQoSLimits(t *testing.T) {
 		{
 			name: "all valid limits",
 			limits: &types.QoSLimits{
-				MaxCPUsPerUser:        intPtr(100),
-				MaxJobsPerUser:        intPtr(10),
-				MaxNodesPerUser:       intPtr(5),
-				MaxSubmitJobsPerUser:  intPtr(20),
-				MaxCPUsPerAccount:     intPtr(1000),
-				MaxJobsPerAccount:     intPtr(100),
-				MaxNodesPerAccount:    intPtr(50),
-				MaxCPUsPerJob:         intPtr(32),
-				MaxNodesPerJob:        intPtr(2),
-				MaxWallTimePerJob:     intPtr(1440),
-				MaxMemoryPerNode:      int64Ptr(64000),
-				MaxMemoryPerCPU:       int64Ptr(4000),
-				MinCPUsPerJob:         intPtr(1),
-				MinNodesPerJob:        intPtr(1),
+				MaxCPUsPerUser:        testutil.IntPtr(100),
+				MaxJobsPerUser:        testutil.IntPtr(10),
+				MaxNodesPerUser:       testutil.IntPtr(5),
+				MaxSubmitJobsPerUser:  testutil.IntPtr(20),
+				MaxCPUsPerAccount:     testutil.IntPtr(1000),
+				MaxJobsPerAccount:     testutil.IntPtr(100),
+				MaxNodesPerAccount:    testutil.IntPtr(50),
+				MaxCPUsPerJob:         testutil.IntPtr(32),
+				MaxNodesPerJob:        testutil.IntPtr(2),
+				MaxWallTimePerJob:     testutil.IntPtr(1440),
+				MaxMemoryPerNode:      testutil.Int64Ptr(64000),
+				MaxMemoryPerCPU:       testutil.Int64Ptr(4000),
+				MinCPUsPerJob:         testutil.IntPtr(1),
+				MinNodesPerJob:        testutil.IntPtr(1),
 			},
 			wantErr: false,
 		},
 		{
 			name: "negative MaxCPUsPerUser",
 			limits: &types.QoSLimits{
-				MaxCPUsPerUser: intPtr(-1),
+				MaxCPUsPerUser: testutil.IntPtr(-1),
 			},
 			wantErr: true,
 			errMsg:  "MaxCPUsPerUser must be non-negative",
@@ -304,7 +305,7 @@ func TestQoSBaseManager_ValidateQoSLimits(t *testing.T) {
 		{
 			name: "negative MaxJobsPerUser",
 			limits: &types.QoSLimits{
-				MaxJobsPerUser: intPtr(-10),
+				MaxJobsPerUser: testutil.IntPtr(-10),
 			},
 			wantErr: true,
 			errMsg:  "MaxJobsPerUser must be non-negative",
@@ -312,7 +313,7 @@ func TestQoSBaseManager_ValidateQoSLimits(t *testing.T) {
 		{
 			name: "negative MaxNodesPerUser",
 			limits: &types.QoSLimits{
-				MaxNodesPerUser: intPtr(-5),
+				MaxNodesPerUser: testutil.IntPtr(-5),
 			},
 			wantErr: true,
 			errMsg:  "MaxNodesPerUser must be non-negative",
@@ -320,7 +321,7 @@ func TestQoSBaseManager_ValidateQoSLimits(t *testing.T) {
 		{
 			name: "negative MaxWallTimePerJob",
 			limits: &types.QoSLimits{
-				MaxWallTimePerJob: intPtr(-60),
+				MaxWallTimePerJob: testutil.IntPtr(-60),
 			},
 			wantErr: true,
 			errMsg:  "MaxWallTimePerJob must be non-negative",
@@ -328,7 +329,7 @@ func TestQoSBaseManager_ValidateQoSLimits(t *testing.T) {
 		{
 			name: "negative MaxMemoryPerNode",
 			limits: &types.QoSLimits{
-				MaxMemoryPerNode: int64Ptr(-1000),
+				MaxMemoryPerNode: testutil.Int64Ptr(-1000),
 			},
 			wantErr: true,
 			errMsg:  "MaxMemoryPerNode must be non-negative",
@@ -336,7 +337,7 @@ func TestQoSBaseManager_ValidateQoSLimits(t *testing.T) {
 		{
 			name: "negative MinCPUsPerJob",
 			limits: &types.QoSLimits{
-				MinCPUsPerJob: intPtr(-1),
+				MinCPUsPerJob: testutil.IntPtr(-1),
 			},
 			wantErr: true,
 			errMsg:  "MinCPUsPerJob must be non-negative",
@@ -344,9 +345,9 @@ func TestQoSBaseManager_ValidateQoSLimits(t *testing.T) {
 		{
 			name: "multiple negative values",
 			limits: &types.QoSLimits{
-				MaxCPUsPerUser:  intPtr(-1),
-				MaxJobsPerUser:  intPtr(-2),
-				MaxNodesPerUser: intPtr(-3),
+				MaxCPUsPerUser:  testutil.IntPtr(-1),
+				MaxJobsPerUser:  testutil.IntPtr(-2),
+				MaxNodesPerUser: testutil.IntPtr(-3),
 			},
 			wantErr: true,
 			errMsg:  "must be non-negative", // Should catch first error
@@ -574,19 +575,3 @@ func TestQoSBaseManager_FilterQoSList(t *testing.T) {
 	}
 }
 
-// Helper functions for creating pointers
-func intPtr(i int) *int {
-	return &i
-}
-
-func int64Ptr(i int64) *int64 {
-	return &i
-}
-
-func stringPtr(s string) *string {
-	return &s
-}
-
-func float64Ptr(f float64) *float64 {
-	return &f
-}

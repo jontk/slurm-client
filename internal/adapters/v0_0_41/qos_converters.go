@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jontk/slurm-client/internal/adapters/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 )
@@ -199,32 +200,32 @@ func (a *QoSAdapter) convertAPIQoSToCommon(apiQoS interface{}) (*types.QoS, erro
 			if qosData.Limits.Max.Tres != nil {
 				// Total TRES
 				if qosData.Limits.Max.Tres.Total != nil {
-					qos.MaxTRES = convertTRESListToString(*qosData.Limits.Max.Tres.Total)
+					qos.MaxTRES = convertQoSTRESListToString(*qosData.Limits.Max.Tres.Total)
 				}
 
 				// Per-user TRES
 				if qosData.Limits.Max.Tres.Per != nil && qosData.Limits.Max.Tres.Per.User != nil {
-					qos.MaxTRESPerUser = convertTRESListToString(*qosData.Limits.Max.Tres.Per.User)
+					qos.MaxTRESPerUser = convertQoSTRESListToString(*qosData.Limits.Max.Tres.Per.User)
 				}
 
 				// Per-job TRES
 				if qosData.Limits.Max.Tres.Per != nil && qosData.Limits.Max.Tres.Per.Job != nil {
-					qos.MaxTRESPerJob = convertTRESListToString(*qosData.Limits.Max.Tres.Per.Job)
+					qos.MaxTRESPerJob = convertQoSTRESListToString(*qosData.Limits.Max.Tres.Per.Job)
 				}
 
 				// Per-node TRES
 				if qosData.Limits.Max.Tres.Per != nil && qosData.Limits.Max.Tres.Per.Node != nil {
-					qos.MaxTRESPerNode = convertTRESListToString(*qosData.Limits.Max.Tres.Per.Node)
+					qos.MaxTRESPerNode = convertQoSTRESListToString(*qosData.Limits.Max.Tres.Per.Node)
 				}
 
 				// Per-account TRES
 				if qosData.Limits.Max.Tres.Per != nil && qosData.Limits.Max.Tres.Per.Account != nil {
-					qos.MaxTRESPerAccount = convertTRESListToString(*qosData.Limits.Max.Tres.Per.Account)
+					qos.MaxTRESPerAccount = convertQoSTRESListToString(*qosData.Limits.Max.Tres.Per.Account)
 				}
 
 				// TRES minutes
 				if qosData.Limits.Max.Tres.Minutes != nil && qosData.Limits.Max.Tres.Minutes.Total != nil {
-					qos.MaxTRESMinutes = convertTRESListToString(*qosData.Limits.Max.Tres.Minutes.Total)
+					qos.MaxTRESMinutes = convertQoSTRESListToString(*qosData.Limits.Max.Tres.Minutes.Total)
 				}
 			}
 		}
@@ -238,7 +239,7 @@ func (a *QoSAdapter) convertAPIQoSToCommon(apiQoS interface{}) (*types.QoS, erro
 
 			// Min TRES per job
 			if qosData.Limits.Min.TresPerJob != nil {
-				qos.MinTRESPerJob = convertTRESListToString(*qosData.Limits.Min.TresPerJob)
+				qos.MinTRESPerJob = convertQoSTRESListToString(*qosData.Limits.Min.TresPerJob)
 			}
 		}
 	}
@@ -409,49 +410,64 @@ func (a *QoSAdapter) convertCommonToAPIQoS(qos *types.QoS) *api.V0041OpenapiSlur
 	return req
 }
 
-// convertTRESListToString converts a list of TRES entries to a comma-separated string
-func convertTRESListToString(tresList []struct {
+// convertQoSTRESListToString is a wrapper that extracts values from API-specific types
+// and delegates to the common TRES converter
+func convertQoSTRESListToString(tresList []struct {
 	Type  *string `json:"type,omitempty"`
 	Value interface{} `json:"value,omitempty"`
 }) string {
-	var parts []string
+	// Convert to a format the common function can handle
+	var convertedList []struct {
+		Type  *string `json:"type,omitempty"`
+		Value interface{} `json:"value,omitempty"`
+	}
+	
 	for _, tres := range tresList {
 		if tres.Type != nil && tres.Value != nil {
-			// Extract value based on the actual type
-			var valueStr string
+			var extractedValue interface{}
+			
+			// Extract the numeric value from API-specific types
 			switch v := tres.Value.(type) {
 			case *api.V0041OpenapiSlurmdbdQosRespQosLimitsMaxTresTotalValue:
 				if v != nil && v.Number != nil {
-					valueStr = strconv.FormatInt(*v.Number, 10)
+					extractedValue = *v.Number
 				}
 			case *api.V0041OpenapiSlurmdbdQosRespQosLimitsMaxTresPerUserValue:
 				if v != nil && v.Number != nil {
-					valueStr = strconv.FormatInt(*v.Number, 10)
+					extractedValue = *v.Number
 				}
 			case *api.V0041OpenapiSlurmdbdQosRespQosLimitsMaxTresPerJobValue:
 				if v != nil && v.Number != nil {
-					valueStr = strconv.FormatInt(*v.Number, 10)
+					extractedValue = *v.Number
 				}
 			case *api.V0041OpenapiSlurmdbdQosRespQosLimitsMaxTresPerNodeValue:
 				if v != nil && v.Number != nil {
-					valueStr = strconv.FormatInt(*v.Number, 10)
+					extractedValue = *v.Number
 				}
 			case *api.V0041OpenapiSlurmdbdQosRespQosLimitsMaxTresPerAccountValue:
 				if v != nil && v.Number != nil {
-					valueStr = strconv.FormatInt(*v.Number, 10)
+					extractedValue = *v.Number
 				}
 			case *api.V0041OpenapiSlurmdbdQosRespQosLimitsMinTresPerJobValue:
 				if v != nil && v.Number != nil {
-					valueStr = strconv.FormatInt(*v.Number, 10)
+					extractedValue = *v.Number
 				}
 			default:
-				// Handle other types or just use string representation
-				valueStr = fmt.Sprintf("%v", tres.Value)
+				// For unknown types, pass through as-is
+				extractedValue = tres.Value
 			}
-			if valueStr != "" {
-				parts = append(parts, fmt.Sprintf("%s=%s", *tres.Type, valueStr))
+			
+			if extractedValue != nil {
+				convertedList = append(convertedList, struct {
+					Type  *string `json:"type,omitempty"`
+					Value interface{} `json:"value,omitempty"`
+				}{
+					Type:  tres.Type,
+					Value: extractedValue,
+				})
 			}
 		}
 	}
-	return strings.Join(parts, ",")
+	
+	return common.ConvertTRESListToString(convertedList)
 }

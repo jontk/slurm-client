@@ -78,8 +78,8 @@ func (e *ErrorResponseImpl) GetErrors() []common.ErrorDetail {
 	apiErrors := make([]common.ErrorDetail, len(*e.errors))
 	for i, apiErr := range *e.errors {
 		var errorNumber int
-		if apiErr.Errno != nil {
-			errorNumber = int(*apiErr.Errno)
+		if apiErr.ErrorNumber != nil {
+			errorNumber = int(*apiErr.ErrorNumber)
 		}
 		var errorCode string
 		if apiErr.Error != nil {

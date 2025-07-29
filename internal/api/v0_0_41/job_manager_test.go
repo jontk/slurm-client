@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/internal/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -83,7 +84,7 @@ func TestJobManager_Update_NotImplemented(t *testing.T) {
 		client: &WrapperClient{},
 	}
 
-	err := jobManager.Update(context.Background(), "12345", &interfaces.JobUpdate{Priority: intPtr(100)})
+	err := jobManager.Update(context.Background(), "12345", &interfaces.JobUpdate{Priority: testutil.IntPtr(100)})
 
 	// v0.0.41 Update is not implemented
 	assert.Error(t, err)
@@ -154,7 +155,3 @@ func TestFilterJobs(t *testing.T) {
 	assert.Equal(t, "2", filtered[0].ID)
 }
 
-// Helper functions for pointer creation
-func intPtr(i int) *int {
-	return &i
-}

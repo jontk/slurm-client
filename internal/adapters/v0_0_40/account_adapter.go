@@ -2,11 +2,13 @@ package v0_0_40
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
@@ -42,18 +44,13 @@ func (a *AccountAdapter) List(ctx context.Context, opts *types.AccountListOption
 	params := &api.SlurmdbV0040GetAccountsParams{}
 
 	// Apply filters from options
+	// Note: v0.0.40 API has limited parameter support
 	if opts != nil {
-		if len(opts.Names) > 0 {
-			nameStr := strings.Join(opts.Names, ",")
-			params.Account = &nameStr
-		}
+		// Account and Organization filtering is not supported by v0.0.40 GetAccounts params
+		// Only Description and with_* flags are available
 		if len(opts.Descriptions) > 0 {
 			descStr := strings.Join(opts.Descriptions, ",")
 			params.Description = &descStr
-		}
-		if len(opts.Organizations) > 0 {
-			orgStr := strings.Join(opts.Organizations, ",")
-			params.Organization = &orgStr
 		}
 		if opts.WithDeleted {
 			withDeleted := "true"
@@ -67,6 +64,8 @@ func (a *AccountAdapter) List(ctx context.Context, opts *types.AccountListOption
 			withCoords := "true"
 			params.WithCoords = &withCoords
 		}
+		// TODO: Names and Organizations filtering would need to be done client-side
+		// since v0.0.40 API doesn't support these parameters
 	}
 
 	// Call the generated OpenAPI client
@@ -180,7 +179,7 @@ func (a *AccountAdapter) Get(ctx context.Context, accountName string) (*types.Ac
 
 	// Check if we got any account entries
 	if len(resp.JSON200.Accounts) == 0 {
-		return nil, common.NewResourceNotFoundError("Account", accountName)
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("Account %s not found", accountName))
 	}
 
 	// Convert the first account (should be the only one)
@@ -213,7 +212,7 @@ func (a *AccountAdapter) Create(ctx context.Context, account *types.AccountCreat
 
 	// Create request body
 	reqBody := api.SlurmdbV0040PostAccountsJSONRequestBody{
-		Accounts: &[]api.V0040Account{*apiAccount},
+		Accounts: []api.V0040Account{*apiAccount},
 	}
 
 	// Call the generated OpenAPI client
@@ -262,7 +261,7 @@ func (a *AccountAdapter) Update(ctx context.Context, accountName string, update 
 
 	// Create request body
 	reqBody := api.SlurmdbV0040PostAccountsJSONRequestBody{
-		Accounts: &[]api.V0040Account{*apiAccount},
+		Accounts: []api.V0040Account{*apiAccount},
 	}
 
 	// Call the generated OpenAPI client
@@ -320,10 +319,10 @@ func (a *AccountAdapter) Delete(ctx context.Context, accountName string) error {
 // validateAccountCreate validates account creation request
 func (a *AccountAdapter) validateAccountCreate(account *types.AccountCreate) error {
 	if account == nil {
-		return common.NewValidationError("account creation data is required", "account", nil)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account creation data is required", "account", nil, nil)
 	}
 	if account.Name == "" {
-		return common.NewValidationError("account name is required", "name", account.Name)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "name", account.Name, nil)
 	}
 	return nil
 }
@@ -331,11 +330,11 @@ func (a *AccountAdapter) validateAccountCreate(account *types.AccountCreate) err
 // validateAccountUpdate validates account update request
 func (a *AccountAdapter) validateAccountUpdate(update *types.AccountUpdate) error {
 	if update == nil {
-		return common.NewValidationError("account update data is required", "update", nil)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account update data is required", "update", nil, nil)
 	}
 	// At least one field should be provided for update
-	if update.Description == nil && update.Organization == nil && update.Flags == nil {
-		return common.NewValidationError("at least one field must be provided for update", "update", update)
+	if update.Description == nil && update.Organization == nil {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one field must be provided for update", "update", update, nil)
 	}
 	return nil
 }

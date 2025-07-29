@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jontk/slurm-client/internal/adapters/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 )
@@ -631,7 +632,7 @@ func (a *JobAdapter) convertCommonToAPIJobUpdate(update *types.JobUpdate) *api.V
 	// Set time limit
 	if update.TimeLimit != nil {
 		// Convert duration to string format (e.g., "1-00:00:00" for 1 day)
-		timeLimitStr := formatDurationForSlurm(*update.TimeLimit)
+		timeLimitStr := common.FormatDurationForSlurm(*update.TimeLimit)
 		job.TimeLimit = &timeLimitStr
 	}
 
@@ -707,73 +708,3 @@ func (a *JobAdapter) convertCommonToAPIJobUpdate(update *types.JobUpdate) *api.V
 	return req
 }
 
-// formatDurationForSlurm converts a Go duration to Slurm time format
-func formatDurationForSlurm(d time.Duration) string {
-	totalMinutes := int(d.Minutes())
-	days := totalMinutes / 1440
-	hours := (totalMinutes % 1440) / 60
-	minutes := totalMinutes % 60
-
-	if days > 0 {
-		return fmt.Sprintf("%d-%02d:%02d:00", days, hours, minutes)
-	}
-	return fmt.Sprintf("%02d:%02d:00", hours, minutes)
-}
-
-// parseNumberField safely extracts int32 from a NumberField
-func parseNumberField(field interface{}) (int32, bool) {
-	if field == nil {
-		return 0, false
-	}
-
-	// Handle different number field types
-	switch v := field.(type) {
-	case *struct {
-		Infinite *bool  `json:"infinite,omitempty"`
-		Number   *int32 `json:"number,omitempty"`
-		Set      *bool  `json:"set,omitempty"`
-	}:
-		if v != nil && v.Set != nil && *v.Set && v.Number != nil {
-			return *v.Number, true
-		}
-	case *struct {
-		Infinite *bool  `json:"infinite,omitempty"`
-		Number   *int64 `json:"number,omitempty"`
-		Set      *bool  `json:"set,omitempty"`
-	}:
-		if v != nil && v.Set != nil && *v.Set && v.Number != nil {
-			return int32(*v.Number), true
-		}
-	}
-
-	return 0, false
-}
-
-// parseNumberField64 safely extracts int64 from a NumberField
-func parseNumberField64(field interface{}) (int64, bool) {
-	if field == nil {
-		return 0, false
-	}
-
-	// Handle different number field types
-	switch v := field.(type) {
-	case *struct {
-		Infinite *bool  `json:"infinite,omitempty"`
-		Number   *int64 `json:"number,omitempty"`
-		Set      *bool  `json:"set,omitempty"`
-	}:
-		if v != nil && v.Set != nil && *v.Set && v.Number != nil {
-			return *v.Number, true
-		}
-	case *struct {
-		Infinite *bool  `json:"infinite,omitempty"`
-		Number   *int32 `json:"number,omitempty"`
-		Set      *bool  `json:"set,omitempty"`
-	}:
-		if v != nil && v.Set != nil && *v.Set && v.Number != nil {
-			return int64(*v.Number), true
-		}
-	}
-
-	return 0, false
-}

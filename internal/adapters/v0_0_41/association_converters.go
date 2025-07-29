@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jontk/slurm-client/internal/adapters/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 )
@@ -138,16 +139,16 @@ func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssoc interface{})
 		// Max TRES
 		if assocData.Max.Tres != nil {
 			if assocData.Max.Tres.Total != nil {
-				assoc.MaxTRES = convertTRESListToString(*assocData.Max.Tres.Total)
+				assoc.MaxTRES = common.ConvertTRESListToStringSimple(*assocData.Max.Tres.Total)
 			}
 			if assocData.Max.Tres.Per != nil && assocData.Max.Tres.Per.Job != nil {
-				assoc.MaxTRESPerJob = convertTRESListToString(*assocData.Max.Tres.Per.Job)
+				assoc.MaxTRESPerJob = common.ConvertTRESListToStringSimple(*assocData.Max.Tres.Per.Job)
 			}
 		}
 
 		// Max TRES minutes
 		if assocData.Max.TresMinutes != nil && assocData.Max.TresMinutes.Total != nil {
-			assoc.MaxTRESMinutes = convertTRESListToString(*assocData.Max.TresMinutes.Total)
+			assoc.MaxTRESMinutes = common.ConvertTRESListToStringSimple(*assocData.Max.TresMinutes.Total)
 		}
 
 		// Max wall time per account
@@ -304,16 +305,3 @@ func (a *AssociationAdapter) convertCommonToAPIAssociation(assoc *types.Associat
 	return req
 }
 
-// convertTRESListToString converts a list of TRES entries to a comma-separated string
-func convertTRESListToString(tresList []struct {
-	Type  *string `json:"type,omitempty"`
-	Value *int64  `json:"value,omitempty"`
-}) string {
-	var parts []string
-	for _, tres := range tresList {
-		if tres.Type != nil && tres.Value != nil {
-			parts = append(parts, fmt.Sprintf("%s=%d", *tres.Type, *tres.Value))
-		}
-	}
-	return strings.Join(parts, ",")
-}

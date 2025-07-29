@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/internal/testutil"
 	"github.com/jontk/slurm-client/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -268,7 +269,7 @@ func TestJobManager_StructuredErrorTypes(t *testing.T) {
 	assert.Equal(t, errors.ErrorCodeClientNotInitialized, slurmErr.Code)
 
 	// Test Update method returns SlurmError
-	err = jobManager.Update(context.Background(), "12345", &interfaces.JobUpdate{Priority: intPtr(100)})
+	err = jobManager.Update(context.Background(), "12345", &interfaces.JobUpdate{Priority: testutil.IntPtr(100)})
 	assert.Error(t, err)
 	assert.ErrorAs(t, err, &slurmErr)
 	assert.Equal(t, errors.ErrorCodeClientNotInitialized, slurmErr.Code)
@@ -292,7 +293,7 @@ func TestJobManager_ErrorHandling_Update(t *testing.T) {
 		client: &WrapperClient{}, // No API client initialized
 	}
 
-	err := jobManager.Update(context.Background(), "12345", &interfaces.JobUpdate{Priority: intPtr(100)})
+	err := jobManager.Update(context.Background(), "12345", &interfaces.JobUpdate{Priority: testutil.IntPtr(100)})
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "API client not initialized")
@@ -333,7 +334,7 @@ func TestJobManager_convertJobUpdateToAPI(t *testing.T) {
 		{
 			name: "Update priority only",
 			update: &interfaces.JobUpdate{
-				Priority: intPtr(100),
+				Priority: testutil.IntPtr(100),
 			},
 			expected: &V0040JobDescMsg{
 				Priority: &V0040Uint32NoVal{
@@ -346,7 +347,7 @@ func TestJobManager_convertJobUpdateToAPI(t *testing.T) {
 		{
 			name: "Update time limit only",
 			update: &interfaces.JobUpdate{
-				TimeLimit: intPtr(3600),
+				TimeLimit: testutil.IntPtr(3600),
 			},
 			expected: &V0040JobDescMsg{
 				TimeLimit: &V0040Uint32NoVal{
@@ -369,8 +370,8 @@ func TestJobManager_convertJobUpdateToAPI(t *testing.T) {
 		{
 			name: "Update all fields",
 			update: &interfaces.JobUpdate{
-				Priority:  intPtr(200),
-				TimeLimit: intPtr(7200),
+				Priority:  testutil.IntPtr(200),
+				TimeLimit: testutil.IntPtr(7200),
 				Name:      stringPtr("new-job-name"),
 			},
 			expected: &V0040JobDescMsg{
@@ -436,9 +437,6 @@ func TestJobManager_convertJobUpdateToAPI(t *testing.T) {
 }
 
 // Helper functions for pointer creation
-func intPtr(i int) *int {
-	return &i
-}
 
 func int32Ptr(i int32) *int32 {
 	return &i
