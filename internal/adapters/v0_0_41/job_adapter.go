@@ -247,15 +247,15 @@ func (a *JobAdapter) Submit(ctx context.Context, opts *types.JobSubmitOptions) (
 }
 
 // Cancel cancels a job
-func (a *JobAdapter) Cancel(ctx context.Context, jobID uint32) error {
+func (a *JobAdapter) Cancel(ctx context.Context, jobID int32, opts *types.JobCancelRequest) error {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
 
 	// Validate job ID
-	if err := a.ValidateResourceID("jobID", jobID); err != nil {
-		return err
+	if jobID <= 0 {
+		return a.HandleValidationError("jobID must be positive")
 	}
 
 	// Check client initialization
@@ -264,7 +264,7 @@ func (a *JobAdapter) Cancel(ctx context.Context, jobID uint32) error {
 	}
 
 	// Make the API call
-	jobIDStr := strconv.FormatUint(uint64(jobID), 10)
+	jobIDStr := strconv.FormatInt(int64(jobID), 10)
 	resp, err := a.client.SlurmV0041DeleteJobWithResponse(ctx, jobIDStr)
 	if err != nil {
 		return a.WrapError(err, fmt.Sprintf("failed to cancel job %d", jobID))

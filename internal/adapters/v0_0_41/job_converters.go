@@ -304,9 +304,9 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob interface{}) (*types.Job, erro
 }
 
 // convertCommonToAPIJobSubmit converts common JobSubmitOptions to v0.0.41 API request
-func (a *JobAdapter) convertCommonToAPIJobSubmit(opts *types.JobSubmitOptions) *api.V0041OpenapiJobSubmitReq {
-	req := &api.V0041OpenapiJobSubmitReq{
-		Jobs: []struct {
+func (a *JobAdapter) convertCommonToAPIJobSubmit(opts *types.JobSubmitOptions) *api.SlurmV0041PostJobSubmitJSONBody {
+	req := &api.SlurmV0041PostJobSubmitJSONBody{
+		Job: &struct {
 			Account                 *string   `json:"account,omitempty"`
 			AccountGatherFrequency  *string   `json:"account_gather_frequency,omitempty"`
 			Argv                    *[]string `json:"argv,omitempty"`
@@ -397,7 +397,7 @@ func (a *JobAdapter) convertCommonToAPIJobSubmit(opts *types.JobSubmitOptions) *
 		},
 	}
 
-	job := &req.Jobs[0]
+	job := req.Job
 
 	// Set basic fields
 	if opts.Name != "" {
@@ -520,189 +520,24 @@ func (a *JobAdapter) convertCommonToAPIJobSubmit(opts *types.JobSubmitOptions) *
 }
 
 // convertCommonToAPIJobUpdate converts common JobUpdate to v0.0.41 API request
-func (a *JobAdapter) convertCommonToAPIJobUpdate(update *types.JobUpdate) *api.V0041OpenapiJobUpdateReq {
-	req := &api.V0041OpenapiJobUpdateReq{
-		Jobs: []struct {
-			AdminComment     *string `json:"admin_comment,omitempty"`
-			ArrayInx         *string `json:"array_inx,omitempty"`
-			ArrayTaskThrottle *int32  `json:"array_task_throttle,omitempty"`
-			BatchScript      *string `json:"batch_script,omitempty"`
-			BurstBuffer      *string `json:"burst_buffer,omitempty"`
-			ClusterFeatures  *string `json:"cluster_features,omitempty"`
-			Comment          *string `json:"comment,omitempty"`
-			Container        *string `json:"container,omitempty"`
-			ContainerId      *string `json:"container_id,omitempty"`
-			CoreSpec         *int32  `json:"core_spec,omitempty"`
-			CoresPerSocket   *int32  `json:"cores_per_socket,omitempty"`
-			CpusPerTask      *int32  `json:"cpus_per_task,omitempty"`
-			CpuFreqGov       *string `json:"cpu_freq_gov,omitempty"`
-			CpuFreqMax       *int32  `json:"cpu_freq_max,omitempty"`
-			CpuFreqMin       *int32  `json:"cpu_freq_min,omitempty"`
-			Deadline         *string `json:"deadline,omitempty"`
-			DelayBoot        *int32  `json:"delay_boot,omitempty"`
-			Dependency       *string `json:"dependency,omitempty"`
-			EndTime          *string `json:"end_time,omitempty"`
-			Environment      *string `json:"environment,omitempty"`
-			ExcNodes         *string `json:"exc_nodes,omitempty"`
-			Extra            *string `json:"extra,omitempty"`
-			Features         *string `json:"features,omitempty"`
-			FedIsLock        *bool   `json:"fed_is_lock,omitempty"`
-			GresReq          *string `json:"gres_req,omitempty"`
-			Hold             *bool   `json:"hold,omitempty"`
-			JobId            *string `json:"job_id,omitempty"`
-			Kill_on_node_fail *bool   `json:"kill_on_node_fail,omitempty"`
-			Licenses         *string `json:"licenses,omitempty"`
-			MailType         *string `json:"mail_type,omitempty"`
-			MailUser         *string `json:"mail_user,omitempty"`
-			McsLabel         *string `json:"mcs_label,omitempty"`
-			MemPerCpu        *int64  `json:"mem_per_cpu,omitempty"`
-			MemPerGpu        *int64  `json:"mem_per_gpu,omitempty"`
-			MemPerNode       *int64  `json:"mem_per_node,omitempty"`
-			MinCpusNode      *int32  `json:"min_cpus_node,omitempty"`
-			MinMemoryCpu     *int64  `json:"min_memory_cpu,omitempty"`
-			MinMemoryNode    *int64  `json:"min_memory_node,omitempty"`
-			MinTmpDisk       *int32  `json:"min_tmp_disk,omitempty"`
-			Name             *string `json:"name,omitempty"`
-			Network          *string `json:"network,omitempty"`
-			Nice             *int32  `json:"nice,omitempty"`
-			NodeCnt          *int32  `json:"node_cnt,omitempty"`
-			NodeInx          *string `json:"node_inx,omitempty"`
-			Nodes            *string `json:"nodes,omitempty"`
-			NodesMax         *int32  `json:"nodes_max,omitempty"`
-			NodesMin         *int32  `json:"nodes_min,omitempty"`
-			NumCpus          *int32  `json:"num_cpus,omitempty"`
-			NumNodes         *int32  `json:"num_nodes,omitempty"`
-			NumTasks         *int32  `json:"num_tasks,omitempty"`
-			Oversubscribe    *bool   `json:"oversubscribe,omitempty"`
-			Partition        *string `json:"partition,omitempty"`
-			PreSusTime       *int32  `json:"pre_sus_time,omitempty"`
-			Priority         *int32  `json:"priority,omitempty"`
-			Profile          *string `json:"profile,omitempty"`
-			Qos              *string `json:"qos,omitempty"`
-			Reboot           *bool   `json:"reboot,omitempty"`
-			ReqNodes         *string `json:"req_nodes,omitempty"`
-			ReqSwitch        *int32  `json:"req_switch,omitempty"`
-			Requeue          *bool   `json:"requeue,omitempty"`
-			ResvName         *string `json:"resv_name,omitempty"`
-			Sched_nodes      *string `json:"sched_nodes,omitempty"`
-			Script           *string `json:"script,omitempty"`
-			SiblingsActive   *string `json:"siblings_active,omitempty"`
-			SiblingsViable   *string `json:"siblings_viable,omitempty"`
-			Shared           *string `json:"shared,omitempty"`
-			SocketsPerNode   *int32  `json:"sockets_per_node,omitempty"`
-			SpankJobEnv      *string `json:"spank_job_env,omitempty"`
-			SpankJobEnvSize  *int32  `json:"spank_job_env_size,omitempty"`
-			StartTime        *string `json:"start_time,omitempty"`
-			StateDesc        *string `json:"state_desc,omitempty"`
-			StdErr           *string `json:"std_err,omitempty"`
-			StdIn            *string `json:"std_in,omitempty"`
-			StdOut           *string `json:"std_out,omitempty"`
-			TasksPerCore     *int32  `json:"tasks_per_core,omitempty"`
-			TasksPerNode     *int32  `json:"tasks_per_node,omitempty"`
-			TasksPerSocket   *int32  `json:"tasks_per_socket,omitempty"`
-			TasksPerBoard    *int32  `json:"tasks_per_board,omitempty"`
-			ThreadSpec       *int32  `json:"thread_spec,omitempty"`
-			ThreadsPerCore   *int32  `json:"threads_per_core,omitempty"`
-			TimeLimit        *string `json:"time_limit,omitempty"`
-			TimeMin          *string `json:"time_min,omitempty"`
-			TresBind         *string `json:"tres_bind,omitempty"`
-			TresFreq         *string `json:"tres_freq,omitempty"`
-			TresPerJob       *string `json:"tres_per_job,omitempty"`
-			TresPerNode      *string `json:"tres_per_node,omitempty"`
-			TresPerSocket    *string `json:"tres_per_socket,omitempty"`
-			TresPerTask      *string `json:"tres_per_task,omitempty"`
-			TresReqStr       *string `json:"tres_req_str,omitempty"`
-			UserId           *string `json:"user_id,omitempty"`
-			Wait4switch      *int32  `json:"wait4switch,omitempty"`
-			Wckey            *string `json:"wckey,omitempty"`
-			WorkDir          *string `json:"work_dir,omitempty"`
-		}{
-			{},
-		},
-	}
+// Note: v0.0.41 may not have a dedicated update type, using a basic structure
+func (a *JobAdapter) convertCommonToAPIJobUpdate(update *types.JobUpdate) map[string]interface{} {
+	req := make(map[string]interface{})
 
-	job := &req.Jobs[0]
-
-	// Set priority
-	if update.Priority != nil {
-		priority := int32(*update.Priority)
-		job.Priority = &priority
-	}
-
-	// Set time limit
-	if update.TimeLimit != nil {
-		// Convert duration to string format (e.g., "1-00:00:00" for 1 day)
-		timeLimitStr := common.FormatDurationForSlurm(*update.TimeLimit)
-		job.TimeLimit = &timeLimitStr
-	}
-
-	// Set partition
-	if update.Partition != nil {
-		job.Partition = update.Partition
-	}
-
-	// Set QoS
-	if update.QoS != nil {
-		job.Qos = update.QoS
-	}
-
-	// Set node count
-	if update.NodeCount != nil {
-		nodeCount := int32(*update.NodeCount)
-		job.NumNodes = &nodeCount
-	}
-
-	// Set features/constraints
-	if update.Features != nil {
-		job.Features = update.Features
-	}
-
-	// Set comment
+	// Set fields that can be updated
 	if update.Comment != nil {
-		job.Comment = update.Comment
+		req["comment"] = *update.Comment
 	}
-
-	// Set hold state
-	if update.Hold != nil {
-		job.Hold = update.Hold
+	if update.Priority != nil {
+		req["priority"] = *update.Priority
 	}
-
-	// Set nice value
-	if update.Nice != nil {
-		nice := int32(*update.Nice)
-		job.Nice = &nice
+	if update.QoS != nil {
+		req["qos"] = *update.QoS
 	}
-
-	// Set requeue flag
-	if update.Requeue != nil {
-		job.Requeue = update.Requeue
-	}
-
-	// Set account
-	if update.Account != nil {
-		// v0.0.41 doesn't support account update through job update
-		// This would need to be done through association update
-	}
-
-	// Set WCKEY
-	if update.WCKey != nil {
-		job.Wckey = update.WCKey
-	}
-
-	// Set reservation
-	if update.Reservation != nil {
-		job.ResvName = update.Reservation
-	}
-
-	// Set dependency
-	if update.Dependency != nil {
-		job.Dependency = update.Dependency
-	}
-
-	// Set deadline
-	if update.Deadline != nil {
-		deadlineStr := update.Deadline.Format("2006-01-02T15:04:05")
-		job.Deadline = &deadlineStr
+	if update.TimeLimit != nil {
+		// Convert duration to minutes
+		timeLimitMinutes := int32(update.TimeLimit.Minutes())
+		req["time_limit"] = timeLimitMinutes
 	}
 
 	return req

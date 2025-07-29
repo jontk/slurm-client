@@ -192,22 +192,22 @@ func (a *AccountAdapter) Get(ctx context.Context, accountName string) (*types.Ac
 }
 
 // Create creates a new account
-func (a *AccountAdapter) Create(ctx context.Context, account *types.AccountCreate) error {
+func (a *AccountAdapter) Create(ctx context.Context, account *types.AccountCreate) (*types.AccountCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 	if err := a.validateAccountCreate(account); err != nil {
-		return err
+		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Convert to API format
 	apiAccount, err := a.convertCommonAccountCreateToAPI(account)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create request body
@@ -218,7 +218,7 @@ func (a *AccountAdapter) Create(ctx context.Context, account *types.AccountCreat
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmdbV0040PostAccountsWithResponse(ctx, reqBody)
 	if err != nil {
-		return a.HandleAPIError(err)
+		return nil, a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
@@ -228,7 +228,13 @@ func (a *AccountAdapter) Create(ctx context.Context, account *types.AccountCreat
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
+		return nil, err
+	}
+
+	return &types.AccountCreateResponse{
+		AccountName: account.Name,
+	}, nil
 }
 
 // Update updates an existing account

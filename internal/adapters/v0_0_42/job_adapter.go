@@ -121,7 +121,7 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 }
 
 // Get retrieves a specific job by ID
-func (a *JobAdapter) Get(ctx context.Context, jobID uint32) (*types.Job, error) {
+func (a *JobAdapter) Get(ctx context.Context, jobID int32) (*types.Job, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
@@ -159,7 +159,7 @@ func (a *JobAdapter) Get(ctx context.Context, jobID uint32) (*types.Job, error) 
 }
 
 // Cancel cancels a job
-func (a *JobAdapter) Cancel(ctx context.Context, jobID uint32, signal string, flags *types.JobCancelFlags) error {
+func (a *JobAdapter) Cancel(ctx context.Context, jobID int32, opts *types.JobCancelRequest) error {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
@@ -173,24 +173,26 @@ func (a *JobAdapter) Cancel(ctx context.Context, jobID uint32, signal string, fl
 	// Prepare parameters
 	params := &api.SlurmV0042DeleteJobParams{}
 	
-	// Set signal
-	if signal != "" {
-		params.Signal = &signal
+	// Set signal from options
+	signal := "SIGTERM" // Default signal
+	if opts != nil && opts.Signal != "" {
+		signal = opts.Signal
 	}
+	params.Signal = &signal
 
-	// Apply flags if provided
-	if flags != nil {
+	// Apply flags if provided in options
+	if opts != nil && opts.Flags != nil {
 		var apiFlags []api.SlurmV0042DeleteJobParamsFlags
-		if flags.ArrayTask {
+		if opts.Flags.ArrayTask {
 			apiFlags = append(apiFlags, api.ARRAYTASK)
 		}
-		if flags.BatchJob {
+		if opts.Flags.BatchJob {
 			apiFlags = append(apiFlags, api.BATCHJOB)
 		}
-		if flags.FullJob {
+		if opts.Flags.FullJob {
 			apiFlags = append(apiFlags, api.FULLJOB)
 		}
-		if flags.Hurry {
+		if opts.Flags.Hurry {
 			apiFlags = append(apiFlags, api.HURRY)
 		}
 		if len(apiFlags) > 0 {
@@ -251,7 +253,7 @@ func (a *JobAdapter) Submit(ctx context.Context, jobSpec *types.JobSubmitRequest
 }
 
 // Update updates an existing job
-func (a *JobAdapter) Update(ctx context.Context, jobID uint32, updates *types.JobUpdateRequest) error {
+func (a *JobAdapter) Update(ctx context.Context, jobID int32, updates *types.JobUpdate) error {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
@@ -280,6 +282,56 @@ func (a *JobAdapter) Update(ctx context.Context, jobID uint32, updates *types.Jo
 	}
 
 	return nil
+}
+
+// Signal sends a signal to a job
+func (a *JobAdapter) Signal(ctx context.Context, req *types.JobSignalRequest) error {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return err
+	}
+
+	// Check client initialization
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return err
+	}
+
+	// This is a placeholder - v0.0.42 doesn't have a dedicated signal endpoint
+	// Signaling is typically done through the delete/cancel endpoint with different signals
+	return fmt.Errorf("job signaling not directly supported via v0.0.42 API - use cancel with specific signal")
+}
+
+// Hold holds a job
+func (a *JobAdapter) Hold(ctx context.Context, req *types.JobHoldRequest) error {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return err
+	}
+
+	// Check client initialization
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return err
+	}
+
+	// v0.0.42 doesn't have a dedicated hold endpoint
+	// Job holds are typically managed through job updates or administrative commands
+	return fmt.Errorf("job hold not directly supported via v0.0.42 API - use administrative commands")
+}
+
+// Notify sends a notification for a job
+func (a *JobAdapter) Notify(ctx context.Context, req *types.JobNotifyRequest) error {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return err
+	}
+
+	// Check client initialization
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return err
+	}
+
+	// This is a placeholder - v0.0.42 doesn't have a job notification endpoint
+	return fmt.Errorf("job notification not supported via v0.0.42 API")
 }
 
 // Watch watches for job changes

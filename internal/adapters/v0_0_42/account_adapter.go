@@ -3,7 +3,6 @@ package v0_0_42
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
@@ -41,33 +40,31 @@ func (a *AccountAdapter) List(ctx context.Context, opts *types.AccountListOption
 
 	// Apply filters from options
 	if opts != nil {
-		if len(opts.Names) > 0 {
-			accountStr := strings.Join(opts.Names, ",")
-			params.Account = &accountStr
-		}
-		if opts.WithAssociations {
+		// Note: v0.0.42 API doesn't support filtering by account names in GetAccounts
+		// Account filtering is done after retrieval
+		if opts.WithAssocs {
 			withAssoc := "true"
-			params.WithAssoc = &withAssoc
+			params.WithAssociations = &withAssoc
 		}
-		if opts.WithCoordinators {
+		if opts.WithCoords {
 			withCoord := "true"
-			params.WithCoord = &withCoord
+			params.WithCoordinators = &withCoord
 		}
 		if opts.WithDeleted {
 			withDeleted := "true"
-			params.WithDeleted = &withDeleted
+			params.DELETED = &withDeleted
 		}
 	}
 
 	// Call the API
 	resp, err := a.client.SlurmdbV0042GetAccountsWithResponse(ctx, params)
 	if err != nil {
-		return nil, a.WrapError(err, "failed to list accounts")
+		return nil, a.HandleAPIError(err)
 	}
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return nil, a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, fmt.Errorf("API request failed with status %d", resp.StatusCode())
 	}
 
 	// Check for API response
@@ -77,17 +74,17 @@ func (a *AccountAdapter) List(ctx context.Context, opts *types.AccountListOption
 
 	// Convert the response to common types
 	accountList := &types.AccountList{
-		Accounts: make([]*types.Account, 0),
+		Accounts: make([]types.Account, 0),
 	}
 
 	if resp.JSON200.Accounts != nil {
-		for _, apiAccount := range *resp.JSON200.Accounts {
+		for _, apiAccount := range resp.JSON200.Accounts {
 			account, err := a.convertAPIAccountToCommon(apiAccount)
 			if err != nil {
 				// Log conversion error but continue
 				continue
 			}
-			accountList.Accounts = append(accountList.Accounts, account)
+			accountList.Accounts = append(accountList.Accounts, *account)
 		}
 	}
 
@@ -112,58 +109,61 @@ func (a *AccountAdapter) Get(ctx context.Context, name string) (*types.Account, 
 	// Call the API
 	resp, err := a.client.SlurmdbV0042GetAccountWithResponse(ctx, name, params)
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to get account %s", name))
+		return nil, a.HandleAPIError(err)
 	}
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return nil, a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, fmt.Errorf("API request failed with status %d", resp.StatusCode())
 	}
 
 	// Check for API response
-	if resp.JSON200 == nil || resp.JSON200.Accounts == nil || len(*resp.JSON200.Accounts) == 0 {
+	if resp.JSON200 == nil || resp.JSON200.Accounts == nil || len(resp.JSON200.Accounts) == 0 {
 		return nil, fmt.Errorf("account %s not found", name)
 	}
 
 	// Convert the first account in the response
-	accounts := *resp.JSON200.Accounts
+	accounts := resp.JSON200.Accounts
 	return a.convertAPIAccountToCommon(accounts[0])
 }
 
 // Create creates a new account
-func (a *AccountAdapter) Create(ctx context.Context, account *types.AccountCreateRequest) error {
+func (a *AccountAdapter) Create(ctx context.Context, account *types.AccountCreate) (*types.AccountCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Convert common account to API format
 	apiAccount, err := a.convertCommonAccountCreateToAPI(account)
 	if err != nil {
-		return a.WrapError(err, "failed to convert account create request")
+		return nil, a.HandleAPIError(err)
 	}
 
 	// Call the API
-	resp, err := a.client.SlurmdbV0042PostAccountsWithResponse(ctx, apiAccount)
+	resp, err := a.client.SlurmdbV0042PostAccountsWithResponse(ctx, *apiAccount)
 	if err != nil {
-		return a.WrapError(err, "failed to create account")
+		return nil, a.HandleAPIError(err)
 	}
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, fmt.Errorf("API request failed with status %d", resp.StatusCode())
 	}
 
-	return nil
+	// Return success response
+	return &types.AccountCreateResponse{
+		AccountName: account.Name,
+	}, nil
 }
 
 // Update updates an existing account
-func (a *AccountAdapter) Update(ctx context.Context, name string, updates *types.AccountUpdateRequest) error {
+func (a *AccountAdapter) Update(ctx context.Context, name string, updates *types.AccountUpdate) error {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
@@ -194,12 +194,12 @@ func (a *AccountAdapter) Delete(ctx context.Context, name string) error {
 	// Call the API
 	resp, err := a.client.SlurmdbV0042DeleteAccountWithResponse(ctx, name)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to delete account %s", name))
+		return a.HandleAPIError(err)
 	}
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return fmt.Errorf("API request failed with status %d", resp.StatusCode())
 	}
 
 	return nil

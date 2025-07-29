@@ -6,24 +6,26 @@ import (
 )
 
 // convertAPIAssociationToCommon converts a v0.0.40 API Association to common Association type
-func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0040AssocShort) (*types.Association, error) {
+func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0040Assoc) (*types.Association, error) {
 	association := &types.Association{}
 
-	// Basic fields (V0040AssocShort only has these fields)
+	// Basic fields from V0040Assoc
 	if apiAssociation.Account != nil {
-		association.Account = *apiAssociation.Account
+		association.AccountName = *apiAssociation.Account
 	}
-	// User is required in V0040AssocShort
-	association.User = apiAssociation.User
+	// V0040Assoc has User inside the Id field (V0040AssocShort)
+	if apiAssociation.Id != nil && apiAssociation.Id.User != "" {
+		association.UserName = apiAssociation.Id.User
+	}
 	if apiAssociation.Cluster != nil {
 		association.Cluster = *apiAssociation.Cluster
 	}
 	if apiAssociation.Partition != nil {
 		association.Partition = *apiAssociation.Partition
 	}
-	// Set ID if available
-	if apiAssociation.Id != nil {
-		association.ID = uint32(*apiAssociation.Id)
+	// Set ID from V0040AssocShort nested in Id field
+	if apiAssociation.Id != nil && apiAssociation.Id.Id != nil {
+		association.ID = string(*apiAssociation.Id.Id)
 	}
 
 	return association, nil
@@ -33,18 +35,16 @@ func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0
 func (a *AssociationAdapter) convertCommonAssociationCreateToAPI(association *types.AssociationCreate) (*api.V0040AssocShort, error) {
 	apiAssociation := &api.V0040AssocShort{}
 
-	// Basic fields (V0040AssocShort only supports limited fields)
-	apiAssociation.Account = &association.Account
-	apiAssociation.User = association.User // User is required and not a pointer
+	// Basic fields for V0040AssocShort
+	apiAssociation.Account = &association.AccountName
+	apiAssociation.User = association.UserName // User is string, not pointer in V0040AssocShort
 	apiAssociation.Cluster = &association.Cluster
 	
 	if association.Partition != "" {
 		apiAssociation.Partition = &association.Partition
 	}
 
-	// Note: V0040AssocShort is a simplified type and doesn't support
-	// advanced fields like QoS, shares, priority, flags, etc.
-	// Those would require using V0040Assoc type instead.
+	// Note: V0040AssocShort is used for creation requests
 
 	return apiAssociation, nil
 }

@@ -136,35 +136,39 @@ func (a *UserAdapter) Get(ctx context.Context, name string) (*types.User, error)
 }
 
 // Create creates a new user
-func (a *UserAdapter) Create(ctx context.Context, user *types.UserCreateRequest) error {
+func (a *UserAdapter) Create(ctx context.Context, user *types.UserCreate) (*types.UserCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Convert common user to API format
 	apiUser, err := a.convertCommonUserCreateToAPI(user)
 	if err != nil {
-		return a.WrapError(err, "failed to convert user create request")
+		return nil, a.WrapError(err, "failed to convert user create request")
 	}
 
 	// Call the API
 	resp, err := a.client.SlurmdbV0042PostUsersWithResponse(ctx, apiUser)
 	if err != nil {
-		return a.WrapError(err, "failed to create user")
+		return nil, a.WrapError(err, "failed to create user")
 	}
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, a.HandleAPIError(resp.StatusCode(), resp.Body)
 	}
 
-	return nil
+	// Return success response
+	return &types.UserCreateResponse{
+		Success: true,
+		Message: "User created successfully",
+	}, nil
 }
 
 // Update updates an existing user

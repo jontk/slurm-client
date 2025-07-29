@@ -7,6 +7,7 @@ import (
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
@@ -169,7 +170,7 @@ func (a *PartitionAdapter) Get(ctx context.Context, partitionName string) (*type
 
 	// Check if we got any partition entries
 	if len(resp.JSON200.Partitions) == 0 {
-		return nil, common.NewResourceNotFoundError("Partition", partitionName)
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, "Partition '"+partitionName+"' not found")
 	}
 
 	// Convert the first partition (should be the only one)
@@ -182,22 +183,22 @@ func (a *PartitionAdapter) Get(ctx context.Context, partitionName string) (*type
 }
 
 // Create creates a new partition
-func (a *PartitionAdapter) Create(ctx context.Context, partition *types.PartitionCreate) error {
+func (a *PartitionAdapter) Create(ctx context.Context, partition *types.PartitionCreate) (*types.PartitionCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 	if err := a.validatePartitionCreate(partition); err != nil {
-		return err
+		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Convert to API format
 	apiPartition, err := a.convertCommonPartitionCreateToAPI(partition)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create request body
@@ -208,7 +209,7 @@ func (a *PartitionAdapter) Create(ctx context.Context, partition *types.Partitio
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmV0040PostPartitionWithResponse(ctx, reqBody)
 	if err != nil {
-		return a.HandleAPIError(err)
+		return nil, a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
@@ -218,7 +219,13 @@ func (a *PartitionAdapter) Create(ctx context.Context, partition *types.Partitio
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
+		return nil, err
+	}
+
+	return &types.PartitionCreateResponse{
+		PartitionName: partition.Name,
+	}, nil
 }
 
 // Update updates an existing partition

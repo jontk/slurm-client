@@ -7,6 +7,7 @@ import (
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
@@ -63,10 +64,11 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 			withDeleted := "true"
 			params.WithDeleted = &withDeleted
 		}
-		if opts.WithSubAccounts {
-			withSubAccts := "true"
-			params.WithSubAccts = &withSubAccts
-		}
+		// Note: WithSubAccounts not supported in AssociationListOptions for v0.0.40
+		// if opts.WithSubAccounts {
+		// 	withSubAccts := "true"
+		// 	params.WithSubAccts = &withSubAccts
+		// }
 	}
 
 	// Call the generated OpenAPI client
@@ -162,37 +164,45 @@ func (a *AssociationAdapter) Get(ctx context.Context, associationID string) (*ty
 		}
 	}
 
-	return nil, common.NewResourceNotFoundError("Association", associationID)
+	return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, "Association '"+associationID+"' not found")
 }
 
 // Create creates a new association
-func (a *AssociationAdapter) Create(ctx context.Context, association *types.AssociationCreate) error {
+func (a *AssociationAdapter) Create(ctx context.Context, association *types.AssociationCreate) (*types.AssociationCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 	if err := a.validateAssociationCreate(association); err != nil {
-		return err
+		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Convert to API format
 	apiAssociation, err := a.convertCommonAssociationCreateToAPI(association)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create request body
+	// Convert V0040AssocShort to V0040Assoc for the associations list
+	assoc := api.V0040Assoc{
+		Account: apiAssociation.Account,
+		Cluster: apiAssociation.Cluster,
+		Partition: apiAssociation.Partition,
+		Id: apiAssociation,  // V0040AssocShort is used as the Id field in V0040Assoc
+	}
+	
 	reqBody := api.SlurmdbV0040PostAssociationsJSONRequestBody{
-		Associations: &[]api.V0040AssociationShort{*apiAssociation},
+		Associations: api.V0040AssocList{assoc},
 	}
 
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmdbV0040PostAssociationsWithResponse(ctx, reqBody)
 	if err != nil {
-		return a.HandleAPIError(err)
+		return nil, a.HandleAPIError(err)
 	}
 
 	// Use common response error handling
@@ -202,7 +212,16 @@ func (a *AssociationAdapter) Create(ctx context.Context, association *types.Asso
 	}
 
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
+		return nil, err
+	}
+
+	return &types.AssociationCreateResponse{
+		AssociationID: a.constructAssociationIDFromCreate(*association),
+		AccountName:   association.AccountName,
+		UserName:      association.UserName,
+		Cluster:       association.Cluster,
+	}, nil
 }
 
 // Update updates an existing association
@@ -216,7 +235,7 @@ func (a *AssociationAdapter) Update(ctx context.Context, associationID string, u
 	}
 
 	// v0.0.40 may not support association updates directly
-	return common.NewNotImplementedError("Update Association is not implemented for v0.0.40")
+	return errors.NewNotImplementedError("Update Association", "v0.0.40")
 }
 
 // Delete deletes an association
@@ -231,12 +250,12 @@ func (a *AssociationAdapter) Delete(ctx context.Context, associationID string) e
 
 	// v0.0.40 doesn't have a direct association delete endpoint
 	// You would typically delete by removing the user from account
-	return common.NewNotImplementedError("Delete Association is not implemented for v0.0.40")
+	return errors.NewNotImplementedError("Delete Association", "v0.0.40")
 }
 
 // constructAssociationID constructs an ID from association fields
 func (a *AssociationAdapter) constructAssociationID(assoc types.Association) string {
-	parts := []string{assoc.Cluster, assoc.Account, assoc.User}
+	parts := []string{assoc.Cluster, assoc.AccountName, assoc.UserName}
 	if assoc.Partition != "" {
 		parts = append(parts, assoc.Partition)
 	}
@@ -246,16 +265,25 @@ func (a *AssociationAdapter) constructAssociationID(assoc types.Association) str
 // validateAssociationCreate validates association creation request
 func (a *AssociationAdapter) validateAssociationCreate(association *types.AssociationCreate) error {
 	if association == nil {
-		return common.NewValidationError("association creation data is required", "association", nil)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "association creation data is required", "association", nil, nil)
 	}
-	if association.Account == "" {
-		return common.NewValidationError("account is required", "account", association.Account)
+	if association.AccountName == "" {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account is required", "account", association.AccountName, nil)
 	}
-	if association.User == "" {
-		return common.NewValidationError("user is required", "user", association.User)
+	if association.UserName == "" {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "user is required", "user", association.UserName, nil)
 	}
 	if association.Cluster == "" {
-		return common.NewValidationError("cluster is required", "cluster", association.Cluster)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "cluster is required", "cluster", association.Cluster, nil)
 	}
 	return nil
+}
+
+// constructAssociationIDFromCreate constructs an ID from association create fields
+func (a *AssociationAdapter) constructAssociationIDFromCreate(assoc types.AssociationCreate) string {
+	parts := []string{assoc.Cluster, assoc.AccountName, assoc.UserName}
+	if assoc.Partition != "" {
+		parts = append(parts, assoc.Partition)
+	}
+	return strings.Join(parts, ":")
 }

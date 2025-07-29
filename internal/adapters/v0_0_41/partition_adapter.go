@@ -159,27 +159,27 @@ func (a *PartitionAdapter) Get(ctx context.Context, name string) (*types.Partiti
 }
 
 // Create creates a new partition
-func (a *PartitionAdapter) Create(ctx context.Context, partition *types.Partition) error {
+func (a *PartitionAdapter) Create(ctx context.Context, req *types.PartitionCreate) (*types.PartitionCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
-	// Validate partition
-	if partition == nil {
-		return a.HandleValidationError("partition cannot be nil")
+	// Validate request
+	if req == nil {
+		return nil, a.HandleValidationError("partition create request cannot be nil")
 	}
-	if err := a.ValidateResourceName("partition name", partition.Name); err != nil {
-		return err
+	if err := a.ValidateResourceName("partition name", req.Name); err != nil {
+		return nil, err
 	}
 
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
+		return nil, err
 	}
 
 	// v0.0.41 doesn't support partition creation through the API
-	return fmt.Errorf("partition creation is not supported in API v0.0.41")
+	return nil, fmt.Errorf("partition creation is not supported in API v0.0.41")
 }
 
 // Update updates an existing partition

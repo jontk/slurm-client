@@ -2,7 +2,7 @@ package v0_0_40
 
 import (
 	"context"
-	"strings"
+	"fmt"
 
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
@@ -43,21 +43,11 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 
 	// Apply filters from options
 	if opts != nil {
-		if len(opts.Names) > 0 {
-			nameStr := strings.Join(opts.Names, ",")
-			params.NodeName = &nameStr
-		}
-		if len(opts.States) > 0 {
-			stateStrs := make([]string, len(opts.States))
-			for i, state := range opts.States {
-				stateStrs[i] = string(state)
-			}
-			stateStr := strings.Join(stateStrs, ",")
-			params.States = &stateStr
-		}
+		// v0.0.40 API doesn't support NodeName or States parameters in the API call
+		// We'll handle these filters client-side in filterNodeList
 		if opts.UpdateTime != nil {
-			updateTime := opts.UpdateTime.Unix()
-			params.UpdateTime = &updateTime
+			updateTimeStr := fmt.Sprintf("%d", opts.UpdateTime.Unix())
+			params.UpdateTime = &updateTimeStr
 		}
 	}
 
@@ -211,10 +201,8 @@ func (a *NodeAdapter) Update(ctx context.Context, nodeName string, update *types
 		return err
 	}
 
-	// Create request body
-	reqBody := api.SlurmV0040PostNodeJSONRequestBody{
-		Nodes: &[]api.V0040Node{*apiNode},
-	}
+	// Create request body - v0.0.40 uses V0040UpdateNodeMsg directly  
+	reqBody := *apiNode
 
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmV0040PostNodeWithResponse(ctx, nodeName, reqBody)
@@ -292,49 +280,9 @@ func (a *NodeAdapter) filterNodeList(nodes []types.Node, opts *types.NodeListOpt
 			}
 		}
 
-		// Apply Features filter
-		if len(opts.Features) > 0 {
-			hasAllFeatures := true
-			for _, feature := range opts.Features {
-				found := false
-				nodeFeatures := strings.Split(node.Features, ",")
-				for _, nodeFeature := range nodeFeatures {
-					if feature == strings.TrimSpace(nodeFeature) {
-						found = true
-						break
-					}
-				}
-				if !found {
-					hasAllFeatures = false
-					break
-				}
-			}
-			if !hasAllFeatures {
-				continue
-			}
-		}
-
-		// Apply GRES filter
-		if opts.GRES != "" {
-			if !strings.Contains(node.GRES, opts.GRES) {
-				continue
-			}
-		}
-
-		// Apply CPUs filter
-		if opts.MinCPUs > 0 && node.CPUs < opts.MinCPUs {
-			continue
-		}
-
-		// Apply Memory filter
-		if opts.MinMemory > 0 && (node.RealMemory == nil || *node.RealMemory < opts.MinMemory) {
-			continue
-		}
-
-		// Apply TmpDisk filter
-		if opts.MinTmpDisk > 0 && (node.TmpDisk == nil || *node.TmpDisk < opts.MinTmpDisk) {
-			continue
-		}
+		// Note: v0.0.40 API and NodeListOptions don't support advanced filtering
+		// like Features, GRES, MinCPUs, MinMemory, MinTmpDisk
+		// These filters would need to be added to NodeListOptions if needed
 
 		filtered = append(filtered, node)
 	}
@@ -349,7 +297,7 @@ func (a *NodeAdapter) validateNodeUpdate(update *types.NodeUpdate) error {
 	}
 	// At least one field should be provided for update
 	if update.State == nil && update.Reason == nil && update.Comment == nil && 
-	   update.Features == nil && update.GRES == nil && update.Weight == nil {
+	   len(update.Features) == 0 && update.Gres == nil && update.Weight == nil {
 		return common.NewValidationError("at least one field must be provided for update", "update", update)
 	}
 	return nil

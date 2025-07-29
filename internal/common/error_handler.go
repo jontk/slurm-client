@@ -168,3 +168,23 @@ func CheckClientInitialized(client interface{}) error {
 	}
 	return nil
 }
+
+// NewResourceNotFoundError creates a standardized resource not found error
+func NewResourceNotFoundError(resourceType string, identifier interface{}) error {
+	return errors.NewClientError(
+		errors.ErrorCodeResourceNotFound,
+		fmt.Sprintf("%s not found", resourceType),
+		fmt.Sprintf("%s '%v' was not found", resourceType, identifier),
+	)
+}
+
+// NewValidationError creates a standardized validation error
+func NewValidationError(message, field string, value interface{}) error {
+	return errors.NewValidationError(
+		errors.ErrorCodeValidationFailed,
+		message,
+		field,
+		value,
+		nil,
+	)
+}

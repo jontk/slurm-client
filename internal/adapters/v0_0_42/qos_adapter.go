@@ -137,35 +137,44 @@ func (a *QoSAdapter) Get(ctx context.Context, name string) (*types.QoS, error) {
 }
 
 // Create creates a new QoS
-func (a *QoSAdapter) Create(ctx context.Context, qos *types.QoSCreateRequest) error {
+func (a *QoSAdapter) Create(ctx context.Context, qos *types.QoSCreate) (*types.QoSCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
+		return nil, err
+	}
+
+	// Convert QoSCreate to QoSCreateRequest for compatibility
+	qosCreateReq := &types.QoSCreateRequest{
+		Name:        qos.Name,
+		Description: qos.Description,
+		Priority:    qos.Priority,
 	}
 
 	// Convert common QoS to API format
-	apiQoS, err := a.convertCommonQoSCreateToAPI(qos)
+	apiQoS, err := a.convertCommonQoSCreateToAPI(qosCreateReq)
 	if err != nil {
-		return a.WrapError(err, "failed to convert QoS create request")
+		return nil, fmt.Errorf("failed to convert QoS create request: %w", err)
 	}
 
 	// Call the API
-	resp, err := a.client.SlurmdbV0042PostQosWithResponse(ctx, apiQoS)
+	resp, err := a.client.SlurmdbV0042PostQosWithResponse(ctx, *apiQoS)
 	if err != nil {
-		return a.WrapError(err, "failed to create QoS")
+		return nil, fmt.Errorf("failed to create QoS: %w", err)
 	}
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, fmt.Errorf("API request failed with status %d", resp.StatusCode())
 	}
 
-	return nil
+	return &types.QoSCreateResponse{
+		QoSName: qos.Name,
+	}, nil
 }
 
 // Update updates an existing QoS

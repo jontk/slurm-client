@@ -187,23 +187,31 @@ func (a *UserAdapter) Get(ctx context.Context, name string) (*types.User, error)
 }
 
 // Create creates a new user
-func (a *UserAdapter) Create(ctx context.Context, user *types.User) error {
+func (a *UserAdapter) Create(ctx context.Context, req *types.UserCreate) (*types.UserCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
-	// Validate user
-	if user == nil {
-		return a.HandleValidationError("user cannot be nil")
+	// Validate request
+	if req == nil {
+		return nil, a.HandleValidationError("user create request cannot be nil")
 	}
-	if err := a.ValidateResourceName("user name", user.Name); err != nil {
-		return err
+	if err := a.ValidateResourceName("user name", req.Name); err != nil {
+		return nil, err
 	}
 
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
+		return nil, err
+	}
+
+	// Convert request to user for API call
+	user := &types.User{
+		Name: req.Name,
+		DefaultAccount: req.DefaultAccount,
+		DefaultWCKey: req.DefaultWCKey,
+		AdminLevel: req.AdminLevel,
 	}
 
 	// Convert user to API request
@@ -212,15 +220,15 @@ func (a *UserAdapter) Create(ctx context.Context, user *types.User) error {
 	// Make the API call
 	resp, err := a.client.SlurmdbV0041PostUsersWithResponse(ctx, *createReq)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to create user %s", user.Name))
+		return nil, a.WrapError(err, fmt.Sprintf("failed to create user %s", req.Name))
 	}
 
 	// Handle response
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &types.UserCreateResponse{Name: req.Name}, nil
 }
 
 // Update updates an existing user

@@ -44,11 +44,11 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 
 	// Apply filters from options
 	if opts != nil {
-		if opts.Account != "" {
-			params.Account = &opts.Account
+		if opts.AccountName != "" {
+			params.Account = &opts.AccountName
 		}
-		if opts.User != "" {
-			params.User = &opts.User
+		if opts.UserName != "" {
+			params.User = &opts.UserName
 		}
 		if opts.Cluster != "" {
 			params.Cluster = &opts.Cluster
@@ -149,20 +149,32 @@ func (a *AssociationAdapter) Get(ctx context.Context, id uint32) (*types.Associa
 }
 
 // Create creates a new association
-func (a *AssociationAdapter) Create(ctx context.Context, association *types.Association) error {
+func (a *AssociationAdapter) Create(ctx context.Context, req *types.AssociationCreate) (*types.AssociationCreateResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
-	// Validate association
-	if association == nil {
-		return a.HandleValidationError("association cannot be nil")
+	// Validate request
+	if req == nil {
+		return nil, a.HandleValidationError("association create request cannot be nil")
 	}
 
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
+		return nil, err
+	}
+
+	// Convert request to association for API call
+	association := &types.Association{
+		AccountName: req.Account,
+		UserName: req.User,
+		Cluster: req.Cluster,
+		Partition: req.Partition,
+		DefaultQoS: req.DefaultQoS,
+		SharesRaw: req.SharesRaw,
+		Priority: req.Priority,
+		ParentAccount: req.ParentAccount,
 	}
 
 	// Convert association to API request
@@ -171,15 +183,15 @@ func (a *AssociationAdapter) Create(ctx context.Context, association *types.Asso
 	// Make the API call
 	resp, err := a.client.SlurmdbV0041PostAssociationsWithResponse(ctx, *createReq)
 	if err != nil {
-		return a.WrapError(err, "failed to create association")
+		return nil, a.WrapError(err, "failed to create association")
 	}
 
 	// Handle response
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &types.AssociationCreateResponse{ID: association.ID}, nil
 }
 
 // Update updates an existing association
@@ -237,7 +249,7 @@ func (a *AssociationAdapter) Update(ctx context.Context, id uint32, update *type
 }
 
 // Delete deletes an association
-func (a *AssociationAdapter) Delete(ctx context.Context, id uint32) error {
+func (a *AssociationAdapter) Delete(ctx context.Context, id string) error {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
@@ -249,23 +261,34 @@ func (a *AssociationAdapter) Delete(ctx context.Context, id uint32) error {
 	}
 
 	// v0.0.41 doesn't support deleting by ID directly
-	// We need to get the association first
-	assoc, err := a.Get(ctx, id)
-	if err != nil {
-		return err
+	// Parse the composite key (format: "account:user:cluster:partition")
+	parts := strings.Split(id, ":")
+	if len(parts) < 3 {
+		return a.HandleValidationError("invalid association ID format, expected 'account:user:cluster[:partition]'")
+	}
+	
+	account := parts[0]
+	user := parts[1]
+	cluster := parts[2]
+	partition := ""
+	if len(parts) > 3 {
+		partition = parts[3]
 	}
 
 	// Make the API call using account, user, cluster, partition
 	params := &api.SlurmdbV0041DeleteAssociationsParams{
-		Account:   &assoc.Account,
-		User:      &assoc.User,
-		Cluster:   &assoc.Cluster,
-		Partition: &assoc.Partition,
+		Account: &account,
+		User:    &user,
+		Cluster: &cluster,
+	}
+	
+	if partition != "" {
+		params.Partition = &partition
 	}
 
 	resp, err := a.client.SlurmdbV0041DeleteAssociationsWithResponse(ctx, params)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to delete association %d", id))
+		return a.WrapError(err, fmt.Sprintf("failed to delete association %s", id))
 	}
 
 	// Handle response
@@ -303,9 +326,9 @@ func (a *AssociationAdapter) SetLimits(ctx context.Context, id uint32, limits *t
 // GetByUserAccount gets associations for a specific user and account
 func (a *AssociationAdapter) GetByUserAccount(ctx context.Context, user, account, cluster string) (*types.Association, error) {
 	opts := &types.AssociationListOptions{
-		User:    user,
-		Account: account,
-		Cluster: cluster,
+		UserName:    user,
+		AccountName: account,
+		Cluster:     cluster,
 	}
 
 	assocList, err := a.List(ctx, opts)
