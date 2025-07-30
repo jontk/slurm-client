@@ -177,15 +177,15 @@ func (a *JobAdapter) Get(ctx context.Context, jobID int32) (*types.Job, error) {
 }
 
 // Submit submits a new job to the Slurm scheduler
-func (a *JobAdapter) Submit(ctx context.Context, opts *types.JobSubmitOptions) (*types.JobSubmitResponse, error) {
+func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.JobSubmitResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
 
-	// Validate options
-	if opts == nil {
-		return nil, a.HandleValidationError("job submit options cannot be nil")
+	// Validate job
+	if job == nil {
+		return nil, a.HandleValidationError("job cannot be nil")
 	}
 
 	// Check client initialization
@@ -193,11 +193,87 @@ func (a *JobAdapter) Submit(ctx context.Context, opts *types.JobSubmitOptions) (
 		return nil, err
 	}
 
-	// Convert options to API request
-	submitReq := a.convertCommonToAPIJobSubmit(opts)
+	// Create job submission structure
+	jobSubmission := api.V0041JobSubmission{
+		Script: &job.Script,
+	}
+
+	// Basic job properties
+	if job.Name != "" {
+		jobSubmission.Name = &job.Name
+	}
+	if job.Account != "" {
+		jobSubmission.Account = &job.Account
+	}
+	if job.Partition != "" {
+		jobSubmission.Partition = &job.Partition
+	}
+
+	// Working directory
+	if job.WorkingDirectory != "" {
+		jobSubmission.CurrentWorkingDirectory = &job.WorkingDirectory
+	}
+
+	// Standard output/error/input
+	if job.StandardOutput != "" {
+		jobSubmission.StandardOutput = &job.StandardOutput
+	}
+	if job.StandardError != "" {
+		jobSubmission.StandardError = &job.StandardError
+	}
+	if job.StandardInput != "" {
+		jobSubmission.StandardInput = &job.StandardInput
+	}
+
+	// Time limit
+	if job.TimeLimit > 0 {
+		timeLimit := api.V0041Uint32NoVal{
+			Set:    true,
+			Number: int64(job.TimeLimit),
+		}
+		jobSubmission.TimeLimit = &timeLimit
+	}
+
+	// Node count
+	if job.Nodes > 0 {
+		nodes := api.V0041Uint32NoVal{
+			Set:    true,
+			Number: int64(job.Nodes),
+		}
+		jobSubmission.Nodes = &nodes
+	}
+
+	// Handle environment variables - CRITICAL for avoiding SLURM errors
+	envList := make([]string, 0)
+	
+	// Always provide at least minimal environment to avoid SLURM write errors
+	hasPath := false
+	for key := range job.Environment {
+		if key == "PATH" {
+			hasPath = true
+			break
+		}
+	}
+	
+	if !hasPath {
+		envList = append(envList, "PATH=/usr/bin:/bin")
+	}
+	
+	// Add all user-provided environment variables
+	for key, value := range job.Environment {
+		envList = append(envList, fmt.Sprintf("%s=%s", key, value))
+	}
+	
+	// Set environment in job submission
+	jobSubmission.Environment = &envList
+
+	// Create request body
+	submitReq := api.V0041JobSubmitReq{
+		Jobs: []api.V0041JobSubmission{jobSubmission},
+	}
 
 	// Make the API call
-	resp, err := a.client.SlurmV0041PostJobSubmitWithResponse(ctx, *submitReq)
+	resp, err := a.client.SlurmV0041PostJobSubmitWithResponse(ctx, submitReq)
 	if err != nil {
 		return nil, a.WrapError(err, "failed to submit job")
 	}
@@ -227,7 +303,7 @@ func (a *JobAdapter) Submit(ctx context.Context, opts *types.JobSubmitOptions) (
 				warnings = append(warnings, *warning.Description)
 			}
 		}
-		submitResp.Warnings = warnings
+		submitResp.Warning = warnings
 	}
 
 	// Extract errors if any
@@ -239,7 +315,7 @@ func (a *JobAdapter) Submit(ctx context.Context, opts *types.JobSubmitOptions) (
 			}
 		}
 		if len(errors) > 0 {
-			return submitResp, fmt.Errorf("job submission errors: %v", errors)
+			submitResp.Error = errors
 		}
 	}
 

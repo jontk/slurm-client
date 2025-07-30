@@ -44,41 +44,11 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 	params := &api.SlurmV0042GetJobsParams{}
 
 	// Apply filters from options
-	if opts != nil {
-		if len(opts.Accounts) > 0 {
-			accountStr := strings.Join(opts.Accounts, ",")
-			params.Account = &accountStr
-		}
-		if len(opts.Partitions) > 0 {
-			partitionStr := strings.Join(opts.Partitions, ",")
-			params.Partition = &partitionStr
-		}
-		if len(opts.Users) > 0 {
-			usersStr := strings.Join(opts.Users, ",")
-			params.Users = &usersStr
-		}
-		if len(opts.JobIDs) > 0 {
-			// Convert job IDs to string
-			jobIDStrs := make([]string, len(opts.JobIDs))
-			for i, id := range opts.JobIDs {
-				jobIDStrs[i] = strconv.FormatUint(uint64(id), 10)
-			}
-			jobsStr := strings.Join(jobIDStrs, ",")
-			params.Job = &jobsStr
-		}
-		if opts.StartTime != nil {
-			startTimeStr := strconv.FormatInt(opts.StartTime.Unix(), 10)
-			params.StartTime = &startTimeStr
-		}
-		if opts.EndTime != nil {
-			endTimeStr := strconv.FormatInt(opts.EndTime.Unix(), 10)
-			params.EndTime = &endTimeStr
-		}
-		if len(opts.States) > 0 {
-			// Convert states to string
-			stateStr := strings.Join(opts.States, ",")
-			params.State = &stateStr
-		}
+	// Note: v0.0.42 has very limited filtering capabilities in GetJobs
+	// Only UpdateTime is supported
+	if opts != nil && opts.StartTime != nil {
+		updateTimeStr := strconv.FormatInt(opts.StartTime.Unix(), 10)
+		params.UpdateTime = &updateTimeStr
 	}
 
 	// Set flags to get detailed job information
@@ -102,9 +72,7 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 	}
 
 	// Convert the response to common types
-	jobList := &types.JobList{
-		Jobs: make([]*types.Job, 0),
-	}
+	jobs := make([]types.Job, 0)
 
 	if resp.JSON200.Jobs != nil {
 		for _, apiJob := range *resp.JSON200.Jobs {
@@ -113,11 +81,113 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 				// Log conversion error but continue
 				continue
 			}
-			jobList.Jobs = append(jobList.Jobs, job)
+			jobs = append(jobs, *job)
 		}
 	}
 
-	return jobList, nil
+	// Apply client-side filtering since API has limited support
+	if opts != nil {
+		filteredJobs := make([]types.Job, 0)
+		for _, job := range jobs {
+			// Filter by accounts
+			if len(opts.Accounts) > 0 {
+				found := false
+				for _, account := range opts.Accounts {
+					if job.Account == account {
+						found = true
+						break
+					}
+				}
+				if !found {
+					continue
+				}
+			}
+
+			// Filter by partitions
+			if len(opts.Partitions) > 0 {
+				found := false
+				for _, partition := range opts.Partitions {
+					if job.Partition == partition {
+						found = true
+						break
+					}
+				}
+				if !found {
+					continue
+				}
+			}
+
+			// Filter by users
+			if len(opts.Users) > 0 {
+				found := false
+				for _, user := range opts.Users {
+					if job.UserName == user || fmt.Sprintf("%d", job.UserID) == user {
+						found = true
+						break
+					}
+				}
+				if !found {
+					continue
+				}
+			}
+
+			// Filter by states
+			if len(opts.States) > 0 {
+				found := false
+				for _, state := range opts.States {
+					if string(job.State) == string(state) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					continue
+				}
+			}
+
+			// Filter by job IDs
+			if len(opts.JobIDs) > 0 {
+				found := false
+				for _, id := range opts.JobIDs {
+					if job.JobID == id {
+						found = true
+						break
+					}
+				}
+				if !found {
+					continue
+				}
+			}
+
+			filteredJobs = append(filteredJobs, job)
+		}
+		jobs = filteredJobs
+	}
+
+	// Apply pagination
+	start := 0
+	if opts != nil && opts.Offset > 0 {
+		start = opts.Offset
+	}
+	if start >= len(jobs) {
+		return &types.JobList{
+			Jobs:  []types.Job{},
+			Total: len(jobs),
+		}, nil
+	}
+
+	end := len(jobs)
+	if opts != nil && opts.Limit > 0 {
+		end = start + opts.Limit
+		if end > len(jobs) {
+			end = len(jobs)
+		}
+	}
+
+	return &types.JobList{
+		Jobs:  jobs[start:end],
+		Total: len(jobs),
+	}, nil
 }
 
 // Get retrieves a specific job by ID
@@ -215,7 +285,7 @@ func (a *JobAdapter) Cancel(ctx context.Context, jobID int32, opts *types.JobCan
 }
 
 // Submit submits a new job
-func (a *JobAdapter) Submit(ctx context.Context, jobSpec *types.JobSubmitRequest) (*types.JobSubmitResponse, error) {
+func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.JobSubmitResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
@@ -226,10 +296,73 @@ func (a *JobAdapter) Submit(ctx context.Context, jobSpec *types.JobSubmitRequest
 		return nil, err
 	}
 
-	// Convert common job spec to API format
-	apiJobReq, err := a.convertCommonJobSubmitToAPI(jobSpec)
-	if err != nil {
-		return nil, a.WrapError(err, "failed to convert job submission request")
+	// Create the job submission structure
+	apiJobSubmission := &api.V0042JobSubmission{
+		Name:      &job.Name,
+		Account:   &job.Account,
+		Partition: &job.Partition,
+	}
+
+	// Handle script/command
+	if job.Script != "" {
+		apiJobSubmission.Script = &job.Script
+	}
+	
+	// Handle working directory
+	if job.WorkingDirectory != "" {
+		apiJobSubmission.CurrentWorkingDirectory = &job.WorkingDirectory
+	}
+	
+	// Handle standard output/error/input
+	if job.StandardOutput != "" {
+		apiJobSubmission.StandardOutput = &job.StandardOutput
+	}
+	if job.StandardError != "" {
+		apiJobSubmission.StandardError = &job.StandardError
+	}
+	if job.StandardInput != "" {
+		apiJobSubmission.StandardInput = &job.StandardInput
+	}
+	
+	// Handle time limit
+	if job.TimeLimit > 0 {
+		timeLimitStr := fmt.Sprintf("%d", job.TimeLimit)
+		apiJobSubmission.TimeLimit = &timeLimitStr
+	}
+	
+	// Handle node count
+	if job.Nodes > 0 {
+		nodes := int32(job.Nodes)
+		apiJobSubmission.Nodes = &nodes
+	}
+
+	// Handle environment variables - CRITICAL for avoiding SLURM errors
+	envVars := make([]string, 0)
+	
+	// Always provide at least minimal environment to avoid SLURM write errors
+	hasPath := false
+	for key := range job.Environment {
+		if key == "PATH" {
+			hasPath = true
+			break
+		}
+	}
+	
+	if !hasPath {
+		envVars = append(envVars, "PATH=/usr/bin:/bin")
+	}
+	
+	// Add all user-provided environment variables
+	for key, value := range job.Environment {
+		envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
+	}
+	
+	// Set environment in job submission
+	apiJobSubmission.Environment = &envVars
+
+	// Create request body
+	apiJobReq := &api.SlurmV0042PostJobSubmitJSONRequestBody{
+		Jobs: &[]api.V0042JobSubmission{*apiJobSubmission},
 	}
 
 	// Call the API

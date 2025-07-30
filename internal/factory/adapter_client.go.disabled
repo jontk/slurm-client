@@ -1,0 +1,623 @@
+package factory
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/jontk/slurm-client/internal/adapters/common"
+	v040adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_40"
+	v041adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_41"
+	v042adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_42"
+	v043adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_43"
+	v040api "github.com/jontk/slurm-client/internal/api/v0_0_40"
+	v041api "github.com/jontk/slurm-client/internal/api/v0_0_41"
+	v042api "github.com/jontk/slurm-client/internal/api/v0_0_42"
+	v043api "github.com/jontk/slurm-client/internal/api/v0_0_43"
+	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/internal/common/types"
+)
+
+// AdapterClient wraps a version-specific adapter to implement the SlurmClient interface
+type AdapterClient struct {
+	adapter common.VersionAdapter
+	version string
+}
+
+// NewAdapterClient creates a new adapter-based client for the specified version
+func NewAdapterClient(version string, config *ClientConfig) (SlurmClient, error) {
+	switch version {
+	case "v0.0.40":
+		client, err := v040api.NewClientWithResponses(config.BaseURL, v040api.WithHTTPClient(config.HTTPClient))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create v0.0.40 client: %w", err)
+		}
+		adapter := v040adapter.NewAdapter(client)
+		return &AdapterClient{
+			adapter: adapter,
+			version: version,
+		}, nil
+
+	case "v0.0.41":
+		client, err := v041api.NewClientWithResponses(config.BaseURL, v041api.WithHTTPClient(config.HTTPClient))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create v0.0.41 client: %w", err)
+		}
+		adapter := v041adapter.NewAdapter(client)
+		return &AdapterClient{
+			adapter: adapter,
+			version: version,
+		}, nil
+
+	case "v0.0.42":
+		client, err := v042api.NewClientWithResponses(config.BaseURL, v042api.WithHTTPClient(config.HTTPClient))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create v0.0.42 client: %w", err)
+		}
+		adapter := v042adapter.NewAdapter(client)
+		return &AdapterClient{
+			adapter: adapter,
+			version: version,
+		}, nil
+
+	case "v0.0.43":
+		client, err := v043api.NewClientWithResponses(config.BaseURL, v043api.WithHTTPClient(config.HTTPClient))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create v0.0.43 client: %w", err)
+		}
+		adapter := v043adapter.NewAdapter(client)
+		return &AdapterClient{
+			adapter: adapter,
+			version: version,
+		}, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported version: %s", version)
+	}
+}
+
+// Version returns the API version
+func (c *AdapterClient) Version() string {
+	return c.version
+}
+
+// Jobs returns the JobManager
+func (c *AdapterClient) Jobs() interfaces.JobManager {
+	return &adapterJobManager{adapter: c.adapter.GetJobManager()}
+}
+
+// Nodes returns the NodeManager
+func (c *AdapterClient) Nodes() interfaces.NodeManager {
+	return &adapterNodeManager{adapter: c.adapter.GetNodeManager()}
+}
+
+// Partitions returns the PartitionManager
+func (c *AdapterClient) Partitions() interfaces.PartitionManager {
+	return &adapterPartitionManager{adapter: c.adapter.GetPartitionManager()}
+}
+
+// Info returns the InfoManager
+func (c *AdapterClient) Info() interfaces.InfoManager {
+	// For now, return a basic implementation
+	return &adapterInfoManager{version: c.version}
+}
+
+// Reservations returns the ReservationManager
+func (c *AdapterClient) Reservations() interfaces.ReservationManager {
+	return &adapterReservationManager{adapter: c.adapter.GetReservationManager()}
+}
+
+// QoS returns the QoSManager
+func (c *AdapterClient) QoS() interfaces.QoSManager {
+	return &adapterQoSManager{adapter: c.adapter.GetQoSManager()}
+}
+
+// Accounts returns the AccountManager
+func (c *AdapterClient) Accounts() interfaces.AccountManager {
+	return &adapterAccountManager{adapter: c.adapter.GetAccountManager()}
+}
+
+// Users returns the UserManager
+func (c *AdapterClient) Users() interfaces.UserManager {
+	return &adapterUserManager{adapter: c.adapter.GetUserManager()}
+}
+
+// Clusters returns the ClusterManager
+func (c *AdapterClient) Clusters() interfaces.ClusterManager {
+	// Clusters are not supported in the adapter pattern yet
+	return nil
+}
+
+// Associations returns the AssociationManager
+func (c *AdapterClient) Associations() interfaces.AssociationManager {
+	return &adapterAssociationManager{adapter: c.adapter.GetAssociationManager()}
+}
+
+// Close closes the client
+func (c *AdapterClient) Close() error {
+	// No resources to close
+	return nil
+}
+
+// Manager wrappers to convert between common.types and interfaces types
+
+// adapterJobManager wraps a common.JobAdapter to implement interfaces.JobManager
+type adapterJobManager struct {
+	adapter common.JobAdapter
+}
+
+func (m *adapterJobManager) List(ctx context.Context, opts *interfaces.ListJobsOptions) (*interfaces.JobList, error) {
+	// Convert options
+	adapterOpts := &types.JobListOptions{}
+	if opts != nil {
+		adapterOpts.Accounts = opts.Accounts
+		adapterOpts.Partitions = opts.Partitions
+		adapterOpts.Users = opts.Users
+		adapterOpts.Limit = opts.Limit
+		adapterOpts.Offset = opts.Offset
+		// Convert states
+		for _, s := range opts.States {
+			adapterOpts.States = append(adapterOpts.States, types.JobState(s))
+		}
+	}
+
+	// Call adapter
+	result, err := m.adapter.List(ctx, adapterOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert result
+	jobList := &interfaces.JobList{
+		Jobs: make([]interfaces.Job, 0, len(result.Jobs)),
+		Total: result.Meta.TotalCount,
+	}
+
+	for _, job := range result.Jobs {
+		jobList.Jobs = append(jobList.Jobs, convertJobToInterface(job))
+	}
+
+	return jobList, nil
+}
+
+func (m *adapterJobManager) Get(ctx context.Context, jobID uint32) (*interfaces.Job, error) {
+	job, err := m.adapter.Get(ctx, int32(jobID))
+	if err != nil {
+		return nil, err
+	}
+	result := convertJobToInterface(*job)
+	return &result, nil
+}
+
+func (m *adapterJobManager) Submit(ctx context.Context, job *interfaces.JobSubmission) (*interfaces.JobSubmitResponse, error) {
+	// Convert submission
+	submission := &types.JobCreate{
+		Name:         job.Name,
+		Account:      job.Account,
+		Partition:    job.Partition,
+		TimeLimit:    job.TimeLimit,
+		NodeCount:    job.NodeCount,
+		Tasks:        job.Tasks,
+		CPUsPerTask:  job.CPUsPerTask,
+		Memory:       job.Memory,
+		MemoryPerCPU: job.MemoryPerCPU,
+		WorkingDir:   job.WorkingDirectory,
+		Environment:  job.Environment,
+		Script:       job.Script,
+		Command:      job.Command,
+		Args:         job.Arguments,
+		Output:       job.StandardOutput,
+		Error:        job.StandardError,
+		Input:        job.StandardInput,
+		Comment:      job.Comment,
+		Priority:     job.Priority,
+		QoS:          job.QoS,
+		Constraints:  job.Constraints,
+		Dependencies: job.Dependencies,
+		Array:        job.ArraySpec,
+		Email:        job.MailUser,
+		EmailType:    job.MailType,
+		HoldTime:     job.BeginTime,
+		EndTime:      job.EndTime,
+	}
+
+	// Call adapter
+	resp, err := m.adapter.Submit(ctx, submission)
+	if err != nil {
+		return nil, err
+	}
+
+	return &interfaces.JobSubmitResponse{
+		JobID:            resp.JobID,
+		JobName:          resp.JobName,
+		Message:          resp.Message,
+		SubmitTime:       resp.SubmitTime,
+		PartitionName:    resp.PartitionName,
+		EstimatedStartTime: resp.EstimatedStartTime,
+	}, nil
+}
+
+func (m *adapterJobManager) Update(ctx context.Context, jobID uint32, update *interfaces.JobUpdate) error {
+	// Convert update
+	adapterUpdate := &types.JobUpdate{
+		Account:      update.Account,
+		Partition:    update.Partition,
+		TimeLimit:    update.TimeLimit,
+		NodeCount:    update.NodeCount,
+		Priority:     update.Priority,
+		QoS:          update.QoS,
+		Comment:      update.Comment,
+		Features:     update.Features,
+		Dependency:   update.Dependency,
+		Name:         update.Name,
+		Nice:         update.Nice,
+		RequeueState: update.Requeue,
+	}
+
+	return m.adapter.Update(ctx, int32(jobID), adapterUpdate)
+}
+
+func (m *adapterJobManager) Cancel(ctx context.Context, jobID uint32) error {
+	return m.adapter.Cancel(ctx, int32(jobID), nil)
+}
+
+func (m *adapterJobManager) Watch(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+	// Watch is not implemented in adapters
+	return nil, fmt.Errorf("watch not implemented in adapter")
+}
+
+// Helper function to convert types.Job to interfaces.Job
+func convertJobToInterface(job types.Job) interfaces.Job {
+	return interfaces.Job{
+		JobID:           job.JobID,
+		JobName:         job.Name,
+		UserID:          job.UserID,
+		UserName:        job.UserName,
+		GroupID:         job.GroupID,
+		Account:         job.Account,
+		Partition:       job.Partition,
+		State:           string(job.JobState),
+		SubmitTime:      job.SubmitTime,
+		StartTime:       job.StartTime,
+		EndTime:         job.EndTime,
+		NodeList:        job.NodeList,
+		NodeCount:       job.NodeCount,
+		CPUs:            job.CPUs,
+		Tasks:           job.Tasks,
+		CPUsPerTask:     job.CPUsPerTask,
+		Memory:          job.Memory,
+		MemoryPerCPU:    job.MemoryPerCPU,
+		MemoryPerNode:   job.MemoryPerNode,
+		Priority:        job.Priority,
+		TimeLimit:       job.TimeLimit,
+		TimeUsed:        job.TimeUsed,
+		QoS:             job.QoS,
+		ExitCode:        job.ExitCode,
+		DerivedExitCode: job.DerivedExitCode,
+		Reason:          job.Reason,
+		Comment:         job.Comment,
+		WorkingDirectory: job.WorkDir,
+		StandardOutput:  job.StdOut,
+		StandardError:   job.StdErr,
+		StandardInput:   job.StdIn,
+		Command:         job.Command,
+		Arguments:       job.Args,
+		Environment:     job.Environment,
+		BatchHost:       job.BatchHost,
+		BatchScript:     job.BatchScript,
+		ArrayJobID:      job.ArrayJobID,
+		ArrayTaskID:     job.ArrayTaskID,
+		ArrayTaskString: job.ArrayTaskStr,
+		Association:     job.AssocID,
+		Constraints:     job.Features,
+		Contiguous:      job.Contiguous,
+		Exclusive:       job.Exclusive,
+		Requeue:         job.Requeue,
+		Reboot:          job.Reboot,
+		Metadata:        make(map[string]interface{}),
+	}
+}
+
+// adapterNodeManager wraps a common.NodeAdapter to implement interfaces.NodeManager
+type adapterNodeManager struct {
+	adapter common.NodeAdapter
+}
+
+func (m *adapterNodeManager) List(ctx context.Context, opts *interfaces.ListNodesOptions) (*interfaces.NodeList, error) {
+	// Convert options
+	adapterOpts := &types.NodeListOptions{}
+	if opts != nil {
+		adapterOpts.Names = opts.States // Using States as Names for now
+		adapterOpts.Partition = opts.Partition
+		adapterOpts.State = opts.Partition // Mismatched field
+		adapterOpts.Limit = opts.Limit
+		adapterOpts.Offset = opts.Offset
+	}
+
+	// Call adapter
+	result, err := m.adapter.List(ctx, adapterOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert result
+	nodeList := &interfaces.NodeList{
+		Nodes: make([]interfaces.Node, 0, len(result.Nodes)),
+		Total: result.Meta.TotalCount,
+	}
+
+	for _, node := range result.Nodes {
+		nodeList.Nodes = append(nodeList.Nodes, convertNodeToInterface(node))
+	}
+
+	return nodeList, nil
+}
+
+func (m *adapterNodeManager) Get(ctx context.Context, nodeName string) (*interfaces.Node, error) {
+	node, err := m.adapter.Get(ctx, nodeName)
+	if err != nil {
+		return nil, err
+	}
+	result := convertNodeToInterface(*node)
+	return &result, nil
+}
+
+func (m *adapterNodeManager) Update(ctx context.Context, nodeName string, update *interfaces.NodeUpdate) error {
+	// Convert update
+	adapterUpdate := &types.NodeUpdate{
+		State:    (*types.NodeState)(update.State),
+		Reason:   update.Reason,
+		Features: &update.Features,
+	}
+
+	return m.adapter.Update(ctx, nodeName, adapterUpdate)
+}
+
+func (m *adapterNodeManager) Watch(ctx context.Context, opts *interfaces.WatchNodesOptions) (<-chan interfaces.NodeEvent, error) {
+	// Watch is not implemented in adapters
+	return nil, fmt.Errorf("watch not implemented in adapter")
+}
+
+// Helper function to convert types.Node to interfaces.Node
+func convertNodeToInterface(node types.Node) interfaces.Node {
+	// Extract features as array from comma-separated string
+	features := []string{}
+	if node.AvailableFeatures != "" {
+		features = append(features, node.AvailableFeatures)
+	}
+
+	return interfaces.Node{
+		Name:         node.Name,
+		State:        string(node.State),
+		CPUs:         int(node.CPUs),
+		Memory:       int(node.Memory),
+		Partitions:   node.Partitions,
+		Features:     features,
+		Reason:       node.Reason,
+		LastBusy:     node.LastBusy,
+		Architecture: node.Arch,
+		Metadata:     make(map[string]interface{}),
+	}
+}
+
+// adapterPartitionManager wraps a common.PartitionAdapter
+type adapterPartitionManager struct {
+	adapter common.PartitionAdapter
+}
+
+func (m *adapterPartitionManager) List(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error) {
+	// Convert options
+	adapterOpts := &types.PartitionListOptions{}
+	if opts != nil {
+		adapterOpts.Names = opts.States // Using States as Names for now
+		adapterOpts.Limit = opts.Limit
+		adapterOpts.Offset = opts.Offset
+	}
+
+	// Call adapter
+	result, err := m.adapter.List(ctx, adapterOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert result
+	partitionList := &interfaces.PartitionList{
+		Partitions: make([]interfaces.Partition, 0, len(result.Partitions)),
+		Total:      result.Meta.TotalCount,
+	}
+
+	for _, partition := range result.Partitions {
+		partitionList.Partitions = append(partitionList.Partitions, convertPartitionToInterface(partition))
+	}
+
+	return partitionList, nil
+}
+
+func (m *adapterPartitionManager) Get(ctx context.Context, partitionName string) (*interfaces.Partition, error) {
+	partition, err := m.adapter.Get(ctx, partitionName)
+	if err != nil {
+		return nil, err
+	}
+	result := convertPartitionToInterface(*partition)
+	return &result, nil
+}
+
+func (m *adapterPartitionManager) Update(ctx context.Context, partitionName string, update *interfaces.PartitionUpdate) error {
+	// Not implemented in interfaces
+	return fmt.Errorf("partition update not implemented")
+}
+
+func (m *adapterPartitionManager) Watch(ctx context.Context, opts *interfaces.WatchPartitionsOptions) (<-chan interfaces.PartitionEvent, error) {
+	// Watch is not implemented in adapters
+	return nil, fmt.Errorf("watch not implemented in adapter")
+}
+
+// Helper function to convert types.Partition to interfaces.Partition
+func convertPartitionToInterface(partition types.Partition) interfaces.Partition {
+	return interfaces.Partition{
+		Name:           partition.Name,
+		State:          string(partition.State),
+		TotalNodes:     int(partition.TotalNodes),
+		AvailableNodes: int(partition.AvailableNodes),
+		TotalCPUs:      int(partition.TotalCPUs),
+		IdleCPUs:       int(partition.TotalCPUs), // No idle CPUs field in types
+		MaxTime:        int(partition.MaxTime),
+		DefaultTime:    int(partition.DefaultTime),
+		MaxMemory:      int(partition.MaxMemPerNode),
+		DefaultMemory:  int(partition.DefMemPerNode),
+		AllowedUsers:   []string{}, // Not available in types
+		DeniedUsers:    []string{}, // Not available in types
+		AllowedAccounts: partition.Accounts,
+		DeniedAccounts: partition.DenyAccounts,
+		QoS:            partition.QoSName,
+		DefaultQoS:     partition.QoSName, // Using same as QoS
+		Nodes:          partition.Nodes,
+		Metadata:       make(map[string]interface{}),
+	}
+}
+
+// adapterInfoManager provides basic info operations
+type adapterInfoManager struct {
+	version string
+}
+
+func (m *adapterInfoManager) Ping(ctx context.Context) error {
+	// Basic ping - always succeeds if we get here
+	return nil
+}
+
+func (m *adapterInfoManager) GetVersion(ctx context.Context) (*interfaces.VersionInfo, error) {
+	return &interfaces.VersionInfo{
+		Version: m.version,
+		Major:   0,
+		Minor:   0,
+		Patch:   0,
+	}, nil
+}
+
+func (m *adapterInfoManager) GetClusterInfo(ctx context.Context) (*interfaces.ClusterInfo, error) {
+	// Not implemented
+	return nil, fmt.Errorf("cluster info not implemented in adapter")
+}
+
+// Other manager implementations...
+
+type adapterQoSManager struct {
+	adapter common.QoSAdapter
+}
+
+func (m *adapterQoSManager) List(ctx context.Context, opts *interfaces.ListQoSOptions) (*interfaces.QoSList, error) {
+	// Implementation would go here
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterQoSManager) Get(ctx context.Context, qosName string) (*interfaces.QoS, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterQoSManager) Create(ctx context.Context, qos *interfaces.QoSCreate) (*interfaces.QoS, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterQoSManager) Update(ctx context.Context, qosName string, update *interfaces.QoSUpdate) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (m *adapterQoSManager) Delete(ctx context.Context, qosName string) error {
+	return fmt.Errorf("not implemented")
+}
+
+type adapterAccountManager struct {
+	adapter common.AccountAdapter
+}
+
+func (m *adapterAccountManager) List(ctx context.Context, opts *interfaces.ListAccountsOptions) (*interfaces.AccountList, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterAccountManager) Get(ctx context.Context, accountName string) (*interfaces.Account, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterAccountManager) Create(ctx context.Context, account *interfaces.AccountCreate) (*interfaces.Account, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterAccountManager) Update(ctx context.Context, accountName string, update *interfaces.AccountUpdate) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (m *adapterAccountManager) Delete(ctx context.Context, accountName string) error {
+	return fmt.Errorf("not implemented")
+}
+
+type adapterUserManager struct {
+	adapter common.UserAdapter
+}
+
+func (m *adapterUserManager) List(ctx context.Context, opts *interfaces.ListUsersOptions) (*interfaces.UserList, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterUserManager) Get(ctx context.Context, userName string) (*interfaces.User, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterUserManager) Create(ctx context.Context, user *interfaces.UserCreate) (*interfaces.User, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterUserManager) Update(ctx context.Context, userName string, update *interfaces.UserUpdate) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (m *adapterUserManager) Delete(ctx context.Context, userName string) error {
+	return fmt.Errorf("not implemented")
+}
+
+type adapterReservationManager struct {
+	adapter common.ReservationAdapter
+}
+
+func (m *adapterReservationManager) List(ctx context.Context, opts *interfaces.ListReservationsOptions) (*interfaces.ReservationList, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterReservationManager) Get(ctx context.Context, reservationName string) (*interfaces.Reservation, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterReservationManager) Create(ctx context.Context, reservation *interfaces.ReservationCreate) (*interfaces.Reservation, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterReservationManager) Update(ctx context.Context, reservationName string, update *interfaces.ReservationUpdate) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (m *adapterReservationManager) Delete(ctx context.Context, reservationName string) error {
+	return fmt.Errorf("not implemented")
+}
+
+type adapterAssociationManager struct {
+	adapter common.AssociationAdapter
+}
+
+func (m *adapterAssociationManager) List(ctx context.Context, opts *interfaces.ListAssociationsOptions) (*interfaces.AssociationList, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterAssociationManager) Get(ctx context.Context, associationID string) (*interfaces.Association, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterAssociationManager) Create(ctx context.Context, association *interfaces.AssociationCreate) (*interfaces.Association, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *adapterAssociationManager) Update(ctx context.Context, associationID string, update *interfaces.AssociationUpdate) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (m *adapterAssociationManager) Delete(ctx context.Context, associationID string) error {
+	return fmt.Errorf("not implemented")
+}
