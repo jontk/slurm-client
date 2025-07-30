@@ -518,13 +518,28 @@ func convertJobSubmissionToAPI(job *interfaces.JobSubmission) (*V0040JobDescMsg,
 	}
 
 	// Environment variables
-	if len(job.Environment) > 0 {
-		envVars := make([]string, 0, len(job.Environment))
-		for key, value := range job.Environment {
-			envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
+	// Always provide at least minimal environment to avoid SLURM write errors
+	envVars := make([]string, 0)
+	
+	// Add default PATH if not provided
+	hasPath := false
+	for key := range job.Environment {
+		if key == "PATH" {
+			hasPath = true
+			break
 		}
-		jobDesc.Environment = &envVars
 	}
+	
+	if !hasPath {
+		envVars = append(envVars, "PATH=/usr/bin:/bin")
+	}
+	
+	// Add user-provided environment
+	for key, value := range job.Environment {
+		envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
+	}
+	
+	jobDesc.Environment = &envVars
 
 	// Args
 	if len(job.Args) > 0 {
