@@ -12,6 +12,7 @@ import (
 	v041 "github.com/jontk/slurm-client/internal/api/v0_0_41"
 	v042 "github.com/jontk/slurm-client/internal/api/v0_0_42"
 	v043 "github.com/jontk/slurm-client/internal/api/v0_0_43"
+	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/internal/versioning"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
@@ -32,6 +33,9 @@ type ClientFactory struct {
 	
 	// Enhanced options for new features
 	enhanced *EnhancedOptions
+	
+	// Use adapters instead of wrapper clients
+	useAdapters bool
 }
 
 // NewClientFactory creates a new client factory
@@ -97,6 +101,14 @@ func WithRetryPolicy(policy retry.Policy) FactoryOption {
 func WithBaseURL(baseURL string) FactoryOption {
 	return func(f *ClientFactory) error {
 		f.baseURL = baseURL
+		return nil
+	}
+}
+
+// WithUseAdapters enables the use of adapter implementations instead of wrapper clients
+func WithUseAdapters(useAdapters bool) FactoryOption {
+	return func(f *ClientFactory) error {
+		f.useAdapters = useAdapters
 		return nil
 	}
 }
@@ -274,19 +286,29 @@ func (f *ClientFactory) createV0_0_40Client() (SlurmClient, error) {
 		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
 	}
 
-	config := &ClientConfig{
+	// Check if adapters should be used
+	if f.useAdapters {
+		// Create adapter client config
+		/*config := &ClientConfig{
+			BaseURL:    f.baseURL,
+			HTTPClient: httpClient,
+			APIKey:     "",    // Not used when we have auth provider
+			Debug:      f.config.Debug,
+		}
+		return NewAdapterClient("v0.0.40", config)*/
+		return nil, fmt.Errorf("adapter implementation is incomplete and disabled")
+	}
+
+	// Create the wrapper client config
+	config := &interfaces.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
 		APIKey:     "",    // Not used when we have auth provider
 		Debug:      f.config.Debug,
 	}
 
-	wrapperClient, err := v040.NewWrapperClient(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return wrapperClient, nil
+	// Return the wrapper client
+	return v040.NewWrapperClient(config)
 }
 
 func (f *ClientFactory) createV0_0_41Client() (SlurmClient, error) {
@@ -298,19 +320,29 @@ func (f *ClientFactory) createV0_0_41Client() (SlurmClient, error) {
 		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
 	}
 
-	config := &ClientConfig{
+	// Check if adapters should be used
+	if f.useAdapters {
+		// Create adapter client config
+		/*config := &ClientConfig{
+			BaseURL:    f.baseURL,
+			HTTPClient: httpClient,
+			APIKey:     "",    // Not used when we have auth provider
+			Debug:      f.config.Debug,
+		}
+		return NewAdapterClient("v0.0.41", config)*/
+		return nil, fmt.Errorf("adapter implementation is incomplete and disabled")
+	}
+
+	// Create the wrapper client config
+	config := &interfaces.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
 		APIKey:     "",    // Not used when we have auth provider
 		Debug:      f.config.Debug,
 	}
 
-	wrapperClient, err := v041.NewWrapperClient(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return wrapperClient, nil
+	// Return the wrapper client
+	return v041.NewWrapperClient(config)
 }
 
 func (f *ClientFactory) createV0_0_42Client() (SlurmClient, error) {
@@ -322,19 +354,29 @@ func (f *ClientFactory) createV0_0_42Client() (SlurmClient, error) {
 		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
 	}
 
-	config := &ClientConfig{
+	// Check if adapters should be used
+	if f.useAdapters {
+		// Create adapter client config
+		/*config := &ClientConfig{
+			BaseURL:    f.baseURL,
+			HTTPClient: httpClient,
+			APIKey:     "",    // Not used when we have auth provider
+			Debug:      f.config.Debug,
+		}
+		return NewAdapterClient("v0.0.42", config)*/
+		return nil, fmt.Errorf("adapter implementation is incomplete and disabled")
+	}
+
+	// Create the wrapper client config
+	config := &interfaces.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
 		APIKey:     "",    // Not used when we have auth provider
 		Debug:      f.config.Debug,
 	}
 
-	wrapperClient, err := v042.NewWrapperClient(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return wrapperClient, nil
+	// Return the wrapper client
+	return v042.NewWrapperClient(config)
 }
 
 func (f *ClientFactory) createV0_0_43Client() (SlurmClient, error) {
@@ -346,19 +388,29 @@ func (f *ClientFactory) createV0_0_43Client() (SlurmClient, error) {
 		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
 	}
 
-	config := &ClientConfig{
+	// Check if adapters should be used
+	if f.useAdapters {
+		// Create adapter client config
+		/*config := &ClientConfig{
+			BaseURL:    f.baseURL,
+			HTTPClient: httpClient,
+			APIKey:     "",    // Not used when we have auth provider
+			Debug:      f.config.Debug,
+		}
+		return NewAdapterClient("v0.0.43", config)*/
+		return nil, fmt.Errorf("adapter implementation is incomplete and disabled")
+	}
+
+	// Create the wrapper client config
+	config := &interfaces.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
 		APIKey:     "",    // Not used when we have auth provider
 		Debug:      f.config.Debug,
 	}
 
-	wrapperClient, err := v043.NewWrapperClient(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return wrapperClient, nil
+	// Return the wrapper client
+	return v043.NewWrapperClient(config)
 }
 
 // extractVersionFromURL extracts version from a URL like "/slurm/v0.0.42/"
