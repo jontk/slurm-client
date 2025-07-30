@@ -195,9 +195,139 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 		return nil, err
 	}
 
-	// Job submission is not supported in v0.0.40 adapter
-	// This would need to be implemented when the API supports it
-	return nil, fmt.Errorf("job submission not supported in v0.0.40")
+	// Create job submission structure
+	jobDesc := &api.V0040JobDescMsg{
+		Script: &job.Script,
+	}
+
+	// Basic job properties
+	if job.Name != "" {
+		jobDesc.Name = &job.Name
+	}
+	if job.Account != "" {
+		jobDesc.Account = &job.Account
+	}
+	if job.Partition != "" {
+		jobDesc.Partition = &job.Partition
+	}
+
+	// Working directory
+	if job.WorkingDirectory != "" {
+		jobDesc.CurrentWorkingDirectory = &job.WorkingDirectory
+	}
+
+	// Standard output/error/input
+	if job.StandardOutput != "" {
+		jobDesc.StandardOutput = &job.StandardOutput
+	}
+	if job.StandardError != "" {
+		jobDesc.StandardError = &job.StandardError
+	}
+	if job.StandardInput != "" {
+		jobDesc.StandardInput = &job.StandardInput
+	}
+
+	// Time limit
+	if job.TimeLimit > 0 {
+		timeLimit := int64(job.TimeLimit)
+		setTrue := true
+		jobDesc.TimeLimit = &api.V0040Uint32NoVal{
+			Set:    &setTrue,
+			Number: &timeLimit,
+		}
+	}
+
+	// Node count
+	if job.Nodes > 0 {
+		nodes := int32(job.Nodes)
+		jobDesc.MinimumNodes = &nodes
+		jobDesc.MaximumNodes = &nodes
+	}
+
+	// Handle environment variables - CRITICAL for avoiding SLURM errors
+	envList := make([]string, 0)
+	
+	// Always provide at least minimal environment to avoid SLURM write errors
+	hasPath := false
+	for key := range job.Environment {
+		if key == "PATH" {
+			hasPath = true
+			break
+		}
+	}
+	
+	if !hasPath {
+		envList = append(envList, "PATH=/usr/bin:/bin")
+	}
+	
+	// Add all user-provided environment variables
+	for key, value := range job.Environment {
+		envList = append(envList, fmt.Sprintf("%s=%s", key, value))
+	}
+	
+	// Set environment in job submission
+	jobDesc.Environment = &envList
+
+	// Create request body
+	submitReq := api.V0040JobSubmitReq{
+		Job: jobDesc,
+	}
+
+	// Make the API call
+	resp, err := a.client.SlurmV0040PostJobSubmitWithResponse(ctx, submitReq)
+	if err != nil {
+		return nil, a.HandleAPIError(err)
+	}
+
+	// Use common response error handling
+	var apiErrors *api.V0040OpenapiErrors
+	if resp.JSON200 != nil {
+		apiErrors = resp.JSON200.Errors
+	}
+
+	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
+		return nil, err
+	}
+
+	// Check for unexpected response format
+	if err := a.CheckNilResponse(resp.JSON200, "Submit Job"); err != nil {
+		return nil, err
+	}
+
+	// Convert response
+	submitResp := &types.JobSubmitResponse{}
+
+	// Extract job ID
+	if resp.JSON200.JobId != nil {
+		submitResp.JobID = int32(*resp.JSON200.JobId)
+	}
+
+	// Extract warnings if any
+	if resp.JSON200.Warnings != nil {
+		warnings := make([]string, 0, len(*resp.JSON200.Warnings))
+		for _, warning := range *resp.JSON200.Warnings {
+			if warning.Description != nil {
+				warnings = append(warnings, *warning.Description)
+			}
+		}
+		submitResp.Warning = warnings
+	}
+
+	// Extract errors if any  
+	if resp.JSON200.Errors != nil {
+		errors := make([]string, 0, len(*resp.JSON200.Errors))
+		for _, error := range *resp.JSON200.Errors {
+			if error.Description != nil {
+				errors = append(errors, *error.Description)
+			}
+		}
+		if len(errors) > 0 {
+			submitResp.Error = errors
+		}
+	}
+
+	return submitResp, nil
 }
 
 // Update updates an existing job
