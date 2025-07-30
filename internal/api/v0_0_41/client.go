@@ -16,14 +16,205 @@ import (
 	"path"
 	"strings"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/oapi-codegen/runtime"
 )
 
+// Defines values for V0041JobDescMsgCpuBindingFlags.
 const (
-	BearerAuthScopes = "bearerAuth.Scopes"
-	TokenScopes      = "token.Scopes"
-	UserScopes       = "user.Scopes"
+	V0041JobDescMsgCpuBindingFlagsCPUBINDLDMAP            V0041JobDescMsgCpuBindingFlags = "CPU_BIND_LDMAP"
+	V0041JobDescMsgCpuBindingFlagsCPUBINDLDMASK           V0041JobDescMsgCpuBindingFlags = "CPU_BIND_LDMASK"
+	V0041JobDescMsgCpuBindingFlagsCPUBINDLDRANK           V0041JobDescMsgCpuBindingFlags = "CPU_BIND_LDRANK"
+	V0041JobDescMsgCpuBindingFlagsCPUBINDMAP              V0041JobDescMsgCpuBindingFlags = "CPU_BIND_MAP"
+	V0041JobDescMsgCpuBindingFlagsCPUBINDMASK             V0041JobDescMsgCpuBindingFlags = "CPU_BIND_MASK"
+	V0041JobDescMsgCpuBindingFlagsCPUBINDNONE             V0041JobDescMsgCpuBindingFlags = "CPU_BIND_NONE"
+	V0041JobDescMsgCpuBindingFlagsCPUBINDONETHREADPERCORE V0041JobDescMsgCpuBindingFlags = "CPU_BIND_ONE_THREAD_PER_CORE"
+	V0041JobDescMsgCpuBindingFlagsCPUBINDRANK             V0041JobDescMsgCpuBindingFlags = "CPU_BIND_RANK"
+	V0041JobDescMsgCpuBindingFlagsCPUBINDTOCORES          V0041JobDescMsgCpuBindingFlags = "CPU_BIND_TO_CORES"
+	V0041JobDescMsgCpuBindingFlagsCPUBINDTOLDOMS          V0041JobDescMsgCpuBindingFlags = "CPU_BIND_TO_LDOMS"
+	V0041JobDescMsgCpuBindingFlagsCPUBINDTOSOCKETS        V0041JobDescMsgCpuBindingFlags = "CPU_BIND_TO_SOCKETS"
+	V0041JobDescMsgCpuBindingFlagsCPUBINDTOTHREADS        V0041JobDescMsgCpuBindingFlags = "CPU_BIND_TO_THREADS"
+	V0041JobDescMsgCpuBindingFlagsVERBOSE                 V0041JobDescMsgCpuBindingFlags = "VERBOSE"
+)
+
+// Defines values for V0041JobDescMsgCrontabFlags.
+const (
+	WILDDAYOFMONTH V0041JobDescMsgCrontabFlags = "WILD_DAY_OF_MONTH"
+	WILDDAYOFWEEK  V0041JobDescMsgCrontabFlags = "WILD_DAY_OF_WEEK"
+	WILDHOUR       V0041JobDescMsgCrontabFlags = "WILD_HOUR"
+	WILDMINUTE     V0041JobDescMsgCrontabFlags = "WILD_MINUTE"
+	WILDMONTH      V0041JobDescMsgCrontabFlags = "WILD_MONTH"
+)
+
+// Defines values for V0041JobDescMsgExclusive.
+const (
+	V0041JobDescMsgExclusiveFalse V0041JobDescMsgExclusive = "false"
+	V0041JobDescMsgExclusiveMcs   V0041JobDescMsgExclusive = "mcs"
+	V0041JobDescMsgExclusiveTopo  V0041JobDescMsgExclusive = "topo"
+	V0041JobDescMsgExclusiveTrue  V0041JobDescMsgExclusive = "true"
+	V0041JobDescMsgExclusiveUser  V0041JobDescMsgExclusive = "user"
+)
+
+// Defines values for V0041JobDescMsgFlags.
+const (
+	V0041JobDescMsgFlagsACCRUECOUNTCLEARED       V0041JobDescMsgFlags = "ACCRUE_COUNT_CLEARED"
+	V0041JobDescMsgFlagsBACKFILLATTEMPTED        V0041JobDescMsgFlags = "BACKFILL_ATTEMPTED"
+	V0041JobDescMsgFlagsCRONJOB                  V0041JobDescMsgFlags = "CRON_JOB"
+	V0041JobDescMsgFlagsDEPENDENT                V0041JobDescMsgFlags = "DEPENDENT"
+	V0041JobDescMsgFlagsEXACTCPUCOUNTREQUESTED   V0041JobDescMsgFlags = "EXACT_CPU_COUNT_REQUESTED"
+	V0041JobDescMsgFlagsEXACTMEMORYREQUESTED     V0041JobDescMsgFlags = "EXACT_MEMORY_REQUESTED"
+	V0041JobDescMsgFlagsEXACTTASKCOUNTREQUESTED  V0041JobDescMsgFlags = "EXACT_TASK_COUNT_REQUESTED"
+	V0041JobDescMsgFlagsGRESBINDINGDISABLED      V0041JobDescMsgFlags = "GRES_BINDING_DISABLED"
+	V0041JobDescMsgFlagsGRESBINDINGENFORCED      V0041JobDescMsgFlags = "GRES_BINDING_ENFORCED"
+	V0041JobDescMsgFlagsHASSTATEDIRECTORY        V0041JobDescMsgFlags = "HAS_STATE_DIRECTORY"
+	V0041JobDescMsgFlagsHETEROGENEOUSJOB         V0041JobDescMsgFlags = "HETEROGENEOUS_JOB"
+	V0041JobDescMsgFlagsJOBACCRUETIMERESET       V0041JobDescMsgFlags = "JOB_ACCRUE_TIME_RESET"
+	V0041JobDescMsgFlagsJOBKILLHURRY             V0041JobDescMsgFlags = "JOB_KILL_HURRY"
+	V0041JobDescMsgFlagsJOBWASRUNNING            V0041JobDescMsgFlags = "JOB_WAS_RUNNING"
+	V0041JobDescMsgFlagsKILLINVALIDDEPENDENCY    V0041JobDescMsgFlags = "KILL_INVALID_DEPENDENCY"
+	V0041JobDescMsgFlagsMAGNETIC                 V0041JobDescMsgFlags = "MAGNETIC"
+	V0041JobDescMsgFlagsNOKILLINVALIDDEPENDENCY  V0041JobDescMsgFlags = "NO_KILL_INVALID_DEPENDENCY"
+	V0041JobDescMsgFlagsPARTITIONASSIGNED        V0041JobDescMsgFlags = "PARTITION_ASSIGNED"
+	V0041JobDescMsgFlagsPREFERMINIMUMNODECOUNT   V0041JobDescMsgFlags = "PREFER_MINIMUM_NODE_COUNT"
+	V0041JobDescMsgFlagsSCHEDULINGATTEMPTED      V0041JobDescMsgFlags = "SCHEDULING_ATTEMPTED"
+	V0041JobDescMsgFlagsSENDJOBENVIRONMENT       V0041JobDescMsgFlags = "SEND_JOB_ENVIRONMENT"
+	V0041JobDescMsgFlagsSIBLINGCLUSTERUPDATEONLY V0041JobDescMsgFlags = "SIBLING_CLUSTER_UPDATE_ONLY"
+	V0041JobDescMsgFlagsSKIPTRESSTRINGACCOUNTING V0041JobDescMsgFlags = "SKIP_TRES_STRING_ACCOUNTING"
+	V0041JobDescMsgFlagsSPREADJOB                V0041JobDescMsgFlags = "SPREAD_JOB"
+	V0041JobDescMsgFlagsSTEPMGRENABLED           V0041JobDescMsgFlags = "STEPMGR_ENABLED"
+	V0041JobDescMsgFlagsTESTINGBACKFILL          V0041JobDescMsgFlags = "TESTING_BACKFILL"
+	V0041JobDescMsgFlagsTESTINGWHOLENODEBACKFILL V0041JobDescMsgFlags = "TESTING_WHOLE_NODE_BACKFILL"
+	V0041JobDescMsgFlagsTESTNOWONLY              V0041JobDescMsgFlags = "TEST_NOW_ONLY"
+	V0041JobDescMsgFlagsTOPPRIORITYJOB           V0041JobDescMsgFlags = "TOP_PRIORITY_JOB"
+	V0041JobDescMsgFlagsUSINGDEFAULTACCOUNT      V0041JobDescMsgFlags = "USING_DEFAULT_ACCOUNT"
+	V0041JobDescMsgFlagsUSINGDEFAULTPARTITION    V0041JobDescMsgFlags = "USING_DEFAULT_PARTITION"
+	V0041JobDescMsgFlagsUSINGDEFAULTQOS          V0041JobDescMsgFlags = "USING_DEFAULT_QOS"
+	V0041JobDescMsgFlagsUSINGDEFAULTWCKEY        V0041JobDescMsgFlags = "USING_DEFAULT_WCKEY"
+)
+
+// Defines values for V0041JobDescMsgKillWarningFlags.
+const (
+	V0041JobDescMsgKillWarningFlagsARRAYTASK         V0041JobDescMsgKillWarningFlags = "ARRAY_TASK"
+	V0041JobDescMsgKillWarningFlagsBATCHJOB          V0041JobDescMsgKillWarningFlags = "BATCH_JOB"
+	V0041JobDescMsgKillWarningFlagsCRONJOBS          V0041JobDescMsgKillWarningFlags = "CRON_JOBS"
+	V0041JobDescMsgKillWarningFlagsFEDERATIONREQUEUE V0041JobDescMsgKillWarningFlags = "FEDERATION_REQUEUE"
+	V0041JobDescMsgKillWarningFlagsFULLJOB           V0041JobDescMsgKillWarningFlags = "FULL_JOB"
+	V0041JobDescMsgKillWarningFlagsFULLSTEPSONLY     V0041JobDescMsgKillWarningFlags = "FULL_STEPS_ONLY"
+	V0041JobDescMsgKillWarningFlagsHURRY             V0041JobDescMsgKillWarningFlags = "HURRY"
+	V0041JobDescMsgKillWarningFlagsNOSIBLINGJOBS     V0041JobDescMsgKillWarningFlags = "NO_SIBLING_JOBS"
+	V0041JobDescMsgKillWarningFlagsOUTOFMEMORY       V0041JobDescMsgKillWarningFlags = "OUT_OF_MEMORY"
+	V0041JobDescMsgKillWarningFlagsRESERVATIONJOB    V0041JobDescMsgKillWarningFlags = "RESERVATION_JOB"
+	V0041JobDescMsgKillWarningFlagsVERBOSE           V0041JobDescMsgKillWarningFlags = "VERBOSE"
+	V0041JobDescMsgKillWarningFlagsWARNINGSENT       V0041JobDescMsgKillWarningFlags = "WARNING_SENT"
+)
+
+// Defines values for V0041JobDescMsgMailType.
+const (
+	V0041JobDescMsgMailTypeARRAYTASKS        V0041JobDescMsgMailType = "ARRAY_TASKS"
+	V0041JobDescMsgMailTypeBEGIN             V0041JobDescMsgMailType = "BEGIN"
+	V0041JobDescMsgMailTypeEND               V0041JobDescMsgMailType = "END"
+	V0041JobDescMsgMailTypeFAIL              V0041JobDescMsgMailType = "FAIL"
+	V0041JobDescMsgMailTypeINVALIDDEPENDENCY V0041JobDescMsgMailType = "INVALID_DEPENDENCY"
+	V0041JobDescMsgMailTypeREQUEUE           V0041JobDescMsgMailType = "REQUEUE"
+	V0041JobDescMsgMailTypeSTAGEOUT          V0041JobDescMsgMailType = "STAGE_OUT"
+	V0041JobDescMsgMailTypeTIME100           V0041JobDescMsgMailType = "TIME=100%"
+	V0041JobDescMsgMailTypeTIME50            V0041JobDescMsgMailType = "TIME=50%"
+	V0041JobDescMsgMailTypeTIME80            V0041JobDescMsgMailType = "TIME=80%"
+	V0041JobDescMsgMailTypeTIME90            V0041JobDescMsgMailType = "TIME=90%"
+)
+
+// Defines values for V0041JobDescMsgMemoryBindingType.
+const (
+	V0041JobDescMsgMemoryBindingTypeLOCAL   V0041JobDescMsgMemoryBindingType = "LOCAL"
+	V0041JobDescMsgMemoryBindingTypeMAP     V0041JobDescMsgMemoryBindingType = "MAP"
+	V0041JobDescMsgMemoryBindingTypeMASK    V0041JobDescMsgMemoryBindingType = "MASK"
+	V0041JobDescMsgMemoryBindingTypeNONE    V0041JobDescMsgMemoryBindingType = "NONE"
+	V0041JobDescMsgMemoryBindingTypePREFER  V0041JobDescMsgMemoryBindingType = "PREFER"
+	V0041JobDescMsgMemoryBindingTypeRANK    V0041JobDescMsgMemoryBindingType = "RANK"
+	V0041JobDescMsgMemoryBindingTypeSORT    V0041JobDescMsgMemoryBindingType = "SORT"
+	V0041JobDescMsgMemoryBindingTypeVERBOSE V0041JobDescMsgMemoryBindingType = "VERBOSE"
+)
+
+// Defines values for V0041JobDescMsgOpenMode.
+const (
+	APPEND   V0041JobDescMsgOpenMode = "APPEND"
+	TRUNCATE V0041JobDescMsgOpenMode = "TRUNCATE"
+)
+
+// Defines values for V0041JobDescMsgProfile.
+const (
+	V0041JobDescMsgProfileENERGY  V0041JobDescMsgProfile = "ENERGY"
+	V0041JobDescMsgProfileLUSTRE  V0041JobDescMsgProfile = "LUSTRE"
+	V0041JobDescMsgProfileNETWORK V0041JobDescMsgProfile = "NETWORK"
+	V0041JobDescMsgProfileNONE    V0041JobDescMsgProfile = "NONE"
+	V0041JobDescMsgProfileNOTSET  V0041JobDescMsgProfile = "NOT_SET"
+	V0041JobDescMsgProfileTASK    V0041JobDescMsgProfile = "TASK"
+)
+
+// Defines values for V0041JobDescMsgShared.
+const (
+	V0041JobDescMsgSharedMcs           V0041JobDescMsgShared = "mcs"
+	V0041JobDescMsgSharedNone          V0041JobDescMsgShared = "none"
+	V0041JobDescMsgSharedOversubscribe V0041JobDescMsgShared = "oversubscribe"
+	V0041JobDescMsgSharedTopo          V0041JobDescMsgShared = "topo"
+	V0041JobDescMsgSharedUser          V0041JobDescMsgShared = "user"
+)
+
+// Defines values for V0041JobDescMsgX11.
+const (
+	BATCHNODE       V0041JobDescMsgX11 = "BATCH_NODE"
+	FIRSTNODE       V0041JobDescMsgX11 = "FIRST_NODE"
+	FORWARDALLNODES V0041JobDescMsgX11 = "FORWARD_ALL_NODES"
+	LASTNODE        V0041JobDescMsgX11 = "LAST_NODE"
+)
+
+// Defines values for V0041KillJobsMsgFlags.
+const (
+	V0041KillJobsMsgFlagsARRAYTASK         V0041KillJobsMsgFlags = "ARRAY_TASK"
+	V0041KillJobsMsgFlagsBATCHJOB          V0041KillJobsMsgFlags = "BATCH_JOB"
+	V0041KillJobsMsgFlagsCRONJOBS          V0041KillJobsMsgFlags = "CRON_JOBS"
+	V0041KillJobsMsgFlagsFEDERATIONREQUEUE V0041KillJobsMsgFlags = "FEDERATION_REQUEUE"
+	V0041KillJobsMsgFlagsFULLJOB           V0041KillJobsMsgFlags = "FULL_JOB"
+	V0041KillJobsMsgFlagsFULLSTEPSONLY     V0041KillJobsMsgFlags = "FULL_STEPS_ONLY"
+	V0041KillJobsMsgFlagsHURRY             V0041KillJobsMsgFlags = "HURRY"
+	V0041KillJobsMsgFlagsNOSIBLINGJOBS     V0041KillJobsMsgFlags = "NO_SIBLING_JOBS"
+	V0041KillJobsMsgFlagsOUTOFMEMORY       V0041KillJobsMsgFlags = "OUT_OF_MEMORY"
+	V0041KillJobsMsgFlagsRESERVATIONJOB    V0041KillJobsMsgFlags = "RESERVATION_JOB"
+	V0041KillJobsMsgFlagsVERBOSE           V0041KillJobsMsgFlags = "VERBOSE"
+	V0041KillJobsMsgFlagsWARNINGSENT       V0041KillJobsMsgFlags = "WARNING_SENT"
+)
+
+// Defines values for V0041KillJobsMsgJobState.
+const (
+	V0041KillJobsMsgJobStateBOOTFAIL     V0041KillJobsMsgJobState = "BOOT_FAIL"
+	V0041KillJobsMsgJobStateCANCELLED    V0041KillJobsMsgJobState = "CANCELLED"
+	V0041KillJobsMsgJobStateCOMPLETED    V0041KillJobsMsgJobState = "COMPLETED"
+	V0041KillJobsMsgJobStateCOMPLETING   V0041KillJobsMsgJobState = "COMPLETING"
+	V0041KillJobsMsgJobStateCONFIGURING  V0041KillJobsMsgJobState = "CONFIGURING"
+	V0041KillJobsMsgJobStateDEADLINE     V0041KillJobsMsgJobState = "DEADLINE"
+	V0041KillJobsMsgJobStateFAILED       V0041KillJobsMsgJobState = "FAILED"
+	V0041KillJobsMsgJobStateLAUNCHFAILED V0041KillJobsMsgJobState = "LAUNCH_FAILED"
+	V0041KillJobsMsgJobStateNODEFAIL     V0041KillJobsMsgJobState = "NODE_FAIL"
+	V0041KillJobsMsgJobStateOUTOFMEMORY  V0041KillJobsMsgJobState = "OUT_OF_MEMORY"
+	V0041KillJobsMsgJobStatePENDING      V0041KillJobsMsgJobState = "PENDING"
+	V0041KillJobsMsgJobStatePOWERUPNODE  V0041KillJobsMsgJobState = "POWER_UP_NODE"
+	V0041KillJobsMsgJobStatePREEMPTED    V0041KillJobsMsgJobState = "PREEMPTED"
+	V0041KillJobsMsgJobStateRECONFIGFAIL V0041KillJobsMsgJobState = "RECONFIG_FAIL"
+	V0041KillJobsMsgJobStateREQUEUED     V0041KillJobsMsgJobState = "REQUEUED"
+	V0041KillJobsMsgJobStateREQUEUEFED   V0041KillJobsMsgJobState = "REQUEUE_FED"
+	V0041KillJobsMsgJobStateREQUEUEHOLD  V0041KillJobsMsgJobState = "REQUEUE_HOLD"
+	V0041KillJobsMsgJobStateRESIZING     V0041KillJobsMsgJobState = "RESIZING"
+	V0041KillJobsMsgJobStateRESVDELHOLD  V0041KillJobsMsgJobState = "RESV_DEL_HOLD"
+	V0041KillJobsMsgJobStateREVOKED      V0041KillJobsMsgJobState = "REVOKED"
+	V0041KillJobsMsgJobStateRUNNING      V0041KillJobsMsgJobState = "RUNNING"
+	V0041KillJobsMsgJobStateSIGNALING    V0041KillJobsMsgJobState = "SIGNALING"
+	V0041KillJobsMsgJobStateSPECIALEXIT  V0041KillJobsMsgJobState = "SPECIAL_EXIT"
+	V0041KillJobsMsgJobStateSTAGEOUT     V0041KillJobsMsgJobState = "STAGE_OUT"
+	V0041KillJobsMsgJobStateSTOPPED      V0041KillJobsMsgJobState = "STOPPED"
+	V0041KillJobsMsgJobStateSUSPENDED    V0041KillJobsMsgJobState = "SUSPENDED"
+	V0041KillJobsMsgJobStateTIMEOUT      V0041KillJobsMsgJobState = "TIMEOUT"
 )
 
 // Defines values for V0041OpenapiAccountsRespAccountsFlags.
@@ -321,42 +512,42 @@ const (
 
 // Defines values for V0041OpenapiReservationRespReservationsFlags.
 const (
-	V0041OpenapiReservationRespReservationsFlagsALLNODES           V0041OpenapiReservationRespReservationsFlags = "ALL_NODES"
-	V0041OpenapiReservationRespReservationsFlagsANYNODES           V0041OpenapiReservationRespReservationsFlags = "ANY_NODES"
-	V0041OpenapiReservationRespReservationsFlagsDAILY              V0041OpenapiReservationRespReservationsFlags = "DAILY"
-	V0041OpenapiReservationRespReservationsFlagsDURATIONMINUS      V0041OpenapiReservationRespReservationsFlags = "DURATION_MINUS"
-	V0041OpenapiReservationRespReservationsFlagsDURATIONPLUS       V0041OpenapiReservationRespReservationsFlags = "DURATION_PLUS"
-	V0041OpenapiReservationRespReservationsFlagsFLEX               V0041OpenapiReservationRespReservationsFlags = "FLEX"
-	V0041OpenapiReservationRespReservationsFlagsHOURLY             V0041OpenapiReservationRespReservationsFlags = "HOURLY"
-	V0041OpenapiReservationRespReservationsFlagsIGNOREJOBS         V0041OpenapiReservationRespReservationsFlags = "IGNORE_JOBS"
-	V0041OpenapiReservationRespReservationsFlagsMAGNETIC           V0041OpenapiReservationRespReservationsFlags = "MAGNETIC"
-	V0041OpenapiReservationRespReservationsFlagsMAINT              V0041OpenapiReservationRespReservationsFlags = "MAINT"
-	V0041OpenapiReservationRespReservationsFlagsNODAILY            V0041OpenapiReservationRespReservationsFlags = "NO_DAILY"
-	V0041OpenapiReservationRespReservationsFlagsNOFLEX             V0041OpenapiReservationRespReservationsFlags = "NO_FLEX"
-	V0041OpenapiReservationRespReservationsFlagsNOHOLDJOBSAFTEREND V0041OpenapiReservationRespReservationsFlags = "NO_HOLD_JOBS_AFTER_END"
-	V0041OpenapiReservationRespReservationsFlagsNOHOURLY           V0041OpenapiReservationRespReservationsFlags = "NO_HOURLY"
-	V0041OpenapiReservationRespReservationsFlagsNOIGNOREJOBS       V0041OpenapiReservationRespReservationsFlags = "NO_IGNORE_JOBS"
-	V0041OpenapiReservationRespReservationsFlagsNOMAINT            V0041OpenapiReservationRespReservationsFlags = "NO_MAINT"
-	V0041OpenapiReservationRespReservationsFlagsNOPARTNODES        V0041OpenapiReservationRespReservationsFlags = "NO_PART_NODES"
-	V0041OpenapiReservationRespReservationsFlagsNOPURGECOMP        V0041OpenapiReservationRespReservationsFlags = "NO_PURGE_COMP"
-	V0041OpenapiReservationRespReservationsFlagsNOSTATIC           V0041OpenapiReservationRespReservationsFlags = "NO_STATIC"
-	V0041OpenapiReservationRespReservationsFlagsNOUSERDELETE       V0041OpenapiReservationRespReservationsFlags = "NO_USER_DELETE"
-	V0041OpenapiReservationRespReservationsFlagsNOWEEKDAY          V0041OpenapiReservationRespReservationsFlags = "NO_WEEKDAY"
-	V0041OpenapiReservationRespReservationsFlagsNOWEEKEND          V0041OpenapiReservationRespReservationsFlags = "NO_WEEKEND"
-	V0041OpenapiReservationRespReservationsFlagsNOWEEKLY           V0041OpenapiReservationRespReservationsFlags = "NO_WEEKLY"
-	V0041OpenapiReservationRespReservationsFlagsOVERLAP            V0041OpenapiReservationRespReservationsFlags = "OVERLAP"
-	V0041OpenapiReservationRespReservationsFlagsPARTNODES          V0041OpenapiReservationRespReservationsFlags = "PART_NODES"
-	V0041OpenapiReservationRespReservationsFlagsPURGECOMP          V0041OpenapiReservationRespReservationsFlags = "PURGE_COMP"
-	V0041OpenapiReservationRespReservationsFlagsREOCCURRING        V0041OpenapiReservationRespReservationsFlags = "REOCCURRING"
-	V0041OpenapiReservationRespReservationsFlagsREPLACE            V0041OpenapiReservationRespReservationsFlags = "REPLACE"
-	V0041OpenapiReservationRespReservationsFlagsSKIP               V0041OpenapiReservationRespReservationsFlags = "SKIP"
-	V0041OpenapiReservationRespReservationsFlagsSPECNODES          V0041OpenapiReservationRespReservationsFlags = "SPEC_NODES"
-	V0041OpenapiReservationRespReservationsFlagsSTATIC             V0041OpenapiReservationRespReservationsFlags = "STATIC"
-	V0041OpenapiReservationRespReservationsFlagsTIMEFLOAT          V0041OpenapiReservationRespReservationsFlags = "TIME_FLOAT"
-	V0041OpenapiReservationRespReservationsFlagsUSERDELETE         V0041OpenapiReservationRespReservationsFlags = "USER_DELETE"
-	V0041OpenapiReservationRespReservationsFlagsWEEKDAY            V0041OpenapiReservationRespReservationsFlags = "WEEKDAY"
-	V0041OpenapiReservationRespReservationsFlagsWEEKEND            V0041OpenapiReservationRespReservationsFlags = "WEEKEND"
-	V0041OpenapiReservationRespReservationsFlagsWEEKLY             V0041OpenapiReservationRespReservationsFlags = "WEEKLY"
+	ALLNODES           V0041OpenapiReservationRespReservationsFlags = "ALL_NODES"
+	ANYNODES           V0041OpenapiReservationRespReservationsFlags = "ANY_NODES"
+	DAILY              V0041OpenapiReservationRespReservationsFlags = "DAILY"
+	DURATIONMINUS      V0041OpenapiReservationRespReservationsFlags = "DURATION_MINUS"
+	DURATIONPLUS       V0041OpenapiReservationRespReservationsFlags = "DURATION_PLUS"
+	FLEX               V0041OpenapiReservationRespReservationsFlags = "FLEX"
+	HOURLY             V0041OpenapiReservationRespReservationsFlags = "HOURLY"
+	IGNOREJOBS         V0041OpenapiReservationRespReservationsFlags = "IGNORE_JOBS"
+	MAGNETIC           V0041OpenapiReservationRespReservationsFlags = "MAGNETIC"
+	MAINT              V0041OpenapiReservationRespReservationsFlags = "MAINT"
+	NODAILY            V0041OpenapiReservationRespReservationsFlags = "NO_DAILY"
+	NOFLEX             V0041OpenapiReservationRespReservationsFlags = "NO_FLEX"
+	NOHOLDJOBSAFTEREND V0041OpenapiReservationRespReservationsFlags = "NO_HOLD_JOBS_AFTER_END"
+	NOHOURLY           V0041OpenapiReservationRespReservationsFlags = "NO_HOURLY"
+	NOIGNOREJOBS       V0041OpenapiReservationRespReservationsFlags = "NO_IGNORE_JOBS"
+	NOMAINT            V0041OpenapiReservationRespReservationsFlags = "NO_MAINT"
+	NOPARTNODES        V0041OpenapiReservationRespReservationsFlags = "NO_PART_NODES"
+	NOPURGECOMP        V0041OpenapiReservationRespReservationsFlags = "NO_PURGE_COMP"
+	NOSTATIC           V0041OpenapiReservationRespReservationsFlags = "NO_STATIC"
+	NOUSERDELETE       V0041OpenapiReservationRespReservationsFlags = "NO_USER_DELETE"
+	NOWEEKDAY          V0041OpenapiReservationRespReservationsFlags = "NO_WEEKDAY"
+	NOWEEKEND          V0041OpenapiReservationRespReservationsFlags = "NO_WEEKEND"
+	NOWEEKLY           V0041OpenapiReservationRespReservationsFlags = "NO_WEEKLY"
+	OVERLAP            V0041OpenapiReservationRespReservationsFlags = "OVERLAP"
+	PARTNODES          V0041OpenapiReservationRespReservationsFlags = "PART_NODES"
+	PURGECOMP          V0041OpenapiReservationRespReservationsFlags = "PURGE_COMP"
+	REOCCURRING        V0041OpenapiReservationRespReservationsFlags = "REOCCURRING"
+	REPLACE            V0041OpenapiReservationRespReservationsFlags = "REPLACE"
+	SKIP               V0041OpenapiReservationRespReservationsFlags = "SKIP"
+	SPECNODES          V0041OpenapiReservationRespReservationsFlags = "SPEC_NODES"
+	STATIC             V0041OpenapiReservationRespReservationsFlags = "STATIC"
+	TIMEFLOAT          V0041OpenapiReservationRespReservationsFlags = "TIME_FLOAT"
+	USERDELETE         V0041OpenapiReservationRespReservationsFlags = "USER_DELETE"
+	WEEKDAY            V0041OpenapiReservationRespReservationsFlags = "WEEKDAY"
+	WEEKEND            V0041OpenapiReservationRespReservationsFlags = "WEEKEND"
+	WEEKLY             V0041OpenapiReservationRespReservationsFlags = "WEEKLY"
 )
 
 // Defines values for V0041OpenapiSharesRespSharesSharesType.
@@ -577,6 +768,14 @@ const (
 	V0041OpenapiSlurmdbdQosRespQosPreemptModeSUSPEND  V0041OpenapiSlurmdbdQosRespQosPreemptMode = "SUSPEND"
 )
 
+// Defines values for V0041OpenapiUsersAddCondRespUserAdminlevel.
+const (
+	V0041OpenapiUsersAddCondRespUserAdminlevelAdministrator V0041OpenapiUsersAddCondRespUserAdminlevel = "Administrator"
+	V0041OpenapiUsersAddCondRespUserAdminlevelNone          V0041OpenapiUsersAddCondRespUserAdminlevel = "None"
+	V0041OpenapiUsersAddCondRespUserAdminlevelNotSet        V0041OpenapiUsersAddCondRespUserAdminlevel = "Not Set"
+	V0041OpenapiUsersAddCondRespUserAdminlevelOperator      V0041OpenapiUsersAddCondRespUserAdminlevel = "Operator"
+)
+
 // Defines values for V0041OpenapiUsersRespUsersAdministratorLevel.
 const (
 	V0041OpenapiUsersRespUsersAdministratorLevelAdministrator V0041OpenapiUsersRespUsersAdministratorLevel = "Administrator"
@@ -635,598 +834,6 @@ const (
 	V0041UpdateNodeMsgStateUNKNOWN         V0041UpdateNodeMsgState = "UNKNOWN"
 )
 
-// Defines values for SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags.
-const (
-	SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlagsCPUBINDLDMAP            SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags = "CPU_BIND_LDMAP"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlagsCPUBINDLDMASK           SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags = "CPU_BIND_LDMASK"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlagsCPUBINDLDRANK           SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags = "CPU_BIND_LDRANK"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlagsCPUBINDMAP              SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags = "CPU_BIND_MAP"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlagsCPUBINDMASK             SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags = "CPU_BIND_MASK"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlagsCPUBINDNONE             SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags = "CPU_BIND_NONE"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlagsCPUBINDONETHREADPERCORE SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags = "CPU_BIND_ONE_THREAD_PER_CORE"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlagsCPUBINDRANK             SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags = "CPU_BIND_RANK"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlagsCPUBINDTOCORES          SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags = "CPU_BIND_TO_CORES"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlagsCPUBINDTOLDOMS          SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags = "CPU_BIND_TO_LDOMS"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlagsCPUBINDTOSOCKETS        SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags = "CPU_BIND_TO_SOCKETS"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlagsCPUBINDTOTHREADS        SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags = "CPU_BIND_TO_THREADS"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlagsVERBOSE                 SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags = "VERBOSE"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyHetjobCrontabFlags.
-const (
-	SlurmV0041PostJobAllocateJSONBodyHetjobCrontabFlagsWILDDAYOFMONTH SlurmV0041PostJobAllocateJSONBodyHetjobCrontabFlags = "WILD_DAY_OF_MONTH"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCrontabFlagsWILDDAYOFWEEK  SlurmV0041PostJobAllocateJSONBodyHetjobCrontabFlags = "WILD_DAY_OF_WEEK"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCrontabFlagsWILDHOUR       SlurmV0041PostJobAllocateJSONBodyHetjobCrontabFlags = "WILD_HOUR"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCrontabFlagsWILDMINUTE     SlurmV0041PostJobAllocateJSONBodyHetjobCrontabFlags = "WILD_MINUTE"
-	SlurmV0041PostJobAllocateJSONBodyHetjobCrontabFlagsWILDMONTH      SlurmV0041PostJobAllocateJSONBodyHetjobCrontabFlags = "WILD_MONTH"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyHetjobExclusive.
-const (
-	SlurmV0041PostJobAllocateJSONBodyHetjobExclusiveFalse SlurmV0041PostJobAllocateJSONBodyHetjobExclusive = "false"
-	SlurmV0041PostJobAllocateJSONBodyHetjobExclusiveMcs   SlurmV0041PostJobAllocateJSONBodyHetjobExclusive = "mcs"
-	SlurmV0041PostJobAllocateJSONBodyHetjobExclusiveTopo  SlurmV0041PostJobAllocateJSONBodyHetjobExclusive = "topo"
-	SlurmV0041PostJobAllocateJSONBodyHetjobExclusiveTrue  SlurmV0041PostJobAllocateJSONBodyHetjobExclusive = "true"
-	SlurmV0041PostJobAllocateJSONBodyHetjobExclusiveUser  SlurmV0041PostJobAllocateJSONBodyHetjobExclusive = "user"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyHetjobFlags.
-const (
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsACCRUECOUNTCLEARED       SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "ACCRUE_COUNT_CLEARED"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsBACKFILLATTEMPTED        SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "BACKFILL_ATTEMPTED"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsCRONJOB                  SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "CRON_JOB"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsDEPENDENT                SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "DEPENDENT"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsEXACTCPUCOUNTREQUESTED   SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "EXACT_CPU_COUNT_REQUESTED"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsEXACTMEMORYREQUESTED     SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "EXACT_MEMORY_REQUESTED"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsEXACTTASKCOUNTREQUESTED  SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "EXACT_TASK_COUNT_REQUESTED"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsGRESBINDINGDISABLED      SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "GRES_BINDING_DISABLED"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsGRESBINDINGENFORCED      SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "GRES_BINDING_ENFORCED"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsHASSTATEDIRECTORY        SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "HAS_STATE_DIRECTORY"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsHETEROGENEOUSJOB         SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "HETEROGENEOUS_JOB"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsJOBACCRUETIMERESET       SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "JOB_ACCRUE_TIME_RESET"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsJOBKILLHURRY             SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "JOB_KILL_HURRY"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsJOBWASRUNNING            SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "JOB_WAS_RUNNING"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsKILLINVALIDDEPENDENCY    SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "KILL_INVALID_DEPENDENCY"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsMAGNETIC                 SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "MAGNETIC"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsNOKILLINVALIDDEPENDENCY  SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "NO_KILL_INVALID_DEPENDENCY"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsPARTITIONASSIGNED        SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "PARTITION_ASSIGNED"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsPREFERMINIMUMNODECOUNT   SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "PREFER_MINIMUM_NODE_COUNT"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsSCHEDULINGATTEMPTED      SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "SCHEDULING_ATTEMPTED"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsSENDJOBENVIRONMENT       SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "SEND_JOB_ENVIRONMENT"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsSIBLINGCLUSTERUPDATEONLY SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "SIBLING_CLUSTER_UPDATE_ONLY"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsSKIPTRESSTRINGACCOUNTING SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "SKIP_TRES_STRING_ACCOUNTING"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsSPREADJOB                SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "SPREAD_JOB"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsSTEPMGRENABLED           SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "STEPMGR_ENABLED"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsTESTINGBACKFILL          SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "TESTING_BACKFILL"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsTESTINGWHOLENODEBACKFILL SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "TESTING_WHOLE_NODE_BACKFILL"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsTESTNOWONLY              SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "TEST_NOW_ONLY"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsTOPPRIORITYJOB           SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "TOP_PRIORITY_JOB"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsUSINGDEFAULTACCOUNT      SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "USING_DEFAULT_ACCOUNT"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsUSINGDEFAULTPARTITION    SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "USING_DEFAULT_PARTITION"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsUSINGDEFAULTQOS          SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "USING_DEFAULT_QOS"
-	SlurmV0041PostJobAllocateJSONBodyHetjobFlagsUSINGDEFAULTWCKEY        SlurmV0041PostJobAllocateJSONBodyHetjobFlags = "USING_DEFAULT_WCKEY"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags.
-const (
-	SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlagsARRAYTASK         SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags = "ARRAY_TASK"
-	SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlagsBATCHJOB          SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags = "BATCH_JOB"
-	SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlagsCRONJOBS          SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags = "CRON_JOBS"
-	SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlagsFEDERATIONREQUEUE SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags = "FEDERATION_REQUEUE"
-	SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlagsFULLJOB           SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags = "FULL_JOB"
-	SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlagsFULLSTEPSONLY     SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags = "FULL_STEPS_ONLY"
-	SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlagsHURRY             SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags = "HURRY"
-	SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlagsNOSIBLINGJOBS     SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags = "NO_SIBLING_JOBS"
-	SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlagsOUTOFMEMORY       SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags = "OUT_OF_MEMORY"
-	SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlagsRESERVATIONJOB    SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags = "RESERVATION_JOB"
-	SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlagsVERBOSE           SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags = "VERBOSE"
-	SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlagsWARNINGSENT       SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags = "WARNING_SENT"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyHetjobMailType.
-const (
-	SlurmV0041PostJobAllocateJSONBodyHetjobMailTypeARRAYTASKS        SlurmV0041PostJobAllocateJSONBodyHetjobMailType = "ARRAY_TASKS"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMailTypeBEGIN             SlurmV0041PostJobAllocateJSONBodyHetjobMailType = "BEGIN"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMailTypeEND               SlurmV0041PostJobAllocateJSONBodyHetjobMailType = "END"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMailTypeFAIL              SlurmV0041PostJobAllocateJSONBodyHetjobMailType = "FAIL"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMailTypeINVALIDDEPENDENCY SlurmV0041PostJobAllocateJSONBodyHetjobMailType = "INVALID_DEPENDENCY"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMailTypeREQUEUE           SlurmV0041PostJobAllocateJSONBodyHetjobMailType = "REQUEUE"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMailTypeSTAGEOUT          SlurmV0041PostJobAllocateJSONBodyHetjobMailType = "STAGE_OUT"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMailTypeTIME100           SlurmV0041PostJobAllocateJSONBodyHetjobMailType = "TIME=100%"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMailTypeTIME50            SlurmV0041PostJobAllocateJSONBodyHetjobMailType = "TIME=50%"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMailTypeTIME80            SlurmV0041PostJobAllocateJSONBodyHetjobMailType = "TIME=80%"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMailTypeTIME90            SlurmV0041PostJobAllocateJSONBodyHetjobMailType = "TIME=90%"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingType.
-const (
-	SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingTypeLOCAL   SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingType = "LOCAL"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingTypeMAP     SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingType = "MAP"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingTypeMASK    SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingType = "MASK"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingTypeNONE    SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingType = "NONE"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingTypePREFER  SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingType = "PREFER"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingTypeRANK    SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingType = "RANK"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingTypeSORT    SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingType = "SORT"
-	SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingTypeVERBOSE SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingType = "VERBOSE"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyHetjobOpenMode.
-const (
-	SlurmV0041PostJobAllocateJSONBodyHetjobOpenModeAPPEND   SlurmV0041PostJobAllocateJSONBodyHetjobOpenMode = "APPEND"
-	SlurmV0041PostJobAllocateJSONBodyHetjobOpenModeTRUNCATE SlurmV0041PostJobAllocateJSONBodyHetjobOpenMode = "TRUNCATE"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyHetjobProfile.
-const (
-	SlurmV0041PostJobAllocateJSONBodyHetjobProfileENERGY  SlurmV0041PostJobAllocateJSONBodyHetjobProfile = "ENERGY"
-	SlurmV0041PostJobAllocateJSONBodyHetjobProfileLUSTRE  SlurmV0041PostJobAllocateJSONBodyHetjobProfile = "LUSTRE"
-	SlurmV0041PostJobAllocateJSONBodyHetjobProfileNETWORK SlurmV0041PostJobAllocateJSONBodyHetjobProfile = "NETWORK"
-	SlurmV0041PostJobAllocateJSONBodyHetjobProfileNONE    SlurmV0041PostJobAllocateJSONBodyHetjobProfile = "NONE"
-	SlurmV0041PostJobAllocateJSONBodyHetjobProfileNOTSET  SlurmV0041PostJobAllocateJSONBodyHetjobProfile = "NOT_SET"
-	SlurmV0041PostJobAllocateJSONBodyHetjobProfileTASK    SlurmV0041PostJobAllocateJSONBodyHetjobProfile = "TASK"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyHetjobShared.
-const (
-	SlurmV0041PostJobAllocateJSONBodyHetjobSharedMcs           SlurmV0041PostJobAllocateJSONBodyHetjobShared = "mcs"
-	SlurmV0041PostJobAllocateJSONBodyHetjobSharedNone          SlurmV0041PostJobAllocateJSONBodyHetjobShared = "none"
-	SlurmV0041PostJobAllocateJSONBodyHetjobSharedOversubscribe SlurmV0041PostJobAllocateJSONBodyHetjobShared = "oversubscribe"
-	SlurmV0041PostJobAllocateJSONBodyHetjobSharedTopo          SlurmV0041PostJobAllocateJSONBodyHetjobShared = "topo"
-	SlurmV0041PostJobAllocateJSONBodyHetjobSharedUser          SlurmV0041PostJobAllocateJSONBodyHetjobShared = "user"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyHetjobX11.
-const (
-	SlurmV0041PostJobAllocateJSONBodyHetjobX11BATCHNODE       SlurmV0041PostJobAllocateJSONBodyHetjobX11 = "BATCH_NODE"
-	SlurmV0041PostJobAllocateJSONBodyHetjobX11FIRSTNODE       SlurmV0041PostJobAllocateJSONBodyHetjobX11 = "FIRST_NODE"
-	SlurmV0041PostJobAllocateJSONBodyHetjobX11FORWARDALLNODES SlurmV0041PostJobAllocateJSONBodyHetjobX11 = "FORWARD_ALL_NODES"
-	SlurmV0041PostJobAllocateJSONBodyHetjobX11LASTNODE        SlurmV0041PostJobAllocateJSONBodyHetjobX11 = "LAST_NODE"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags.
-const (
-	SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlagsCPUBINDLDMAP            SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags = "CPU_BIND_LDMAP"
-	SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlagsCPUBINDLDMASK           SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags = "CPU_BIND_LDMASK"
-	SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlagsCPUBINDLDRANK           SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags = "CPU_BIND_LDRANK"
-	SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlagsCPUBINDMAP              SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags = "CPU_BIND_MAP"
-	SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlagsCPUBINDMASK             SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags = "CPU_BIND_MASK"
-	SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlagsCPUBINDNONE             SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags = "CPU_BIND_NONE"
-	SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlagsCPUBINDONETHREADPERCORE SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags = "CPU_BIND_ONE_THREAD_PER_CORE"
-	SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlagsCPUBINDRANK             SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags = "CPU_BIND_RANK"
-	SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlagsCPUBINDTOCORES          SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags = "CPU_BIND_TO_CORES"
-	SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlagsCPUBINDTOLDOMS          SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags = "CPU_BIND_TO_LDOMS"
-	SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlagsCPUBINDTOSOCKETS        SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags = "CPU_BIND_TO_SOCKETS"
-	SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlagsCPUBINDTOTHREADS        SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags = "CPU_BIND_TO_THREADS"
-	SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlagsVERBOSE                 SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags = "VERBOSE"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyJobCrontabFlags.
-const (
-	SlurmV0041PostJobAllocateJSONBodyJobCrontabFlagsWILDDAYOFMONTH SlurmV0041PostJobAllocateJSONBodyJobCrontabFlags = "WILD_DAY_OF_MONTH"
-	SlurmV0041PostJobAllocateJSONBodyJobCrontabFlagsWILDDAYOFWEEK  SlurmV0041PostJobAllocateJSONBodyJobCrontabFlags = "WILD_DAY_OF_WEEK"
-	SlurmV0041PostJobAllocateJSONBodyJobCrontabFlagsWILDHOUR       SlurmV0041PostJobAllocateJSONBodyJobCrontabFlags = "WILD_HOUR"
-	SlurmV0041PostJobAllocateJSONBodyJobCrontabFlagsWILDMINUTE     SlurmV0041PostJobAllocateJSONBodyJobCrontabFlags = "WILD_MINUTE"
-	SlurmV0041PostJobAllocateJSONBodyJobCrontabFlagsWILDMONTH      SlurmV0041PostJobAllocateJSONBodyJobCrontabFlags = "WILD_MONTH"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyJobExclusive.
-const (
-	SlurmV0041PostJobAllocateJSONBodyJobExclusiveFalse SlurmV0041PostJobAllocateJSONBodyJobExclusive = "false"
-	SlurmV0041PostJobAllocateJSONBodyJobExclusiveMcs   SlurmV0041PostJobAllocateJSONBodyJobExclusive = "mcs"
-	SlurmV0041PostJobAllocateJSONBodyJobExclusiveTopo  SlurmV0041PostJobAllocateJSONBodyJobExclusive = "topo"
-	SlurmV0041PostJobAllocateJSONBodyJobExclusiveTrue  SlurmV0041PostJobAllocateJSONBodyJobExclusive = "true"
-	SlurmV0041PostJobAllocateJSONBodyJobExclusiveUser  SlurmV0041PostJobAllocateJSONBodyJobExclusive = "user"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyJobFlags.
-const (
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsACCRUECOUNTCLEARED       SlurmV0041PostJobAllocateJSONBodyJobFlags = "ACCRUE_COUNT_CLEARED"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsBACKFILLATTEMPTED        SlurmV0041PostJobAllocateJSONBodyJobFlags = "BACKFILL_ATTEMPTED"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsCRONJOB                  SlurmV0041PostJobAllocateJSONBodyJobFlags = "CRON_JOB"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsDEPENDENT                SlurmV0041PostJobAllocateJSONBodyJobFlags = "DEPENDENT"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsEXACTCPUCOUNTREQUESTED   SlurmV0041PostJobAllocateJSONBodyJobFlags = "EXACT_CPU_COUNT_REQUESTED"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsEXACTMEMORYREQUESTED     SlurmV0041PostJobAllocateJSONBodyJobFlags = "EXACT_MEMORY_REQUESTED"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsEXACTTASKCOUNTREQUESTED  SlurmV0041PostJobAllocateJSONBodyJobFlags = "EXACT_TASK_COUNT_REQUESTED"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsGRESBINDINGDISABLED      SlurmV0041PostJobAllocateJSONBodyJobFlags = "GRES_BINDING_DISABLED"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsGRESBINDINGENFORCED      SlurmV0041PostJobAllocateJSONBodyJobFlags = "GRES_BINDING_ENFORCED"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsHASSTATEDIRECTORY        SlurmV0041PostJobAllocateJSONBodyJobFlags = "HAS_STATE_DIRECTORY"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsHETEROGENEOUSJOB         SlurmV0041PostJobAllocateJSONBodyJobFlags = "HETEROGENEOUS_JOB"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsJOBACCRUETIMERESET       SlurmV0041PostJobAllocateJSONBodyJobFlags = "JOB_ACCRUE_TIME_RESET"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsJOBKILLHURRY             SlurmV0041PostJobAllocateJSONBodyJobFlags = "JOB_KILL_HURRY"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsJOBWASRUNNING            SlurmV0041PostJobAllocateJSONBodyJobFlags = "JOB_WAS_RUNNING"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsKILLINVALIDDEPENDENCY    SlurmV0041PostJobAllocateJSONBodyJobFlags = "KILL_INVALID_DEPENDENCY"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsMAGNETIC                 SlurmV0041PostJobAllocateJSONBodyJobFlags = "MAGNETIC"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsNOKILLINVALIDDEPENDENCY  SlurmV0041PostJobAllocateJSONBodyJobFlags = "NO_KILL_INVALID_DEPENDENCY"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsPARTITIONASSIGNED        SlurmV0041PostJobAllocateJSONBodyJobFlags = "PARTITION_ASSIGNED"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsPREFERMINIMUMNODECOUNT   SlurmV0041PostJobAllocateJSONBodyJobFlags = "PREFER_MINIMUM_NODE_COUNT"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsSCHEDULINGATTEMPTED      SlurmV0041PostJobAllocateJSONBodyJobFlags = "SCHEDULING_ATTEMPTED"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsSENDJOBENVIRONMENT       SlurmV0041PostJobAllocateJSONBodyJobFlags = "SEND_JOB_ENVIRONMENT"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsSIBLINGCLUSTERUPDATEONLY SlurmV0041PostJobAllocateJSONBodyJobFlags = "SIBLING_CLUSTER_UPDATE_ONLY"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsSKIPTRESSTRINGACCOUNTING SlurmV0041PostJobAllocateJSONBodyJobFlags = "SKIP_TRES_STRING_ACCOUNTING"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsSPREADJOB                SlurmV0041PostJobAllocateJSONBodyJobFlags = "SPREAD_JOB"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsSTEPMGRENABLED           SlurmV0041PostJobAllocateJSONBodyJobFlags = "STEPMGR_ENABLED"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsTESTINGBACKFILL          SlurmV0041PostJobAllocateJSONBodyJobFlags = "TESTING_BACKFILL"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsTESTINGWHOLENODEBACKFILL SlurmV0041PostJobAllocateJSONBodyJobFlags = "TESTING_WHOLE_NODE_BACKFILL"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsTESTNOWONLY              SlurmV0041PostJobAllocateJSONBodyJobFlags = "TEST_NOW_ONLY"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsTOPPRIORITYJOB           SlurmV0041PostJobAllocateJSONBodyJobFlags = "TOP_PRIORITY_JOB"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsUSINGDEFAULTACCOUNT      SlurmV0041PostJobAllocateJSONBodyJobFlags = "USING_DEFAULT_ACCOUNT"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsUSINGDEFAULTPARTITION    SlurmV0041PostJobAllocateJSONBodyJobFlags = "USING_DEFAULT_PARTITION"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsUSINGDEFAULTQOS          SlurmV0041PostJobAllocateJSONBodyJobFlags = "USING_DEFAULT_QOS"
-	SlurmV0041PostJobAllocateJSONBodyJobFlagsUSINGDEFAULTWCKEY        SlurmV0041PostJobAllocateJSONBodyJobFlags = "USING_DEFAULT_WCKEY"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags.
-const (
-	SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlagsARRAYTASK         SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags = "ARRAY_TASK"
-	SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlagsBATCHJOB          SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags = "BATCH_JOB"
-	SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlagsCRONJOBS          SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags = "CRON_JOBS"
-	SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlagsFEDERATIONREQUEUE SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags = "FEDERATION_REQUEUE"
-	SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlagsFULLJOB           SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags = "FULL_JOB"
-	SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlagsFULLSTEPSONLY     SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags = "FULL_STEPS_ONLY"
-	SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlagsHURRY             SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags = "HURRY"
-	SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlagsNOSIBLINGJOBS     SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags = "NO_SIBLING_JOBS"
-	SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlagsOUTOFMEMORY       SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags = "OUT_OF_MEMORY"
-	SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlagsRESERVATIONJOB    SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags = "RESERVATION_JOB"
-	SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlagsVERBOSE           SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags = "VERBOSE"
-	SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlagsWARNINGSENT       SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags = "WARNING_SENT"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyJobMailType.
-const (
-	SlurmV0041PostJobAllocateJSONBodyJobMailTypeARRAYTASKS        SlurmV0041PostJobAllocateJSONBodyJobMailType = "ARRAY_TASKS"
-	SlurmV0041PostJobAllocateJSONBodyJobMailTypeBEGIN             SlurmV0041PostJobAllocateJSONBodyJobMailType = "BEGIN"
-	SlurmV0041PostJobAllocateJSONBodyJobMailTypeEND               SlurmV0041PostJobAllocateJSONBodyJobMailType = "END"
-	SlurmV0041PostJobAllocateJSONBodyJobMailTypeFAIL              SlurmV0041PostJobAllocateJSONBodyJobMailType = "FAIL"
-	SlurmV0041PostJobAllocateJSONBodyJobMailTypeINVALIDDEPENDENCY SlurmV0041PostJobAllocateJSONBodyJobMailType = "INVALID_DEPENDENCY"
-	SlurmV0041PostJobAllocateJSONBodyJobMailTypeREQUEUE           SlurmV0041PostJobAllocateJSONBodyJobMailType = "REQUEUE"
-	SlurmV0041PostJobAllocateJSONBodyJobMailTypeSTAGEOUT          SlurmV0041PostJobAllocateJSONBodyJobMailType = "STAGE_OUT"
-	SlurmV0041PostJobAllocateJSONBodyJobMailTypeTIME100           SlurmV0041PostJobAllocateJSONBodyJobMailType = "TIME=100%"
-	SlurmV0041PostJobAllocateJSONBodyJobMailTypeTIME50            SlurmV0041PostJobAllocateJSONBodyJobMailType = "TIME=50%"
-	SlurmV0041PostJobAllocateJSONBodyJobMailTypeTIME80            SlurmV0041PostJobAllocateJSONBodyJobMailType = "TIME=80%"
-	SlurmV0041PostJobAllocateJSONBodyJobMailTypeTIME90            SlurmV0041PostJobAllocateJSONBodyJobMailType = "TIME=90%"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingType.
-const (
-	SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingTypeLOCAL   SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingType = "LOCAL"
-	SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingTypeMAP     SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingType = "MAP"
-	SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingTypeMASK    SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingType = "MASK"
-	SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingTypeNONE    SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingType = "NONE"
-	SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingTypePREFER  SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingType = "PREFER"
-	SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingTypeRANK    SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingType = "RANK"
-	SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingTypeSORT    SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingType = "SORT"
-	SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingTypeVERBOSE SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingType = "VERBOSE"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyJobOpenMode.
-const (
-	SlurmV0041PostJobAllocateJSONBodyJobOpenModeAPPEND   SlurmV0041PostJobAllocateJSONBodyJobOpenMode = "APPEND"
-	SlurmV0041PostJobAllocateJSONBodyJobOpenModeTRUNCATE SlurmV0041PostJobAllocateJSONBodyJobOpenMode = "TRUNCATE"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyJobProfile.
-const (
-	SlurmV0041PostJobAllocateJSONBodyJobProfileENERGY  SlurmV0041PostJobAllocateJSONBodyJobProfile = "ENERGY"
-	SlurmV0041PostJobAllocateJSONBodyJobProfileLUSTRE  SlurmV0041PostJobAllocateJSONBodyJobProfile = "LUSTRE"
-	SlurmV0041PostJobAllocateJSONBodyJobProfileNETWORK SlurmV0041PostJobAllocateJSONBodyJobProfile = "NETWORK"
-	SlurmV0041PostJobAllocateJSONBodyJobProfileNONE    SlurmV0041PostJobAllocateJSONBodyJobProfile = "NONE"
-	SlurmV0041PostJobAllocateJSONBodyJobProfileNOTSET  SlurmV0041PostJobAllocateJSONBodyJobProfile = "NOT_SET"
-	SlurmV0041PostJobAllocateJSONBodyJobProfileTASK    SlurmV0041PostJobAllocateJSONBodyJobProfile = "TASK"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyJobShared.
-const (
-	SlurmV0041PostJobAllocateJSONBodyJobSharedMcs           SlurmV0041PostJobAllocateJSONBodyJobShared = "mcs"
-	SlurmV0041PostJobAllocateJSONBodyJobSharedNone          SlurmV0041PostJobAllocateJSONBodyJobShared = "none"
-	SlurmV0041PostJobAllocateJSONBodyJobSharedOversubscribe SlurmV0041PostJobAllocateJSONBodyJobShared = "oversubscribe"
-	SlurmV0041PostJobAllocateJSONBodyJobSharedTopo          SlurmV0041PostJobAllocateJSONBodyJobShared = "topo"
-	SlurmV0041PostJobAllocateJSONBodyJobSharedUser          SlurmV0041PostJobAllocateJSONBodyJobShared = "user"
-)
-
-// Defines values for SlurmV0041PostJobAllocateJSONBodyJobX11.
-const (
-	SlurmV0041PostJobAllocateJSONBodyJobX11BATCHNODE       SlurmV0041PostJobAllocateJSONBodyJobX11 = "BATCH_NODE"
-	SlurmV0041PostJobAllocateJSONBodyJobX11FIRSTNODE       SlurmV0041PostJobAllocateJSONBodyJobX11 = "FIRST_NODE"
-	SlurmV0041PostJobAllocateJSONBodyJobX11FORWARDALLNODES SlurmV0041PostJobAllocateJSONBodyJobX11 = "FORWARD_ALL_NODES"
-	SlurmV0041PostJobAllocateJSONBodyJobX11LASTNODE        SlurmV0041PostJobAllocateJSONBodyJobX11 = "LAST_NODE"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlagsCPUBINDLDMAP            SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags = "CPU_BIND_LDMAP"
-	SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlagsCPUBINDLDMASK           SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags = "CPU_BIND_LDMASK"
-	SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlagsCPUBINDLDRANK           SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags = "CPU_BIND_LDRANK"
-	SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlagsCPUBINDMAP              SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags = "CPU_BIND_MAP"
-	SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlagsCPUBINDMASK             SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags = "CPU_BIND_MASK"
-	SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlagsCPUBINDNONE             SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags = "CPU_BIND_NONE"
-	SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlagsCPUBINDONETHREADPERCORE SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags = "CPU_BIND_ONE_THREAD_PER_CORE"
-	SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlagsCPUBINDRANK             SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags = "CPU_BIND_RANK"
-	SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlagsCPUBINDTOCORES          SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags = "CPU_BIND_TO_CORES"
-	SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlagsCPUBINDTOLDOMS          SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags = "CPU_BIND_TO_LDOMS"
-	SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlagsCPUBINDTOSOCKETS        SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags = "CPU_BIND_TO_SOCKETS"
-	SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlagsCPUBINDTOTHREADS        SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags = "CPU_BIND_TO_THREADS"
-	SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlagsVERBOSE                 SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags = "VERBOSE"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobCrontabFlags.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobCrontabFlagsWILDDAYOFMONTH SlurmV0041PostJobSubmitJSONBodyJobCrontabFlags = "WILD_DAY_OF_MONTH"
-	SlurmV0041PostJobSubmitJSONBodyJobCrontabFlagsWILDDAYOFWEEK  SlurmV0041PostJobSubmitJSONBodyJobCrontabFlags = "WILD_DAY_OF_WEEK"
-	SlurmV0041PostJobSubmitJSONBodyJobCrontabFlagsWILDHOUR       SlurmV0041PostJobSubmitJSONBodyJobCrontabFlags = "WILD_HOUR"
-	SlurmV0041PostJobSubmitJSONBodyJobCrontabFlagsWILDMINUTE     SlurmV0041PostJobSubmitJSONBodyJobCrontabFlags = "WILD_MINUTE"
-	SlurmV0041PostJobSubmitJSONBodyJobCrontabFlagsWILDMONTH      SlurmV0041PostJobSubmitJSONBodyJobCrontabFlags = "WILD_MONTH"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobExclusive.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobExclusiveFalse SlurmV0041PostJobSubmitJSONBodyJobExclusive = "false"
-	SlurmV0041PostJobSubmitJSONBodyJobExclusiveMcs   SlurmV0041PostJobSubmitJSONBodyJobExclusive = "mcs"
-	SlurmV0041PostJobSubmitJSONBodyJobExclusiveTopo  SlurmV0041PostJobSubmitJSONBodyJobExclusive = "topo"
-	SlurmV0041PostJobSubmitJSONBodyJobExclusiveTrue  SlurmV0041PostJobSubmitJSONBodyJobExclusive = "true"
-	SlurmV0041PostJobSubmitJSONBodyJobExclusiveUser  SlurmV0041PostJobSubmitJSONBodyJobExclusive = "user"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobFlags.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsACCRUECOUNTCLEARED       SlurmV0041PostJobSubmitJSONBodyJobFlags = "ACCRUE_COUNT_CLEARED"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsBACKFILLATTEMPTED        SlurmV0041PostJobSubmitJSONBodyJobFlags = "BACKFILL_ATTEMPTED"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsCRONJOB                  SlurmV0041PostJobSubmitJSONBodyJobFlags = "CRON_JOB"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsDEPENDENT                SlurmV0041PostJobSubmitJSONBodyJobFlags = "DEPENDENT"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsEXACTCPUCOUNTREQUESTED   SlurmV0041PostJobSubmitJSONBodyJobFlags = "EXACT_CPU_COUNT_REQUESTED"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsEXACTMEMORYREQUESTED     SlurmV0041PostJobSubmitJSONBodyJobFlags = "EXACT_MEMORY_REQUESTED"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsEXACTTASKCOUNTREQUESTED  SlurmV0041PostJobSubmitJSONBodyJobFlags = "EXACT_TASK_COUNT_REQUESTED"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsGRESBINDINGDISABLED      SlurmV0041PostJobSubmitJSONBodyJobFlags = "GRES_BINDING_DISABLED"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsGRESBINDINGENFORCED      SlurmV0041PostJobSubmitJSONBodyJobFlags = "GRES_BINDING_ENFORCED"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsHASSTATEDIRECTORY        SlurmV0041PostJobSubmitJSONBodyJobFlags = "HAS_STATE_DIRECTORY"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsHETEROGENEOUSJOB         SlurmV0041PostJobSubmitJSONBodyJobFlags = "HETEROGENEOUS_JOB"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsJOBACCRUETIMERESET       SlurmV0041PostJobSubmitJSONBodyJobFlags = "JOB_ACCRUE_TIME_RESET"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsJOBKILLHURRY             SlurmV0041PostJobSubmitJSONBodyJobFlags = "JOB_KILL_HURRY"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsJOBWASRUNNING            SlurmV0041PostJobSubmitJSONBodyJobFlags = "JOB_WAS_RUNNING"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsKILLINVALIDDEPENDENCY    SlurmV0041PostJobSubmitJSONBodyJobFlags = "KILL_INVALID_DEPENDENCY"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsMAGNETIC                 SlurmV0041PostJobSubmitJSONBodyJobFlags = "MAGNETIC"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsNOKILLINVALIDDEPENDENCY  SlurmV0041PostJobSubmitJSONBodyJobFlags = "NO_KILL_INVALID_DEPENDENCY"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsPARTITIONASSIGNED        SlurmV0041PostJobSubmitJSONBodyJobFlags = "PARTITION_ASSIGNED"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsPREFERMINIMUMNODECOUNT   SlurmV0041PostJobSubmitJSONBodyJobFlags = "PREFER_MINIMUM_NODE_COUNT"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsSCHEDULINGATTEMPTED      SlurmV0041PostJobSubmitJSONBodyJobFlags = "SCHEDULING_ATTEMPTED"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsSENDJOBENVIRONMENT       SlurmV0041PostJobSubmitJSONBodyJobFlags = "SEND_JOB_ENVIRONMENT"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsSIBLINGCLUSTERUPDATEONLY SlurmV0041PostJobSubmitJSONBodyJobFlags = "SIBLING_CLUSTER_UPDATE_ONLY"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsSKIPTRESSTRINGACCOUNTING SlurmV0041PostJobSubmitJSONBodyJobFlags = "SKIP_TRES_STRING_ACCOUNTING"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsSPREADJOB                SlurmV0041PostJobSubmitJSONBodyJobFlags = "SPREAD_JOB"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsSTEPMGRENABLED           SlurmV0041PostJobSubmitJSONBodyJobFlags = "STEPMGR_ENABLED"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsTESTINGBACKFILL          SlurmV0041PostJobSubmitJSONBodyJobFlags = "TESTING_BACKFILL"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsTESTINGWHOLENODEBACKFILL SlurmV0041PostJobSubmitJSONBodyJobFlags = "TESTING_WHOLE_NODE_BACKFILL"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsTESTNOWONLY              SlurmV0041PostJobSubmitJSONBodyJobFlags = "TEST_NOW_ONLY"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsTOPPRIORITYJOB           SlurmV0041PostJobSubmitJSONBodyJobFlags = "TOP_PRIORITY_JOB"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsUSINGDEFAULTACCOUNT      SlurmV0041PostJobSubmitJSONBodyJobFlags = "USING_DEFAULT_ACCOUNT"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsUSINGDEFAULTPARTITION    SlurmV0041PostJobSubmitJSONBodyJobFlags = "USING_DEFAULT_PARTITION"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsUSINGDEFAULTQOS          SlurmV0041PostJobSubmitJSONBodyJobFlags = "USING_DEFAULT_QOS"
-	SlurmV0041PostJobSubmitJSONBodyJobFlagsUSINGDEFAULTWCKEY        SlurmV0041PostJobSubmitJSONBodyJobFlags = "USING_DEFAULT_WCKEY"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlagsARRAYTASK         SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags = "ARRAY_TASK"
-	SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlagsBATCHJOB          SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags = "BATCH_JOB"
-	SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlagsCRONJOBS          SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags = "CRON_JOBS"
-	SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlagsFEDERATIONREQUEUE SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags = "FEDERATION_REQUEUE"
-	SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlagsFULLJOB           SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags = "FULL_JOB"
-	SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlagsFULLSTEPSONLY     SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags = "FULL_STEPS_ONLY"
-	SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlagsHURRY             SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags = "HURRY"
-	SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlagsNOSIBLINGJOBS     SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags = "NO_SIBLING_JOBS"
-	SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlagsOUTOFMEMORY       SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags = "OUT_OF_MEMORY"
-	SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlagsRESERVATIONJOB    SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags = "RESERVATION_JOB"
-	SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlagsVERBOSE           SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags = "VERBOSE"
-	SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlagsWARNINGSENT       SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags = "WARNING_SENT"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobMailType.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobMailTypeARRAYTASKS        SlurmV0041PostJobSubmitJSONBodyJobMailType = "ARRAY_TASKS"
-	SlurmV0041PostJobSubmitJSONBodyJobMailTypeBEGIN             SlurmV0041PostJobSubmitJSONBodyJobMailType = "BEGIN"
-	SlurmV0041PostJobSubmitJSONBodyJobMailTypeEND               SlurmV0041PostJobSubmitJSONBodyJobMailType = "END"
-	SlurmV0041PostJobSubmitJSONBodyJobMailTypeFAIL              SlurmV0041PostJobSubmitJSONBodyJobMailType = "FAIL"
-	SlurmV0041PostJobSubmitJSONBodyJobMailTypeINVALIDDEPENDENCY SlurmV0041PostJobSubmitJSONBodyJobMailType = "INVALID_DEPENDENCY"
-	SlurmV0041PostJobSubmitJSONBodyJobMailTypeREQUEUE           SlurmV0041PostJobSubmitJSONBodyJobMailType = "REQUEUE"
-	SlurmV0041PostJobSubmitJSONBodyJobMailTypeSTAGEOUT          SlurmV0041PostJobSubmitJSONBodyJobMailType = "STAGE_OUT"
-	SlurmV0041PostJobSubmitJSONBodyJobMailTypeTIME100           SlurmV0041PostJobSubmitJSONBodyJobMailType = "TIME=100%"
-	SlurmV0041PostJobSubmitJSONBodyJobMailTypeTIME50            SlurmV0041PostJobSubmitJSONBodyJobMailType = "TIME=50%"
-	SlurmV0041PostJobSubmitJSONBodyJobMailTypeTIME80            SlurmV0041PostJobSubmitJSONBodyJobMailType = "TIME=80%"
-	SlurmV0041PostJobSubmitJSONBodyJobMailTypeTIME90            SlurmV0041PostJobSubmitJSONBodyJobMailType = "TIME=90%"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingType.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingTypeLOCAL   SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingType = "LOCAL"
-	SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingTypeMAP     SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingType = "MAP"
-	SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingTypeMASK    SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingType = "MASK"
-	SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingTypeNONE    SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingType = "NONE"
-	SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingTypePREFER  SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingType = "PREFER"
-	SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingTypeRANK    SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingType = "RANK"
-	SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingTypeSORT    SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingType = "SORT"
-	SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingTypeVERBOSE SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingType = "VERBOSE"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobOpenMode.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobOpenModeAPPEND   SlurmV0041PostJobSubmitJSONBodyJobOpenMode = "APPEND"
-	SlurmV0041PostJobSubmitJSONBodyJobOpenModeTRUNCATE SlurmV0041PostJobSubmitJSONBodyJobOpenMode = "TRUNCATE"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobProfile.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobProfileENERGY  SlurmV0041PostJobSubmitJSONBodyJobProfile = "ENERGY"
-	SlurmV0041PostJobSubmitJSONBodyJobProfileLUSTRE  SlurmV0041PostJobSubmitJSONBodyJobProfile = "LUSTRE"
-	SlurmV0041PostJobSubmitJSONBodyJobProfileNETWORK SlurmV0041PostJobSubmitJSONBodyJobProfile = "NETWORK"
-	SlurmV0041PostJobSubmitJSONBodyJobProfileNONE    SlurmV0041PostJobSubmitJSONBodyJobProfile = "NONE"
-	SlurmV0041PostJobSubmitJSONBodyJobProfileNOTSET  SlurmV0041PostJobSubmitJSONBodyJobProfile = "NOT_SET"
-	SlurmV0041PostJobSubmitJSONBodyJobProfileTASK    SlurmV0041PostJobSubmitJSONBodyJobProfile = "TASK"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobShared.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobSharedMcs           SlurmV0041PostJobSubmitJSONBodyJobShared = "mcs"
-	SlurmV0041PostJobSubmitJSONBodyJobSharedNone          SlurmV0041PostJobSubmitJSONBodyJobShared = "none"
-	SlurmV0041PostJobSubmitJSONBodyJobSharedOversubscribe SlurmV0041PostJobSubmitJSONBodyJobShared = "oversubscribe"
-	SlurmV0041PostJobSubmitJSONBodyJobSharedTopo          SlurmV0041PostJobSubmitJSONBodyJobShared = "topo"
-	SlurmV0041PostJobSubmitJSONBodyJobSharedUser          SlurmV0041PostJobSubmitJSONBodyJobShared = "user"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobX11.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobX11BATCHNODE       SlurmV0041PostJobSubmitJSONBodyJobX11 = "BATCH_NODE"
-	SlurmV0041PostJobSubmitJSONBodyJobX11FIRSTNODE       SlurmV0041PostJobSubmitJSONBodyJobX11 = "FIRST_NODE"
-	SlurmV0041PostJobSubmitJSONBodyJobX11FORWARDALLNODES SlurmV0041PostJobSubmitJSONBodyJobX11 = "FORWARD_ALL_NODES"
-	SlurmV0041PostJobSubmitJSONBodyJobX11LASTNODE        SlurmV0041PostJobSubmitJSONBodyJobX11 = "LAST_NODE"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlagsCPUBINDLDMAP            SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags = "CPU_BIND_LDMAP"
-	SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlagsCPUBINDLDMASK           SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags = "CPU_BIND_LDMASK"
-	SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlagsCPUBINDLDRANK           SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags = "CPU_BIND_LDRANK"
-	SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlagsCPUBINDMAP              SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags = "CPU_BIND_MAP"
-	SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlagsCPUBINDMASK             SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags = "CPU_BIND_MASK"
-	SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlagsCPUBINDNONE             SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags = "CPU_BIND_NONE"
-	SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlagsCPUBINDONETHREADPERCORE SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags = "CPU_BIND_ONE_THREAD_PER_CORE"
-	SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlagsCPUBINDRANK             SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags = "CPU_BIND_RANK"
-	SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlagsCPUBINDTOCORES          SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags = "CPU_BIND_TO_CORES"
-	SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlagsCPUBINDTOLDOMS          SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags = "CPU_BIND_TO_LDOMS"
-	SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlagsCPUBINDTOSOCKETS        SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags = "CPU_BIND_TO_SOCKETS"
-	SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlagsCPUBINDTOTHREADS        SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags = "CPU_BIND_TO_THREADS"
-	SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlagsVERBOSE                 SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags = "VERBOSE"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobsCrontabFlags.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobsCrontabFlagsWILDDAYOFMONTH SlurmV0041PostJobSubmitJSONBodyJobsCrontabFlags = "WILD_DAY_OF_MONTH"
-	SlurmV0041PostJobSubmitJSONBodyJobsCrontabFlagsWILDDAYOFWEEK  SlurmV0041PostJobSubmitJSONBodyJobsCrontabFlags = "WILD_DAY_OF_WEEK"
-	SlurmV0041PostJobSubmitJSONBodyJobsCrontabFlagsWILDHOUR       SlurmV0041PostJobSubmitJSONBodyJobsCrontabFlags = "WILD_HOUR"
-	SlurmV0041PostJobSubmitJSONBodyJobsCrontabFlagsWILDMINUTE     SlurmV0041PostJobSubmitJSONBodyJobsCrontabFlags = "WILD_MINUTE"
-	SlurmV0041PostJobSubmitJSONBodyJobsCrontabFlagsWILDMONTH      SlurmV0041PostJobSubmitJSONBodyJobsCrontabFlags = "WILD_MONTH"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobsExclusive.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobsExclusiveFalse SlurmV0041PostJobSubmitJSONBodyJobsExclusive = "false"
-	SlurmV0041PostJobSubmitJSONBodyJobsExclusiveMcs   SlurmV0041PostJobSubmitJSONBodyJobsExclusive = "mcs"
-	SlurmV0041PostJobSubmitJSONBodyJobsExclusiveTopo  SlurmV0041PostJobSubmitJSONBodyJobsExclusive = "topo"
-	SlurmV0041PostJobSubmitJSONBodyJobsExclusiveTrue  SlurmV0041PostJobSubmitJSONBodyJobsExclusive = "true"
-	SlurmV0041PostJobSubmitJSONBodyJobsExclusiveUser  SlurmV0041PostJobSubmitJSONBodyJobsExclusive = "user"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobsFlags.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsACCRUECOUNTCLEARED       SlurmV0041PostJobSubmitJSONBodyJobsFlags = "ACCRUE_COUNT_CLEARED"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsBACKFILLATTEMPTED        SlurmV0041PostJobSubmitJSONBodyJobsFlags = "BACKFILL_ATTEMPTED"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsCRONJOB                  SlurmV0041PostJobSubmitJSONBodyJobsFlags = "CRON_JOB"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsDEPENDENT                SlurmV0041PostJobSubmitJSONBodyJobsFlags = "DEPENDENT"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsEXACTCPUCOUNTREQUESTED   SlurmV0041PostJobSubmitJSONBodyJobsFlags = "EXACT_CPU_COUNT_REQUESTED"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsEXACTMEMORYREQUESTED     SlurmV0041PostJobSubmitJSONBodyJobsFlags = "EXACT_MEMORY_REQUESTED"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsEXACTTASKCOUNTREQUESTED  SlurmV0041PostJobSubmitJSONBodyJobsFlags = "EXACT_TASK_COUNT_REQUESTED"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsGRESBINDINGDISABLED      SlurmV0041PostJobSubmitJSONBodyJobsFlags = "GRES_BINDING_DISABLED"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsGRESBINDINGENFORCED      SlurmV0041PostJobSubmitJSONBodyJobsFlags = "GRES_BINDING_ENFORCED"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsHASSTATEDIRECTORY        SlurmV0041PostJobSubmitJSONBodyJobsFlags = "HAS_STATE_DIRECTORY"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsHETEROGENEOUSJOB         SlurmV0041PostJobSubmitJSONBodyJobsFlags = "HETEROGENEOUS_JOB"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsJOBACCRUETIMERESET       SlurmV0041PostJobSubmitJSONBodyJobsFlags = "JOB_ACCRUE_TIME_RESET"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsJOBKILLHURRY             SlurmV0041PostJobSubmitJSONBodyJobsFlags = "JOB_KILL_HURRY"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsJOBWASRUNNING            SlurmV0041PostJobSubmitJSONBodyJobsFlags = "JOB_WAS_RUNNING"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsKILLINVALIDDEPENDENCY    SlurmV0041PostJobSubmitJSONBodyJobsFlags = "KILL_INVALID_DEPENDENCY"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsMAGNETIC                 SlurmV0041PostJobSubmitJSONBodyJobsFlags = "MAGNETIC"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsNOKILLINVALIDDEPENDENCY  SlurmV0041PostJobSubmitJSONBodyJobsFlags = "NO_KILL_INVALID_DEPENDENCY"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsPARTITIONASSIGNED        SlurmV0041PostJobSubmitJSONBodyJobsFlags = "PARTITION_ASSIGNED"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsPREFERMINIMUMNODECOUNT   SlurmV0041PostJobSubmitJSONBodyJobsFlags = "PREFER_MINIMUM_NODE_COUNT"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsSCHEDULINGATTEMPTED      SlurmV0041PostJobSubmitJSONBodyJobsFlags = "SCHEDULING_ATTEMPTED"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsSENDJOBENVIRONMENT       SlurmV0041PostJobSubmitJSONBodyJobsFlags = "SEND_JOB_ENVIRONMENT"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsSIBLINGCLUSTERUPDATEONLY SlurmV0041PostJobSubmitJSONBodyJobsFlags = "SIBLING_CLUSTER_UPDATE_ONLY"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsSKIPTRESSTRINGACCOUNTING SlurmV0041PostJobSubmitJSONBodyJobsFlags = "SKIP_TRES_STRING_ACCOUNTING"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsSPREADJOB                SlurmV0041PostJobSubmitJSONBodyJobsFlags = "SPREAD_JOB"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsSTEPMGRENABLED           SlurmV0041PostJobSubmitJSONBodyJobsFlags = "STEPMGR_ENABLED"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsTESTINGBACKFILL          SlurmV0041PostJobSubmitJSONBodyJobsFlags = "TESTING_BACKFILL"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsTESTINGWHOLENODEBACKFILL SlurmV0041PostJobSubmitJSONBodyJobsFlags = "TESTING_WHOLE_NODE_BACKFILL"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsTESTNOWONLY              SlurmV0041PostJobSubmitJSONBodyJobsFlags = "TEST_NOW_ONLY"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsTOPPRIORITYJOB           SlurmV0041PostJobSubmitJSONBodyJobsFlags = "TOP_PRIORITY_JOB"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsUSINGDEFAULTACCOUNT      SlurmV0041PostJobSubmitJSONBodyJobsFlags = "USING_DEFAULT_ACCOUNT"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsUSINGDEFAULTPARTITION    SlurmV0041PostJobSubmitJSONBodyJobsFlags = "USING_DEFAULT_PARTITION"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsUSINGDEFAULTQOS          SlurmV0041PostJobSubmitJSONBodyJobsFlags = "USING_DEFAULT_QOS"
-	SlurmV0041PostJobSubmitJSONBodyJobsFlagsUSINGDEFAULTWCKEY        SlurmV0041PostJobSubmitJSONBodyJobsFlags = "USING_DEFAULT_WCKEY"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlagsARRAYTASK         SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags = "ARRAY_TASK"
-	SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlagsBATCHJOB          SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags = "BATCH_JOB"
-	SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlagsCRONJOBS          SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags = "CRON_JOBS"
-	SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlagsFEDERATIONREQUEUE SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags = "FEDERATION_REQUEUE"
-	SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlagsFULLJOB           SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags = "FULL_JOB"
-	SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlagsFULLSTEPSONLY     SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags = "FULL_STEPS_ONLY"
-	SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlagsHURRY             SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags = "HURRY"
-	SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlagsNOSIBLINGJOBS     SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags = "NO_SIBLING_JOBS"
-	SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlagsOUTOFMEMORY       SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags = "OUT_OF_MEMORY"
-	SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlagsRESERVATIONJOB    SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags = "RESERVATION_JOB"
-	SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlagsVERBOSE           SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags = "VERBOSE"
-	SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlagsWARNINGSENT       SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags = "WARNING_SENT"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobsMailType.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobsMailTypeARRAYTASKS        SlurmV0041PostJobSubmitJSONBodyJobsMailType = "ARRAY_TASKS"
-	SlurmV0041PostJobSubmitJSONBodyJobsMailTypeBEGIN             SlurmV0041PostJobSubmitJSONBodyJobsMailType = "BEGIN"
-	SlurmV0041PostJobSubmitJSONBodyJobsMailTypeEND               SlurmV0041PostJobSubmitJSONBodyJobsMailType = "END"
-	SlurmV0041PostJobSubmitJSONBodyJobsMailTypeFAIL              SlurmV0041PostJobSubmitJSONBodyJobsMailType = "FAIL"
-	SlurmV0041PostJobSubmitJSONBodyJobsMailTypeINVALIDDEPENDENCY SlurmV0041PostJobSubmitJSONBodyJobsMailType = "INVALID_DEPENDENCY"
-	SlurmV0041PostJobSubmitJSONBodyJobsMailTypeREQUEUE           SlurmV0041PostJobSubmitJSONBodyJobsMailType = "REQUEUE"
-	SlurmV0041PostJobSubmitJSONBodyJobsMailTypeSTAGEOUT          SlurmV0041PostJobSubmitJSONBodyJobsMailType = "STAGE_OUT"
-	SlurmV0041PostJobSubmitJSONBodyJobsMailTypeTIME100           SlurmV0041PostJobSubmitJSONBodyJobsMailType = "TIME=100%"
-	SlurmV0041PostJobSubmitJSONBodyJobsMailTypeTIME50            SlurmV0041PostJobSubmitJSONBodyJobsMailType = "TIME=50%"
-	SlurmV0041PostJobSubmitJSONBodyJobsMailTypeTIME80            SlurmV0041PostJobSubmitJSONBodyJobsMailType = "TIME=80%"
-	SlurmV0041PostJobSubmitJSONBodyJobsMailTypeTIME90            SlurmV0041PostJobSubmitJSONBodyJobsMailType = "TIME=90%"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingType.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingTypeLOCAL   SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingType = "LOCAL"
-	SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingTypeMAP     SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingType = "MAP"
-	SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingTypeMASK    SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingType = "MASK"
-	SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingTypeNONE    SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingType = "NONE"
-	SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingTypePREFER  SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingType = "PREFER"
-	SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingTypeRANK    SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingType = "RANK"
-	SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingTypeSORT    SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingType = "SORT"
-	SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingTypeVERBOSE SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingType = "VERBOSE"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobsOpenMode.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobsOpenModeAPPEND   SlurmV0041PostJobSubmitJSONBodyJobsOpenMode = "APPEND"
-	SlurmV0041PostJobSubmitJSONBodyJobsOpenModeTRUNCATE SlurmV0041PostJobSubmitJSONBodyJobsOpenMode = "TRUNCATE"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobsProfile.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobsProfileENERGY  SlurmV0041PostJobSubmitJSONBodyJobsProfile = "ENERGY"
-	SlurmV0041PostJobSubmitJSONBodyJobsProfileLUSTRE  SlurmV0041PostJobSubmitJSONBodyJobsProfile = "LUSTRE"
-	SlurmV0041PostJobSubmitJSONBodyJobsProfileNETWORK SlurmV0041PostJobSubmitJSONBodyJobsProfile = "NETWORK"
-	SlurmV0041PostJobSubmitJSONBodyJobsProfileNONE    SlurmV0041PostJobSubmitJSONBodyJobsProfile = "NONE"
-	SlurmV0041PostJobSubmitJSONBodyJobsProfileNOTSET  SlurmV0041PostJobSubmitJSONBodyJobsProfile = "NOT_SET"
-	SlurmV0041PostJobSubmitJSONBodyJobsProfileTASK    SlurmV0041PostJobSubmitJSONBodyJobsProfile = "TASK"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobsShared.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobsSharedMcs           SlurmV0041PostJobSubmitJSONBodyJobsShared = "mcs"
-	SlurmV0041PostJobSubmitJSONBodyJobsSharedNone          SlurmV0041PostJobSubmitJSONBodyJobsShared = "none"
-	SlurmV0041PostJobSubmitJSONBodyJobsSharedOversubscribe SlurmV0041PostJobSubmitJSONBodyJobsShared = "oversubscribe"
-	SlurmV0041PostJobSubmitJSONBodyJobsSharedTopo          SlurmV0041PostJobSubmitJSONBodyJobsShared = "topo"
-	SlurmV0041PostJobSubmitJSONBodyJobsSharedUser          SlurmV0041PostJobSubmitJSONBodyJobsShared = "user"
-)
-
-// Defines values for SlurmV0041PostJobSubmitJSONBodyJobsX11.
-const (
-	SlurmV0041PostJobSubmitJSONBodyJobsX11BATCHNODE       SlurmV0041PostJobSubmitJSONBodyJobsX11 = "BATCH_NODE"
-	SlurmV0041PostJobSubmitJSONBodyJobsX11FIRSTNODE       SlurmV0041PostJobSubmitJSONBodyJobsX11 = "FIRST_NODE"
-	SlurmV0041PostJobSubmitJSONBodyJobsX11FORWARDALLNODES SlurmV0041PostJobSubmitJSONBodyJobsX11 = "FORWARD_ALL_NODES"
-	SlurmV0041PostJobSubmitJSONBodyJobsX11LASTNODE        SlurmV0041PostJobSubmitJSONBodyJobsX11 = "LAST_NODE"
-)
-
 // Defines values for SlurmV0041DeleteJobParamsFlags.
 const (
 	SlurmV0041DeleteJobParamsFlagsARRAYTASK         SlurmV0041DeleteJobParamsFlags = "ARRAY_TASK"
@@ -1252,201 +859,6 @@ const (
 	SlurmV0041GetJobParamsFlagsLOCAL      SlurmV0041GetJobParamsFlags = "LOCAL"
 	SlurmV0041GetJobParamsFlagsMIXED      SlurmV0041GetJobParamsFlags = "MIXED"
 	SlurmV0041GetJobParamsFlagsSIBLING    SlurmV0041GetJobParamsFlags = "SIBLING"
-)
-
-// Defines values for SlurmV0041PostJobJSONBodyCpuBindingFlags.
-const (
-	SlurmV0041PostJobJSONBodyCpuBindingFlagsCPUBINDLDMAP            SlurmV0041PostJobJSONBodyCpuBindingFlags = "CPU_BIND_LDMAP"
-	SlurmV0041PostJobJSONBodyCpuBindingFlagsCPUBINDLDMASK           SlurmV0041PostJobJSONBodyCpuBindingFlags = "CPU_BIND_LDMASK"
-	SlurmV0041PostJobJSONBodyCpuBindingFlagsCPUBINDLDRANK           SlurmV0041PostJobJSONBodyCpuBindingFlags = "CPU_BIND_LDRANK"
-	SlurmV0041PostJobJSONBodyCpuBindingFlagsCPUBINDMAP              SlurmV0041PostJobJSONBodyCpuBindingFlags = "CPU_BIND_MAP"
-	SlurmV0041PostJobJSONBodyCpuBindingFlagsCPUBINDMASK             SlurmV0041PostJobJSONBodyCpuBindingFlags = "CPU_BIND_MASK"
-	SlurmV0041PostJobJSONBodyCpuBindingFlagsCPUBINDNONE             SlurmV0041PostJobJSONBodyCpuBindingFlags = "CPU_BIND_NONE"
-	SlurmV0041PostJobJSONBodyCpuBindingFlagsCPUBINDONETHREADPERCORE SlurmV0041PostJobJSONBodyCpuBindingFlags = "CPU_BIND_ONE_THREAD_PER_CORE"
-	SlurmV0041PostJobJSONBodyCpuBindingFlagsCPUBINDRANK             SlurmV0041PostJobJSONBodyCpuBindingFlags = "CPU_BIND_RANK"
-	SlurmV0041PostJobJSONBodyCpuBindingFlagsCPUBINDTOCORES          SlurmV0041PostJobJSONBodyCpuBindingFlags = "CPU_BIND_TO_CORES"
-	SlurmV0041PostJobJSONBodyCpuBindingFlagsCPUBINDTOLDOMS          SlurmV0041PostJobJSONBodyCpuBindingFlags = "CPU_BIND_TO_LDOMS"
-	SlurmV0041PostJobJSONBodyCpuBindingFlagsCPUBINDTOSOCKETS        SlurmV0041PostJobJSONBodyCpuBindingFlags = "CPU_BIND_TO_SOCKETS"
-	SlurmV0041PostJobJSONBodyCpuBindingFlagsCPUBINDTOTHREADS        SlurmV0041PostJobJSONBodyCpuBindingFlags = "CPU_BIND_TO_THREADS"
-	SlurmV0041PostJobJSONBodyCpuBindingFlagsVERBOSE                 SlurmV0041PostJobJSONBodyCpuBindingFlags = "VERBOSE"
-)
-
-// Defines values for SlurmV0041PostJobJSONBodyCrontabFlags.
-const (
-	WILDDAYOFMONTH SlurmV0041PostJobJSONBodyCrontabFlags = "WILD_DAY_OF_MONTH"
-	WILDDAYOFWEEK  SlurmV0041PostJobJSONBodyCrontabFlags = "WILD_DAY_OF_WEEK"
-	WILDHOUR       SlurmV0041PostJobJSONBodyCrontabFlags = "WILD_HOUR"
-	WILDMINUTE     SlurmV0041PostJobJSONBodyCrontabFlags = "WILD_MINUTE"
-	WILDMONTH      SlurmV0041PostJobJSONBodyCrontabFlags = "WILD_MONTH"
-)
-
-// Defines values for SlurmV0041PostJobJSONBodyExclusive.
-const (
-	SlurmV0041PostJobJSONBodyExclusiveFalse SlurmV0041PostJobJSONBodyExclusive = "false"
-	SlurmV0041PostJobJSONBodyExclusiveMcs   SlurmV0041PostJobJSONBodyExclusive = "mcs"
-	SlurmV0041PostJobJSONBodyExclusiveTopo  SlurmV0041PostJobJSONBodyExclusive = "topo"
-	SlurmV0041PostJobJSONBodyExclusiveTrue  SlurmV0041PostJobJSONBodyExclusive = "true"
-	SlurmV0041PostJobJSONBodyExclusiveUser  SlurmV0041PostJobJSONBodyExclusive = "user"
-)
-
-// Defines values for SlurmV0041PostJobJSONBodyFlags.
-const (
-	ACCRUECOUNTCLEARED       SlurmV0041PostJobJSONBodyFlags = "ACCRUE_COUNT_CLEARED"
-	BACKFILLATTEMPTED        SlurmV0041PostJobJSONBodyFlags = "BACKFILL_ATTEMPTED"
-	CRONJOB                  SlurmV0041PostJobJSONBodyFlags = "CRON_JOB"
-	DEPENDENT                SlurmV0041PostJobJSONBodyFlags = "DEPENDENT"
-	EXACTCPUCOUNTREQUESTED   SlurmV0041PostJobJSONBodyFlags = "EXACT_CPU_COUNT_REQUESTED"
-	EXACTMEMORYREQUESTED     SlurmV0041PostJobJSONBodyFlags = "EXACT_MEMORY_REQUESTED"
-	EXACTTASKCOUNTREQUESTED  SlurmV0041PostJobJSONBodyFlags = "EXACT_TASK_COUNT_REQUESTED"
-	GRESBINDINGDISABLED      SlurmV0041PostJobJSONBodyFlags = "GRES_BINDING_DISABLED"
-	GRESBINDINGENFORCED      SlurmV0041PostJobJSONBodyFlags = "GRES_BINDING_ENFORCED"
-	HASSTATEDIRECTORY        SlurmV0041PostJobJSONBodyFlags = "HAS_STATE_DIRECTORY"
-	HETEROGENEOUSJOB         SlurmV0041PostJobJSONBodyFlags = "HETEROGENEOUS_JOB"
-	JOBACCRUETIMERESET       SlurmV0041PostJobJSONBodyFlags = "JOB_ACCRUE_TIME_RESET"
-	JOBKILLHURRY             SlurmV0041PostJobJSONBodyFlags = "JOB_KILL_HURRY"
-	JOBWASRUNNING            SlurmV0041PostJobJSONBodyFlags = "JOB_WAS_RUNNING"
-	KILLINVALIDDEPENDENCY    SlurmV0041PostJobJSONBodyFlags = "KILL_INVALID_DEPENDENCY"
-	MAGNETIC                 SlurmV0041PostJobJSONBodyFlags = "MAGNETIC"
-	NOKILLINVALIDDEPENDENCY  SlurmV0041PostJobJSONBodyFlags = "NO_KILL_INVALID_DEPENDENCY"
-	PARTITIONASSIGNED        SlurmV0041PostJobJSONBodyFlags = "PARTITION_ASSIGNED"
-	PREFERMINIMUMNODECOUNT   SlurmV0041PostJobJSONBodyFlags = "PREFER_MINIMUM_NODE_COUNT"
-	SCHEDULINGATTEMPTED      SlurmV0041PostJobJSONBodyFlags = "SCHEDULING_ATTEMPTED"
-	SENDJOBENVIRONMENT       SlurmV0041PostJobJSONBodyFlags = "SEND_JOB_ENVIRONMENT"
-	SIBLINGCLUSTERUPDATEONLY SlurmV0041PostJobJSONBodyFlags = "SIBLING_CLUSTER_UPDATE_ONLY"
-	SKIPTRESSTRINGACCOUNTING SlurmV0041PostJobJSONBodyFlags = "SKIP_TRES_STRING_ACCOUNTING"
-	SPREADJOB                SlurmV0041PostJobJSONBodyFlags = "SPREAD_JOB"
-	STEPMGRENABLED           SlurmV0041PostJobJSONBodyFlags = "STEPMGR_ENABLED"
-	TESTINGBACKFILL          SlurmV0041PostJobJSONBodyFlags = "TESTING_BACKFILL"
-	TESTINGWHOLENODEBACKFILL SlurmV0041PostJobJSONBodyFlags = "TESTING_WHOLE_NODE_BACKFILL"
-	TESTNOWONLY              SlurmV0041PostJobJSONBodyFlags = "TEST_NOW_ONLY"
-	TOPPRIORITYJOB           SlurmV0041PostJobJSONBodyFlags = "TOP_PRIORITY_JOB"
-	USINGDEFAULTACCOUNT      SlurmV0041PostJobJSONBodyFlags = "USING_DEFAULT_ACCOUNT"
-	USINGDEFAULTPARTITION    SlurmV0041PostJobJSONBodyFlags = "USING_DEFAULT_PARTITION"
-	USINGDEFAULTQOS          SlurmV0041PostJobJSONBodyFlags = "USING_DEFAULT_QOS"
-	USINGDEFAULTWCKEY        SlurmV0041PostJobJSONBodyFlags = "USING_DEFAULT_WCKEY"
-)
-
-// Defines values for SlurmV0041PostJobJSONBodyKillWarningFlags.
-const (
-	SlurmV0041PostJobJSONBodyKillWarningFlagsARRAYTASK         SlurmV0041PostJobJSONBodyKillWarningFlags = "ARRAY_TASK"
-	SlurmV0041PostJobJSONBodyKillWarningFlagsBATCHJOB          SlurmV0041PostJobJSONBodyKillWarningFlags = "BATCH_JOB"
-	SlurmV0041PostJobJSONBodyKillWarningFlagsCRONJOBS          SlurmV0041PostJobJSONBodyKillWarningFlags = "CRON_JOBS"
-	SlurmV0041PostJobJSONBodyKillWarningFlagsFEDERATIONREQUEUE SlurmV0041PostJobJSONBodyKillWarningFlags = "FEDERATION_REQUEUE"
-	SlurmV0041PostJobJSONBodyKillWarningFlagsFULLJOB           SlurmV0041PostJobJSONBodyKillWarningFlags = "FULL_JOB"
-	SlurmV0041PostJobJSONBodyKillWarningFlagsFULLSTEPSONLY     SlurmV0041PostJobJSONBodyKillWarningFlags = "FULL_STEPS_ONLY"
-	SlurmV0041PostJobJSONBodyKillWarningFlagsHURRY             SlurmV0041PostJobJSONBodyKillWarningFlags = "HURRY"
-	SlurmV0041PostJobJSONBodyKillWarningFlagsNOSIBLINGJOBS     SlurmV0041PostJobJSONBodyKillWarningFlags = "NO_SIBLING_JOBS"
-	SlurmV0041PostJobJSONBodyKillWarningFlagsOUTOFMEMORY       SlurmV0041PostJobJSONBodyKillWarningFlags = "OUT_OF_MEMORY"
-	SlurmV0041PostJobJSONBodyKillWarningFlagsRESERVATIONJOB    SlurmV0041PostJobJSONBodyKillWarningFlags = "RESERVATION_JOB"
-	SlurmV0041PostJobJSONBodyKillWarningFlagsVERBOSE           SlurmV0041PostJobJSONBodyKillWarningFlags = "VERBOSE"
-	SlurmV0041PostJobJSONBodyKillWarningFlagsWARNINGSENT       SlurmV0041PostJobJSONBodyKillWarningFlags = "WARNING_SENT"
-)
-
-// Defines values for SlurmV0041PostJobJSONBodyMailType.
-const (
-	SlurmV0041PostJobJSONBodyMailTypeARRAYTASKS        SlurmV0041PostJobJSONBodyMailType = "ARRAY_TASKS"
-	SlurmV0041PostJobJSONBodyMailTypeBEGIN             SlurmV0041PostJobJSONBodyMailType = "BEGIN"
-	SlurmV0041PostJobJSONBodyMailTypeEND               SlurmV0041PostJobJSONBodyMailType = "END"
-	SlurmV0041PostJobJSONBodyMailTypeFAIL              SlurmV0041PostJobJSONBodyMailType = "FAIL"
-	SlurmV0041PostJobJSONBodyMailTypeINVALIDDEPENDENCY SlurmV0041PostJobJSONBodyMailType = "INVALID_DEPENDENCY"
-	SlurmV0041PostJobJSONBodyMailTypeREQUEUE           SlurmV0041PostJobJSONBodyMailType = "REQUEUE"
-	SlurmV0041PostJobJSONBodyMailTypeSTAGEOUT          SlurmV0041PostJobJSONBodyMailType = "STAGE_OUT"
-	SlurmV0041PostJobJSONBodyMailTypeTIME100           SlurmV0041PostJobJSONBodyMailType = "TIME=100%"
-	SlurmV0041PostJobJSONBodyMailTypeTIME50            SlurmV0041PostJobJSONBodyMailType = "TIME=50%"
-	SlurmV0041PostJobJSONBodyMailTypeTIME80            SlurmV0041PostJobJSONBodyMailType = "TIME=80%"
-	SlurmV0041PostJobJSONBodyMailTypeTIME90            SlurmV0041PostJobJSONBodyMailType = "TIME=90%"
-)
-
-// Defines values for SlurmV0041PostJobJSONBodyMemoryBindingType.
-const (
-	SlurmV0041PostJobJSONBodyMemoryBindingTypeLOCAL   SlurmV0041PostJobJSONBodyMemoryBindingType = "LOCAL"
-	SlurmV0041PostJobJSONBodyMemoryBindingTypeMAP     SlurmV0041PostJobJSONBodyMemoryBindingType = "MAP"
-	SlurmV0041PostJobJSONBodyMemoryBindingTypeMASK    SlurmV0041PostJobJSONBodyMemoryBindingType = "MASK"
-	SlurmV0041PostJobJSONBodyMemoryBindingTypeNONE    SlurmV0041PostJobJSONBodyMemoryBindingType = "NONE"
-	SlurmV0041PostJobJSONBodyMemoryBindingTypePREFER  SlurmV0041PostJobJSONBodyMemoryBindingType = "PREFER"
-	SlurmV0041PostJobJSONBodyMemoryBindingTypeRANK    SlurmV0041PostJobJSONBodyMemoryBindingType = "RANK"
-	SlurmV0041PostJobJSONBodyMemoryBindingTypeSORT    SlurmV0041PostJobJSONBodyMemoryBindingType = "SORT"
-	SlurmV0041PostJobJSONBodyMemoryBindingTypeVERBOSE SlurmV0041PostJobJSONBodyMemoryBindingType = "VERBOSE"
-)
-
-// Defines values for SlurmV0041PostJobJSONBodyOpenMode.
-const (
-	APPEND   SlurmV0041PostJobJSONBodyOpenMode = "APPEND"
-	TRUNCATE SlurmV0041PostJobJSONBodyOpenMode = "TRUNCATE"
-)
-
-// Defines values for SlurmV0041PostJobJSONBodyProfile.
-const (
-	ENERGY  SlurmV0041PostJobJSONBodyProfile = "ENERGY"
-	LUSTRE  SlurmV0041PostJobJSONBodyProfile = "LUSTRE"
-	NETWORK SlurmV0041PostJobJSONBodyProfile = "NETWORK"
-	NONE    SlurmV0041PostJobJSONBodyProfile = "NONE"
-	NOTSET  SlurmV0041PostJobJSONBodyProfile = "NOT_SET"
-	TASK    SlurmV0041PostJobJSONBodyProfile = "TASK"
-)
-
-// Defines values for SlurmV0041PostJobJSONBodyShared.
-const (
-	SlurmV0041PostJobJSONBodySharedMcs           SlurmV0041PostJobJSONBodyShared = "mcs"
-	SlurmV0041PostJobJSONBodySharedNone          SlurmV0041PostJobJSONBodyShared = "none"
-	SlurmV0041PostJobJSONBodySharedOversubscribe SlurmV0041PostJobJSONBodyShared = "oversubscribe"
-	SlurmV0041PostJobJSONBodySharedTopo          SlurmV0041PostJobJSONBodyShared = "topo"
-	SlurmV0041PostJobJSONBodySharedUser          SlurmV0041PostJobJSONBodyShared = "user"
-)
-
-// Defines values for SlurmV0041PostJobJSONBodyX11.
-const (
-	BATCHNODE       SlurmV0041PostJobJSONBodyX11 = "BATCH_NODE"
-	FIRSTNODE       SlurmV0041PostJobJSONBodyX11 = "FIRST_NODE"
-	FORWARDALLNODES SlurmV0041PostJobJSONBodyX11 = "FORWARD_ALL_NODES"
-	LASTNODE        SlurmV0041PostJobJSONBodyX11 = "LAST_NODE"
-)
-
-// Defines values for SlurmV0041DeleteJobsJSONBodyFlags.
-const (
-	SlurmV0041DeleteJobsJSONBodyFlagsARRAYTASK         SlurmV0041DeleteJobsJSONBodyFlags = "ARRAY_TASK"
-	SlurmV0041DeleteJobsJSONBodyFlagsBATCHJOB          SlurmV0041DeleteJobsJSONBodyFlags = "BATCH_JOB"
-	SlurmV0041DeleteJobsJSONBodyFlagsCRONJOBS          SlurmV0041DeleteJobsJSONBodyFlags = "CRON_JOBS"
-	SlurmV0041DeleteJobsJSONBodyFlagsFEDERATIONREQUEUE SlurmV0041DeleteJobsJSONBodyFlags = "FEDERATION_REQUEUE"
-	SlurmV0041DeleteJobsJSONBodyFlagsFULLJOB           SlurmV0041DeleteJobsJSONBodyFlags = "FULL_JOB"
-	SlurmV0041DeleteJobsJSONBodyFlagsFULLSTEPSONLY     SlurmV0041DeleteJobsJSONBodyFlags = "FULL_STEPS_ONLY"
-	SlurmV0041DeleteJobsJSONBodyFlagsHURRY             SlurmV0041DeleteJobsJSONBodyFlags = "HURRY"
-	SlurmV0041DeleteJobsJSONBodyFlagsNOSIBLINGJOBS     SlurmV0041DeleteJobsJSONBodyFlags = "NO_SIBLING_JOBS"
-	SlurmV0041DeleteJobsJSONBodyFlagsOUTOFMEMORY       SlurmV0041DeleteJobsJSONBodyFlags = "OUT_OF_MEMORY"
-	SlurmV0041DeleteJobsJSONBodyFlagsRESERVATIONJOB    SlurmV0041DeleteJobsJSONBodyFlags = "RESERVATION_JOB"
-	SlurmV0041DeleteJobsJSONBodyFlagsVERBOSE           SlurmV0041DeleteJobsJSONBodyFlags = "VERBOSE"
-	SlurmV0041DeleteJobsJSONBodyFlagsWARNINGSENT       SlurmV0041DeleteJobsJSONBodyFlags = "WARNING_SENT"
-)
-
-// Defines values for SlurmV0041DeleteJobsJSONBodyJobState.
-const (
-	SlurmV0041DeleteJobsJSONBodyJobStateBOOTFAIL     SlurmV0041DeleteJobsJSONBodyJobState = "BOOT_FAIL"
-	SlurmV0041DeleteJobsJSONBodyJobStateCANCELLED    SlurmV0041DeleteJobsJSONBodyJobState = "CANCELLED"
-	SlurmV0041DeleteJobsJSONBodyJobStateCOMPLETED    SlurmV0041DeleteJobsJSONBodyJobState = "COMPLETED"
-	SlurmV0041DeleteJobsJSONBodyJobStateCOMPLETING   SlurmV0041DeleteJobsJSONBodyJobState = "COMPLETING"
-	SlurmV0041DeleteJobsJSONBodyJobStateCONFIGURING  SlurmV0041DeleteJobsJSONBodyJobState = "CONFIGURING"
-	SlurmV0041DeleteJobsJSONBodyJobStateDEADLINE     SlurmV0041DeleteJobsJSONBodyJobState = "DEADLINE"
-	SlurmV0041DeleteJobsJSONBodyJobStateFAILED       SlurmV0041DeleteJobsJSONBodyJobState = "FAILED"
-	SlurmV0041DeleteJobsJSONBodyJobStateLAUNCHFAILED SlurmV0041DeleteJobsJSONBodyJobState = "LAUNCH_FAILED"
-	SlurmV0041DeleteJobsJSONBodyJobStateNODEFAIL     SlurmV0041DeleteJobsJSONBodyJobState = "NODE_FAIL"
-	SlurmV0041DeleteJobsJSONBodyJobStateOUTOFMEMORY  SlurmV0041DeleteJobsJSONBodyJobState = "OUT_OF_MEMORY"
-	SlurmV0041DeleteJobsJSONBodyJobStatePENDING      SlurmV0041DeleteJobsJSONBodyJobState = "PENDING"
-	SlurmV0041DeleteJobsJSONBodyJobStatePOWERUPNODE  SlurmV0041DeleteJobsJSONBodyJobState = "POWER_UP_NODE"
-	SlurmV0041DeleteJobsJSONBodyJobStatePREEMPTED    SlurmV0041DeleteJobsJSONBodyJobState = "PREEMPTED"
-	SlurmV0041DeleteJobsJSONBodyJobStateRECONFIGFAIL SlurmV0041DeleteJobsJSONBodyJobState = "RECONFIG_FAIL"
-	SlurmV0041DeleteJobsJSONBodyJobStateREQUEUED     SlurmV0041DeleteJobsJSONBodyJobState = "REQUEUED"
-	SlurmV0041DeleteJobsJSONBodyJobStateREQUEUEFED   SlurmV0041DeleteJobsJSONBodyJobState = "REQUEUE_FED"
-	SlurmV0041DeleteJobsJSONBodyJobStateREQUEUEHOLD  SlurmV0041DeleteJobsJSONBodyJobState = "REQUEUE_HOLD"
-	SlurmV0041DeleteJobsJSONBodyJobStateRESIZING     SlurmV0041DeleteJobsJSONBodyJobState = "RESIZING"
-	SlurmV0041DeleteJobsJSONBodyJobStateRESVDELHOLD  SlurmV0041DeleteJobsJSONBodyJobState = "RESV_DEL_HOLD"
-	SlurmV0041DeleteJobsJSONBodyJobStateREVOKED      SlurmV0041DeleteJobsJSONBodyJobState = "REVOKED"
-	SlurmV0041DeleteJobsJSONBodyJobStateRUNNING      SlurmV0041DeleteJobsJSONBodyJobState = "RUNNING"
-	SlurmV0041DeleteJobsJSONBodyJobStateSIGNALING    SlurmV0041DeleteJobsJSONBodyJobState = "SIGNALING"
-	SlurmV0041DeleteJobsJSONBodyJobStateSPECIALEXIT  SlurmV0041DeleteJobsJSONBodyJobState = "SPECIAL_EXIT"
-	SlurmV0041DeleteJobsJSONBodyJobStateSTAGEOUT     SlurmV0041DeleteJobsJSONBodyJobState = "STAGE_OUT"
-	SlurmV0041DeleteJobsJSONBodyJobStateSTOPPED      SlurmV0041DeleteJobsJSONBodyJobState = "STOPPED"
-	SlurmV0041DeleteJobsJSONBodyJobStateSUSPENDED    SlurmV0041DeleteJobsJSONBodyJobState = "SUSPENDED"
-	SlurmV0041DeleteJobsJSONBodyJobStateTIMEOUT      SlurmV0041DeleteJobsJSONBodyJobState = "TIMEOUT"
 )
 
 // Defines values for SlurmV0041GetJobsParamsFlags.
@@ -1547,11 +959,11 @@ const (
 
 // Defines values for SlurmdbV0041PostQosParamsPreemptMode.
 const (
-	SlurmdbV0041PostQosParamsPreemptModeCANCEL   SlurmdbV0041PostQosParamsPreemptMode = "CANCEL"
-	SlurmdbV0041PostQosParamsPreemptModeDISABLED SlurmdbV0041PostQosParamsPreemptMode = "DISABLED"
-	SlurmdbV0041PostQosParamsPreemptModeGANG     SlurmdbV0041PostQosParamsPreemptMode = "GANG"
-	SlurmdbV0041PostQosParamsPreemptModeREQUEUE  SlurmdbV0041PostQosParamsPreemptMode = "REQUEUE"
-	SlurmdbV0041PostQosParamsPreemptModeSUSPEND  SlurmdbV0041PostQosParamsPreemptMode = "SUSPEND"
+	CANCEL   SlurmdbV0041PostQosParamsPreemptMode = "CANCEL"
+	DISABLED SlurmdbV0041PostQosParamsPreemptMode = "DISABLED"
+	GANG     SlurmdbV0041PostQosParamsPreemptMode = "GANG"
+	REQUEUE  SlurmdbV0041PostQosParamsPreemptMode = "REQUEUE"
+	SUSPEND  SlurmdbV0041PostQosParamsPreemptMode = "SUSPEND"
 )
 
 // Defines values for SlurmdbV0041GetUsersParamsAdminLevel.
@@ -1573,13 +985,1184 @@ const (
 	SlurmdbV0041PostUsersAssociationParamsFlagsSIBLING    SlurmdbV0041PostUsersAssociationParamsFlags = "SIBLING"
 )
 
-// Defines values for SlurmdbV0041PostUsersAssociationJSONBodyUserAdminlevel.
-const (
-	SlurmdbV0041PostUsersAssociationJSONBodyUserAdminlevelAdministrator SlurmdbV0041PostUsersAssociationJSONBodyUserAdminlevel = "Administrator"
-	SlurmdbV0041PostUsersAssociationJSONBodyUserAdminlevelNone          SlurmdbV0041PostUsersAssociationJSONBodyUserAdminlevel = "None"
-	SlurmdbV0041PostUsersAssociationJSONBodyUserAdminlevelNotSet        SlurmdbV0041PostUsersAssociationJSONBodyUserAdminlevel = "Not Set"
-	SlurmdbV0041PostUsersAssociationJSONBodyUserAdminlevelOperator      SlurmdbV0041PostUsersAssociationJSONBodyUserAdminlevel = "Operator"
-)
+// V0041JobAllocReq defines model for v0.0.41_job_alloc_req.
+type V0041JobAllocReq struct {
+	// Hetjob HetJob description
+	Hetjob *[]V0041JobDescMsg `json:"hetjob,omitempty"`
+	Job    *V0041JobDescMsg   `json:"job,omitempty"`
+}
+
+// V0041JobDescMsg defines model for v0.0.41_job_desc_msg.
+type V0041JobDescMsg struct {
+	// Account Account associated with the job
+	Account *string `json:"account,omitempty"`
+
+	// AccountGatherFrequency Job accounting and profiling sampling intervals in seconds
+	AccountGatherFrequency *string `json:"account_gather_frequency,omitempty"`
+
+	// AdminComment Arbitrary comment made by administrator
+	AdminComment *string `json:"admin_comment,omitempty"`
+
+	// AllocationNodeList Local node making the resource allocation
+	AllocationNodeList *string `json:"allocation_node_list,omitempty"`
+
+	// AllocationNodePort Port to send allocation confirmation to
+	AllocationNodePort *int32 `json:"allocation_node_port,omitempty"`
+
+	// Argv Arguments to the script
+	Argv *[]string `json:"argv,omitempty"`
+
+	// Array Job array index value specification
+	Array *string `json:"array,omitempty"`
+
+	// BatchFeatures Features required for batch script's node
+	BatchFeatures *string `json:"batch_features,omitempty"`
+
+	// BeginTime Defer the allocation of the job until the specified time (UNIX timestamp)
+	BeginTime *struct {
+		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+		Infinite *bool `json:"infinite,omitempty"`
+
+		// Number If "set" is True the number will be set with value; otherwise ignore number contents
+		Number *int64 `json:"number,omitempty"`
+
+		// Set True if number has been set; False if number is unset
+		Set *bool `json:"set,omitempty"`
+	} `json:"begin_time,omitempty"`
+
+	// BurstBuffer Burst buffer specifications
+	BurstBuffer *string `json:"burst_buffer,omitempty"`
+
+	// ClusterConstraint Required features that a federated cluster must have to have a sibling job submitted to it
+	ClusterConstraint *string `json:"cluster_constraint,omitempty"`
+
+	// Clusters Clusters that a federated job can run on
+	Clusters *string `json:"clusters,omitempty"`
+
+	// Comment Arbitrary comment made by user
+	Comment *string `json:"comment,omitempty"`
+
+	// Constraints Comma separated list of features that are required
+	Constraints *string `json:"constraints,omitempty"`
+
+	// Container Absolute path to OCI container bundle
+	Container *string `json:"container,omitempty"`
+
+	// ContainerId OCI container ID
+	ContainerId *string `json:"container_id,omitempty"`
+
+	// Contiguous True if job requires contiguous nodes
+	Contiguous *bool `json:"contiguous,omitempty"`
+
+	// CoreSpecification Specialized core count
+	CoreSpecification *int32 `json:"core_specification,omitempty"`
+
+	// CpuBinding Method for binding tasks to allocated CPUs
+	CpuBinding *string `json:"cpu_binding,omitempty"`
+
+	// CpuBindingFlags Flags for CPU binding
+	CpuBindingFlags *[]V0041JobDescMsgCpuBindingFlags `json:"cpu_binding_flags,omitempty"`
+
+	// CpuFrequency Requested CPU frequency range <p1>[-p2][:p3]
+	CpuFrequency *string `json:"cpu_frequency,omitempty"`
+
+	// CpusPerTask Number of CPUs required by each task
+	CpusPerTask *int32 `json:"cpus_per_task,omitempty"`
+
+	// CpusPerTres Semicolon delimited list of TRES=# values values indicating how many CPUs should be allocated for each specified TRES (currently only used for gres/gpu)
+	CpusPerTres *string `json:"cpus_per_tres,omitempty"`
+
+	// Crontab Specification for scrontab job
+	Crontab *struct {
+		// Command Command to run
+		Command *string `json:"command,omitempty"`
+
+		// DayOfMonth Ranged string specifying eligible day of month values (e.g. 0-10,29)
+		DayOfMonth *string `json:"day_of_month,omitempty"`
+
+		// DayOfWeek Ranged string specifying eligible day of week values (e.g.0-3,7)
+		DayOfWeek *string `json:"day_of_week,omitempty"`
+
+		// Flags Flags
+		Flags *[]V0041JobDescMsgCrontabFlags `json:"flags,omitempty"`
+
+		// Hour Ranged string specifying eligible hour values (e.g. 0-5,23)
+		Hour *string `json:"hour,omitempty"`
+		Line *struct {
+			// End End of this entry in file
+			End *int32 `json:"end,omitempty"`
+
+			// Start Start of this entry in file
+			Start *int32 `json:"start,omitempty"`
+		} `json:"line,omitempty"`
+
+		// Minute Ranged string specifying eligible minute values (e.g. 0-10,50)
+		Minute *string `json:"minute,omitempty"`
+
+		// Month Ranged string specifying eligible month values (e.g. 0-5,12)
+		Month *string `json:"month,omitempty"`
+
+		// Specification Time specification (* means valid for all allowed values) - minute hour day_of_month month day_of_week
+		Specification *string `json:"specification,omitempty"`
+	} `json:"crontab,omitempty"`
+
+	// CurrentWorkingDirectory Working directory to use for the job
+	CurrentWorkingDirectory *string `json:"current_working_directory,omitempty"`
+
+	// Deadline Latest time that the job may start (UNIX timestamp)
+	Deadline *int64 `json:"deadline,omitempty"`
+
+	// DelayBoot Number of seconds after job eligible start that nodes will be rebooted to satisfy feature specification
+	DelayBoot *int32 `json:"delay_boot,omitempty"`
+
+	// Dependency Other jobs that must meet certain criteria before this job can start
+	Dependency *string `json:"dependency,omitempty"`
+
+	// Distribution Layout
+	Distribution *string `json:"distribution,omitempty"`
+
+	// DistributionPlaneSize Plane size specification when distribution specifies plane
+	DistributionPlaneSize *struct {
+		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+		Infinite *bool `json:"infinite,omitempty"`
+
+		// Number If "set" is True the number will be set with value; otherwise ignore number contents
+		Number *int32 `json:"number,omitempty"`
+
+		// Set True if number has been set; False if number is unset
+		Set *bool `json:"set,omitempty"`
+	} `json:"distribution_plane_size,omitempty"`
+
+	// EndTime Expected end time (UNIX timestamp)
+	EndTime *int64 `json:"end_time,omitempty"`
+
+	// Environment Environment variables to be set for the job
+	Environment *[]string `json:"environment,omitempty"`
+
+	// ExcludedNodes Comma separated list of nodes that may not be used
+	ExcludedNodes *[]string `json:"excluded_nodes,omitempty"`
+	// Deprecated:
+	Exclusive *[]V0041JobDescMsgExclusive `json:"exclusive,omitempty"`
+
+	// Extra Arbitrary string used for node filtering if extra constraints are enabled
+	Extra *string `json:"extra,omitempty"`
+
+	// Flags Job flags
+	Flags *[]V0041JobDescMsgFlags `json:"flags,omitempty"`
+
+	// GroupId Group ID of the user that owns the job
+	GroupId *string `json:"group_id,omitempty"`
+
+	// HetjobGroup Unique sequence number applied to this component of the heterogeneous job
+	HetjobGroup *int32 `json:"hetjob_group,omitempty"`
+
+	// Hold Hold (true) or release (false) job
+	Hold *bool `json:"hold,omitempty"`
+
+	// Immediate If true, exit if resources are not available within the time period specified
+	Immediate *bool `json:"immediate,omitempty"`
+
+	// JobId Job ID
+	JobId *int32 `json:"job_id,omitempty"`
+
+	// KillOnNodeFail If true, kill job on node failure
+	KillOnNodeFail *bool `json:"kill_on_node_fail,omitempty"`
+
+	// KillWarningDelay Number of seconds before end time to send the warning signal
+	KillWarningDelay *struct {
+		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+		Infinite *bool `json:"infinite,omitempty"`
+
+		// Number If "set" is True the number will be set with value; otherwise ignore number contents
+		Number *int32 `json:"number,omitempty"`
+
+		// Set True if number has been set; False if number is unset
+		Set *bool `json:"set,omitempty"`
+	} `json:"kill_warning_delay,omitempty"`
+
+	// KillWarningFlags Flags related to job signals
+	KillWarningFlags *[]V0041JobDescMsgKillWarningFlags `json:"kill_warning_flags,omitempty"`
+
+	// KillWarningSignal Signal to send when approaching end time (e.g. "10" or "USR1")
+	KillWarningSignal *string `json:"kill_warning_signal,omitempty"`
+
+	// Licenses License(s) required by the job
+	Licenses *string `json:"licenses,omitempty"`
+
+	// MailType Mail event type(s)
+	MailType *[]V0041JobDescMsgMailType `json:"mail_type,omitempty"`
+
+	// MailUser User to receive email notifications
+	MailUser *string `json:"mail_user,omitempty"`
+
+	// MaximumCpus Maximum number of CPUs required
+	MaximumCpus *int32 `json:"maximum_cpus,omitempty"`
+
+	// MaximumNodes Maximum node count
+	MaximumNodes *int32 `json:"maximum_nodes,omitempty"`
+
+	// McsLabel Multi-Category Security label on the job
+	McsLabel *string `json:"mcs_label,omitempty"`
+
+	// MemoryBinding Binding map for map/mask_cpu
+	MemoryBinding *string `json:"memory_binding,omitempty"`
+
+	// MemoryBindingType Method for binding tasks to memory
+	MemoryBindingType *[]V0041JobDescMsgMemoryBindingType `json:"memory_binding_type,omitempty"`
+
+	// MemoryPerCpu Minimum memory in megabytes per allocated CPU
+	MemoryPerCpu *struct {
+		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+		Infinite *bool `json:"infinite,omitempty"`
+
+		// Number If "set" is True the number will be set with value; otherwise ignore number contents
+		Number *int64 `json:"number,omitempty"`
+
+		// Set True if number has been set; False if number is unset
+		Set *bool `json:"set,omitempty"`
+	} `json:"memory_per_cpu,omitempty"`
+
+	// MemoryPerNode Minimum memory in megabytes per allocated CPU
+	MemoryPerNode *struct {
+		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+		Infinite *bool `json:"infinite,omitempty"`
+
+		// Number If "set" is True the number will be set with value; otherwise ignore number contents
+		Number *int64 `json:"number,omitempty"`
+
+		// Set True if number has been set; False if number is unset
+		Set *bool `json:"set,omitempty"`
+	} `json:"memory_per_node,omitempty"`
+
+	// MemoryPerTres Semicolon delimited list of TRES=# values indicating how much memory in megabytes should be allocated for each specified TRES (currently only used for gres/gpu)
+	MemoryPerTres *string `json:"memory_per_tres,omitempty"`
+
+	// MinimumBoardsPerNode Boards per node required
+	MinimumBoardsPerNode *int32 `json:"minimum_boards_per_node,omitempty"`
+
+	// MinimumCpus Minimum number of CPUs required
+	MinimumCpus *int32 `json:"minimum_cpus,omitempty"`
+
+	// MinimumCpusPerNode Minimum number of CPUs per node
+	MinimumCpusPerNode *int32 `json:"minimum_cpus_per_node,omitempty"`
+
+	// MinimumNodes Minimum node count
+	MinimumNodes *int32 `json:"minimum_nodes,omitempty"`
+
+	// MinimumSocketsPerBoard Sockets per board required
+	MinimumSocketsPerBoard *int32 `json:"minimum_sockets_per_board,omitempty"`
+
+	// Name Job name
+	Name *string `json:"name,omitempty"`
+
+	// Network Network specs for job step
+	Network *string `json:"network,omitempty"`
+
+	// Nice Requested job priority change
+	Nice *int32 `json:"nice,omitempty"`
+
+	// Nodes Node count range specification (e.g. 1-15:4)
+	Nodes *string `json:"nodes,omitempty"`
+
+	// NtasksPerTres Number of tasks that can access each GPU
+	NtasksPerTres *int32 `json:"ntasks_per_tres,omitempty"`
+
+	// OpenMode Open mode used for stdout and stderr files
+	OpenMode *[]V0041JobDescMsgOpenMode `json:"open_mode,omitempty"`
+
+	// Overcommit Overcommit resources
+	Overcommit *bool `json:"overcommit,omitempty"`
+	// Deprecated:
+	Oversubscribe *bool `json:"oversubscribe,omitempty"`
+
+	// Partition Partition assigned to the job
+	Partition *string `json:"partition,omitempty"`
+	// Deprecated:
+	PowerFlags *[]interface{} `json:"power_flags,omitempty"`
+
+	// Prefer Comma separated list of features that are preferred but not required
+	Prefer *string `json:"prefer,omitempty"`
+
+	// Priority Request specific job priority
+	Priority *struct {
+		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+		Infinite *bool `json:"infinite,omitempty"`
+
+		// Number If "set" is True the number will be set with value; otherwise ignore number contents
+		Number *int32 `json:"number,omitempty"`
+
+		// Set True if number has been set; False if number is unset
+		Set *bool `json:"set,omitempty"`
+	} `json:"priority,omitempty"`
+
+	// Profile Profile used by the acct_gather_profile plugin
+	Profile *[]V0041JobDescMsgProfile `json:"profile,omitempty"`
+
+	// Qos Quality of Service assigned to the job
+	Qos *string `json:"qos,omitempty"`
+
+	// Reboot Node reboot requested before start
+	Reboot *bool `json:"reboot,omitempty"`
+
+	// Requeue Determines whether the job may be requeued
+	Requeue *bool `json:"requeue,omitempty"`
+
+	// RequiredNodes Comma separated list of required nodes
+	RequiredNodes *[]string `json:"required_nodes,omitempty"`
+
+	// RequiredSwitches Maximum number of switches
+	RequiredSwitches *struct {
+		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+		Infinite *bool `json:"infinite,omitempty"`
+
+		// Number If "set" is True the number will be set with value; otherwise ignore number contents
+		Number *int32 `json:"number,omitempty"`
+
+		// Set True if number has been set; False if number is unset
+		Set *bool `json:"set,omitempty"`
+	} `json:"required_switches,omitempty"`
+
+	// Reservation Name of reservation to use
+	Reservation *string `json:"reservation,omitempty"`
+
+	// ReservePorts Port to send various notification msg to
+	ReservePorts *int32 `json:"reserve_ports,omitempty"`
+
+	// ResvMpiPorts Number of reserved communication ports; can only be used if slurmstepd step manager is enabled
+	ResvMpiPorts *int32 `json:"resv_mpi_ports,omitempty"`
+	Rlimits      *struct {
+		// As Address space limit.
+		As *struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int64 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"as,omitempty"`
+
+		// Core Largest core file that can be created, in bytes.
+		Core *struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int64 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"core,omitempty"`
+
+		// Cpu Per-process CPU limit, in seconds.
+		Cpu *struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int64 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"cpu,omitempty"`
+
+		// Data Maximum size of data segment, in bytes.
+		Data *struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int64 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"data,omitempty"`
+
+		// Fsize Largest file that can be created, in bytes.
+		Fsize *struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int64 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"fsize,omitempty"`
+
+		// Memlock Locked-in-memory address space
+		Memlock *struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int64 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"memlock,omitempty"`
+
+		// Nofile Number of open files.
+		Nofile *struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int64 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"nofile,omitempty"`
+
+		// Nproc Number of processes.
+		Nproc *struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int64 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"nproc,omitempty"`
+
+		// Rss Largest resident set size, in bytes. This affects swapping; processes that are exceeding their resident set size will be more likely to have physical memory taken from them.
+		Rss *struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int64 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"rss,omitempty"`
+
+		// Stack Maximum size of stack segment, in bytes.
+		Stack *struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int64 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"stack,omitempty"`
+	} `json:"rlimits,omitempty"`
+
+	// Script Job batch script; only the first component in a HetJob is populated or honored
+	Script *string `json:"script,omitempty"`
+
+	// SegmentSize Segment size for topology/block
+	SegmentSize *struct {
+		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+		Infinite *bool `json:"infinite,omitempty"`
+
+		// Number If "set" is True the number will be set with value; otherwise ignore number contents
+		Number *int32 `json:"number,omitempty"`
+
+		// Set True if number has been set; False if number is unset
+		Set *bool `json:"set,omitempty"`
+	} `json:"segment_size,omitempty"`
+
+	// SelinuxContext SELinux context
+	SelinuxContext *string `json:"selinux_context,omitempty"`
+
+	// Shared How the job can share resources with other jobs, if at all
+	Shared *[]V0041JobDescMsgShared `json:"shared,omitempty"`
+
+	// SiteFactor Site-specific priority factor
+	SiteFactor *int32 `json:"site_factor,omitempty"`
+
+	// SocketsPerNode Sockets per node required
+	SocketsPerNode *int32 `json:"sockets_per_node,omitempty"`
+
+	// SpankEnvironment Environment variables for job prolog/epilog scripts as set by SPANK plugins
+	SpankEnvironment *[]string `json:"spank_environment,omitempty"`
+
+	// StandardError Path to stderr file
+	StandardError *string `json:"standard_error,omitempty"`
+
+	// StandardInput Path to stdin file
+	StandardInput *string `json:"standard_input,omitempty"`
+
+	// StandardOutput Path to stdout file
+	StandardOutput *string `json:"standard_output,omitempty"`
+
+	// Tasks Number of tasks
+	Tasks *int32 `json:"tasks,omitempty"`
+
+	// TasksPerBoard Number of tasks to invoke on each board
+	TasksPerBoard *int32 `json:"tasks_per_board,omitempty"`
+
+	// TasksPerCore Number of tasks to invoke on each core
+	TasksPerCore *int32 `json:"tasks_per_core,omitempty"`
+
+	// TasksPerNode Number of tasks to invoke on each node
+	TasksPerNode *int32 `json:"tasks_per_node,omitempty"`
+
+	// TasksPerSocket Number of tasks to invoke on each socket
+	TasksPerSocket *int32 `json:"tasks_per_socket,omitempty"`
+
+	// TemporaryDiskPerNode Minimum tmp disk space required per node
+	TemporaryDiskPerNode *int32 `json:"temporary_disk_per_node,omitempty"`
+
+	// ThreadSpecification Specialized thread count
+	ThreadSpecification *int32 `json:"thread_specification,omitempty"`
+
+	// ThreadsPerCore Threads per core required
+	ThreadsPerCore *int32 `json:"threads_per_core,omitempty"`
+
+	// TimeLimit Maximum run time in minutes
+	TimeLimit *struct {
+		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+		Infinite *bool `json:"infinite,omitempty"`
+
+		// Number If "set" is True the number will be set with value; otherwise ignore number contents
+		Number *int32 `json:"number,omitempty"`
+
+		// Set True if number has been set; False if number is unset
+		Set *bool `json:"set,omitempty"`
+	} `json:"time_limit,omitempty"`
+
+	// TimeMinimum Minimum run time in minutes
+	TimeMinimum *struct {
+		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+		Infinite *bool `json:"infinite,omitempty"`
+
+		// Number If "set" is True the number will be set with value; otherwise ignore number contents
+		Number *int32 `json:"number,omitempty"`
+
+		// Set True if number has been set; False if number is unset
+		Set *bool `json:"set,omitempty"`
+	} `json:"time_minimum,omitempty"`
+
+	// TresBind Task to TRES binding directives
+	TresBind *string `json:"tres_bind,omitempty"`
+
+	// TresFreq TRES frequency directives
+	TresFreq *string `json:"tres_freq,omitempty"`
+
+	// TresPerJob Comma separated list of TRES=# values to be allocated for every job
+	TresPerJob *string `json:"tres_per_job,omitempty"`
+
+	// TresPerNode Comma separated list of TRES=# values to be allocated for every node
+	TresPerNode *string `json:"tres_per_node,omitempty"`
+
+	// TresPerSocket Comma separated list of TRES=# values to be allocated for every socket
+	TresPerSocket *string `json:"tres_per_socket,omitempty"`
+
+	// TresPerTask Comma separated list of TRES=# values to be allocated for every task
+	TresPerTask *string `json:"tres_per_task,omitempty"`
+
+	// UserId User ID that owns the job
+	UserId *string `json:"user_id,omitempty"`
+
+	// WaitAllNodes If true, wait to start until after all nodes have booted
+	WaitAllNodes *bool `json:"wait_all_nodes,omitempty"`
+
+	// WaitForSwitch Maximum time to wait for switches in seconds
+	WaitForSwitch *int32 `json:"wait_for_switch,omitempty"`
+
+	// Wckey Workload characterization key
+	Wckey *string `json:"wckey,omitempty"`
+
+	// X11 X11 forwarding options
+	X11 *[]V0041JobDescMsgX11 `json:"x11,omitempty"`
+
+	// X11MagicCookie Magic cookie for X11 forwarding
+	X11MagicCookie *string `json:"x11_magic_cookie,omitempty"`
+
+	// X11TargetHost Hostname or UNIX socket if x11_target_port=0
+	X11TargetHost *string `json:"x11_target_host,omitempty"`
+
+	// X11TargetPort TCP port
+	X11TargetPort *int32 `json:"x11_target_port,omitempty"`
+}
+
+// V0041JobDescMsgCpuBindingFlags defines model for V0041JobDescMsg.CpuBindingFlags.
+type V0041JobDescMsgCpuBindingFlags string
+
+// V0041JobDescMsgCrontabFlags defines model for V0041JobDescMsg.Crontab.Flags.
+type V0041JobDescMsgCrontabFlags string
+
+// V0041JobDescMsgExclusive defines model for V0041JobDescMsg.Exclusive.
+type V0041JobDescMsgExclusive string
+
+// V0041JobDescMsgFlags defines model for V0041JobDescMsg.Flags.
+type V0041JobDescMsgFlags string
+
+// V0041JobDescMsgKillWarningFlags defines model for V0041JobDescMsg.KillWarningFlags.
+type V0041JobDescMsgKillWarningFlags string
+
+// V0041JobDescMsgMailType defines model for V0041JobDescMsg.MailType.
+type V0041JobDescMsgMailType string
+
+// V0041JobDescMsgMemoryBindingType defines model for V0041JobDescMsg.MemoryBindingType.
+type V0041JobDescMsgMemoryBindingType string
+
+// V0041JobDescMsgOpenMode defines model for V0041JobDescMsg.OpenMode.
+type V0041JobDescMsgOpenMode string
+
+// V0041JobDescMsgProfile defines model for V0041JobDescMsg.Profile.
+type V0041JobDescMsgProfile string
+
+// V0041JobDescMsgShared defines model for V0041JobDescMsg.Shared.
+type V0041JobDescMsgShared string
+
+// V0041JobDescMsgX11 defines model for V0041JobDescMsg.X11.
+type V0041JobDescMsgX11 string
+
+// V0041JobSubmitReq defines model for v0.0.41_job_submit_req.
+type V0041JobSubmitReq struct {
+	Job *V0041JobDescMsg `json:"job,omitempty"`
+
+	// Jobs HetJob description
+	Jobs *[]V0041JobDescMsg `json:"jobs,omitempty"`
+
+	// Script Deprecated; Populate script field in jobs[0] or job
+	// Deprecated:
+	Script *string `json:"script,omitempty"`
+}
+
+// V0041KillJobsMsg defines model for v0.0.41_kill_jobs_msg.
+type V0041KillJobsMsg struct {
+	// Account Filter jobs to a specific account
+	Account *string `json:"account,omitempty"`
+
+	// Flags Filter jobs according to flags
+	Flags *[]V0041KillJobsMsgFlags `json:"flags,omitempty"`
+
+	// JobName Filter jobs to a specific name
+	JobName *string `json:"job_name,omitempty"`
+
+	// JobState Filter jobs to a specific state
+	JobState *[]V0041KillJobsMsgJobState `json:"job_state,omitempty"`
+
+	// Jobs List of jobs to signal
+	Jobs *[]string `json:"jobs,omitempty"`
+
+	// Nodes Filter jobs to a set of nodes
+	Nodes *[]string `json:"nodes,omitempty"`
+
+	// Partition Filter jobs to a specific partition
+	Partition *string `json:"partition,omitempty"`
+
+	// Qos Filter jobs to a specific QOS
+	Qos *string `json:"qos,omitempty"`
+
+	// Reservation Filter jobs to a specific reservation
+	Reservation *string `json:"reservation,omitempty"`
+
+	// Signal Signal to send to jobs
+	Signal *string `json:"signal,omitempty"`
+
+	// UserId Filter jobs to a specific numeric user id
+	UserId *string `json:"user_id,omitempty"`
+
+	// UserName Filter jobs to a specific user name
+	UserName *string `json:"user_name,omitempty"`
+
+	// Wckey Filter jobs to a specific wckey
+	Wckey *string `json:"wckey,omitempty"`
+}
+
+// V0041KillJobsMsgFlags defines model for V0041KillJobsMsg.Flags.
+type V0041KillJobsMsgFlags string
+
+// V0041KillJobsMsgJobState defines model for V0041KillJobsMsg.JobState.
+type V0041KillJobsMsgJobState string
+
+// V0041OpenapiAccountsAddCondResp defines model for v0.0.41_openapi_accounts_add_cond_resp.
+type V0041OpenapiAccountsAddCondResp struct {
+	// Account Account organization and description
+	Account *struct {
+		// Description Arbitrary string describing the account
+		Description *string `json:"description,omitempty"`
+
+		// Organization Organization to which the account belongs
+		Organization *string `json:"organization,omitempty"`
+	} `json:"account,omitempty"`
+
+	// AssociationCondition CSV list of accounts, association limits and options, CSV list of clusters
+	AssociationCondition *struct {
+		// Accounts CSV accounts list
+		Accounts []string `json:"accounts"`
+
+		// Association Association limits and options
+		Association *struct {
+			// Comment Arbitrary comment
+			Comment *string `json:"comment,omitempty"`
+
+			// Defaultqos Default QOS
+			Defaultqos *string `json:"defaultqos,omitempty"`
+
+			// Fairshare Allocated shares used for fairshare calculation
+			Fairshare *int32 `json:"fairshare,omitempty"`
+
+			// Grpjobs Maximum number of running jobs in this association and its children
+			Grpjobs *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"grpjobs,omitempty"`
+
+			// Grpjobsaccrue Maximum number of pending jobs able to accrue age priority in this association and its children
+			Grpjobsaccrue *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"grpjobsaccrue,omitempty"`
+
+			// Grpsubmitjobs Maximum number of jobs which can be in a pending or running state at any time in this association and its children
+			Grpsubmitjobs *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"grpsubmitjobs,omitempty"`
+
+			// Grptres Maximum number of TRES able to be allocated by running jobs in this association and its children
+			Grptres *[]struct {
+				// Count TRES count (0 if listed generically)
+				Count *int64 `json:"count,omitempty"`
+
+				// Id ID used in database
+				Id *int32 `json:"id,omitempty"`
+
+				// Name TRES name (if applicable)
+				Name *string `json:"name,omitempty"`
+
+				// Type TRES type (CPU, MEM, etc)
+				Type string `json:"type"`
+			} `json:"grptres,omitempty"`
+
+			// Grptresmins Total number of TRES minutes that can possibly be used by past, present and future jobs in this association and its children
+			Grptresmins *[]struct {
+				// Count TRES count (0 if listed generically)
+				Count *int64 `json:"count,omitempty"`
+
+				// Id ID used in database
+				Id *int32 `json:"id,omitempty"`
+
+				// Name TRES name (if applicable)
+				Name *string `json:"name,omitempty"`
+
+				// Type TRES type (CPU, MEM, etc)
+				Type string `json:"type"`
+			} `json:"grptresmins,omitempty"`
+
+			// Grptresrunmins Maximum number of TRES minutes able to be allocated by running jobs in this association and its children
+			Grptresrunmins *[]struct {
+				// Count TRES count (0 if listed generically)
+				Count *int64 `json:"count,omitempty"`
+
+				// Id ID used in database
+				Id *int32 `json:"id,omitempty"`
+
+				// Name TRES name (if applicable)
+				Name *string `json:"name,omitempty"`
+
+				// Type TRES type (CPU, MEM, etc)
+				Type string `json:"type"`
+			} `json:"grptresrunmins,omitempty"`
+
+			// Grpwall Maximum wall clock time in minutes able to be allocated by running jobs in this association and its children
+			Grpwall *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"grpwall,omitempty"`
+
+			// Maxjobs Maximum number of running jobs per user in this association
+			Maxjobs *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"maxjobs,omitempty"`
+
+			// Maxjobsaccrue Maximum number of pending jobs able to accrue age priority at any given time in this association
+			Maxjobsaccrue *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"maxjobsaccrue,omitempty"`
+
+			// Maxsubmitjobs Maximum number of jobs which can be in a pending or running state at any time in this association
+			Maxsubmitjobs *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"maxsubmitjobs,omitempty"`
+
+			// Maxtresminsperjob Maximum number of TRES minutes each job is able to use in this association
+			Maxtresminsperjob *[]struct {
+				// Count TRES count (0 if listed generically)
+				Count *int64 `json:"count,omitempty"`
+
+				// Id ID used in database
+				Id *int32 `json:"id,omitempty"`
+
+				// Name TRES name (if applicable)
+				Name *string `json:"name,omitempty"`
+
+				// Type TRES type (CPU, MEM, etc)
+				Type string `json:"type"`
+			} `json:"maxtresminsperjob,omitempty"`
+
+			// Maxtresperjob Maximum number of TRES each job is able to use in this association
+			Maxtresperjob *[]struct {
+				// Count TRES count (0 if listed generically)
+				Count *int64 `json:"count,omitempty"`
+
+				// Id ID used in database
+				Id *int32 `json:"id,omitempty"`
+
+				// Name TRES name (if applicable)
+				Name *string `json:"name,omitempty"`
+
+				// Type TRES type (CPU, MEM, etc)
+				Type string `json:"type"`
+			} `json:"maxtresperjob,omitempty"`
+
+			// Maxtrespernode Maximum number of TRES each node is able to use
+			Maxtrespernode *[]struct {
+				// Count TRES count (0 if listed generically)
+				Count *int64 `json:"count,omitempty"`
+
+				// Id ID used in database
+				Id *int32 `json:"id,omitempty"`
+
+				// Name TRES name (if applicable)
+				Name *string `json:"name,omitempty"`
+
+				// Type TRES type (CPU, MEM, etc)
+				Type string `json:"type"`
+			} `json:"maxtrespernode,omitempty"`
+
+			// Maxtresrunmins Maximum number of TRES minutes able to be allocated by running jobs in this association
+			Maxtresrunmins *[]struct {
+				// Count TRES count (0 if listed generically)
+				Count *int64 `json:"count,omitempty"`
+
+				// Id ID used in database
+				Id *int32 `json:"id,omitempty"`
+
+				// Name TRES name (if applicable)
+				Name *string `json:"name,omitempty"`
+
+				// Type TRES type (CPU, MEM, etc)
+				Type string `json:"type"`
+			} `json:"maxtresrunmins,omitempty"`
+
+			// Maxwalldurationperjob Maximum wall clock time each job is able to use in this association
+			Maxwalldurationperjob *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"maxwalldurationperjob,omitempty"`
+
+			// Minpriothresh Minimum priority required to reserve resources when scheduling
+			Minpriothresh *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"minpriothresh,omitempty"`
+
+			// Parent Name of parent account
+			Parent *string `json:"parent,omitempty"`
+
+			// Priority Association priority factor
+			Priority *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"priority,omitempty"`
+
+			// Qoslevel List of available QOS names
+			Qoslevel *[]string `json:"qoslevel,omitempty"`
+		} `json:"association,omitempty"`
+
+		// Clusters CSV clusters list
+		Clusters *[]string `json:"clusters,omitempty"`
+	} `json:"association_condition,omitempty"`
+
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
+
+// V0041OpenapiAccountsAddCondRespStr defines model for v0.0.41_openapi_accounts_add_cond_resp_str.
+type V0041OpenapiAccountsAddCondRespStr struct {
+	// AddedAccounts added_accounts
+	AddedAccounts string `json:"added_accounts"`
+
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
+
+// V0041OpenapiAccountsRemovedResp defines model for v0.0.41_openapi_accounts_removed_resp.
+type V0041OpenapiAccountsRemovedResp struct {
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// RemovedAccounts removed_accounts
+	RemovedAccounts []string `json:"removed_accounts"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
 
 // V0041OpenapiAccountsResp defines model for v0.0.41_openapi_accounts_resp.
 type V0041OpenapiAccountsResp struct {
@@ -2165,6 +2748,83 @@ type V0041OpenapiAssocsResp struct {
 // V0041OpenapiAssocsRespAssociationsFlags defines model for V0041OpenapiAssocsResp.Associations.Flags.
 type V0041OpenapiAssocsRespAssociationsFlags string
 
+// V0041OpenapiClustersRemovedResp defines model for v0.0.41_openapi_clusters_removed_resp.
+type V0041OpenapiClustersRemovedResp struct {
+	// DeletedClusters deleted_clusters
+	DeletedClusters []string `json:"deleted_clusters"`
+
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
+
 // V0041OpenapiClustersResp defines model for v0.0.41_openapi_clusters_resp.
 type V0041OpenapiClustersResp struct {
 	// Clusters clusters
@@ -2301,6 +2961,395 @@ type V0041OpenapiClustersResp struct {
 // V0041OpenapiClustersRespClustersFlags defines model for V0041OpenapiClustersResp.Clusters.Flags.
 type V0041OpenapiClustersRespClustersFlags string
 
+// V0041OpenapiDiagResp defines model for v0.0.41_openapi_diag_resp.
+type V0041OpenapiDiagResp struct {
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// Statistics statistics
+	Statistics struct {
+		// AgentCount Number of agent threads
+		AgentCount *int32 `json:"agent_count,omitempty"`
+
+		// AgentQueueSize Number of enqueued outgoing RPC requests in an internal retry list
+		AgentQueueSize *int32 `json:"agent_queue_size,omitempty"`
+
+		// AgentThreadCount Total number of active threads created by all agent threads
+		AgentThreadCount *int32 `json:"agent_thread_count,omitempty"`
+
+		// BfActive Backfill scheduler currently running
+		BfActive *bool `json:"bf_active,omitempty"`
+
+		// BfBackfilledHetJobs Number of heterogeneous job components started through backfilling since last Slurm start
+		BfBackfilledHetJobs *int32 `json:"bf_backfilled_het_jobs,omitempty"`
+
+		// BfBackfilledJobs Number of jobs started through backfilling since last slurm start
+		BfBackfilledJobs *int32 `json:"bf_backfilled_jobs,omitempty"`
+
+		// BfCycleCounter Number of backfill scheduling cycles since last reset
+		BfCycleCounter *int32 `json:"bf_cycle_counter,omitempty"`
+
+		// BfCycleLast Execution time in microseconds of last backfill scheduling cycle
+		BfCycleLast *int32 `json:"bf_cycle_last,omitempty"`
+
+		// BfCycleMax Execution time in microseconds of longest backfill scheduling cycle
+		BfCycleMax *int32 `json:"bf_cycle_max,omitempty"`
+
+		// BfCycleMean Mean time in microseconds of backfilling scheduling cycles since last reset
+		BfCycleMean *int64 `json:"bf_cycle_mean,omitempty"`
+
+		// BfCycleSum Total time in microseconds of backfilling scheduling cycles since last reset
+		BfCycleSum *int64 `json:"bf_cycle_sum,omitempty"`
+
+		// BfDepthMean Mean number of eligible to run jobs processed during all backfilling scheduling cycles since last reset
+		BfDepthMean *int64 `json:"bf_depth_mean,omitempty"`
+
+		// BfDepthMeanTry The subset of Depth Mean that the backfill scheduler attempted to schedule
+		BfDepthMeanTry *int64 `json:"bf_depth_mean_try,omitempty"`
+
+		// BfDepthSum Total number of jobs processed during all backfilling scheduling cycles since last reset
+		BfDepthSum *int32 `json:"bf_depth_sum,omitempty"`
+
+		// BfDepthTrySum Subset of bf_depth_sum that the backfill scheduler attempted to schedule
+		BfDepthTrySum *int32 `json:"bf_depth_try_sum,omitempty"`
+
+		// BfExit Reasons for which the backfill scheduling cycle exited since last reset
+		BfExit *struct {
+			// BfMaxJobStart Reached number of jobs allowed to start
+			BfMaxJobStart *int32 `json:"bf_max_job_start,omitempty"`
+
+			// BfMaxJobTest Reached number of jobs allowed to be tested
+			BfMaxJobTest *int32 `json:"bf_max_job_test,omitempty"`
+
+			// BfMaxTime Reached maximum allowed scheduler time
+			BfMaxTime *int32 `json:"bf_max_time,omitempty"`
+
+			// BfNodeSpaceSize Reached table size limit
+			BfNodeSpaceSize *int32 `json:"bf_node_space_size,omitempty"`
+
+			// EndJobQueue Reached end of queue
+			EndJobQueue *int32 `json:"end_job_queue,omitempty"`
+
+			// StateChanged System state changed
+			StateChanged *int32 `json:"state_changed,omitempty"`
+		} `json:"bf_exit,omitempty"`
+
+		// BfLastBackfilledJobs Number of jobs started through backfilling since last reset
+		BfLastBackfilledJobs *int32 `json:"bf_last_backfilled_jobs,omitempty"`
+
+		// BfLastDepth Number of processed jobs during last backfilling scheduling cycle
+		BfLastDepth *int32 `json:"bf_last_depth,omitempty"`
+
+		// BfLastDepthTry Number of processed jobs during last backfilling scheduling cycle that had a chance to start using available resources
+		BfLastDepthTry *int32 `json:"bf_last_depth_try,omitempty"`
+
+		// BfQueueLen Number of jobs pending to be processed by backfilling algorithm
+		BfQueueLen *int32 `json:"bf_queue_len,omitempty"`
+
+		// BfQueueLenMean Mean number of jobs pending to be processed by backfilling algorithm
+		BfQueueLenMean *int64 `json:"bf_queue_len_mean,omitempty"`
+
+		// BfQueueLenSum Total number of jobs pending to be processed by backfilling algorithm since last reset
+		BfQueueLenSum *int32 `json:"bf_queue_len_sum,omitempty"`
+
+		// BfTableSize Number of different time slots tested by the backfill scheduler in its last iteration
+		BfTableSize *int32 `json:"bf_table_size,omitempty"`
+
+		// BfTableSizeMean Mean number of different time slots tested by the backfill scheduler
+		BfTableSizeMean *int64 `json:"bf_table_size_mean,omitempty"`
+
+		// BfTableSizeSum Total number of different time slots tested by the backfill scheduler
+		BfTableSizeSum *int32 `json:"bf_table_size_sum,omitempty"`
+
+		// BfWhenLastCycle When the last backfill scheduling cycle happened (UNIX timestamp)
+		BfWhenLastCycle *struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int64 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"bf_when_last_cycle,omitempty"`
+
+		// DbdAgentQueueSize Number of messages for SlurmDBD that are queued
+		DbdAgentQueueSize *int32 `json:"dbd_agent_queue_size,omitempty"`
+
+		// GettimeofdayLatency Latency of 1000 calls to the gettimeofday() syscall in microseconds, as measured at controller startup
+		GettimeofdayLatency *int32 `json:"gettimeofday_latency,omitempty"`
+
+		// JobStatesTs When the job state counts were gathered (UNIX timestamp)
+		JobStatesTs *struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int64 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"job_states_ts,omitempty"`
+
+		// JobsCanceled Number of jobs canceled since the last reset
+		JobsCanceled *int32 `json:"jobs_canceled,omitempty"`
+
+		// JobsCompleted Number of jobs completed since last reset
+		JobsCompleted *int32 `json:"jobs_completed,omitempty"`
+
+		// JobsFailed Number of jobs failed due to slurmd or other internal issues since last reset
+		JobsFailed *int32 `json:"jobs_failed,omitempty"`
+
+		// JobsPending Number of jobs pending at the time of listed in job_state_ts
+		JobsPending *int32 `json:"jobs_pending,omitempty"`
+
+		// JobsRunning Number of jobs running at the time of listed in job_state_ts
+		JobsRunning *int32 `json:"jobs_running,omitempty"`
+
+		// JobsStarted Number of jobs started since last reset
+		JobsStarted *int32 `json:"jobs_started,omitempty"`
+
+		// JobsSubmitted Number of jobs submitted since last reset
+		JobsSubmitted *int32 `json:"jobs_submitted,omitempty"`
+
+		// PartsPacked Zero if only RPC statistic included
+		PartsPacked *int32 `json:"parts_packed,omitempty"`
+
+		// PendingRpcs Pending RPC statistics
+		PendingRpcs *[]struct {
+			// Count Number of pending RPCs queued
+			Count int32 `json:"count"`
+
+			// MessageType Message type as string
+			MessageType string `json:"message_type"`
+
+			// TypeId Message type as integer
+			TypeId int32 `json:"type_id"`
+		} `json:"pending_rpcs,omitempty"`
+
+		// PendingRpcsByHostlist Pending RPCs hostlists
+		PendingRpcsByHostlist *[]struct {
+			// Count Number of RPCs received
+			Count []string `json:"count"`
+
+			// MessageType Message type as string
+			MessageType string `json:"message_type"`
+
+			// TypeId Message type as integer
+			TypeId int32 `json:"type_id"`
+		} `json:"pending_rpcs_by_hostlist,omitempty"`
+
+		// ReqTime When the request was made (UNIX timestamp)
+		ReqTime *struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int64 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"req_time,omitempty"`
+
+		// ReqTimeStart When the data in the report started (UNIX timestamp)
+		ReqTimeStart *struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int64 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"req_time_start,omitempty"`
+
+		// RpcsByMessageType Most frequently issued remote procedure calls (RPCs)
+		RpcsByMessageType *[]struct {
+			// AverageTime Average time spent processing RPC in seconds
+			AverageTime struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int64 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"average_time"`
+
+			// Count Number of RPCs received
+			Count int32 `json:"count"`
+
+			// CycleLast Number of RPCs processed within the last RPC queue cycle
+			CycleLast int32 `json:"cycle_last"`
+
+			// CycleMax Maximum number of RPCs processed within a RPC queue cycle since start
+			CycleMax int32 `json:"cycle_max"`
+
+			// Dropped Number of RPCs dropped
+			Dropped int64 `json:"dropped"`
+
+			// MessageType Message type as string
+			MessageType string `json:"message_type"`
+
+			// Queued Number of RPCs queued
+			Queued int32 `json:"queued"`
+
+			// TotalTime Total time spent processing RPC in seconds
+			TotalTime int64 `json:"total_time"`
+
+			// TypeId Message type as integer
+			TypeId int32 `json:"type_id"`
+		} `json:"rpcs_by_message_type,omitempty"`
+
+		// RpcsByUser RPCs issued by user ID
+		RpcsByUser *[]struct {
+			// AverageTime Average time spent processing RPC in seconds
+			AverageTime struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int64 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"average_time"`
+
+			// Count Number of RPCs received
+			Count int32 `json:"count"`
+
+			// TotalTime Total time spent processing RPC in seconds
+			TotalTime int64 `json:"total_time"`
+
+			// User User name
+			User string `json:"user"`
+
+			// UserId User ID (numeric)
+			UserId int32 `json:"user_id"`
+		} `json:"rpcs_by_user,omitempty"`
+
+		// ScheduleCycleDepth Total number of jobs processed in scheduling cycles
+		ScheduleCycleDepth *int32 `json:"schedule_cycle_depth,omitempty"`
+
+		// ScheduleCycleLast Time in microseconds for last scheduling cycle
+		ScheduleCycleLast *int32 `json:"schedule_cycle_last,omitempty"`
+
+		// ScheduleCycleMax Max time of any scheduling cycle in microseconds since last reset
+		ScheduleCycleMax *int32 `json:"schedule_cycle_max,omitempty"`
+
+		// ScheduleCycleMean Mean time in microseconds for all scheduling cycles since last reset
+		ScheduleCycleMean *int64 `json:"schedule_cycle_mean,omitempty"`
+
+		// ScheduleCycleMeanDepth Mean of the number of jobs processed in a scheduling cycle
+		ScheduleCycleMeanDepth *int64 `json:"schedule_cycle_mean_depth,omitempty"`
+
+		// ScheduleCyclePerMinute Number of scheduling executions per minute
+		ScheduleCyclePerMinute *int64 `json:"schedule_cycle_per_minute,omitempty"`
+
+		// ScheduleCycleSum Total run time in microseconds for all scheduling cycles since last reset
+		ScheduleCycleSum *int32 `json:"schedule_cycle_sum,omitempty"`
+
+		// ScheduleCycleTotal Number of scheduling cycles since last reset
+		ScheduleCycleTotal *int32 `json:"schedule_cycle_total,omitempty"`
+
+		// ScheduleExit Reasons for which the scheduling cycle exited since last reset
+		ScheduleExit *struct {
+			// DefaultQueueDepth Reached number of jobs allowed to be tested
+			DefaultQueueDepth *int32 `json:"default_queue_depth,omitempty"`
+
+			// EndJobQueue Reached end of queue
+			EndJobQueue *int32 `json:"end_job_queue,omitempty"`
+
+			// Licenses Blocked on licenses
+			Licenses *int32 `json:"licenses,omitempty"`
+
+			// MaxJobStart Reached number of jobs allowed to start
+			MaxJobStart *int32 `json:"max_job_start,omitempty"`
+
+			// MaxRpcCnt Reached RPC limit
+			MaxRpcCnt *int32 `json:"max_rpc_cnt,omitempty"`
+
+			// MaxSchedTime Reached maximum allowed scheduler time
+			MaxSchedTime *int32 `json:"max_sched_time,omitempty"`
+		} `json:"schedule_exit,omitempty"`
+
+		// ScheduleQueueLength Number of jobs pending in queue
+		ScheduleQueueLength *int32 `json:"schedule_queue_length,omitempty"`
+
+		// ServerThreadCount Number of current active slurmctld threads
+		ServerThreadCount *int32 `json:"server_thread_count,omitempty"`
+	} `json:"statistics"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
+
 // V0041OpenapiInstancesResp defines model for v0.0.41_openapi_instances_resp.
 type V0041OpenapiInstancesResp struct {
 	// Errors Query errors
@@ -2342,6 +3391,86 @@ type V0041OpenapiInstancesResp struct {
 			TimeStart *int64 `json:"time_start,omitempty"`
 		} `json:"time,omitempty"`
 	} `json:"instances"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
+
+// V0041OpenapiJobAllocResp defines model for v0.0.41_openapi_job_alloc_resp.
+type V0041OpenapiJobAllocResp struct {
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// JobId Submitted Job ID
+	JobId *int32 `json:"job_id,omitempty"`
+
+	// JobSubmitUserMsg Job submission user message
+	JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
 
 	// Meta Slurm meta values
 	Meta *struct {
@@ -3444,6 +4573,435 @@ type V0041OpenapiJobInfoRespJobsShared string
 // V0041OpenapiJobInfoRespJobsShowFlags defines model for V0041OpenapiJobInfoResp.Jobs.ShowFlags.
 type V0041OpenapiJobInfoRespJobsShowFlags string
 
+// V0041OpenapiJobPostResponse defines model for v0.0.41_openapi_job_post_response.
+type V0041OpenapiJobPostResponse struct {
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// JobId First updated Job ID - Use results instead
+	// Deprecated:
+	JobId *string `json:"job_id,omitempty"`
+
+	// JobSubmitUserMsg First updated Job submission user message - Use results instead
+	// Deprecated:
+	JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// Results Job update results
+	Results *[]struct {
+		// Error Verbose update status or error
+		Error *string `json:"error,omitempty"`
+
+		// ErrorCode Verbose update status or error
+		ErrorCode *int32 `json:"error_code,omitempty"`
+
+		// JobId Job ID for updated job
+		JobId *int32 `json:"job_id,omitempty"`
+
+		// StepId Step ID for updated job
+		StepId *string `json:"step_id,omitempty"`
+
+		// Why Update response message
+		Why *string `json:"why,omitempty"`
+	} `json:"results,omitempty"`
+
+	// StepId First updated Step ID - Use results instead
+	// Deprecated:
+	StepId *string `json:"step_id,omitempty"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
+
+// V0041OpenapiJobSubmitResponse defines model for v0.0.41_openapi_job_submit_response.
+type V0041OpenapiJobSubmitResponse struct {
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// JobId Submitted Job ID
+	JobId *int32 `json:"job_id,omitempty"`
+
+	// JobSubmitUserMsg Job submission user message
+	JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// Result Job submission
+	// Deprecated:
+	Result *struct {
+		// Error Error message
+		Error *string `json:"error,omitempty"`
+
+		// ErrorCode Error code
+		ErrorCode *int32 `json:"error_code,omitempty"`
+
+		// JobId New job ID
+		JobId *int32 `json:"job_id,omitempty"`
+
+		// JobSubmitUserMsg Message to user from job_submit plugin
+		JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
+
+		// StepId New job step ID
+		StepId *string `json:"step_id,omitempty"`
+	} `json:"result,omitempty"`
+
+	// StepId Submitted Step ID
+	StepId *string `json:"step_id,omitempty"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
+
+// V0041OpenapiKillJobsResp defines model for v0.0.41_openapi_kill_jobs_resp.
+type V0041OpenapiKillJobsResp struct {
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// Status resultant status of signal request
+	Status []struct {
+		Error *struct {
+			// Code Numeric error encountered signaling job
+			Code *int32 `json:"code,omitempty"`
+
+			// Message Error message why signaling job failed
+			Message *string `json:"message,omitempty"`
+
+			// String String error encountered signaling job
+			String *string `json:"string,omitempty"`
+		} `json:"error,omitempty"`
+		Federation *struct {
+			// Sibling Name of federation sibling (may be empty for non-federation)
+			Sibling *string `json:"sibling,omitempty"`
+		} `json:"federation,omitempty"`
+
+		// JobId Job ID that signaling failed
+		JobId struct {
+			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+			Infinite *bool `json:"infinite,omitempty"`
+
+			// Number If "set" is True the number will be set with value; otherwise ignore number contents
+			Number *int32 `json:"number,omitempty"`
+
+			// Set True if number has been set; False if number is unset
+			Set *bool `json:"set,omitempty"`
+		} `json:"job_id"`
+
+		// StepId Job or Step ID that signaling failed
+		StepId string `json:"step_id"`
+	} `json:"status"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
+
+// V0041OpenapiLicensesResp defines model for v0.0.41_openapi_licenses_resp.
+type V0041OpenapiLicensesResp struct {
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// LastUpdate Time of last licenses change (UNIX timestamp)
+	LastUpdate struct {
+		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+		Infinite *bool `json:"infinite,omitempty"`
+
+		// Number If "set" is True the number will be set with value; otherwise ignore number contents
+		Number *int64 `json:"number,omitempty"`
+
+		// Set True if number has been set; False if number is unset
+		Set *bool `json:"set,omitempty"`
+	} `json:"last_update"`
+
+	// Licenses List of licenses
+	Licenses []struct {
+		// Free Number of licenses currently available
+		Free *int32 `json:"Free,omitempty"`
+
+		// LastConsumed Last known number of licenses that were consumed in the license manager (Remote Only)
+		LastConsumed *int32 `json:"LastConsumed,omitempty"`
+
+		// LastDeficit Number of "missing licenses" from the cluster's perspective
+		LastDeficit *int32 `json:"LastDeficit,omitempty"`
+
+		// LastUpdate When the license information was last updated (UNIX Timestamp)
+		LastUpdate *int64 `json:"LastUpdate,omitempty"`
+
+		// LicenseName Name of the license
+		LicenseName *string `json:"LicenseName,omitempty"`
+
+		// Remote Indicates whether licenses are served by the database
+		Remote *bool `json:"Remote,omitempty"`
+
+		// Reserved Number of licenses reserved
+		Reserved *int32 `json:"Reserved,omitempty"`
+
+		// Total Total number of licenses present
+		Total *int32 `json:"Total,omitempty"`
+
+		// Used Number of licenses in use
+		Used *int32 `json:"Used,omitempty"`
+	} `json:"licenses"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
+
 // V0041OpenapiNodesResp defines model for v0.0.41_openapi_nodes_resp.
 type V0041OpenapiNodesResp struct {
 	// Errors Query errors
@@ -4144,6 +5702,95 @@ type V0041OpenapiPartitionRespPartitionsPartitionState string
 
 // V0041OpenapiPartitionRespPartitionsSelectType defines model for V0041OpenapiPartitionResp.Partitions.SelectType.
 type V0041OpenapiPartitionRespPartitionsSelectType string
+
+// V0041OpenapiPingArrayResp defines model for v0.0.41_openapi_ping_array_resp.
+type V0041OpenapiPingArrayResp struct {
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// Pings pings
+	Pings []struct {
+		// Hostname Target for ping
+		Hostname *string `json:"hostname,omitempty"`
+
+		// Latency Number of microseconds it took to successfully ping or timeout
+		Latency *int64 `json:"latency,omitempty"`
+
+		// Mode The operating mode of the responding slurmctld
+		Mode *string `json:"mode,omitempty"`
+
+		// Pinged Ping result
+		Pinged *string `json:"pinged,omitempty"`
+	} `json:"pings"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
 
 // V0041OpenapiReservationResp defines model for v0.0.41_openapi_reservation_resp.
 type V0041OpenapiReservationResp struct {
@@ -6494,6 +8141,83 @@ type V0041OpenapiSlurmdbdJobsRespJobsStepsState string
 // V0041OpenapiSlurmdbdJobsRespJobsWckeyFlags defines model for V0041OpenapiSlurmdbdJobsResp.Jobs.Wckey.Flags.
 type V0041OpenapiSlurmdbdJobsRespJobsWckeyFlags string
 
+// V0041OpenapiSlurmdbdQosRemovedResp defines model for v0.0.41_openapi_slurmdbd_qos_removed_resp.
+type V0041OpenapiSlurmdbdQosRemovedResp struct {
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// RemovedQos removed QOS
+	RemovedQos []string `json:"removed_qos"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
+
 // V0041OpenapiSlurmdbdQosResp defines model for v0.0.41_openapi_slurmdbd_qos_resp.
 type V0041OpenapiSlurmdbdQosResp struct {
 	// Errors Query errors
@@ -6967,6 +8691,173 @@ type V0041OpenapiSlurmdbdQosRespQosFlags string
 // V0041OpenapiSlurmdbdQosRespQosPreemptMode defines model for V0041OpenapiSlurmdbdQosResp.Qos.Preempt.Mode.
 type V0041OpenapiSlurmdbdQosRespQosPreemptMode string
 
+// V0041OpenapiSlurmdbdStatsResp defines model for v0.0.41_openapi_slurmdbd_stats_resp.
+type V0041OpenapiSlurmdbdStatsResp struct {
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// Statistics statistics
+	Statistics struct {
+		// RPCs List of RPCs sent to the slurmdbd
+		RPCs *[]struct {
+			// Count Number of RPCs processed
+			Count *int32 `json:"count,omitempty"`
+
+			// Rpc RPC type
+			Rpc  *string `json:"rpc,omitempty"`
+			Time *struct {
+				// Average Average RPC processing time in microseconds
+				Average *int64 `json:"average,omitempty"`
+
+				// Total Total RPC processing time in microseconds
+				Total *int64 `json:"total,omitempty"`
+			} `json:"time,omitempty"`
+		} `json:"RPCs,omitempty"`
+
+		// Rollups Rollup statistics
+		Rollups *struct {
+			Daily *struct {
+				// Count Number of daily rollups since last_run
+				Count    *int32 `json:"count,omitempty"`
+				Duration *struct {
+					// Last Total time spent doing daily daily rollup (seconds)
+					Last *int64 `json:"last,omitempty"`
+
+					// Max Longest daily rollup time (seconds)
+					Max *int64 `json:"max,omitempty"`
+
+					// Time Total time spent doing daily rollups (seconds)
+					Time *int64 `json:"time,omitempty"`
+				} `json:"duration,omitempty"`
+
+				// LastRun Last time daily rollup ran (UNIX timestamp)
+				LastRun *int64 `json:"last_run,omitempty"`
+			} `json:"daily,omitempty"`
+			Hourly *struct {
+				// Count Number of hourly rollups since last_run
+				Count    *int32 `json:"count,omitempty"`
+				Duration *struct {
+					// Last Total time spent doing last daily rollup (seconds)
+					Last *int64 `json:"last,omitempty"`
+
+					// Max Longest hourly rollup time (seconds)
+					Max *int64 `json:"max,omitempty"`
+
+					// Time Total time spent doing hourly rollups (seconds)
+					Time *int64 `json:"time,omitempty"`
+				} `json:"duration,omitempty"`
+
+				// LastRun Last time hourly rollup ran (UNIX timestamp)
+				LastRun *int64 `json:"last_run,omitempty"`
+			} `json:"hourly,omitempty"`
+			Monthly *struct {
+				// Count Number of monthly rollups since last_run
+				Count    *int32 `json:"count,omitempty"`
+				Duration *struct {
+					// Last Total time spent doing monthly daily rollup (seconds)
+					Last *int64 `json:"last,omitempty"`
+
+					// Max Longest monthly rollup time (seconds)
+					Max *int64 `json:"max,omitempty"`
+
+					// Time Total time spent doing monthly rollups (seconds)
+					Time *int64 `json:"time,omitempty"`
+				} `json:"duration,omitempty"`
+
+				// LastRun Last time monthly rollup ran (UNIX timestamp)
+				LastRun *int64 `json:"last_run,omitempty"`
+			} `json:"monthly,omitempty"`
+		} `json:"rollups,omitempty"`
+
+		// TimeStart When data collection started (UNIX timestamp)
+		TimeStart *int64 `json:"time_start,omitempty"`
+
+		// Users List of users that issued RPCs
+		Users *[]struct {
+			// Count Number of RPCs processed
+			Count *int32 `json:"count,omitempty"`
+			Time  *struct {
+				// Average Average RPC processing time in microseconds
+				Average *int64 `json:"average,omitempty"`
+
+				// Total Total RPC processing time in microseconds
+				Total *int64 `json:"total,omitempty"`
+			} `json:"time,omitempty"`
+
+			// User User ID
+			User *string `json:"user,omitempty"`
+		} `json:"users,omitempty"`
+	} `json:"statistics"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
+
 // V0041OpenapiTresResp defines model for v0.0.41_openapi_tres_resp.
 type V0041OpenapiTresResp struct {
 	// TRES TRES
@@ -6983,6 +8874,433 @@ type V0041OpenapiTresResp struct {
 		// Type TRES type (CPU, MEM, etc)
 		Type string `json:"type"`
 	} `json:"TRES"`
+
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
+
+// V0041OpenapiUsersAddCondResp defines model for v0.0.41_openapi_users_add_cond_resp.
+type V0041OpenapiUsersAddCondResp struct {
+	// AssociationCondition Filters to select associations for users
+	AssociationCondition struct {
+		// Accounts CSV accounts list
+		Accounts *[]string `json:"accounts,omitempty"`
+
+		// Association Association limits and options
+		Association *struct {
+			// Comment Arbitrary comment
+			Comment *string `json:"comment,omitempty"`
+
+			// Defaultqos Default QOS
+			Defaultqos *string `json:"defaultqos,omitempty"`
+
+			// Fairshare Allocated shares used for fairshare calculation
+			Fairshare *int32 `json:"fairshare,omitempty"`
+
+			// Grpjobs Maximum number of running jobs in this association and its children
+			Grpjobs *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"grpjobs,omitempty"`
+
+			// Grpjobsaccrue Maximum number of pending jobs able to accrue age priority in this association and its children
+			Grpjobsaccrue *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"grpjobsaccrue,omitempty"`
+
+			// Grpsubmitjobs Maximum number of jobs which can be in a pending or running state at any time in this association and its children
+			Grpsubmitjobs *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"grpsubmitjobs,omitempty"`
+
+			// Grptres Maximum number of TRES able to be allocated by running jobs in this association and its children
+			Grptres *[]struct {
+				// Count TRES count (0 if listed generically)
+				Count *int64 `json:"count,omitempty"`
+
+				// Id ID used in database
+				Id *int32 `json:"id,omitempty"`
+
+				// Name TRES name (if applicable)
+				Name *string `json:"name,omitempty"`
+
+				// Type TRES type (CPU, MEM, etc)
+				Type string `json:"type"`
+			} `json:"grptres,omitempty"`
+
+			// Grptresmins Total number of TRES minutes that can possibly be used by past, present and future jobs in this association and its children
+			Grptresmins *[]struct {
+				// Count TRES count (0 if listed generically)
+				Count *int64 `json:"count,omitempty"`
+
+				// Id ID used in database
+				Id *int32 `json:"id,omitempty"`
+
+				// Name TRES name (if applicable)
+				Name *string `json:"name,omitempty"`
+
+				// Type TRES type (CPU, MEM, etc)
+				Type string `json:"type"`
+			} `json:"grptresmins,omitempty"`
+
+			// Grptresrunmins Maximum number of TRES minutes able to be allocated by running jobs in this association and its children
+			Grptresrunmins *[]struct {
+				// Count TRES count (0 if listed generically)
+				Count *int64 `json:"count,omitempty"`
+
+				// Id ID used in database
+				Id *int32 `json:"id,omitempty"`
+
+				// Name TRES name (if applicable)
+				Name *string `json:"name,omitempty"`
+
+				// Type TRES type (CPU, MEM, etc)
+				Type string `json:"type"`
+			} `json:"grptresrunmins,omitempty"`
+
+			// Grpwall Maximum wall clock time in minutes able to be allocated by running jobs in this association and its children
+			Grpwall *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"grpwall,omitempty"`
+
+			// Maxjobs Maximum number of running jobs per user in this association
+			Maxjobs *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"maxjobs,omitempty"`
+
+			// Maxjobsaccrue Maximum number of pending jobs able to accrue age priority at any given time in this association
+			Maxjobsaccrue *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"maxjobsaccrue,omitempty"`
+
+			// Maxsubmitjobs Maximum number of jobs which can be in a pending or running state at any time in this association
+			Maxsubmitjobs *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"maxsubmitjobs,omitempty"`
+
+			// Maxtresminsperjob Maximum number of TRES minutes each job is able to use in this association
+			Maxtresminsperjob *[]struct {
+				// Count TRES count (0 if listed generically)
+				Count *int64 `json:"count,omitempty"`
+
+				// Id ID used in database
+				Id *int32 `json:"id,omitempty"`
+
+				// Name TRES name (if applicable)
+				Name *string `json:"name,omitempty"`
+
+				// Type TRES type (CPU, MEM, etc)
+				Type string `json:"type"`
+			} `json:"maxtresminsperjob,omitempty"`
+
+			// Maxtresperjob Maximum number of TRES each job is able to use in this association
+			Maxtresperjob *[]struct {
+				// Count TRES count (0 if listed generically)
+				Count *int64 `json:"count,omitempty"`
+
+				// Id ID used in database
+				Id *int32 `json:"id,omitempty"`
+
+				// Name TRES name (if applicable)
+				Name *string `json:"name,omitempty"`
+
+				// Type TRES type (CPU, MEM, etc)
+				Type string `json:"type"`
+			} `json:"maxtresperjob,omitempty"`
+
+			// Maxtrespernode Maximum number of TRES each node is able to use
+			Maxtrespernode *[]struct {
+				// Count TRES count (0 if listed generically)
+				Count *int64 `json:"count,omitempty"`
+
+				// Id ID used in database
+				Id *int32 `json:"id,omitempty"`
+
+				// Name TRES name (if applicable)
+				Name *string `json:"name,omitempty"`
+
+				// Type TRES type (CPU, MEM, etc)
+				Type string `json:"type"`
+			} `json:"maxtrespernode,omitempty"`
+
+			// Maxtresrunmins Maximum number of TRES minutes able to be allocated by running jobs in this association
+			Maxtresrunmins *[]struct {
+				// Count TRES count (0 if listed generically)
+				Count *int64 `json:"count,omitempty"`
+
+				// Id ID used in database
+				Id *int32 `json:"id,omitempty"`
+
+				// Name TRES name (if applicable)
+				Name *string `json:"name,omitempty"`
+
+				// Type TRES type (CPU, MEM, etc)
+				Type string `json:"type"`
+			} `json:"maxtresrunmins,omitempty"`
+
+			// Maxwalldurationperjob Maximum wall clock time each job is able to use in this association
+			Maxwalldurationperjob *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"maxwalldurationperjob,omitempty"`
+
+			// Minpriothresh Minimum priority required to reserve resources when scheduling
+			Minpriothresh *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"minpriothresh,omitempty"`
+
+			// Parent Name of parent account
+			Parent *string `json:"parent,omitempty"`
+
+			// Priority Association priority factor
+			Priority *struct {
+				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
+				Infinite *bool `json:"infinite,omitempty"`
+
+				// Number If "set" is True the number will be set with value; otherwise ignore number contents
+				Number *int32 `json:"number,omitempty"`
+
+				// Set True if number has been set; False if number is unset
+				Set *bool `json:"set,omitempty"`
+			} `json:"priority,omitempty"`
+
+			// Qoslevel List of available QOS names
+			Qoslevel *[]string `json:"qoslevel,omitempty"`
+		} `json:"association,omitempty"`
+
+		// Clusters CSV clusters list
+		Clusters *[]string `json:"clusters,omitempty"`
+
+		// Partitions CSV partitions list
+		Partitions *[]string `json:"partitions,omitempty"`
+
+		// Users CSV users list
+		Users []string `json:"users"`
+
+		// Wckeys CSV WCKeys list
+		Wckeys *[]string `json:"wckeys,omitempty"`
+	} `json:"association_condition"`
+
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// User Admin level of user, DefaultAccount, DefaultWCKey
+	User struct {
+		// Adminlevel AdminLevel granted to the user
+		Adminlevel *[]V0041OpenapiUsersAddCondRespUserAdminlevel `json:"adminlevel,omitempty"`
+
+		// Defaultaccount Default account
+		Defaultaccount *string `json:"defaultaccount,omitempty"`
+
+		// Defaultwckey Default WCKey
+		Defaultwckey *string `json:"defaultwckey,omitempty"`
+	} `json:"user"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
+
+// V0041OpenapiUsersAddCondRespUserAdminlevel defines model for V0041OpenapiUsersAddCondResp.User.Adminlevel.
+type V0041OpenapiUsersAddCondRespUserAdminlevel string
+
+// V0041OpenapiUsersAddCondRespStr defines model for v0.0.41_openapi_users_add_cond_resp_str.
+type V0041OpenapiUsersAddCondRespStr struct {
+	// AddedUsers added_users
+	AddedUsers string `json:"added_users"`
 
 	// Errors Query errors
 	Errors *[]struct {
@@ -7234,6 +9552,83 @@ type V0041OpenapiUsersRespUsersFlags string
 // V0041OpenapiUsersRespUsersWckeysFlags defines model for V0041OpenapiUsersResp.Users.Wckeys.Flags.
 type V0041OpenapiUsersRespUsersWckeysFlags string
 
+// V0041OpenapiWckeyRemovedResp defines model for v0.0.41_openapi_wckey_removed_resp.
+type V0041OpenapiWckeyRemovedResp struct {
+	// DeletedWckeys deleted wckeys
+	DeletedWckeys []string `json:"deleted_wckeys"`
+
+	// Errors Query errors
+	Errors *[]struct {
+		// Description Long form error description
+		Description *string `json:"description,omitempty"`
+
+		// Error Short form error description
+		Error *string `json:"error,omitempty"`
+
+		// ErrorNumber Slurm numeric error identifier
+		ErrorNumber *int32 `json:"error_number,omitempty"`
+
+		// Source Source of error or where error was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"errors,omitempty"`
+
+	// Meta Slurm meta values
+	Meta *struct {
+		Client *struct {
+			// Group Client group (if known)
+			Group *string `json:"group,omitempty"`
+
+			// Source Client source description
+			Source *string `json:"source,omitempty"`
+
+			// User Client user (if known)
+			User *string `json:"user,omitempty"`
+		} `json:"client,omitempty"`
+
+		// Command CLI command (if applicable)
+		Command *[]string `json:"command,omitempty"`
+		Plugin  *struct {
+			// AccountingStorage Slurm accounting plugin
+			AccountingStorage *string `json:"accounting_storage,omitempty"`
+
+			// DataParser Slurm data_parser plugin
+			DataParser *string `json:"data_parser,omitempty"`
+
+			// Name Slurm plugin name (if applicable)
+			Name *string `json:"name,omitempty"`
+
+			// Type Slurm plugin type (if applicable)
+			Type *string `json:"type,omitempty"`
+		} `json:"plugin,omitempty"`
+		Slurm *struct {
+			// Cluster Slurm cluster name
+			Cluster *string `json:"cluster,omitempty"`
+
+			// Release Slurm release string
+			Release *string `json:"release,omitempty"`
+			Version *struct {
+				// Major Slurm release major version
+				Major *string `json:"major,omitempty"`
+
+				// Micro Slurm release micro version
+				Micro *string `json:"micro,omitempty"`
+
+				// Minor Slurm release minor version
+				Minor *string `json:"minor,omitempty"`
+			} `json:"version,omitempty"`
+		} `json:"slurm,omitempty"`
+	} `json:"meta,omitempty"`
+
+	// Warnings Query warnings
+	Warnings *[]struct {
+		// Description Long form warning description
+		Description *string `json:"description,omitempty"`
+
+		// Source Source of warning or where warning was first detected
+		Source *string `json:"source,omitempty"`
+	} `json:"warnings,omitempty"`
+}
+
 // V0041OpenapiWckeyResp defines model for v0.0.41_openapi_wckey_resp.
 type V0041OpenapiWckeyResp struct {
 	// Errors Query errors
@@ -7423,2508 +9818,6 @@ type V0041UpdateNodeMsg struct {
 // V0041UpdateNodeMsgState defines model for V0041UpdateNodeMsg.State.
 type V0041UpdateNodeMsgState string
 
-// SlurmV0041PostJobAllocateJSONBody defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBody struct {
-	// Hetjob HetJob description
-	Hetjob *[]struct {
-		// Account Account associated with the job
-		Account *string `json:"account,omitempty"`
-
-		// AccountGatherFrequency Job accounting and profiling sampling intervals in seconds
-		AccountGatherFrequency *string `json:"account_gather_frequency,omitempty"`
-
-		// AdminComment Arbitrary comment made by administrator
-		AdminComment *string `json:"admin_comment,omitempty"`
-
-		// AllocationNodeList Local node making the resource allocation
-		AllocationNodeList *string `json:"allocation_node_list,omitempty"`
-
-		// AllocationNodePort Port to send allocation confirmation to
-		AllocationNodePort *int32 `json:"allocation_node_port,omitempty"`
-
-		// Argv Arguments to the script
-		Argv *[]string `json:"argv,omitempty"`
-
-		// Array Job array index value specification
-		Array *string `json:"array,omitempty"`
-
-		// BatchFeatures Features required for batch script's node
-		BatchFeatures *string `json:"batch_features,omitempty"`
-
-		// BeginTime Defer the allocation of the job until the specified time (UNIX timestamp)
-		BeginTime *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"begin_time,omitempty"`
-
-		// BurstBuffer Burst buffer specifications
-		BurstBuffer *string `json:"burst_buffer,omitempty"`
-
-		// ClusterConstraint Required features that a federated cluster must have to have a sibling job submitted to it
-		ClusterConstraint *string `json:"cluster_constraint,omitempty"`
-
-		// Clusters Clusters that a federated job can run on
-		Clusters *string `json:"clusters,omitempty"`
-
-		// Comment Arbitrary comment made by user
-		Comment *string `json:"comment,omitempty"`
-
-		// Constraints Comma separated list of features that are required
-		Constraints *string `json:"constraints,omitempty"`
-
-		// Container Absolute path to OCI container bundle
-		Container *string `json:"container,omitempty"`
-
-		// ContainerId OCI container ID
-		ContainerId *string `json:"container_id,omitempty"`
-
-		// Contiguous True if job requires contiguous nodes
-		Contiguous *bool `json:"contiguous,omitempty"`
-
-		// CoreSpecification Specialized core count
-		CoreSpecification *int32 `json:"core_specification,omitempty"`
-
-		// CpuBinding Method for binding tasks to allocated CPUs
-		CpuBinding *string `json:"cpu_binding,omitempty"`
-
-		// CpuBindingFlags Flags for CPU binding
-		CpuBindingFlags *[]SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags `json:"cpu_binding_flags,omitempty"`
-
-		// CpuFrequency Requested CPU frequency range <p1>[-p2][:p3]
-		CpuFrequency *string `json:"cpu_frequency,omitempty"`
-
-		// CpusPerTask Number of CPUs required by each task
-		CpusPerTask *int32 `json:"cpus_per_task,omitempty"`
-
-		// CpusPerTres Semicolon delimited list of TRES=# values values indicating how many CPUs should be allocated for each specified TRES (currently only used for gres/gpu)
-		CpusPerTres *string `json:"cpus_per_tres,omitempty"`
-
-		// Crontab Specification for scrontab job
-		Crontab *struct {
-			// Command Command to run
-			Command *string `json:"command,omitempty"`
-
-			// DayOfMonth Ranged string specifying eligible day of month values (e.g. 0-10,29)
-			DayOfMonth *string `json:"day_of_month,omitempty"`
-
-			// DayOfWeek Ranged string specifying eligible day of week values (e.g.0-3,7)
-			DayOfWeek *string `json:"day_of_week,omitempty"`
-
-			// Flags Flags
-			Flags *[]SlurmV0041PostJobAllocateJSONBodyHetjobCrontabFlags `json:"flags,omitempty"`
-
-			// Hour Ranged string specifying eligible hour values (e.g. 0-5,23)
-			Hour *string `json:"hour,omitempty"`
-			Line *struct {
-				// End End of this entry in file
-				End *int32 `json:"end,omitempty"`
-
-				// Start Start of this entry in file
-				Start *int32 `json:"start,omitempty"`
-			} `json:"line,omitempty"`
-
-			// Minute Ranged string specifying eligible minute values (e.g. 0-10,50)
-			Minute *string `json:"minute,omitempty"`
-
-			// Month Ranged string specifying eligible month values (e.g. 0-5,12)
-			Month *string `json:"month,omitempty"`
-
-			// Specification Time specification (* means valid for all allowed values) - minute hour day_of_month month day_of_week
-			Specification *string `json:"specification,omitempty"`
-		} `json:"crontab,omitempty"`
-
-		// CurrentWorkingDirectory Working directory to use for the job
-		CurrentWorkingDirectory *string `json:"current_working_directory,omitempty"`
-
-		// Deadline Latest time that the job may start (UNIX timestamp)
-		Deadline *int64 `json:"deadline,omitempty"`
-
-		// DelayBoot Number of seconds after job eligible start that nodes will be rebooted to satisfy feature specification
-		DelayBoot *int32 `json:"delay_boot,omitempty"`
-
-		// Dependency Other jobs that must meet certain criteria before this job can start
-		Dependency *string `json:"dependency,omitempty"`
-
-		// Distribution Layout
-		Distribution *string `json:"distribution,omitempty"`
-
-		// DistributionPlaneSize Plane size specification when distribution specifies plane
-		DistributionPlaneSize *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"distribution_plane_size,omitempty"`
-
-		// EndTime Expected end time (UNIX timestamp)
-		EndTime *int64 `json:"end_time,omitempty"`
-
-		// Environment Environment variables to be set for the job
-		Environment *[]string `json:"environment,omitempty"`
-
-		// ExcludedNodes Comma separated list of nodes that may not be used
-		ExcludedNodes *[]string `json:"excluded_nodes,omitempty"`
-		// Deprecated:
-		Exclusive *[]SlurmV0041PostJobAllocateJSONBodyHetjobExclusive `json:"exclusive,omitempty"`
-
-		// Extra Arbitrary string used for node filtering if extra constraints are enabled
-		Extra *string `json:"extra,omitempty"`
-
-		// Flags Job flags
-		Flags *[]SlurmV0041PostJobAllocateJSONBodyHetjobFlags `json:"flags,omitempty"`
-
-		// GroupId Group ID of the user that owns the job
-		GroupId *string `json:"group_id,omitempty"`
-
-		// HetjobGroup Unique sequence number applied to this component of the heterogeneous job
-		HetjobGroup *int32 `json:"hetjob_group,omitempty"`
-
-		// Hold Hold (true) or release (false) job
-		Hold *bool `json:"hold,omitempty"`
-
-		// Immediate If true, exit if resources are not available within the time period specified
-		Immediate *bool `json:"immediate,omitempty"`
-
-		// JobId Job ID
-		JobId *int32 `json:"job_id,omitempty"`
-
-		// KillOnNodeFail If true, kill job on node failure
-		KillOnNodeFail *bool `json:"kill_on_node_fail,omitempty"`
-
-		// KillWarningDelay Number of seconds before end time to send the warning signal
-		KillWarningDelay *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"kill_warning_delay,omitempty"`
-
-		// KillWarningFlags Flags related to job signals
-		KillWarningFlags *[]SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags `json:"kill_warning_flags,omitempty"`
-
-		// KillWarningSignal Signal to send when approaching end time (e.g. "10" or "USR1")
-		KillWarningSignal *string `json:"kill_warning_signal,omitempty"`
-
-		// Licenses License(s) required by the job
-		Licenses *string `json:"licenses,omitempty"`
-
-		// MailType Mail event type(s)
-		MailType *[]SlurmV0041PostJobAllocateJSONBodyHetjobMailType `json:"mail_type,omitempty"`
-
-		// MailUser User to receive email notifications
-		MailUser *string `json:"mail_user,omitempty"`
-
-		// MaximumCpus Maximum number of CPUs required
-		MaximumCpus *int32 `json:"maximum_cpus,omitempty"`
-
-		// MaximumNodes Maximum node count
-		MaximumNodes *int32 `json:"maximum_nodes,omitempty"`
-
-		// McsLabel Multi-Category Security label on the job
-		McsLabel *string `json:"mcs_label,omitempty"`
-
-		// MemoryBinding Binding map for map/mask_cpu
-		MemoryBinding *string `json:"memory_binding,omitempty"`
-
-		// MemoryBindingType Method for binding tasks to memory
-		MemoryBindingType *[]SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingType `json:"memory_binding_type,omitempty"`
-
-		// MemoryPerCpu Minimum memory in megabytes per allocated CPU
-		MemoryPerCpu *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"memory_per_cpu,omitempty"`
-
-		// MemoryPerNode Minimum memory in megabytes per allocated CPU
-		MemoryPerNode *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"memory_per_node,omitempty"`
-
-		// MemoryPerTres Semicolon delimited list of TRES=# values indicating how much memory in megabytes should be allocated for each specified TRES (currently only used for gres/gpu)
-		MemoryPerTres *string `json:"memory_per_tres,omitempty"`
-
-		// MinimumBoardsPerNode Boards per node required
-		MinimumBoardsPerNode *int32 `json:"minimum_boards_per_node,omitempty"`
-
-		// MinimumCpus Minimum number of CPUs required
-		MinimumCpus *int32 `json:"minimum_cpus,omitempty"`
-
-		// MinimumCpusPerNode Minimum number of CPUs per node
-		MinimumCpusPerNode *int32 `json:"minimum_cpus_per_node,omitempty"`
-
-		// MinimumNodes Minimum node count
-		MinimumNodes *int32 `json:"minimum_nodes,omitempty"`
-
-		// MinimumSocketsPerBoard Sockets per board required
-		MinimumSocketsPerBoard *int32 `json:"minimum_sockets_per_board,omitempty"`
-
-		// Name Job name
-		Name *string `json:"name,omitempty"`
-
-		// Network Network specs for job step
-		Network *string `json:"network,omitempty"`
-
-		// Nice Requested job priority change
-		Nice *int32 `json:"nice,omitempty"`
-
-		// Nodes Node count range specification (e.g. 1-15:4)
-		Nodes *string `json:"nodes,omitempty"`
-
-		// NtasksPerTres Number of tasks that can access each GPU
-		NtasksPerTres *int32 `json:"ntasks_per_tres,omitempty"`
-
-		// OpenMode Open mode used for stdout and stderr files
-		OpenMode *[]SlurmV0041PostJobAllocateJSONBodyHetjobOpenMode `json:"open_mode,omitempty"`
-
-		// Overcommit Overcommit resources
-		Overcommit *bool `json:"overcommit,omitempty"`
-		// Deprecated:
-		Oversubscribe *bool `json:"oversubscribe,omitempty"`
-
-		// Partition Partition assigned to the job
-		Partition *string `json:"partition,omitempty"`
-		// Deprecated:
-		PowerFlags *[]interface{} `json:"power_flags,omitempty"`
-
-		// Prefer Comma separated list of features that are preferred but not required
-		Prefer *string `json:"prefer,omitempty"`
-
-		// Priority Request specific job priority
-		Priority *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"priority,omitempty"`
-
-		// Profile Profile used by the acct_gather_profile plugin
-		Profile *[]SlurmV0041PostJobAllocateJSONBodyHetjobProfile `json:"profile,omitempty"`
-
-		// Qos Quality of Service assigned to the job
-		Qos *string `json:"qos,omitempty"`
-
-		// Reboot Node reboot requested before start
-		Reboot *bool `json:"reboot,omitempty"`
-
-		// Requeue Determines whether the job may be requeued
-		Requeue *bool `json:"requeue,omitempty"`
-
-		// RequiredNodes Comma separated list of required nodes
-		RequiredNodes *[]string `json:"required_nodes,omitempty"`
-
-		// RequiredSwitches Maximum number of switches
-		RequiredSwitches *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"required_switches,omitempty"`
-
-		// Reservation Name of reservation to use
-		Reservation *string `json:"reservation,omitempty"`
-
-		// ReservePorts Port to send various notification msg to
-		ReservePorts *int32 `json:"reserve_ports,omitempty"`
-
-		// ResvMpiPorts Number of reserved communication ports; can only be used if slurmstepd step manager is enabled
-		ResvMpiPorts *int32 `json:"resv_mpi_ports,omitempty"`
-		Rlimits      *struct {
-			// As Address space limit.
-			As *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"as,omitempty"`
-
-			// Core Largest core file that can be created, in bytes.
-			Core *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"core,omitempty"`
-
-			// Cpu Per-process CPU limit, in seconds.
-			Cpu *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"cpu,omitempty"`
-
-			// Data Maximum size of data segment, in bytes.
-			Data *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"data,omitempty"`
-
-			// Fsize Largest file that can be created, in bytes.
-			Fsize *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"fsize,omitempty"`
-
-			// Memlock Locked-in-memory address space
-			Memlock *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"memlock,omitempty"`
-
-			// Nofile Number of open files.
-			Nofile *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"nofile,omitempty"`
-
-			// Nproc Number of processes.
-			Nproc *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"nproc,omitempty"`
-
-			// Rss Largest resident set size, in bytes. This affects swapping; processes that are exceeding their resident set size will be more likely to have physical memory taken from them.
-			Rss *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"rss,omitempty"`
-
-			// Stack Maximum size of stack segment, in bytes.
-			Stack *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"stack,omitempty"`
-		} `json:"rlimits,omitempty"`
-
-		// Script Job batch script; only the first component in a HetJob is populated or honored
-		Script *string `json:"script,omitempty"`
-
-		// SegmentSize Segment size for topology/block
-		SegmentSize *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"segment_size,omitempty"`
-
-		// SelinuxContext SELinux context
-		SelinuxContext *string `json:"selinux_context,omitempty"`
-
-		// Shared How the job can share resources with other jobs, if at all
-		Shared *[]SlurmV0041PostJobAllocateJSONBodyHetjobShared `json:"shared,omitempty"`
-
-		// SiteFactor Site-specific priority factor
-		SiteFactor *int32 `json:"site_factor,omitempty"`
-
-		// SocketsPerNode Sockets per node required
-		SocketsPerNode *int32 `json:"sockets_per_node,omitempty"`
-
-		// SpankEnvironment Environment variables for job prolog/epilog scripts as set by SPANK plugins
-		SpankEnvironment *[]string `json:"spank_environment,omitempty"`
-
-		// StandardError Path to stderr file
-		StandardError *string `json:"standard_error,omitempty"`
-
-		// StandardInput Path to stdin file
-		StandardInput *string `json:"standard_input,omitempty"`
-
-		// StandardOutput Path to stdout file
-		StandardOutput *string `json:"standard_output,omitempty"`
-
-		// Tasks Number of tasks
-		Tasks *int32 `json:"tasks,omitempty"`
-
-		// TasksPerBoard Number of tasks to invoke on each board
-		TasksPerBoard *int32 `json:"tasks_per_board,omitempty"`
-
-		// TasksPerCore Number of tasks to invoke on each core
-		TasksPerCore *int32 `json:"tasks_per_core,omitempty"`
-
-		// TasksPerNode Number of tasks to invoke on each node
-		TasksPerNode *int32 `json:"tasks_per_node,omitempty"`
-
-		// TasksPerSocket Number of tasks to invoke on each socket
-		TasksPerSocket *int32 `json:"tasks_per_socket,omitempty"`
-
-		// TemporaryDiskPerNode Minimum tmp disk space required per node
-		TemporaryDiskPerNode *int32 `json:"temporary_disk_per_node,omitempty"`
-
-		// ThreadSpecification Specialized thread count
-		ThreadSpecification *int32 `json:"thread_specification,omitempty"`
-
-		// ThreadsPerCore Threads per core required
-		ThreadsPerCore *int32 `json:"threads_per_core,omitempty"`
-
-		// TimeLimit Maximum run time in minutes
-		TimeLimit *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"time_limit,omitempty"`
-
-		// TimeMinimum Minimum run time in minutes
-		TimeMinimum *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"time_minimum,omitempty"`
-
-		// TresBind Task to TRES binding directives
-		TresBind *string `json:"tres_bind,omitempty"`
-
-		// TresFreq TRES frequency directives
-		TresFreq *string `json:"tres_freq,omitempty"`
-
-		// TresPerJob Comma separated list of TRES=# values to be allocated for every job
-		TresPerJob *string `json:"tres_per_job,omitempty"`
-
-		// TresPerNode Comma separated list of TRES=# values to be allocated for every node
-		TresPerNode *string `json:"tres_per_node,omitempty"`
-
-		// TresPerSocket Comma separated list of TRES=# values to be allocated for every socket
-		TresPerSocket *string `json:"tres_per_socket,omitempty"`
-
-		// TresPerTask Comma separated list of TRES=# values to be allocated for every task
-		TresPerTask *string `json:"tres_per_task,omitempty"`
-
-		// UserId User ID that owns the job
-		UserId *string `json:"user_id,omitempty"`
-
-		// WaitAllNodes If true, wait to start until after all nodes have booted
-		WaitAllNodes *bool `json:"wait_all_nodes,omitempty"`
-
-		// WaitForSwitch Maximum time to wait for switches in seconds
-		WaitForSwitch *int32 `json:"wait_for_switch,omitempty"`
-
-		// Wckey Workload characterization key
-		Wckey *string `json:"wckey,omitempty"`
-
-		// X11 X11 forwarding options
-		X11 *[]SlurmV0041PostJobAllocateJSONBodyHetjobX11 `json:"x11,omitempty"`
-
-		// X11MagicCookie Magic cookie for X11 forwarding
-		X11MagicCookie *string `json:"x11_magic_cookie,omitempty"`
-
-		// X11TargetHost Hostname or UNIX socket if x11_target_port=0
-		X11TargetHost *string `json:"x11_target_host,omitempty"`
-
-		// X11TargetPort TCP port
-		X11TargetPort *int32 `json:"x11_target_port,omitempty"`
-	} `json:"hetjob,omitempty"`
-
-	// Job Job description
-	Job *struct {
-		// Account Account associated with the job
-		Account *string `json:"account,omitempty"`
-
-		// AccountGatherFrequency Job accounting and profiling sampling intervals in seconds
-		AccountGatherFrequency *string `json:"account_gather_frequency,omitempty"`
-
-		// AdminComment Arbitrary comment made by administrator
-		AdminComment *string `json:"admin_comment,omitempty"`
-
-		// AllocationNodeList Local node making the resource allocation
-		AllocationNodeList *string `json:"allocation_node_list,omitempty"`
-
-		// AllocationNodePort Port to send allocation confirmation to
-		AllocationNodePort *int32 `json:"allocation_node_port,omitempty"`
-
-		// Argv Arguments to the script
-		Argv *[]string `json:"argv,omitempty"`
-
-		// Array Job array index value specification
-		Array *string `json:"array,omitempty"`
-
-		// BatchFeatures Features required for batch script's node
-		BatchFeatures *string `json:"batch_features,omitempty"`
-
-		// BeginTime Defer the allocation of the job until the specified time (UNIX timestamp)
-		BeginTime *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"begin_time,omitempty"`
-
-		// BurstBuffer Burst buffer specifications
-		BurstBuffer *string `json:"burst_buffer,omitempty"`
-
-		// ClusterConstraint Required features that a federated cluster must have to have a sibling job submitted to it
-		ClusterConstraint *string `json:"cluster_constraint,omitempty"`
-
-		// Clusters Clusters that a federated job can run on
-		Clusters *string `json:"clusters,omitempty"`
-
-		// Comment Arbitrary comment made by user
-		Comment *string `json:"comment,omitempty"`
-
-		// Constraints Comma separated list of features that are required
-		Constraints *string `json:"constraints,omitempty"`
-
-		// Container Absolute path to OCI container bundle
-		Container *string `json:"container,omitempty"`
-
-		// ContainerId OCI container ID
-		ContainerId *string `json:"container_id,omitempty"`
-
-		// Contiguous True if job requires contiguous nodes
-		Contiguous *bool `json:"contiguous,omitempty"`
-
-		// CoreSpecification Specialized core count
-		CoreSpecification *int32 `json:"core_specification,omitempty"`
-
-		// CpuBinding Method for binding tasks to allocated CPUs
-		CpuBinding *string `json:"cpu_binding,omitempty"`
-
-		// CpuBindingFlags Flags for CPU binding
-		CpuBindingFlags *[]SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags `json:"cpu_binding_flags,omitempty"`
-
-		// CpuFrequency Requested CPU frequency range <p1>[-p2][:p3]
-		CpuFrequency *string `json:"cpu_frequency,omitempty"`
-
-		// CpusPerTask Number of CPUs required by each task
-		CpusPerTask *int32 `json:"cpus_per_task,omitempty"`
-
-		// CpusPerTres Semicolon delimited list of TRES=# values values indicating how many CPUs should be allocated for each specified TRES (currently only used for gres/gpu)
-		CpusPerTres *string `json:"cpus_per_tres,omitempty"`
-
-		// Crontab Specification for scrontab job
-		Crontab *struct {
-			// Command Command to run
-			Command *string `json:"command,omitempty"`
-
-			// DayOfMonth Ranged string specifying eligible day of month values (e.g. 0-10,29)
-			DayOfMonth *string `json:"day_of_month,omitempty"`
-
-			// DayOfWeek Ranged string specifying eligible day of week values (e.g.0-3,7)
-			DayOfWeek *string `json:"day_of_week,omitempty"`
-
-			// Flags Flags
-			Flags *[]SlurmV0041PostJobAllocateJSONBodyJobCrontabFlags `json:"flags,omitempty"`
-
-			// Hour Ranged string specifying eligible hour values (e.g. 0-5,23)
-			Hour *string `json:"hour,omitempty"`
-			Line *struct {
-				// End End of this entry in file
-				End *int32 `json:"end,omitempty"`
-
-				// Start Start of this entry in file
-				Start *int32 `json:"start,omitempty"`
-			} `json:"line,omitempty"`
-
-			// Minute Ranged string specifying eligible minute values (e.g. 0-10,50)
-			Minute *string `json:"minute,omitempty"`
-
-			// Month Ranged string specifying eligible month values (e.g. 0-5,12)
-			Month *string `json:"month,omitempty"`
-
-			// Specification Time specification (* means valid for all allowed values) - minute hour day_of_month month day_of_week
-			Specification *string `json:"specification,omitempty"`
-		} `json:"crontab,omitempty"`
-
-		// CurrentWorkingDirectory Working directory to use for the job
-		CurrentWorkingDirectory *string `json:"current_working_directory,omitempty"`
-
-		// Deadline Latest time that the job may start (UNIX timestamp)
-		Deadline *int64 `json:"deadline,omitempty"`
-
-		// DelayBoot Number of seconds after job eligible start that nodes will be rebooted to satisfy feature specification
-		DelayBoot *int32 `json:"delay_boot,omitempty"`
-
-		// Dependency Other jobs that must meet certain criteria before this job can start
-		Dependency *string `json:"dependency,omitempty"`
-
-		// Distribution Layout
-		Distribution *string `json:"distribution,omitempty"`
-
-		// DistributionPlaneSize Plane size specification when distribution specifies plane
-		DistributionPlaneSize *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"distribution_plane_size,omitempty"`
-
-		// EndTime Expected end time (UNIX timestamp)
-		EndTime *int64 `json:"end_time,omitempty"`
-
-		// Environment Environment variables to be set for the job
-		Environment *[]string `json:"environment,omitempty"`
-
-		// ExcludedNodes Comma separated list of nodes that may not be used
-		ExcludedNodes *[]string `json:"excluded_nodes,omitempty"`
-		// Deprecated:
-		Exclusive *[]SlurmV0041PostJobAllocateJSONBodyJobExclusive `json:"exclusive,omitempty"`
-
-		// Extra Arbitrary string used for node filtering if extra constraints are enabled
-		Extra *string `json:"extra,omitempty"`
-
-		// Flags Job flags
-		Flags *[]SlurmV0041PostJobAllocateJSONBodyJobFlags `json:"flags,omitempty"`
-
-		// GroupId Group ID of the user that owns the job
-		GroupId *string `json:"group_id,omitempty"`
-
-		// HetjobGroup Unique sequence number applied to this component of the heterogeneous job
-		HetjobGroup *int32 `json:"hetjob_group,omitempty"`
-
-		// Hold Hold (true) or release (false) job
-		Hold *bool `json:"hold,omitempty"`
-
-		// Immediate If true, exit if resources are not available within the time period specified
-		Immediate *bool `json:"immediate,omitempty"`
-
-		// JobId Job ID
-		JobId *int32 `json:"job_id,omitempty"`
-
-		// KillOnNodeFail If true, kill job on node failure
-		KillOnNodeFail *bool `json:"kill_on_node_fail,omitempty"`
-
-		// KillWarningDelay Number of seconds before end time to send the warning signal
-		KillWarningDelay *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"kill_warning_delay,omitempty"`
-
-		// KillWarningFlags Flags related to job signals
-		KillWarningFlags *[]SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags `json:"kill_warning_flags,omitempty"`
-
-		// KillWarningSignal Signal to send when approaching end time (e.g. "10" or "USR1")
-		KillWarningSignal *string `json:"kill_warning_signal,omitempty"`
-
-		// Licenses License(s) required by the job
-		Licenses *string `json:"licenses,omitempty"`
-
-		// MailType Mail event type(s)
-		MailType *[]SlurmV0041PostJobAllocateJSONBodyJobMailType `json:"mail_type,omitempty"`
-
-		// MailUser User to receive email notifications
-		MailUser *string `json:"mail_user,omitempty"`
-
-		// MaximumCpus Maximum number of CPUs required
-		MaximumCpus *int32 `json:"maximum_cpus,omitempty"`
-
-		// MaximumNodes Maximum node count
-		MaximumNodes *int32 `json:"maximum_nodes,omitempty"`
-
-		// McsLabel Multi-Category Security label on the job
-		McsLabel *string `json:"mcs_label,omitempty"`
-
-		// MemoryBinding Binding map for map/mask_cpu
-		MemoryBinding *string `json:"memory_binding,omitempty"`
-
-		// MemoryBindingType Method for binding tasks to memory
-		MemoryBindingType *[]SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingType `json:"memory_binding_type,omitempty"`
-
-		// MemoryPerCpu Minimum memory in megabytes per allocated CPU
-		MemoryPerCpu *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"memory_per_cpu,omitempty"`
-
-		// MemoryPerNode Minimum memory in megabytes per allocated CPU
-		MemoryPerNode *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"memory_per_node,omitempty"`
-
-		// MemoryPerTres Semicolon delimited list of TRES=# values indicating how much memory in megabytes should be allocated for each specified TRES (currently only used for gres/gpu)
-		MemoryPerTres *string `json:"memory_per_tres,omitempty"`
-
-		// MinimumBoardsPerNode Boards per node required
-		MinimumBoardsPerNode *int32 `json:"minimum_boards_per_node,omitempty"`
-
-		// MinimumCpus Minimum number of CPUs required
-		MinimumCpus *int32 `json:"minimum_cpus,omitempty"`
-
-		// MinimumCpusPerNode Minimum number of CPUs per node
-		MinimumCpusPerNode *int32 `json:"minimum_cpus_per_node,omitempty"`
-
-		// MinimumNodes Minimum node count
-		MinimumNodes *int32 `json:"minimum_nodes,omitempty"`
-
-		// MinimumSocketsPerBoard Sockets per board required
-		MinimumSocketsPerBoard *int32 `json:"minimum_sockets_per_board,omitempty"`
-
-		// Name Job name
-		Name *string `json:"name,omitempty"`
-
-		// Network Network specs for job step
-		Network *string `json:"network,omitempty"`
-
-		// Nice Requested job priority change
-		Nice *int32 `json:"nice,omitempty"`
-
-		// Nodes Node count range specification (e.g. 1-15:4)
-		Nodes *string `json:"nodes,omitempty"`
-
-		// NtasksPerTres Number of tasks that can access each GPU
-		NtasksPerTres *int32 `json:"ntasks_per_tres,omitempty"`
-
-		// OpenMode Open mode used for stdout and stderr files
-		OpenMode *[]SlurmV0041PostJobAllocateJSONBodyJobOpenMode `json:"open_mode,omitempty"`
-
-		// Overcommit Overcommit resources
-		Overcommit *bool `json:"overcommit,omitempty"`
-		// Deprecated:
-		Oversubscribe *bool `json:"oversubscribe,omitempty"`
-
-		// Partition Partition assigned to the job
-		Partition *string `json:"partition,omitempty"`
-		// Deprecated:
-		PowerFlags *[]interface{} `json:"power_flags,omitempty"`
-
-		// Prefer Comma separated list of features that are preferred but not required
-		Prefer *string `json:"prefer,omitempty"`
-
-		// Priority Request specific job priority
-		Priority *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"priority,omitempty"`
-
-		// Profile Profile used by the acct_gather_profile plugin
-		Profile *[]SlurmV0041PostJobAllocateJSONBodyJobProfile `json:"profile,omitempty"`
-
-		// Qos Quality of Service assigned to the job
-		Qos *string `json:"qos,omitempty"`
-
-		// Reboot Node reboot requested before start
-		Reboot *bool `json:"reboot,omitempty"`
-
-		// Requeue Determines whether the job may be requeued
-		Requeue *bool `json:"requeue,omitempty"`
-
-		// RequiredNodes Comma separated list of required nodes
-		RequiredNodes *[]string `json:"required_nodes,omitempty"`
-
-		// RequiredSwitches Maximum number of switches
-		RequiredSwitches *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"required_switches,omitempty"`
-
-		// Reservation Name of reservation to use
-		Reservation *string `json:"reservation,omitempty"`
-
-		// ReservePorts Port to send various notification msg to
-		ReservePorts *int32 `json:"reserve_ports,omitempty"`
-
-		// ResvMpiPorts Number of reserved communication ports; can only be used if slurmstepd step manager is enabled
-		ResvMpiPorts *int32 `json:"resv_mpi_ports,omitempty"`
-		Rlimits      *struct {
-			// As Address space limit.
-			As *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"as,omitempty"`
-
-			// Core Largest core file that can be created, in bytes.
-			Core *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"core,omitempty"`
-
-			// Cpu Per-process CPU limit, in seconds.
-			Cpu *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"cpu,omitempty"`
-
-			// Data Maximum size of data segment, in bytes.
-			Data *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"data,omitempty"`
-
-			// Fsize Largest file that can be created, in bytes.
-			Fsize *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"fsize,omitempty"`
-
-			// Memlock Locked-in-memory address space
-			Memlock *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"memlock,omitempty"`
-
-			// Nofile Number of open files.
-			Nofile *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"nofile,omitempty"`
-
-			// Nproc Number of processes.
-			Nproc *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"nproc,omitempty"`
-
-			// Rss Largest resident set size, in bytes. This affects swapping; processes that are exceeding their resident set size will be more likely to have physical memory taken from them.
-			Rss *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"rss,omitempty"`
-
-			// Stack Maximum size of stack segment, in bytes.
-			Stack *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"stack,omitempty"`
-		} `json:"rlimits,omitempty"`
-
-		// Script Job batch script; only the first component in a HetJob is populated or honored
-		Script *string `json:"script,omitempty"`
-
-		// SegmentSize Segment size for topology/block
-		SegmentSize *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"segment_size,omitempty"`
-
-		// SelinuxContext SELinux context
-		SelinuxContext *string `json:"selinux_context,omitempty"`
-
-		// Shared How the job can share resources with other jobs, if at all
-		Shared *[]SlurmV0041PostJobAllocateJSONBodyJobShared `json:"shared,omitempty"`
-
-		// SiteFactor Site-specific priority factor
-		SiteFactor *int32 `json:"site_factor,omitempty"`
-
-		// SocketsPerNode Sockets per node required
-		SocketsPerNode *int32 `json:"sockets_per_node,omitempty"`
-
-		// SpankEnvironment Environment variables for job prolog/epilog scripts as set by SPANK plugins
-		SpankEnvironment *[]string `json:"spank_environment,omitempty"`
-
-		// StandardError Path to stderr file
-		StandardError *string `json:"standard_error,omitempty"`
-
-		// StandardInput Path to stdin file
-		StandardInput *string `json:"standard_input,omitempty"`
-
-		// StandardOutput Path to stdout file
-		StandardOutput *string `json:"standard_output,omitempty"`
-
-		// Tasks Number of tasks
-		Tasks *int32 `json:"tasks,omitempty"`
-
-		// TasksPerBoard Number of tasks to invoke on each board
-		TasksPerBoard *int32 `json:"tasks_per_board,omitempty"`
-
-		// TasksPerCore Number of tasks to invoke on each core
-		TasksPerCore *int32 `json:"tasks_per_core,omitempty"`
-
-		// TasksPerNode Number of tasks to invoke on each node
-		TasksPerNode *int32 `json:"tasks_per_node,omitempty"`
-
-		// TasksPerSocket Number of tasks to invoke on each socket
-		TasksPerSocket *int32 `json:"tasks_per_socket,omitempty"`
-
-		// TemporaryDiskPerNode Minimum tmp disk space required per node
-		TemporaryDiskPerNode *int32 `json:"temporary_disk_per_node,omitempty"`
-
-		// ThreadSpecification Specialized thread count
-		ThreadSpecification *int32 `json:"thread_specification,omitempty"`
-
-		// ThreadsPerCore Threads per core required
-		ThreadsPerCore *int32 `json:"threads_per_core,omitempty"`
-
-		// TimeLimit Maximum run time in minutes
-		TimeLimit *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"time_limit,omitempty"`
-
-		// TimeMinimum Minimum run time in minutes
-		TimeMinimum *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"time_minimum,omitempty"`
-
-		// TresBind Task to TRES binding directives
-		TresBind *string `json:"tres_bind,omitempty"`
-
-		// TresFreq TRES frequency directives
-		TresFreq *string `json:"tres_freq,omitempty"`
-
-		// TresPerJob Comma separated list of TRES=# values to be allocated for every job
-		TresPerJob *string `json:"tres_per_job,omitempty"`
-
-		// TresPerNode Comma separated list of TRES=# values to be allocated for every node
-		TresPerNode *string `json:"tres_per_node,omitempty"`
-
-		// TresPerSocket Comma separated list of TRES=# values to be allocated for every socket
-		TresPerSocket *string `json:"tres_per_socket,omitempty"`
-
-		// TresPerTask Comma separated list of TRES=# values to be allocated for every task
-		TresPerTask *string `json:"tres_per_task,omitempty"`
-
-		// UserId User ID that owns the job
-		UserId *string `json:"user_id,omitempty"`
-
-		// WaitAllNodes If true, wait to start until after all nodes have booted
-		WaitAllNodes *bool `json:"wait_all_nodes,omitempty"`
-
-		// WaitForSwitch Maximum time to wait for switches in seconds
-		WaitForSwitch *int32 `json:"wait_for_switch,omitempty"`
-
-		// Wckey Workload characterization key
-		Wckey *string `json:"wckey,omitempty"`
-
-		// X11 X11 forwarding options
-		X11 *[]SlurmV0041PostJobAllocateJSONBodyJobX11 `json:"x11,omitempty"`
-
-		// X11MagicCookie Magic cookie for X11 forwarding
-		X11MagicCookie *string `json:"x11_magic_cookie,omitempty"`
-
-		// X11TargetHost Hostname or UNIX socket if x11_target_port=0
-		X11TargetHost *string `json:"x11_target_host,omitempty"`
-
-		// X11TargetPort TCP port
-		X11TargetPort *int32 `json:"x11_target_port,omitempty"`
-	} `json:"job,omitempty"`
-}
-
-// SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyHetjobCpuBindingFlags string
-
-// SlurmV0041PostJobAllocateJSONBodyHetjobCrontabFlags defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyHetjobCrontabFlags string
-
-// SlurmV0041PostJobAllocateJSONBodyHetjobExclusive defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyHetjobExclusive string
-
-// SlurmV0041PostJobAllocateJSONBodyHetjobFlags defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyHetjobFlags string
-
-// SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyHetjobKillWarningFlags string
-
-// SlurmV0041PostJobAllocateJSONBodyHetjobMailType defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyHetjobMailType string
-
-// SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingType defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyHetjobMemoryBindingType string
-
-// SlurmV0041PostJobAllocateJSONBodyHetjobOpenMode defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyHetjobOpenMode string
-
-// SlurmV0041PostJobAllocateJSONBodyHetjobProfile defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyHetjobProfile string
-
-// SlurmV0041PostJobAllocateJSONBodyHetjobShared defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyHetjobShared string
-
-// SlurmV0041PostJobAllocateJSONBodyHetjobX11 defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyHetjobX11 string
-
-// SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyJobCpuBindingFlags string
-
-// SlurmV0041PostJobAllocateJSONBodyJobCrontabFlags defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyJobCrontabFlags string
-
-// SlurmV0041PostJobAllocateJSONBodyJobExclusive defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyJobExclusive string
-
-// SlurmV0041PostJobAllocateJSONBodyJobFlags defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyJobFlags string
-
-// SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyJobKillWarningFlags string
-
-// SlurmV0041PostJobAllocateJSONBodyJobMailType defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyJobMailType string
-
-// SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingType defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyJobMemoryBindingType string
-
-// SlurmV0041PostJobAllocateJSONBodyJobOpenMode defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyJobOpenMode string
-
-// SlurmV0041PostJobAllocateJSONBodyJobProfile defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyJobProfile string
-
-// SlurmV0041PostJobAllocateJSONBodyJobShared defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyJobShared string
-
-// SlurmV0041PostJobAllocateJSONBodyJobX11 defines parameters for SlurmV0041PostJobAllocate.
-type SlurmV0041PostJobAllocateJSONBodyJobX11 string
-
-// SlurmV0041PostJobSubmitJSONBody defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBody struct {
-	// Job Job description
-	Job *struct {
-		// Account Account associated with the job
-		Account *string `json:"account,omitempty"`
-
-		// AccountGatherFrequency Job accounting and profiling sampling intervals in seconds
-		AccountGatherFrequency *string `json:"account_gather_frequency,omitempty"`
-
-		// AdminComment Arbitrary comment made by administrator
-		AdminComment *string `json:"admin_comment,omitempty"`
-
-		// AllocationNodeList Local node making the resource allocation
-		AllocationNodeList *string `json:"allocation_node_list,omitempty"`
-
-		// AllocationNodePort Port to send allocation confirmation to
-		AllocationNodePort *int32 `json:"allocation_node_port,omitempty"`
-
-		// Argv Arguments to the script
-		Argv *[]string `json:"argv,omitempty"`
-
-		// Array Job array index value specification
-		Array *string `json:"array,omitempty"`
-
-		// BatchFeatures Features required for batch script's node
-		BatchFeatures *string `json:"batch_features,omitempty"`
-
-		// BeginTime Defer the allocation of the job until the specified time (UNIX timestamp)
-		BeginTime *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"begin_time,omitempty"`
-
-		// BurstBuffer Burst buffer specifications
-		BurstBuffer *string `json:"burst_buffer,omitempty"`
-
-		// ClusterConstraint Required features that a federated cluster must have to have a sibling job submitted to it
-		ClusterConstraint *string `json:"cluster_constraint,omitempty"`
-
-		// Clusters Clusters that a federated job can run on
-		Clusters *string `json:"clusters,omitempty"`
-
-		// Comment Arbitrary comment made by user
-		Comment *string `json:"comment,omitempty"`
-
-		// Constraints Comma separated list of features that are required
-		Constraints *string `json:"constraints,omitempty"`
-
-		// Container Absolute path to OCI container bundle
-		Container *string `json:"container,omitempty"`
-
-		// ContainerId OCI container ID
-		ContainerId *string `json:"container_id,omitempty"`
-
-		// Contiguous True if job requires contiguous nodes
-		Contiguous *bool `json:"contiguous,omitempty"`
-
-		// CoreSpecification Specialized core count
-		CoreSpecification *int32 `json:"core_specification,omitempty"`
-
-		// CpuBinding Method for binding tasks to allocated CPUs
-		CpuBinding *string `json:"cpu_binding,omitempty"`
-
-		// CpuBindingFlags Flags for CPU binding
-		CpuBindingFlags *[]SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags `json:"cpu_binding_flags,omitempty"`
-
-		// CpuFrequency Requested CPU frequency range <p1>[-p2][:p3]
-		CpuFrequency *string `json:"cpu_frequency,omitempty"`
-
-		// CpusPerTask Number of CPUs required by each task
-		CpusPerTask *int32 `json:"cpus_per_task,omitempty"`
-
-		// CpusPerTres Semicolon delimited list of TRES=# values values indicating how many CPUs should be allocated for each specified TRES (currently only used for gres/gpu)
-		CpusPerTres *string `json:"cpus_per_tres,omitempty"`
-
-		// Crontab Specification for scrontab job
-		Crontab *struct {
-			// Command Command to run
-			Command *string `json:"command,omitempty"`
-
-			// DayOfMonth Ranged string specifying eligible day of month values (e.g. 0-10,29)
-			DayOfMonth *string `json:"day_of_month,omitempty"`
-
-			// DayOfWeek Ranged string specifying eligible day of week values (e.g.0-3,7)
-			DayOfWeek *string `json:"day_of_week,omitempty"`
-
-			// Flags Flags
-			Flags *[]SlurmV0041PostJobSubmitJSONBodyJobCrontabFlags `json:"flags,omitempty"`
-
-			// Hour Ranged string specifying eligible hour values (e.g. 0-5,23)
-			Hour *string `json:"hour,omitempty"`
-			Line *struct {
-				// End End of this entry in file
-				End *int32 `json:"end,omitempty"`
-
-				// Start Start of this entry in file
-				Start *int32 `json:"start,omitempty"`
-			} `json:"line,omitempty"`
-
-			// Minute Ranged string specifying eligible minute values (e.g. 0-10,50)
-			Minute *string `json:"minute,omitempty"`
-
-			// Month Ranged string specifying eligible month values (e.g. 0-5,12)
-			Month *string `json:"month,omitempty"`
-
-			// Specification Time specification (* means valid for all allowed values) - minute hour day_of_month month day_of_week
-			Specification *string `json:"specification,omitempty"`
-		} `json:"crontab,omitempty"`
-
-		// CurrentWorkingDirectory Working directory to use for the job
-		CurrentWorkingDirectory *string `json:"current_working_directory,omitempty"`
-
-		// Deadline Latest time that the job may start (UNIX timestamp)
-		Deadline *int64 `json:"deadline,omitempty"`
-
-		// DelayBoot Number of seconds after job eligible start that nodes will be rebooted to satisfy feature specification
-		DelayBoot *int32 `json:"delay_boot,omitempty"`
-
-		// Dependency Other jobs that must meet certain criteria before this job can start
-		Dependency *string `json:"dependency,omitempty"`
-
-		// Distribution Layout
-		Distribution *string `json:"distribution,omitempty"`
-
-		// DistributionPlaneSize Plane size specification when distribution specifies plane
-		DistributionPlaneSize *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"distribution_plane_size,omitempty"`
-
-		// EndTime Expected end time (UNIX timestamp)
-		EndTime *int64 `json:"end_time,omitempty"`
-
-		// Environment Environment variables to be set for the job
-		Environment *[]string `json:"environment,omitempty"`
-
-		// ExcludedNodes Comma separated list of nodes that may not be used
-		ExcludedNodes *[]string `json:"excluded_nodes,omitempty"`
-		// Deprecated:
-		Exclusive *[]SlurmV0041PostJobSubmitJSONBodyJobExclusive `json:"exclusive,omitempty"`
-
-		// Extra Arbitrary string used for node filtering if extra constraints are enabled
-		Extra *string `json:"extra,omitempty"`
-
-		// Flags Job flags
-		Flags *[]SlurmV0041PostJobSubmitJSONBodyJobFlags `json:"flags,omitempty"`
-
-		// GroupId Group ID of the user that owns the job
-		GroupId *string `json:"group_id,omitempty"`
-
-		// HetjobGroup Unique sequence number applied to this component of the heterogeneous job
-		HetjobGroup *int32 `json:"hetjob_group,omitempty"`
-
-		// Hold Hold (true) or release (false) job
-		Hold *bool `json:"hold,omitempty"`
-
-		// Immediate If true, exit if resources are not available within the time period specified
-		Immediate *bool `json:"immediate,omitempty"`
-
-		// JobId Job ID
-		JobId *int32 `json:"job_id,omitempty"`
-
-		// KillOnNodeFail If true, kill job on node failure
-		KillOnNodeFail *bool `json:"kill_on_node_fail,omitempty"`
-
-		// KillWarningDelay Number of seconds before end time to send the warning signal
-		KillWarningDelay *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"kill_warning_delay,omitempty"`
-
-		// KillWarningFlags Flags related to job signals
-		KillWarningFlags *[]SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags `json:"kill_warning_flags,omitempty"`
-
-		// KillWarningSignal Signal to send when approaching end time (e.g. "10" or "USR1")
-		KillWarningSignal *string `json:"kill_warning_signal,omitempty"`
-
-		// Licenses License(s) required by the job
-		Licenses *string `json:"licenses,omitempty"`
-
-		// MailType Mail event type(s)
-		MailType *[]SlurmV0041PostJobSubmitJSONBodyJobMailType `json:"mail_type,omitempty"`
-
-		// MailUser User to receive email notifications
-		MailUser *string `json:"mail_user,omitempty"`
-
-		// MaximumCpus Maximum number of CPUs required
-		MaximumCpus *int32 `json:"maximum_cpus,omitempty"`
-
-		// MaximumNodes Maximum node count
-		MaximumNodes *int32 `json:"maximum_nodes,omitempty"`
-
-		// McsLabel Multi-Category Security label on the job
-		McsLabel *string `json:"mcs_label,omitempty"`
-
-		// MemoryBinding Binding map for map/mask_cpu
-		MemoryBinding *string `json:"memory_binding,omitempty"`
-
-		// MemoryBindingType Method for binding tasks to memory
-		MemoryBindingType *[]SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingType `json:"memory_binding_type,omitempty"`
-
-		// MemoryPerCpu Minimum memory in megabytes per allocated CPU
-		MemoryPerCpu *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"memory_per_cpu,omitempty"`
-
-		// MemoryPerNode Minimum memory in megabytes per allocated CPU
-		MemoryPerNode *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"memory_per_node,omitempty"`
-
-		// MemoryPerTres Semicolon delimited list of TRES=# values indicating how much memory in megabytes should be allocated for each specified TRES (currently only used for gres/gpu)
-		MemoryPerTres *string `json:"memory_per_tres,omitempty"`
-
-		// MinimumBoardsPerNode Boards per node required
-		MinimumBoardsPerNode *int32 `json:"minimum_boards_per_node,omitempty"`
-
-		// MinimumCpus Minimum number of CPUs required
-		MinimumCpus *int32 `json:"minimum_cpus,omitempty"`
-
-		// MinimumCpusPerNode Minimum number of CPUs per node
-		MinimumCpusPerNode *int32 `json:"minimum_cpus_per_node,omitempty"`
-
-		// MinimumNodes Minimum node count
-		MinimumNodes *int32 `json:"minimum_nodes,omitempty"`
-
-		// MinimumSocketsPerBoard Sockets per board required
-		MinimumSocketsPerBoard *int32 `json:"minimum_sockets_per_board,omitempty"`
-
-		// Name Job name
-		Name *string `json:"name,omitempty"`
-
-		// Network Network specs for job step
-		Network *string `json:"network,omitempty"`
-
-		// Nice Requested job priority change
-		Nice *int32 `json:"nice,omitempty"`
-
-		// Nodes Node count range specification (e.g. 1-15:4)
-		Nodes *string `json:"nodes,omitempty"`
-
-		// NtasksPerTres Number of tasks that can access each GPU
-		NtasksPerTres *int32 `json:"ntasks_per_tres,omitempty"`
-
-		// OpenMode Open mode used for stdout and stderr files
-		OpenMode *[]SlurmV0041PostJobSubmitJSONBodyJobOpenMode `json:"open_mode,omitempty"`
-
-		// Overcommit Overcommit resources
-		Overcommit *bool `json:"overcommit,omitempty"`
-		// Deprecated:
-		Oversubscribe *bool `json:"oversubscribe,omitempty"`
-
-		// Partition Partition assigned to the job
-		Partition *string `json:"partition,omitempty"`
-		// Deprecated:
-		PowerFlags *[]interface{} `json:"power_flags,omitempty"`
-
-		// Prefer Comma separated list of features that are preferred but not required
-		Prefer *string `json:"prefer,omitempty"`
-
-		// Priority Request specific job priority
-		Priority *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"priority,omitempty"`
-
-		// Profile Profile used by the acct_gather_profile plugin
-		Profile *[]SlurmV0041PostJobSubmitJSONBodyJobProfile `json:"profile,omitempty"`
-
-		// Qos Quality of Service assigned to the job
-		Qos *string `json:"qos,omitempty"`
-
-		// Reboot Node reboot requested before start
-		Reboot *bool `json:"reboot,omitempty"`
-
-		// Requeue Determines whether the job may be requeued
-		Requeue *bool `json:"requeue,omitempty"`
-
-		// RequiredNodes Comma separated list of required nodes
-		RequiredNodes *[]string `json:"required_nodes,omitempty"`
-
-		// RequiredSwitches Maximum number of switches
-		RequiredSwitches *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"required_switches,omitempty"`
-
-		// Reservation Name of reservation to use
-		Reservation *string `json:"reservation,omitempty"`
-
-		// ReservePorts Port to send various notification msg to
-		ReservePorts *int32 `json:"reserve_ports,omitempty"`
-
-		// ResvMpiPorts Number of reserved communication ports; can only be used if slurmstepd step manager is enabled
-		ResvMpiPorts *int32 `json:"resv_mpi_ports,omitempty"`
-		Rlimits      *struct {
-			// As Address space limit.
-			As *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"as,omitempty"`
-
-			// Core Largest core file that can be created, in bytes.
-			Core *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"core,omitempty"`
-
-			// Cpu Per-process CPU limit, in seconds.
-			Cpu *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"cpu,omitempty"`
-
-			// Data Maximum size of data segment, in bytes.
-			Data *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"data,omitempty"`
-
-			// Fsize Largest file that can be created, in bytes.
-			Fsize *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"fsize,omitempty"`
-
-			// Memlock Locked-in-memory address space
-			Memlock *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"memlock,omitempty"`
-
-			// Nofile Number of open files.
-			Nofile *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"nofile,omitempty"`
-
-			// Nproc Number of processes.
-			Nproc *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"nproc,omitempty"`
-
-			// Rss Largest resident set size, in bytes. This affects swapping; processes that are exceeding their resident set size will be more likely to have physical memory taken from them.
-			Rss *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"rss,omitempty"`
-
-			// Stack Maximum size of stack segment, in bytes.
-			Stack *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"stack,omitempty"`
-		} `json:"rlimits,omitempty"`
-
-		// Script Job batch script; only the first component in a HetJob is populated or honored
-		Script *string `json:"script,omitempty"`
-
-		// SegmentSize Segment size for topology/block
-		SegmentSize *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"segment_size,omitempty"`
-
-		// SelinuxContext SELinux context
-		SelinuxContext *string `json:"selinux_context,omitempty"`
-
-		// Shared How the job can share resources with other jobs, if at all
-		Shared *[]SlurmV0041PostJobSubmitJSONBodyJobShared `json:"shared,omitempty"`
-
-		// SiteFactor Site-specific priority factor
-		SiteFactor *int32 `json:"site_factor,omitempty"`
-
-		// SocketsPerNode Sockets per node required
-		SocketsPerNode *int32 `json:"sockets_per_node,omitempty"`
-
-		// SpankEnvironment Environment variables for job prolog/epilog scripts as set by SPANK plugins
-		SpankEnvironment *[]string `json:"spank_environment,omitempty"`
-
-		// StandardError Path to stderr file
-		StandardError *string `json:"standard_error,omitempty"`
-
-		// StandardInput Path to stdin file
-		StandardInput *string `json:"standard_input,omitempty"`
-
-		// StandardOutput Path to stdout file
-		StandardOutput *string `json:"standard_output,omitempty"`
-
-		// Tasks Number of tasks
-		Tasks *int32 `json:"tasks,omitempty"`
-
-		// TasksPerBoard Number of tasks to invoke on each board
-		TasksPerBoard *int32 `json:"tasks_per_board,omitempty"`
-
-		// TasksPerCore Number of tasks to invoke on each core
-		TasksPerCore *int32 `json:"tasks_per_core,omitempty"`
-
-		// TasksPerNode Number of tasks to invoke on each node
-		TasksPerNode *int32 `json:"tasks_per_node,omitempty"`
-
-		// TasksPerSocket Number of tasks to invoke on each socket
-		TasksPerSocket *int32 `json:"tasks_per_socket,omitempty"`
-
-		// TemporaryDiskPerNode Minimum tmp disk space required per node
-		TemporaryDiskPerNode *int32 `json:"temporary_disk_per_node,omitempty"`
-
-		// ThreadSpecification Specialized thread count
-		ThreadSpecification *int32 `json:"thread_specification,omitempty"`
-
-		// ThreadsPerCore Threads per core required
-		ThreadsPerCore *int32 `json:"threads_per_core,omitempty"`
-
-		// TimeLimit Maximum run time in minutes
-		TimeLimit *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"time_limit,omitempty"`
-
-		// TimeMinimum Minimum run time in minutes
-		TimeMinimum *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"time_minimum,omitempty"`
-
-		// TresBind Task to TRES binding directives
-		TresBind *string `json:"tres_bind,omitempty"`
-
-		// TresFreq TRES frequency directives
-		TresFreq *string `json:"tres_freq,omitempty"`
-
-		// TresPerJob Comma separated list of TRES=# values to be allocated for every job
-		TresPerJob *string `json:"tres_per_job,omitempty"`
-
-		// TresPerNode Comma separated list of TRES=# values to be allocated for every node
-		TresPerNode *string `json:"tres_per_node,omitempty"`
-
-		// TresPerSocket Comma separated list of TRES=# values to be allocated for every socket
-		TresPerSocket *string `json:"tres_per_socket,omitempty"`
-
-		// TresPerTask Comma separated list of TRES=# values to be allocated for every task
-		TresPerTask *string `json:"tres_per_task,omitempty"`
-
-		// UserId User ID that owns the job
-		UserId *string `json:"user_id,omitempty"`
-
-		// WaitAllNodes If true, wait to start until after all nodes have booted
-		WaitAllNodes *bool `json:"wait_all_nodes,omitempty"`
-
-		// WaitForSwitch Maximum time to wait for switches in seconds
-		WaitForSwitch *int32 `json:"wait_for_switch,omitempty"`
-
-		// Wckey Workload characterization key
-		Wckey *string `json:"wckey,omitempty"`
-
-		// X11 X11 forwarding options
-		X11 *[]SlurmV0041PostJobSubmitJSONBodyJobX11 `json:"x11,omitempty"`
-
-		// X11MagicCookie Magic cookie for X11 forwarding
-		X11MagicCookie *string `json:"x11_magic_cookie,omitempty"`
-
-		// X11TargetHost Hostname or UNIX socket if x11_target_port=0
-		X11TargetHost *string `json:"x11_target_host,omitempty"`
-
-		// X11TargetPort TCP port
-		X11TargetPort *int32 `json:"x11_target_port,omitempty"`
-	} `json:"job,omitempty"`
-
-	// Jobs HetJob description
-	Jobs *[]struct {
-		// Account Account associated with the job
-		Account *string `json:"account,omitempty"`
-
-		// AccountGatherFrequency Job accounting and profiling sampling intervals in seconds
-		AccountGatherFrequency *string `json:"account_gather_frequency,omitempty"`
-
-		// AdminComment Arbitrary comment made by administrator
-		AdminComment *string `json:"admin_comment,omitempty"`
-
-		// AllocationNodeList Local node making the resource allocation
-		AllocationNodeList *string `json:"allocation_node_list,omitempty"`
-
-		// AllocationNodePort Port to send allocation confirmation to
-		AllocationNodePort *int32 `json:"allocation_node_port,omitempty"`
-
-		// Argv Arguments to the script
-		Argv *[]string `json:"argv,omitempty"`
-
-		// Array Job array index value specification
-		Array *string `json:"array,omitempty"`
-
-		// BatchFeatures Features required for batch script's node
-		BatchFeatures *string `json:"batch_features,omitempty"`
-
-		// BeginTime Defer the allocation of the job until the specified time (UNIX timestamp)
-		BeginTime *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"begin_time,omitempty"`
-
-		// BurstBuffer Burst buffer specifications
-		BurstBuffer *string `json:"burst_buffer,omitempty"`
-
-		// ClusterConstraint Required features that a federated cluster must have to have a sibling job submitted to it
-		ClusterConstraint *string `json:"cluster_constraint,omitempty"`
-
-		// Clusters Clusters that a federated job can run on
-		Clusters *string `json:"clusters,omitempty"`
-
-		// Comment Arbitrary comment made by user
-		Comment *string `json:"comment,omitempty"`
-
-		// Constraints Comma separated list of features that are required
-		Constraints *string `json:"constraints,omitempty"`
-
-		// Container Absolute path to OCI container bundle
-		Container *string `json:"container,omitempty"`
-
-		// ContainerId OCI container ID
-		ContainerId *string `json:"container_id,omitempty"`
-
-		// Contiguous True if job requires contiguous nodes
-		Contiguous *bool `json:"contiguous,omitempty"`
-
-		// CoreSpecification Specialized core count
-		CoreSpecification *int32 `json:"core_specification,omitempty"`
-
-		// CpuBinding Method for binding tasks to allocated CPUs
-		CpuBinding *string `json:"cpu_binding,omitempty"`
-
-		// CpuBindingFlags Flags for CPU binding
-		CpuBindingFlags *[]SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags `json:"cpu_binding_flags,omitempty"`
-
-		// CpuFrequency Requested CPU frequency range <p1>[-p2][:p3]
-		CpuFrequency *string `json:"cpu_frequency,omitempty"`
-
-		// CpusPerTask Number of CPUs required by each task
-		CpusPerTask *int32 `json:"cpus_per_task,omitempty"`
-
-		// CpusPerTres Semicolon delimited list of TRES=# values values indicating how many CPUs should be allocated for each specified TRES (currently only used for gres/gpu)
-		CpusPerTres *string `json:"cpus_per_tres,omitempty"`
-
-		// Crontab Specification for scrontab job
-		Crontab *struct {
-			// Command Command to run
-			Command *string `json:"command,omitempty"`
-
-			// DayOfMonth Ranged string specifying eligible day of month values (e.g. 0-10,29)
-			DayOfMonth *string `json:"day_of_month,omitempty"`
-
-			// DayOfWeek Ranged string specifying eligible day of week values (e.g.0-3,7)
-			DayOfWeek *string `json:"day_of_week,omitempty"`
-
-			// Flags Flags
-			Flags *[]SlurmV0041PostJobSubmitJSONBodyJobsCrontabFlags `json:"flags,omitempty"`
-
-			// Hour Ranged string specifying eligible hour values (e.g. 0-5,23)
-			Hour *string `json:"hour,omitempty"`
-			Line *struct {
-				// End End of this entry in file
-				End *int32 `json:"end,omitempty"`
-
-				// Start Start of this entry in file
-				Start *int32 `json:"start,omitempty"`
-			} `json:"line,omitempty"`
-
-			// Minute Ranged string specifying eligible minute values (e.g. 0-10,50)
-			Minute *string `json:"minute,omitempty"`
-
-			// Month Ranged string specifying eligible month values (e.g. 0-5,12)
-			Month *string `json:"month,omitempty"`
-
-			// Specification Time specification (* means valid for all allowed values) - minute hour day_of_month month day_of_week
-			Specification *string `json:"specification,omitempty"`
-		} `json:"crontab,omitempty"`
-
-		// CurrentWorkingDirectory Working directory to use for the job
-		CurrentWorkingDirectory *string `json:"current_working_directory,omitempty"`
-
-		// Deadline Latest time that the job may start (UNIX timestamp)
-		Deadline *int64 `json:"deadline,omitempty"`
-
-		// DelayBoot Number of seconds after job eligible start that nodes will be rebooted to satisfy feature specification
-		DelayBoot *int32 `json:"delay_boot,omitempty"`
-
-		// Dependency Other jobs that must meet certain criteria before this job can start
-		Dependency *string `json:"dependency,omitempty"`
-
-		// Distribution Layout
-		Distribution *string `json:"distribution,omitempty"`
-
-		// DistributionPlaneSize Plane size specification when distribution specifies plane
-		DistributionPlaneSize *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"distribution_plane_size,omitempty"`
-
-		// EndTime Expected end time (UNIX timestamp)
-		EndTime *int64 `json:"end_time,omitempty"`
-
-		// Environment Environment variables to be set for the job
-		Environment *[]string `json:"environment,omitempty"`
-
-		// ExcludedNodes Comma separated list of nodes that may not be used
-		ExcludedNodes *[]string `json:"excluded_nodes,omitempty"`
-		// Deprecated:
-		Exclusive *[]SlurmV0041PostJobSubmitJSONBodyJobsExclusive `json:"exclusive,omitempty"`
-
-		// Extra Arbitrary string used for node filtering if extra constraints are enabled
-		Extra *string `json:"extra,omitempty"`
-
-		// Flags Job flags
-		Flags *[]SlurmV0041PostJobSubmitJSONBodyJobsFlags `json:"flags,omitempty"`
-
-		// GroupId Group ID of the user that owns the job
-		GroupId *string `json:"group_id,omitempty"`
-
-		// HetjobGroup Unique sequence number applied to this component of the heterogeneous job
-		HetjobGroup *int32 `json:"hetjob_group,omitempty"`
-
-		// Hold Hold (true) or release (false) job
-		Hold *bool `json:"hold,omitempty"`
-
-		// Immediate If true, exit if resources are not available within the time period specified
-		Immediate *bool `json:"immediate,omitempty"`
-
-		// JobId Job ID
-		JobId *int32 `json:"job_id,omitempty"`
-
-		// KillOnNodeFail If true, kill job on node failure
-		KillOnNodeFail *bool `json:"kill_on_node_fail,omitempty"`
-
-		// KillWarningDelay Number of seconds before end time to send the warning signal
-		KillWarningDelay *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"kill_warning_delay,omitempty"`
-
-		// KillWarningFlags Flags related to job signals
-		KillWarningFlags *[]SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags `json:"kill_warning_flags,omitempty"`
-
-		// KillWarningSignal Signal to send when approaching end time (e.g. "10" or "USR1")
-		KillWarningSignal *string `json:"kill_warning_signal,omitempty"`
-
-		// Licenses License(s) required by the job
-		Licenses *string `json:"licenses,omitempty"`
-
-		// MailType Mail event type(s)
-		MailType *[]SlurmV0041PostJobSubmitJSONBodyJobsMailType `json:"mail_type,omitempty"`
-
-		// MailUser User to receive email notifications
-		MailUser *string `json:"mail_user,omitempty"`
-
-		// MaximumCpus Maximum number of CPUs required
-		MaximumCpus *int32 `json:"maximum_cpus,omitempty"`
-
-		// MaximumNodes Maximum node count
-		MaximumNodes *int32 `json:"maximum_nodes,omitempty"`
-
-		// McsLabel Multi-Category Security label on the job
-		McsLabel *string `json:"mcs_label,omitempty"`
-
-		// MemoryBinding Binding map for map/mask_cpu
-		MemoryBinding *string `json:"memory_binding,omitempty"`
-
-		// MemoryBindingType Method for binding tasks to memory
-		MemoryBindingType *[]SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingType `json:"memory_binding_type,omitempty"`
-
-		// MemoryPerCpu Minimum memory in megabytes per allocated CPU
-		MemoryPerCpu *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"memory_per_cpu,omitempty"`
-
-		// MemoryPerNode Minimum memory in megabytes per allocated CPU
-		MemoryPerNode *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"memory_per_node,omitempty"`
-
-		// MemoryPerTres Semicolon delimited list of TRES=# values indicating how much memory in megabytes should be allocated for each specified TRES (currently only used for gres/gpu)
-		MemoryPerTres *string `json:"memory_per_tres,omitempty"`
-
-		// MinimumBoardsPerNode Boards per node required
-		MinimumBoardsPerNode *int32 `json:"minimum_boards_per_node,omitempty"`
-
-		// MinimumCpus Minimum number of CPUs required
-		MinimumCpus *int32 `json:"minimum_cpus,omitempty"`
-
-		// MinimumCpusPerNode Minimum number of CPUs per node
-		MinimumCpusPerNode *int32 `json:"minimum_cpus_per_node,omitempty"`
-
-		// MinimumNodes Minimum node count
-		MinimumNodes *int32 `json:"minimum_nodes,omitempty"`
-
-		// MinimumSocketsPerBoard Sockets per board required
-		MinimumSocketsPerBoard *int32 `json:"minimum_sockets_per_board,omitempty"`
-
-		// Name Job name
-		Name *string `json:"name,omitempty"`
-
-		// Network Network specs for job step
-		Network *string `json:"network,omitempty"`
-
-		// Nice Requested job priority change
-		Nice *int32 `json:"nice,omitempty"`
-
-		// Nodes Node count range specification (e.g. 1-15:4)
-		Nodes *string `json:"nodes,omitempty"`
-
-		// NtasksPerTres Number of tasks that can access each GPU
-		NtasksPerTres *int32 `json:"ntasks_per_tres,omitempty"`
-
-		// OpenMode Open mode used for stdout and stderr files
-		OpenMode *[]SlurmV0041PostJobSubmitJSONBodyJobsOpenMode `json:"open_mode,omitempty"`
-
-		// Overcommit Overcommit resources
-		Overcommit *bool `json:"overcommit,omitempty"`
-		// Deprecated:
-		Oversubscribe *bool `json:"oversubscribe,omitempty"`
-
-		// Partition Partition assigned to the job
-		Partition *string `json:"partition,omitempty"`
-		// Deprecated:
-		PowerFlags *[]interface{} `json:"power_flags,omitempty"`
-
-		// Prefer Comma separated list of features that are preferred but not required
-		Prefer *string `json:"prefer,omitempty"`
-
-		// Priority Request specific job priority
-		Priority *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"priority,omitempty"`
-
-		// Profile Profile used by the acct_gather_profile plugin
-		Profile *[]SlurmV0041PostJobSubmitJSONBodyJobsProfile `json:"profile,omitempty"`
-
-		// Qos Quality of Service assigned to the job
-		Qos *string `json:"qos,omitempty"`
-
-		// Reboot Node reboot requested before start
-		Reboot *bool `json:"reboot,omitempty"`
-
-		// Requeue Determines whether the job may be requeued
-		Requeue *bool `json:"requeue,omitempty"`
-
-		// RequiredNodes Comma separated list of required nodes
-		RequiredNodes *[]string `json:"required_nodes,omitempty"`
-
-		// RequiredSwitches Maximum number of switches
-		RequiredSwitches *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"required_switches,omitempty"`
-
-		// Reservation Name of reservation to use
-		Reservation *string `json:"reservation,omitempty"`
-
-		// ReservePorts Port to send various notification msg to
-		ReservePorts *int32 `json:"reserve_ports,omitempty"`
-
-		// ResvMpiPorts Number of reserved communication ports; can only be used if slurmstepd step manager is enabled
-		ResvMpiPorts *int32 `json:"resv_mpi_ports,omitempty"`
-		Rlimits      *struct {
-			// As Address space limit.
-			As *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"as,omitempty"`
-
-			// Core Largest core file that can be created, in bytes.
-			Core *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"core,omitempty"`
-
-			// Cpu Per-process CPU limit, in seconds.
-			Cpu *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"cpu,omitempty"`
-
-			// Data Maximum size of data segment, in bytes.
-			Data *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"data,omitempty"`
-
-			// Fsize Largest file that can be created, in bytes.
-			Fsize *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"fsize,omitempty"`
-
-			// Memlock Locked-in-memory address space
-			Memlock *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"memlock,omitempty"`
-
-			// Nofile Number of open files.
-			Nofile *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"nofile,omitempty"`
-
-			// Nproc Number of processes.
-			Nproc *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"nproc,omitempty"`
-
-			// Rss Largest resident set size, in bytes. This affects swapping; processes that are exceeding their resident set size will be more likely to have physical memory taken from them.
-			Rss *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"rss,omitempty"`
-
-			// Stack Maximum size of stack segment, in bytes.
-			Stack *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"stack,omitempty"`
-		} `json:"rlimits,omitempty"`
-
-		// Script Job batch script; only the first component in a HetJob is populated or honored
-		Script *string `json:"script,omitempty"`
-
-		// SegmentSize Segment size for topology/block
-		SegmentSize *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"segment_size,omitempty"`
-
-		// SelinuxContext SELinux context
-		SelinuxContext *string `json:"selinux_context,omitempty"`
-
-		// Shared How the job can share resources with other jobs, if at all
-		Shared *[]SlurmV0041PostJobSubmitJSONBodyJobsShared `json:"shared,omitempty"`
-
-		// SiteFactor Site-specific priority factor
-		SiteFactor *int32 `json:"site_factor,omitempty"`
-
-		// SocketsPerNode Sockets per node required
-		SocketsPerNode *int32 `json:"sockets_per_node,omitempty"`
-
-		// SpankEnvironment Environment variables for job prolog/epilog scripts as set by SPANK plugins
-		SpankEnvironment *[]string `json:"spank_environment,omitempty"`
-
-		// StandardError Path to stderr file
-		StandardError *string `json:"standard_error,omitempty"`
-
-		// StandardInput Path to stdin file
-		StandardInput *string `json:"standard_input,omitempty"`
-
-		// StandardOutput Path to stdout file
-		StandardOutput *string `json:"standard_output,omitempty"`
-
-		// Tasks Number of tasks
-		Tasks *int32 `json:"tasks,omitempty"`
-
-		// TasksPerBoard Number of tasks to invoke on each board
-		TasksPerBoard *int32 `json:"tasks_per_board,omitempty"`
-
-		// TasksPerCore Number of tasks to invoke on each core
-		TasksPerCore *int32 `json:"tasks_per_core,omitempty"`
-
-		// TasksPerNode Number of tasks to invoke on each node
-		TasksPerNode *int32 `json:"tasks_per_node,omitempty"`
-
-		// TasksPerSocket Number of tasks to invoke on each socket
-		TasksPerSocket *int32 `json:"tasks_per_socket,omitempty"`
-
-		// TemporaryDiskPerNode Minimum tmp disk space required per node
-		TemporaryDiskPerNode *int32 `json:"temporary_disk_per_node,omitempty"`
-
-		// ThreadSpecification Specialized thread count
-		ThreadSpecification *int32 `json:"thread_specification,omitempty"`
-
-		// ThreadsPerCore Threads per core required
-		ThreadsPerCore *int32 `json:"threads_per_core,omitempty"`
-
-		// TimeLimit Maximum run time in minutes
-		TimeLimit *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"time_limit,omitempty"`
-
-		// TimeMinimum Minimum run time in minutes
-		TimeMinimum *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int32 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"time_minimum,omitempty"`
-
-		// TresBind Task to TRES binding directives
-		TresBind *string `json:"tres_bind,omitempty"`
-
-		// TresFreq TRES frequency directives
-		TresFreq *string `json:"tres_freq,omitempty"`
-
-		// TresPerJob Comma separated list of TRES=# values to be allocated for every job
-		TresPerJob *string `json:"tres_per_job,omitempty"`
-
-		// TresPerNode Comma separated list of TRES=# values to be allocated for every node
-		TresPerNode *string `json:"tres_per_node,omitempty"`
-
-		// TresPerSocket Comma separated list of TRES=# values to be allocated for every socket
-		TresPerSocket *string `json:"tres_per_socket,omitempty"`
-
-		// TresPerTask Comma separated list of TRES=# values to be allocated for every task
-		TresPerTask *string `json:"tres_per_task,omitempty"`
-
-		// UserId User ID that owns the job
-		UserId *string `json:"user_id,omitempty"`
-
-		// WaitAllNodes If true, wait to start until after all nodes have booted
-		WaitAllNodes *bool `json:"wait_all_nodes,omitempty"`
-
-		// WaitForSwitch Maximum time to wait for switches in seconds
-		WaitForSwitch *int32 `json:"wait_for_switch,omitempty"`
-
-		// Wckey Workload characterization key
-		Wckey *string `json:"wckey,omitempty"`
-
-		// X11 X11 forwarding options
-		X11 *[]SlurmV0041PostJobSubmitJSONBodyJobsX11 `json:"x11,omitempty"`
-
-		// X11MagicCookie Magic cookie for X11 forwarding
-		X11MagicCookie *string `json:"x11_magic_cookie,omitempty"`
-
-		// X11TargetHost Hostname or UNIX socket if x11_target_port=0
-		X11TargetHost *string `json:"x11_target_host,omitempty"`
-
-		// X11TargetPort TCP port
-		X11TargetPort *int32 `json:"x11_target_port,omitempty"`
-	} `json:"jobs,omitempty"`
-
-	// Script Deprecated; Populate script field in jobs[0] or job
-	// Deprecated:
-	Script *string `json:"script,omitempty"`
-}
-
-// SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobCpuBindingFlags string
-
-// SlurmV0041PostJobSubmitJSONBodyJobCrontabFlags defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobCrontabFlags string
-
-// SlurmV0041PostJobSubmitJSONBodyJobExclusive defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobExclusive string
-
-// SlurmV0041PostJobSubmitJSONBodyJobFlags defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobFlags string
-
-// SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobKillWarningFlags string
-
-// SlurmV0041PostJobSubmitJSONBodyJobMailType defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobMailType string
-
-// SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingType defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobMemoryBindingType string
-
-// SlurmV0041PostJobSubmitJSONBodyJobOpenMode defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobOpenMode string
-
-// SlurmV0041PostJobSubmitJSONBodyJobProfile defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobProfile string
-
-// SlurmV0041PostJobSubmitJSONBodyJobShared defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobShared string
-
-// SlurmV0041PostJobSubmitJSONBodyJobX11 defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobX11 string
-
-// SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobsCpuBindingFlags string
-
-// SlurmV0041PostJobSubmitJSONBodyJobsCrontabFlags defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobsCrontabFlags string
-
-// SlurmV0041PostJobSubmitJSONBodyJobsExclusive defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobsExclusive string
-
-// SlurmV0041PostJobSubmitJSONBodyJobsFlags defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobsFlags string
-
-// SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobsKillWarningFlags string
-
-// SlurmV0041PostJobSubmitJSONBodyJobsMailType defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobsMailType string
-
-// SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingType defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobsMemoryBindingType string
-
-// SlurmV0041PostJobSubmitJSONBodyJobsOpenMode defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobsOpenMode string
-
-// SlurmV0041PostJobSubmitJSONBodyJobsProfile defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobsProfile string
-
-// SlurmV0041PostJobSubmitJSONBodyJobsShared defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobsShared string
-
-// SlurmV0041PostJobSubmitJSONBodyJobsX11 defines parameters for SlurmV0041PostJobSubmit.
-type SlurmV0041PostJobSubmitJSONBodyJobsX11 string
-
 // SlurmV0041DeleteJobParams defines parameters for SlurmV0041DeleteJob.
 type SlurmV0041DeleteJobParams struct {
 	// Signal Signal to send to Job
@@ -9948,677 +9841,6 @@ type SlurmV0041GetJobParams struct {
 
 // SlurmV0041GetJobParamsFlags defines parameters for SlurmV0041GetJob.
 type SlurmV0041GetJobParamsFlags string
-
-// SlurmV0041PostJobJSONBody defines parameters for SlurmV0041PostJob.
-type SlurmV0041PostJobJSONBody struct {
-	// Account Account associated with the job
-	Account *string `json:"account,omitempty"`
-
-	// AccountGatherFrequency Job accounting and profiling sampling intervals in seconds
-	AccountGatherFrequency *string `json:"account_gather_frequency,omitempty"`
-
-	// AdminComment Arbitrary comment made by administrator
-	AdminComment *string `json:"admin_comment,omitempty"`
-
-	// AllocationNodeList Local node making the resource allocation
-	AllocationNodeList *string `json:"allocation_node_list,omitempty"`
-
-	// AllocationNodePort Port to send allocation confirmation to
-	AllocationNodePort *int32 `json:"allocation_node_port,omitempty"`
-
-	// Argv Arguments to the script
-	Argv *[]string `json:"argv,omitempty"`
-
-	// Array Job array index value specification
-	Array *string `json:"array,omitempty"`
-
-	// BatchFeatures Features required for batch script's node
-	BatchFeatures *string `json:"batch_features,omitempty"`
-
-	// BeginTime Defer the allocation of the job until the specified time (UNIX timestamp)
-	BeginTime *struct {
-		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-		Infinite *bool `json:"infinite,omitempty"`
-
-		// Number If "set" is True the number will be set with value; otherwise ignore number contents
-		Number *int64 `json:"number,omitempty"`
-
-		// Set True if number has been set; False if number is unset
-		Set *bool `json:"set,omitempty"`
-	} `json:"begin_time,omitempty"`
-
-	// BurstBuffer Burst buffer specifications
-	BurstBuffer *string `json:"burst_buffer,omitempty"`
-
-	// ClusterConstraint Required features that a federated cluster must have to have a sibling job submitted to it
-	ClusterConstraint *string `json:"cluster_constraint,omitempty"`
-
-	// Clusters Clusters that a federated job can run on
-	Clusters *string `json:"clusters,omitempty"`
-
-	// Comment Arbitrary comment made by user
-	Comment *string `json:"comment,omitempty"`
-
-	// Constraints Comma separated list of features that are required
-	Constraints *string `json:"constraints,omitempty"`
-
-	// Container Absolute path to OCI container bundle
-	Container *string `json:"container,omitempty"`
-
-	// ContainerId OCI container ID
-	ContainerId *string `json:"container_id,omitempty"`
-
-	// Contiguous True if job requires contiguous nodes
-	Contiguous *bool `json:"contiguous,omitempty"`
-
-	// CoreSpecification Specialized core count
-	CoreSpecification *int32 `json:"core_specification,omitempty"`
-
-	// CpuBinding Method for binding tasks to allocated CPUs
-	CpuBinding *string `json:"cpu_binding,omitempty"`
-
-	// CpuBindingFlags Flags for CPU binding
-	CpuBindingFlags *[]SlurmV0041PostJobJSONBodyCpuBindingFlags `json:"cpu_binding_flags,omitempty"`
-
-	// CpuFrequency Requested CPU frequency range <p1>[-p2][:p3]
-	CpuFrequency *string `json:"cpu_frequency,omitempty"`
-
-	// CpusPerTask Number of CPUs required by each task
-	CpusPerTask *int32 `json:"cpus_per_task,omitempty"`
-
-	// CpusPerTres Semicolon delimited list of TRES=# values values indicating how many CPUs should be allocated for each specified TRES (currently only used for gres/gpu)
-	CpusPerTres *string `json:"cpus_per_tres,omitempty"`
-
-	// Crontab Specification for scrontab job
-	Crontab *struct {
-		// Command Command to run
-		Command *string `json:"command,omitempty"`
-
-		// DayOfMonth Ranged string specifying eligible day of month values (e.g. 0-10,29)
-		DayOfMonth *string `json:"day_of_month,omitempty"`
-
-		// DayOfWeek Ranged string specifying eligible day of week values (e.g.0-3,7)
-		DayOfWeek *string `json:"day_of_week,omitempty"`
-
-		// Flags Flags
-		Flags *[]SlurmV0041PostJobJSONBodyCrontabFlags `json:"flags,omitempty"`
-
-		// Hour Ranged string specifying eligible hour values (e.g. 0-5,23)
-		Hour *string `json:"hour,omitempty"`
-		Line *struct {
-			// End End of this entry in file
-			End *int32 `json:"end,omitempty"`
-
-			// Start Start of this entry in file
-			Start *int32 `json:"start,omitempty"`
-		} `json:"line,omitempty"`
-
-		// Minute Ranged string specifying eligible minute values (e.g. 0-10,50)
-		Minute *string `json:"minute,omitempty"`
-
-		// Month Ranged string specifying eligible month values (e.g. 0-5,12)
-		Month *string `json:"month,omitempty"`
-
-		// Specification Time specification (* means valid for all allowed values) - minute hour day_of_month month day_of_week
-		Specification *string `json:"specification,omitempty"`
-	} `json:"crontab,omitempty"`
-
-	// CurrentWorkingDirectory Working directory to use for the job
-	CurrentWorkingDirectory *string `json:"current_working_directory,omitempty"`
-
-	// Deadline Latest time that the job may start (UNIX timestamp)
-	Deadline *int64 `json:"deadline,omitempty"`
-
-	// DelayBoot Number of seconds after job eligible start that nodes will be rebooted to satisfy feature specification
-	DelayBoot *int32 `json:"delay_boot,omitempty"`
-
-	// Dependency Other jobs that must meet certain criteria before this job can start
-	Dependency *string `json:"dependency,omitempty"`
-
-	// Distribution Layout
-	Distribution *string `json:"distribution,omitempty"`
-
-	// DistributionPlaneSize Plane size specification when distribution specifies plane
-	DistributionPlaneSize *struct {
-		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-		Infinite *bool `json:"infinite,omitempty"`
-
-		// Number If "set" is True the number will be set with value; otherwise ignore number contents
-		Number *int32 `json:"number,omitempty"`
-
-		// Set True if number has been set; False if number is unset
-		Set *bool `json:"set,omitempty"`
-	} `json:"distribution_plane_size,omitempty"`
-
-	// EndTime Expected end time (UNIX timestamp)
-	EndTime *int64 `json:"end_time,omitempty"`
-
-	// Environment Environment variables to be set for the job
-	Environment *[]string `json:"environment,omitempty"`
-
-	// ExcludedNodes Comma separated list of nodes that may not be used
-	ExcludedNodes *[]string `json:"excluded_nodes,omitempty"`
-	// Deprecated:
-	Exclusive *[]SlurmV0041PostJobJSONBodyExclusive `json:"exclusive,omitempty"`
-
-	// Extra Arbitrary string used for node filtering if extra constraints are enabled
-	Extra *string `json:"extra,omitempty"`
-
-	// Flags Job flags
-	Flags *[]SlurmV0041PostJobJSONBodyFlags `json:"flags,omitempty"`
-
-	// GroupId Group ID of the user that owns the job
-	GroupId *string `json:"group_id,omitempty"`
-
-	// HetjobGroup Unique sequence number applied to this component of the heterogeneous job
-	HetjobGroup *int32 `json:"hetjob_group,omitempty"`
-
-	// Hold Hold (true) or release (false) job
-	Hold *bool `json:"hold,omitempty"`
-
-	// Immediate If true, exit if resources are not available within the time period specified
-	Immediate *bool `json:"immediate,omitempty"`
-
-	// JobId Job ID
-	JobId *int32 `json:"job_id,omitempty"`
-
-	// KillOnNodeFail If true, kill job on node failure
-	KillOnNodeFail *bool `json:"kill_on_node_fail,omitempty"`
-
-	// KillWarningDelay Number of seconds before end time to send the warning signal
-	KillWarningDelay *struct {
-		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-		Infinite *bool `json:"infinite,omitempty"`
-
-		// Number If "set" is True the number will be set with value; otherwise ignore number contents
-		Number *int32 `json:"number,omitempty"`
-
-		// Set True if number has been set; False if number is unset
-		Set *bool `json:"set,omitempty"`
-	} `json:"kill_warning_delay,omitempty"`
-
-	// KillWarningFlags Flags related to job signals
-	KillWarningFlags *[]SlurmV0041PostJobJSONBodyKillWarningFlags `json:"kill_warning_flags,omitempty"`
-
-	// KillWarningSignal Signal to send when approaching end time (e.g. "10" or "USR1")
-	KillWarningSignal *string `json:"kill_warning_signal,omitempty"`
-
-	// Licenses License(s) required by the job
-	Licenses *string `json:"licenses,omitempty"`
-
-	// MailType Mail event type(s)
-	MailType *[]SlurmV0041PostJobJSONBodyMailType `json:"mail_type,omitempty"`
-
-	// MailUser User to receive email notifications
-	MailUser *string `json:"mail_user,omitempty"`
-
-	// MaximumCpus Maximum number of CPUs required
-	MaximumCpus *int32 `json:"maximum_cpus,omitempty"`
-
-	// MaximumNodes Maximum node count
-	MaximumNodes *int32 `json:"maximum_nodes,omitempty"`
-
-	// McsLabel Multi-Category Security label on the job
-	McsLabel *string `json:"mcs_label,omitempty"`
-
-	// MemoryBinding Binding map for map/mask_cpu
-	MemoryBinding *string `json:"memory_binding,omitempty"`
-
-	// MemoryBindingType Method for binding tasks to memory
-	MemoryBindingType *[]SlurmV0041PostJobJSONBodyMemoryBindingType `json:"memory_binding_type,omitempty"`
-
-	// MemoryPerCpu Minimum memory in megabytes per allocated CPU
-	MemoryPerCpu *struct {
-		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-		Infinite *bool `json:"infinite,omitempty"`
-
-		// Number If "set" is True the number will be set with value; otherwise ignore number contents
-		Number *int64 `json:"number,omitempty"`
-
-		// Set True if number has been set; False if number is unset
-		Set *bool `json:"set,omitempty"`
-	} `json:"memory_per_cpu,omitempty"`
-
-	// MemoryPerNode Minimum memory in megabytes per allocated CPU
-	MemoryPerNode *struct {
-		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-		Infinite *bool `json:"infinite,omitempty"`
-
-		// Number If "set" is True the number will be set with value; otherwise ignore number contents
-		Number *int64 `json:"number,omitempty"`
-
-		// Set True if number has been set; False if number is unset
-		Set *bool `json:"set,omitempty"`
-	} `json:"memory_per_node,omitempty"`
-
-	// MemoryPerTres Semicolon delimited list of TRES=# values indicating how much memory in megabytes should be allocated for each specified TRES (currently only used for gres/gpu)
-	MemoryPerTres *string `json:"memory_per_tres,omitempty"`
-
-	// MinimumBoardsPerNode Boards per node required
-	MinimumBoardsPerNode *int32 `json:"minimum_boards_per_node,omitempty"`
-
-	// MinimumCpus Minimum number of CPUs required
-	MinimumCpus *int32 `json:"minimum_cpus,omitempty"`
-
-	// MinimumCpusPerNode Minimum number of CPUs per node
-	MinimumCpusPerNode *int32 `json:"minimum_cpus_per_node,omitempty"`
-
-	// MinimumNodes Minimum node count
-	MinimumNodes *int32 `json:"minimum_nodes,omitempty"`
-
-	// MinimumSocketsPerBoard Sockets per board required
-	MinimumSocketsPerBoard *int32 `json:"minimum_sockets_per_board,omitempty"`
-
-	// Name Job name
-	Name *string `json:"name,omitempty"`
-
-	// Network Network specs for job step
-	Network *string `json:"network,omitempty"`
-
-	// Nice Requested job priority change
-	Nice *int32 `json:"nice,omitempty"`
-
-	// Nodes Node count range specification (e.g. 1-15:4)
-	Nodes *string `json:"nodes,omitempty"`
-
-	// NtasksPerTres Number of tasks that can access each GPU
-	NtasksPerTres *int32 `json:"ntasks_per_tres,omitempty"`
-
-	// OpenMode Open mode used for stdout and stderr files
-	OpenMode *[]SlurmV0041PostJobJSONBodyOpenMode `json:"open_mode,omitempty"`
-
-	// Overcommit Overcommit resources
-	Overcommit *bool `json:"overcommit,omitempty"`
-	// Deprecated:
-	Oversubscribe *bool `json:"oversubscribe,omitempty"`
-
-	// Partition Partition assigned to the job
-	Partition *string `json:"partition,omitempty"`
-	// Deprecated:
-	PowerFlags *[]interface{} `json:"power_flags,omitempty"`
-
-	// Prefer Comma separated list of features that are preferred but not required
-	Prefer *string `json:"prefer,omitempty"`
-
-	// Priority Request specific job priority
-	Priority *struct {
-		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-		Infinite *bool `json:"infinite,omitempty"`
-
-		// Number If "set" is True the number will be set with value; otherwise ignore number contents
-		Number *int32 `json:"number,omitempty"`
-
-		// Set True if number has been set; False if number is unset
-		Set *bool `json:"set,omitempty"`
-	} `json:"priority,omitempty"`
-
-	// Profile Profile used by the acct_gather_profile plugin
-	Profile *[]SlurmV0041PostJobJSONBodyProfile `json:"profile,omitempty"`
-
-	// Qos Quality of Service assigned to the job
-	Qos *string `json:"qos,omitempty"`
-
-	// Reboot Node reboot requested before start
-	Reboot *bool `json:"reboot,omitempty"`
-
-	// Requeue Determines whether the job may be requeued
-	Requeue *bool `json:"requeue,omitempty"`
-
-	// RequiredNodes Comma separated list of required nodes
-	RequiredNodes *[]string `json:"required_nodes,omitempty"`
-
-	// RequiredSwitches Maximum number of switches
-	RequiredSwitches *struct {
-		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-		Infinite *bool `json:"infinite,omitempty"`
-
-		// Number If "set" is True the number will be set with value; otherwise ignore number contents
-		Number *int32 `json:"number,omitempty"`
-
-		// Set True if number has been set; False if number is unset
-		Set *bool `json:"set,omitempty"`
-	} `json:"required_switches,omitempty"`
-
-	// Reservation Name of reservation to use
-	Reservation *string `json:"reservation,omitempty"`
-
-	// ReservePorts Port to send various notification msg to
-	ReservePorts *int32 `json:"reserve_ports,omitempty"`
-
-	// ResvMpiPorts Number of reserved communication ports; can only be used if slurmstepd step manager is enabled
-	ResvMpiPorts *int32 `json:"resv_mpi_ports,omitempty"`
-	Rlimits      *struct {
-		// As Address space limit.
-		As *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"as,omitempty"`
-
-		// Core Largest core file that can be created, in bytes.
-		Core *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"core,omitempty"`
-
-		// Cpu Per-process CPU limit, in seconds.
-		Cpu *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"cpu,omitempty"`
-
-		// Data Maximum size of data segment, in bytes.
-		Data *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"data,omitempty"`
-
-		// Fsize Largest file that can be created, in bytes.
-		Fsize *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"fsize,omitempty"`
-
-		// Memlock Locked-in-memory address space
-		Memlock *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"memlock,omitempty"`
-
-		// Nofile Number of open files.
-		Nofile *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"nofile,omitempty"`
-
-		// Nproc Number of processes.
-		Nproc *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"nproc,omitempty"`
-
-		// Rss Largest resident set size, in bytes. This affects swapping; processes that are exceeding their resident set size will be more likely to have physical memory taken from them.
-		Rss *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"rss,omitempty"`
-
-		// Stack Maximum size of stack segment, in bytes.
-		Stack *struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"stack,omitempty"`
-	} `json:"rlimits,omitempty"`
-
-	// Script Job batch script; only the first component in a HetJob is populated or honored
-	Script *string `json:"script,omitempty"`
-
-	// SegmentSize Segment size for topology/block
-	SegmentSize *struct {
-		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-		Infinite *bool `json:"infinite,omitempty"`
-
-		// Number If "set" is True the number will be set with value; otherwise ignore number contents
-		Number *int32 `json:"number,omitempty"`
-
-		// Set True if number has been set; False if number is unset
-		Set *bool `json:"set,omitempty"`
-	} `json:"segment_size,omitempty"`
-
-	// SelinuxContext SELinux context
-	SelinuxContext *string `json:"selinux_context,omitempty"`
-
-	// Shared How the job can share resources with other jobs, if at all
-	Shared *[]SlurmV0041PostJobJSONBodyShared `json:"shared,omitempty"`
-
-	// SiteFactor Site-specific priority factor
-	SiteFactor *int32 `json:"site_factor,omitempty"`
-
-	// SocketsPerNode Sockets per node required
-	SocketsPerNode *int32 `json:"sockets_per_node,omitempty"`
-
-	// SpankEnvironment Environment variables for job prolog/epilog scripts as set by SPANK plugins
-	SpankEnvironment *[]string `json:"spank_environment,omitempty"`
-
-	// StandardError Path to stderr file
-	StandardError *string `json:"standard_error,omitempty"`
-
-	// StandardInput Path to stdin file
-	StandardInput *string `json:"standard_input,omitempty"`
-
-	// StandardOutput Path to stdout file
-	StandardOutput *string `json:"standard_output,omitempty"`
-
-	// Tasks Number of tasks
-	Tasks *int32 `json:"tasks,omitempty"`
-
-	// TasksPerBoard Number of tasks to invoke on each board
-	TasksPerBoard *int32 `json:"tasks_per_board,omitempty"`
-
-	// TasksPerCore Number of tasks to invoke on each core
-	TasksPerCore *int32 `json:"tasks_per_core,omitempty"`
-
-	// TasksPerNode Number of tasks to invoke on each node
-	TasksPerNode *int32 `json:"tasks_per_node,omitempty"`
-
-	// TasksPerSocket Number of tasks to invoke on each socket
-	TasksPerSocket *int32 `json:"tasks_per_socket,omitempty"`
-
-	// TemporaryDiskPerNode Minimum tmp disk space required per node
-	TemporaryDiskPerNode *int32 `json:"temporary_disk_per_node,omitempty"`
-
-	// ThreadSpecification Specialized thread count
-	ThreadSpecification *int32 `json:"thread_specification,omitempty"`
-
-	// ThreadsPerCore Threads per core required
-	ThreadsPerCore *int32 `json:"threads_per_core,omitempty"`
-
-	// TimeLimit Maximum run time in minutes
-	TimeLimit *struct {
-		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-		Infinite *bool `json:"infinite,omitempty"`
-
-		// Number If "set" is True the number will be set with value; otherwise ignore number contents
-		Number *int32 `json:"number,omitempty"`
-
-		// Set True if number has been set; False if number is unset
-		Set *bool `json:"set,omitempty"`
-	} `json:"time_limit,omitempty"`
-
-	// TimeMinimum Minimum run time in minutes
-	TimeMinimum *struct {
-		// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-		Infinite *bool `json:"infinite,omitempty"`
-
-		// Number If "set" is True the number will be set with value; otherwise ignore number contents
-		Number *int32 `json:"number,omitempty"`
-
-		// Set True if number has been set; False if number is unset
-		Set *bool `json:"set,omitempty"`
-	} `json:"time_minimum,omitempty"`
-
-	// TresBind Task to TRES binding directives
-	TresBind *string `json:"tres_bind,omitempty"`
-
-	// TresFreq TRES frequency directives
-	TresFreq *string `json:"tres_freq,omitempty"`
-
-	// TresPerJob Comma separated list of TRES=# values to be allocated for every job
-	TresPerJob *string `json:"tres_per_job,omitempty"`
-
-	// TresPerNode Comma separated list of TRES=# values to be allocated for every node
-	TresPerNode *string `json:"tres_per_node,omitempty"`
-
-	// TresPerSocket Comma separated list of TRES=# values to be allocated for every socket
-	TresPerSocket *string `json:"tres_per_socket,omitempty"`
-
-	// TresPerTask Comma separated list of TRES=# values to be allocated for every task
-	TresPerTask *string `json:"tres_per_task,omitempty"`
-
-	// UserId User ID that owns the job
-	UserId *string `json:"user_id,omitempty"`
-
-	// WaitAllNodes If true, wait to start until after all nodes have booted
-	WaitAllNodes *bool `json:"wait_all_nodes,omitempty"`
-
-	// WaitForSwitch Maximum time to wait for switches in seconds
-	WaitForSwitch *int32 `json:"wait_for_switch,omitempty"`
-
-	// Wckey Workload characterization key
-	Wckey *string `json:"wckey,omitempty"`
-
-	// X11 X11 forwarding options
-	X11 *[]SlurmV0041PostJobJSONBodyX11 `json:"x11,omitempty"`
-
-	// X11MagicCookie Magic cookie for X11 forwarding
-	X11MagicCookie *string `json:"x11_magic_cookie,omitempty"`
-
-	// X11TargetHost Hostname or UNIX socket if x11_target_port=0
-	X11TargetHost *string `json:"x11_target_host,omitempty"`
-
-	// X11TargetPort TCP port
-	X11TargetPort *int32 `json:"x11_target_port,omitempty"`
-}
-
-// SlurmV0041PostJobJSONBodyCpuBindingFlags defines parameters for SlurmV0041PostJob.
-type SlurmV0041PostJobJSONBodyCpuBindingFlags string
-
-// SlurmV0041PostJobJSONBodyCrontabFlags defines parameters for SlurmV0041PostJob.
-type SlurmV0041PostJobJSONBodyCrontabFlags string
-
-// SlurmV0041PostJobJSONBodyExclusive defines parameters for SlurmV0041PostJob.
-type SlurmV0041PostJobJSONBodyExclusive string
-
-// SlurmV0041PostJobJSONBodyFlags defines parameters for SlurmV0041PostJob.
-type SlurmV0041PostJobJSONBodyFlags string
-
-// SlurmV0041PostJobJSONBodyKillWarningFlags defines parameters for SlurmV0041PostJob.
-type SlurmV0041PostJobJSONBodyKillWarningFlags string
-
-// SlurmV0041PostJobJSONBodyMailType defines parameters for SlurmV0041PostJob.
-type SlurmV0041PostJobJSONBodyMailType string
-
-// SlurmV0041PostJobJSONBodyMemoryBindingType defines parameters for SlurmV0041PostJob.
-type SlurmV0041PostJobJSONBodyMemoryBindingType string
-
-// SlurmV0041PostJobJSONBodyOpenMode defines parameters for SlurmV0041PostJob.
-type SlurmV0041PostJobJSONBodyOpenMode string
-
-// SlurmV0041PostJobJSONBodyProfile defines parameters for SlurmV0041PostJob.
-type SlurmV0041PostJobJSONBodyProfile string
-
-// SlurmV0041PostJobJSONBodyShared defines parameters for SlurmV0041PostJob.
-type SlurmV0041PostJobJSONBodyShared string
-
-// SlurmV0041PostJobJSONBodyX11 defines parameters for SlurmV0041PostJob.
-type SlurmV0041PostJobJSONBodyX11 string
-
-// SlurmV0041DeleteJobsJSONBody defines parameters for SlurmV0041DeleteJobs.
-type SlurmV0041DeleteJobsJSONBody struct {
-	// Account Filter jobs to a specific account
-	Account *string `json:"account,omitempty"`
-
-	// Flags Filter jobs according to flags
-	Flags *[]SlurmV0041DeleteJobsJSONBodyFlags `json:"flags,omitempty"`
-
-	// JobName Filter jobs to a specific name
-	JobName *string `json:"job_name,omitempty"`
-
-	// JobState Filter jobs to a specific state
-	JobState *[]SlurmV0041DeleteJobsJSONBodyJobState `json:"job_state,omitempty"`
-
-	// Jobs List of jobs to signal
-	Jobs *[]string `json:"jobs,omitempty"`
-
-	// Nodes Filter jobs to a set of nodes
-	Nodes *[]string `json:"nodes,omitempty"`
-
-	// Partition Filter jobs to a specific partition
-	Partition *string `json:"partition,omitempty"`
-
-	// Qos Filter jobs to a specific QOS
-	Qos *string `json:"qos,omitempty"`
-
-	// Reservation Filter jobs to a specific reservation
-	Reservation *string `json:"reservation,omitempty"`
-
-	// Signal Signal to send to jobs
-	Signal *string `json:"signal,omitempty"`
-
-	// UserId Filter jobs to a specific numeric user id
-	UserId *string `json:"user_id,omitempty"`
-
-	// UserName Filter jobs to a specific user name
-	UserName *string `json:"user_name,omitempty"`
-
-	// Wckey Filter jobs to a specific wckey
-	Wckey *string `json:"wckey,omitempty"`
-}
-
-// SlurmV0041DeleteJobsJSONBodyFlags defines parameters for SlurmV0041DeleteJobs.
-type SlurmV0041DeleteJobsJSONBodyFlags string
-
-// SlurmV0041DeleteJobsJSONBodyJobState defines parameters for SlurmV0041DeleteJobs.
-type SlurmV0041DeleteJobsJSONBodyJobState string
 
 // SlurmV0041GetJobsParams defines parameters for SlurmV0041GetJobs.
 type SlurmV0041GetJobsParams struct {
@@ -10738,341 +9960,6 @@ type SlurmdbV0041GetAccountsParams struct {
 
 	// UsersAreCoords users are coordinators
 	UsersAreCoords *string `form:"UsersAreCoords,omitempty" json:"UsersAreCoords,omitempty"`
-}
-
-// SlurmdbV0041PostAccountsAssociationJSONBody defines parameters for SlurmdbV0041PostAccountsAssociation.
-type SlurmdbV0041PostAccountsAssociationJSONBody struct {
-	// Account Account organization and description
-	Account *struct {
-		// Description Arbitrary string describing the account
-		Description *string `json:"description,omitempty"`
-
-		// Organization Organization to which the account belongs
-		Organization *string `json:"organization,omitempty"`
-	} `json:"account,omitempty"`
-
-	// AssociationCondition CSV list of accounts, association limits and options, CSV list of clusters
-	AssociationCondition *struct {
-		// Accounts CSV accounts list
-		Accounts []string `json:"accounts"`
-
-		// Association Association limits and options
-		Association *struct {
-			// Comment Arbitrary comment
-			Comment *string `json:"comment,omitempty"`
-
-			// Defaultqos Default QOS
-			Defaultqos *string `json:"defaultqos,omitempty"`
-
-			// Fairshare Allocated shares used for fairshare calculation
-			Fairshare *int32 `json:"fairshare,omitempty"`
-
-			// Grpjobs Maximum number of running jobs in this association and its children
-			Grpjobs *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"grpjobs,omitempty"`
-
-			// Grpjobsaccrue Maximum number of pending jobs able to accrue age priority in this association and its children
-			Grpjobsaccrue *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"grpjobsaccrue,omitempty"`
-
-			// Grpsubmitjobs Maximum number of jobs which can be in a pending or running state at any time in this association and its children
-			Grpsubmitjobs *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"grpsubmitjobs,omitempty"`
-
-			// Grptres Maximum number of TRES able to be allocated by running jobs in this association and its children
-			Grptres *[]struct {
-				// Count TRES count (0 if listed generically)
-				Count *int64 `json:"count,omitempty"`
-
-				// Id ID used in database
-				Id *int32 `json:"id,omitempty"`
-
-				// Name TRES name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type TRES type (CPU, MEM, etc)
-				Type string `json:"type"`
-			} `json:"grptres,omitempty"`
-
-			// Grptresmins Total number of TRES minutes that can possibly be used by past, present and future jobs in this association and its children
-			Grptresmins *[]struct {
-				// Count TRES count (0 if listed generically)
-				Count *int64 `json:"count,omitempty"`
-
-				// Id ID used in database
-				Id *int32 `json:"id,omitempty"`
-
-				// Name TRES name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type TRES type (CPU, MEM, etc)
-				Type string `json:"type"`
-			} `json:"grptresmins,omitempty"`
-
-			// Grptresrunmins Maximum number of TRES minutes able to be allocated by running jobs in this association and its children
-			Grptresrunmins *[]struct {
-				// Count TRES count (0 if listed generically)
-				Count *int64 `json:"count,omitempty"`
-
-				// Id ID used in database
-				Id *int32 `json:"id,omitempty"`
-
-				// Name TRES name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type TRES type (CPU, MEM, etc)
-				Type string `json:"type"`
-			} `json:"grptresrunmins,omitempty"`
-
-			// Grpwall Maximum wall clock time in minutes able to be allocated by running jobs in this association and its children
-			Grpwall *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"grpwall,omitempty"`
-
-			// Maxjobs Maximum number of running jobs per user in this association
-			Maxjobs *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"maxjobs,omitempty"`
-
-			// Maxjobsaccrue Maximum number of pending jobs able to accrue age priority at any given time in this association
-			Maxjobsaccrue *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"maxjobsaccrue,omitempty"`
-
-			// Maxsubmitjobs Maximum number of jobs which can be in a pending or running state at any time in this association
-			Maxsubmitjobs *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"maxsubmitjobs,omitempty"`
-
-			// Maxtresminsperjob Maximum number of TRES minutes each job is able to use in this association
-			Maxtresminsperjob *[]struct {
-				// Count TRES count (0 if listed generically)
-				Count *int64 `json:"count,omitempty"`
-
-				// Id ID used in database
-				Id *int32 `json:"id,omitempty"`
-
-				// Name TRES name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type TRES type (CPU, MEM, etc)
-				Type string `json:"type"`
-			} `json:"maxtresminsperjob,omitempty"`
-
-			// Maxtresperjob Maximum number of TRES each job is able to use in this association
-			Maxtresperjob *[]struct {
-				// Count TRES count (0 if listed generically)
-				Count *int64 `json:"count,omitempty"`
-
-				// Id ID used in database
-				Id *int32 `json:"id,omitempty"`
-
-				// Name TRES name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type TRES type (CPU, MEM, etc)
-				Type string `json:"type"`
-			} `json:"maxtresperjob,omitempty"`
-
-			// Maxtrespernode Maximum number of TRES each node is able to use
-			Maxtrespernode *[]struct {
-				// Count TRES count (0 if listed generically)
-				Count *int64 `json:"count,omitempty"`
-
-				// Id ID used in database
-				Id *int32 `json:"id,omitempty"`
-
-				// Name TRES name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type TRES type (CPU, MEM, etc)
-				Type string `json:"type"`
-			} `json:"maxtrespernode,omitempty"`
-
-			// Maxtresrunmins Maximum number of TRES minutes able to be allocated by running jobs in this association
-			Maxtresrunmins *[]struct {
-				// Count TRES count (0 if listed generically)
-				Count *int64 `json:"count,omitempty"`
-
-				// Id ID used in database
-				Id *int32 `json:"id,omitempty"`
-
-				// Name TRES name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type TRES type (CPU, MEM, etc)
-				Type string `json:"type"`
-			} `json:"maxtresrunmins,omitempty"`
-
-			// Maxwalldurationperjob Maximum wall clock time each job is able to use in this association
-			Maxwalldurationperjob *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"maxwalldurationperjob,omitempty"`
-
-			// Minpriothresh Minimum priority required to reserve resources when scheduling
-			Minpriothresh *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"minpriothresh,omitempty"`
-
-			// Parent Name of parent account
-			Parent *string `json:"parent,omitempty"`
-
-			// Priority Association priority factor
-			Priority *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"priority,omitempty"`
-
-			// Qoslevel List of available QOS names
-			Qoslevel *[]string `json:"qoslevel,omitempty"`
-		} `json:"association,omitempty"`
-
-		// Clusters CSV clusters list
-		Clusters *[]string `json:"clusters,omitempty"`
-	} `json:"association_condition,omitempty"`
-
-	// Errors Query errors
-	Errors *[]struct {
-		// Description Long form error description
-		Description *string `json:"description,omitempty"`
-
-		// Error Short form error description
-		Error *string `json:"error,omitempty"`
-
-		// ErrorNumber Slurm numeric error identifier
-		ErrorNumber *int32 `json:"error_number,omitempty"`
-
-		// Source Source of error or where error was first detected
-		Source *string `json:"source,omitempty"`
-	} `json:"errors,omitempty"`
-
-	// Meta Slurm meta values
-	Meta *struct {
-		Client *struct {
-			// Group Client group (if known)
-			Group *string `json:"group,omitempty"`
-
-			// Source Client source description
-			Source *string `json:"source,omitempty"`
-
-			// User Client user (if known)
-			User *string `json:"user,omitempty"`
-		} `json:"client,omitempty"`
-
-		// Command CLI command (if applicable)
-		Command *[]string `json:"command,omitempty"`
-		Plugin  *struct {
-			// AccountingStorage Slurm accounting plugin
-			AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-			// DataParser Slurm data_parser plugin
-			DataParser *string `json:"data_parser,omitempty"`
-
-			// Name Slurm plugin name (if applicable)
-			Name *string `json:"name,omitempty"`
-
-			// Type Slurm plugin type (if applicable)
-			Type *string `json:"type,omitempty"`
-		} `json:"plugin,omitempty"`
-		Slurm *struct {
-			// Cluster Slurm cluster name
-			Cluster *string `json:"cluster,omitempty"`
-
-			// Release Slurm release string
-			Release *string `json:"release,omitempty"`
-			Version *struct {
-				// Major Slurm release major version
-				Major *string `json:"major,omitempty"`
-
-				// Micro Slurm release micro version
-				Micro *string `json:"micro,omitempty"`
-
-				// Minor Slurm release minor version
-				Minor *string `json:"minor,omitempty"`
-			} `json:"version,omitempty"`
-		} `json:"slurm,omitempty"`
-	} `json:"meta,omitempty"`
-
-	// Warnings Query warnings
-	Warnings *[]struct {
-		// Description Long form warning description
-		Description *string `json:"description,omitempty"`
-
-		// Source Source of warning or where warning was first detected
-		Source *string `json:"source,omitempty"`
-	} `json:"warnings,omitempty"`
 }
 
 // SlurmdbV0041DeleteAssociationParams defines parameters for SlurmdbV0041DeleteAssociation.
@@ -11651,353 +10538,6 @@ type SlurmdbV0041GetUsersParams struct {
 // SlurmdbV0041GetUsersParamsAdminLevel defines parameters for SlurmdbV0041GetUsers.
 type SlurmdbV0041GetUsersParamsAdminLevel string
 
-// SlurmdbV0041PostUsersAssociationJSONBody defines parameters for SlurmdbV0041PostUsersAssociation.
-type SlurmdbV0041PostUsersAssociationJSONBody struct {
-	// AssociationCondition Filters to select associations for users
-	AssociationCondition struct {
-		// Accounts CSV accounts list
-		Accounts *[]string `json:"accounts,omitempty"`
-
-		// Association Association limits and options
-		Association *struct {
-			// Comment Arbitrary comment
-			Comment *string `json:"comment,omitempty"`
-
-			// Defaultqos Default QOS
-			Defaultqos *string `json:"defaultqos,omitempty"`
-
-			// Fairshare Allocated shares used for fairshare calculation
-			Fairshare *int32 `json:"fairshare,omitempty"`
-
-			// Grpjobs Maximum number of running jobs in this association and its children
-			Grpjobs *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"grpjobs,omitempty"`
-
-			// Grpjobsaccrue Maximum number of pending jobs able to accrue age priority in this association and its children
-			Grpjobsaccrue *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"grpjobsaccrue,omitempty"`
-
-			// Grpsubmitjobs Maximum number of jobs which can be in a pending or running state at any time in this association and its children
-			Grpsubmitjobs *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"grpsubmitjobs,omitempty"`
-
-			// Grptres Maximum number of TRES able to be allocated by running jobs in this association and its children
-			Grptres *[]struct {
-				// Count TRES count (0 if listed generically)
-				Count *int64 `json:"count,omitempty"`
-
-				// Id ID used in database
-				Id *int32 `json:"id,omitempty"`
-
-				// Name TRES name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type TRES type (CPU, MEM, etc)
-				Type string `json:"type"`
-			} `json:"grptres,omitempty"`
-
-			// Grptresmins Total number of TRES minutes that can possibly be used by past, present and future jobs in this association and its children
-			Grptresmins *[]struct {
-				// Count TRES count (0 if listed generically)
-				Count *int64 `json:"count,omitempty"`
-
-				// Id ID used in database
-				Id *int32 `json:"id,omitempty"`
-
-				// Name TRES name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type TRES type (CPU, MEM, etc)
-				Type string `json:"type"`
-			} `json:"grptresmins,omitempty"`
-
-			// Grptresrunmins Maximum number of TRES minutes able to be allocated by running jobs in this association and its children
-			Grptresrunmins *[]struct {
-				// Count TRES count (0 if listed generically)
-				Count *int64 `json:"count,omitempty"`
-
-				// Id ID used in database
-				Id *int32 `json:"id,omitempty"`
-
-				// Name TRES name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type TRES type (CPU, MEM, etc)
-				Type string `json:"type"`
-			} `json:"grptresrunmins,omitempty"`
-
-			// Grpwall Maximum wall clock time in minutes able to be allocated by running jobs in this association and its children
-			Grpwall *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"grpwall,omitempty"`
-
-			// Maxjobs Maximum number of running jobs per user in this association
-			Maxjobs *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"maxjobs,omitempty"`
-
-			// Maxjobsaccrue Maximum number of pending jobs able to accrue age priority at any given time in this association
-			Maxjobsaccrue *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"maxjobsaccrue,omitempty"`
-
-			// Maxsubmitjobs Maximum number of jobs which can be in a pending or running state at any time in this association
-			Maxsubmitjobs *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"maxsubmitjobs,omitempty"`
-
-			// Maxtresminsperjob Maximum number of TRES minutes each job is able to use in this association
-			Maxtresminsperjob *[]struct {
-				// Count TRES count (0 if listed generically)
-				Count *int64 `json:"count,omitempty"`
-
-				// Id ID used in database
-				Id *int32 `json:"id,omitempty"`
-
-				// Name TRES name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type TRES type (CPU, MEM, etc)
-				Type string `json:"type"`
-			} `json:"maxtresminsperjob,omitempty"`
-
-			// Maxtresperjob Maximum number of TRES each job is able to use in this association
-			Maxtresperjob *[]struct {
-				// Count TRES count (0 if listed generically)
-				Count *int64 `json:"count,omitempty"`
-
-				// Id ID used in database
-				Id *int32 `json:"id,omitempty"`
-
-				// Name TRES name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type TRES type (CPU, MEM, etc)
-				Type string `json:"type"`
-			} `json:"maxtresperjob,omitempty"`
-
-			// Maxtrespernode Maximum number of TRES each node is able to use
-			Maxtrespernode *[]struct {
-				// Count TRES count (0 if listed generically)
-				Count *int64 `json:"count,omitempty"`
-
-				// Id ID used in database
-				Id *int32 `json:"id,omitempty"`
-
-				// Name TRES name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type TRES type (CPU, MEM, etc)
-				Type string `json:"type"`
-			} `json:"maxtrespernode,omitempty"`
-
-			// Maxtresrunmins Maximum number of TRES minutes able to be allocated by running jobs in this association
-			Maxtresrunmins *[]struct {
-				// Count TRES count (0 if listed generically)
-				Count *int64 `json:"count,omitempty"`
-
-				// Id ID used in database
-				Id *int32 `json:"id,omitempty"`
-
-				// Name TRES name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type TRES type (CPU, MEM, etc)
-				Type string `json:"type"`
-			} `json:"maxtresrunmins,omitempty"`
-
-			// Maxwalldurationperjob Maximum wall clock time each job is able to use in this association
-			Maxwalldurationperjob *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"maxwalldurationperjob,omitempty"`
-
-			// Minpriothresh Minimum priority required to reserve resources when scheduling
-			Minpriothresh *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"minpriothresh,omitempty"`
-
-			// Parent Name of parent account
-			Parent *string `json:"parent,omitempty"`
-
-			// Priority Association priority factor
-			Priority *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"priority,omitempty"`
-
-			// Qoslevel List of available QOS names
-			Qoslevel *[]string `json:"qoslevel,omitempty"`
-		} `json:"association,omitempty"`
-
-		// Clusters CSV clusters list
-		Clusters *[]string `json:"clusters,omitempty"`
-
-		// Partitions CSV partitions list
-		Partitions *[]string `json:"partitions,omitempty"`
-
-		// Users CSV users list
-		Users []string `json:"users"`
-
-		// Wckeys CSV WCKeys list
-		Wckeys *[]string `json:"wckeys,omitempty"`
-	} `json:"association_condition"`
-
-	// Errors Query errors
-	Errors *[]struct {
-		// Description Long form error description
-		Description *string `json:"description,omitempty"`
-
-		// Error Short form error description
-		Error *string `json:"error,omitempty"`
-
-		// ErrorNumber Slurm numeric error identifier
-		ErrorNumber *int32 `json:"error_number,omitempty"`
-
-		// Source Source of error or where error was first detected
-		Source *string `json:"source,omitempty"`
-	} `json:"errors,omitempty"`
-
-	// Meta Slurm meta values
-	Meta *struct {
-		Client *struct {
-			// Group Client group (if known)
-			Group *string `json:"group,omitempty"`
-
-			// Source Client source description
-			Source *string `json:"source,omitempty"`
-
-			// User Client user (if known)
-			User *string `json:"user,omitempty"`
-		} `json:"client,omitempty"`
-
-		// Command CLI command (if applicable)
-		Command *[]string `json:"command,omitempty"`
-		Plugin  *struct {
-			// AccountingStorage Slurm accounting plugin
-			AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-			// DataParser Slurm data_parser plugin
-			DataParser *string `json:"data_parser,omitempty"`
-
-			// Name Slurm plugin name (if applicable)
-			Name *string `json:"name,omitempty"`
-
-			// Type Slurm plugin type (if applicable)
-			Type *string `json:"type,omitempty"`
-		} `json:"plugin,omitempty"`
-		Slurm *struct {
-			// Cluster Slurm cluster name
-			Cluster *string `json:"cluster,omitempty"`
-
-			// Release Slurm release string
-			Release *string `json:"release,omitempty"`
-			Version *struct {
-				// Major Slurm release major version
-				Major *string `json:"major,omitempty"`
-
-				// Micro Slurm release micro version
-				Micro *string `json:"micro,omitempty"`
-
-				// Minor Slurm release minor version
-				Minor *string `json:"minor,omitempty"`
-			} `json:"version,omitempty"`
-		} `json:"slurm,omitempty"`
-	} `json:"meta,omitempty"`
-
-	// User Admin level of user, DefaultAccount, DefaultWCKey
-	User struct {
-		// Adminlevel AdminLevel granted to the user
-		Adminlevel *[]SlurmdbV0041PostUsersAssociationJSONBodyUserAdminlevel `json:"adminlevel,omitempty"`
-
-		// Defaultaccount Default account
-		Defaultaccount *string `json:"defaultaccount,omitempty"`
-
-		// Defaultwckey Default WCKey
-		Defaultwckey *string `json:"defaultwckey,omitempty"`
-	} `json:"user"`
-
-	// Warnings Query warnings
-	Warnings *[]struct {
-		// Description Long form warning description
-		Description *string `json:"description,omitempty"`
-
-		// Source Source of warning or where warning was first detected
-		Source *string `json:"source,omitempty"`
-	} `json:"warnings,omitempty"`
-}
-
 // SlurmdbV0041PostUsersAssociationParams defines parameters for SlurmdbV0041PostUsersAssociation.
 type SlurmdbV0041PostUsersAssociationParams struct {
 	// UpdateTime Filter partitions since update timestamp
@@ -12009,9 +10549,6 @@ type SlurmdbV0041PostUsersAssociationParams struct {
 
 // SlurmdbV0041PostUsersAssociationParamsFlags defines parameters for SlurmdbV0041PostUsersAssociation.
 type SlurmdbV0041PostUsersAssociationParamsFlags string
-
-// SlurmdbV0041PostUsersAssociationJSONBodyUserAdminlevel defines parameters for SlurmdbV0041PostUsersAssociation.
-type SlurmdbV0041PostUsersAssociationJSONBodyUserAdminlevel string
 
 // SlurmdbV0041GetWckeysParams defines parameters for SlurmdbV0041GetWckeys.
 type SlurmdbV0041GetWckeysParams struct {
@@ -12080,16 +10617,16 @@ type SlurmdbV0041PostWckeysParams struct {
 }
 
 // SlurmV0041PostJobAllocateJSONRequestBody defines body for SlurmV0041PostJobAllocate for application/json ContentType.
-type SlurmV0041PostJobAllocateJSONRequestBody SlurmV0041PostJobAllocateJSONBody
+type SlurmV0041PostJobAllocateJSONRequestBody = V0041JobAllocReq
 
 // SlurmV0041PostJobSubmitJSONRequestBody defines body for SlurmV0041PostJobSubmit for application/json ContentType.
-type SlurmV0041PostJobSubmitJSONRequestBody SlurmV0041PostJobSubmitJSONBody
+type SlurmV0041PostJobSubmitJSONRequestBody = V0041JobSubmitReq
 
 // SlurmV0041PostJobJSONRequestBody defines body for SlurmV0041PostJob for application/json ContentType.
-type SlurmV0041PostJobJSONRequestBody SlurmV0041PostJobJSONBody
+type SlurmV0041PostJobJSONRequestBody = V0041JobDescMsg
 
 // SlurmV0041DeleteJobsJSONRequestBody defines body for SlurmV0041DeleteJobs for application/json ContentType.
-type SlurmV0041DeleteJobsJSONRequestBody SlurmV0041DeleteJobsJSONBody
+type SlurmV0041DeleteJobsJSONRequestBody = V0041KillJobsMsg
 
 // SlurmV0041PostNodeJSONRequestBody defines body for SlurmV0041PostNode for application/json ContentType.
 type SlurmV0041PostNodeJSONRequestBody = V0041UpdateNodeMsg
@@ -12101,7 +10638,7 @@ type SlurmV0041PostNodesJSONRequestBody = V0041UpdateNodeMsg
 type SlurmdbV0041PostAccountsJSONRequestBody = V0041OpenapiAccountsResp
 
 // SlurmdbV0041PostAccountsAssociationJSONRequestBody defines body for SlurmdbV0041PostAccountsAssociation for application/json ContentType.
-type SlurmdbV0041PostAccountsAssociationJSONRequestBody SlurmdbV0041PostAccountsAssociationJSONBody
+type SlurmdbV0041PostAccountsAssociationJSONRequestBody = V0041OpenapiAccountsAddCondResp
 
 // SlurmdbV0041PostAssociationsJSONRequestBody defines body for SlurmdbV0041PostAssociations for application/json ContentType.
 type SlurmdbV0041PostAssociationsJSONRequestBody = V0041OpenapiAssocsResp
@@ -12122,7 +10659,7 @@ type SlurmdbV0041PostTresJSONRequestBody = V0041OpenapiTresResp
 type SlurmdbV0041PostUsersJSONRequestBody = V0041OpenapiUsersResp
 
 // SlurmdbV0041PostUsersAssociationJSONRequestBody defines body for SlurmdbV0041PostUsersAssociation for application/json ContentType.
-type SlurmdbV0041PostUsersAssociationJSONRequestBody SlurmdbV0041PostUsersAssociationJSONBody
+type SlurmdbV0041PostUsersAssociationJSONRequestBody = V0041OpenapiUsersAddCondResp
 
 // SlurmdbV0041PostWckeysJSONRequestBody defines body for SlurmdbV0041PostWckeys for application/json ContentType.
 type SlurmdbV0041PostWckeysJSONRequestBody = V0041OpenapiWckeyResp
@@ -19203,780 +17740,10 @@ type ClientWithResponsesInterface interface {
 type SlurmV0041GetDiagResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Statistics statistics
-		Statistics struct {
-			// AgentCount Number of agent threads
-			AgentCount *int32 `json:"agent_count,omitempty"`
-
-			// AgentQueueSize Number of enqueued outgoing RPC requests in an internal retry list
-			AgentQueueSize *int32 `json:"agent_queue_size,omitempty"`
-
-			// AgentThreadCount Total number of active threads created by all agent threads
-			AgentThreadCount *int32 `json:"agent_thread_count,omitempty"`
-
-			// BfActive Backfill scheduler currently running
-			BfActive *bool `json:"bf_active,omitempty"`
-
-			// BfBackfilledHetJobs Number of heterogeneous job components started through backfilling since last Slurm start
-			BfBackfilledHetJobs *int32 `json:"bf_backfilled_het_jobs,omitempty"`
-
-			// BfBackfilledJobs Number of jobs started through backfilling since last slurm start
-			BfBackfilledJobs *int32 `json:"bf_backfilled_jobs,omitempty"`
-
-			// BfCycleCounter Number of backfill scheduling cycles since last reset
-			BfCycleCounter *int32 `json:"bf_cycle_counter,omitempty"`
-
-			// BfCycleLast Execution time in microseconds of last backfill scheduling cycle
-			BfCycleLast *int32 `json:"bf_cycle_last,omitempty"`
-
-			// BfCycleMax Execution time in microseconds of longest backfill scheduling cycle
-			BfCycleMax *int32 `json:"bf_cycle_max,omitempty"`
-
-			// BfCycleMean Mean time in microseconds of backfilling scheduling cycles since last reset
-			BfCycleMean *int64 `json:"bf_cycle_mean,omitempty"`
-
-			// BfCycleSum Total time in microseconds of backfilling scheduling cycles since last reset
-			BfCycleSum *int64 `json:"bf_cycle_sum,omitempty"`
-
-			// BfDepthMean Mean number of eligible to run jobs processed during all backfilling scheduling cycles since last reset
-			BfDepthMean *int64 `json:"bf_depth_mean,omitempty"`
-
-			// BfDepthMeanTry The subset of Depth Mean that the backfill scheduler attempted to schedule
-			BfDepthMeanTry *int64 `json:"bf_depth_mean_try,omitempty"`
-
-			// BfDepthSum Total number of jobs processed during all backfilling scheduling cycles since last reset
-			BfDepthSum *int32 `json:"bf_depth_sum,omitempty"`
-
-			// BfDepthTrySum Subset of bf_depth_sum that the backfill scheduler attempted to schedule
-			BfDepthTrySum *int32 `json:"bf_depth_try_sum,omitempty"`
-
-			// BfExit Reasons for which the backfill scheduling cycle exited since last reset
-			BfExit *struct {
-				// BfMaxJobStart Reached number of jobs allowed to start
-				BfMaxJobStart *int32 `json:"bf_max_job_start,omitempty"`
-
-				// BfMaxJobTest Reached number of jobs allowed to be tested
-				BfMaxJobTest *int32 `json:"bf_max_job_test,omitempty"`
-
-				// BfMaxTime Reached maximum allowed scheduler time
-				BfMaxTime *int32 `json:"bf_max_time,omitempty"`
-
-				// BfNodeSpaceSize Reached table size limit
-				BfNodeSpaceSize *int32 `json:"bf_node_space_size,omitempty"`
-
-				// EndJobQueue Reached end of queue
-				EndJobQueue *int32 `json:"end_job_queue,omitempty"`
-
-				// StateChanged System state changed
-				StateChanged *int32 `json:"state_changed,omitempty"`
-			} `json:"bf_exit,omitempty"`
-
-			// BfLastBackfilledJobs Number of jobs started through backfilling since last reset
-			BfLastBackfilledJobs *int32 `json:"bf_last_backfilled_jobs,omitempty"`
-
-			// BfLastDepth Number of processed jobs during last backfilling scheduling cycle
-			BfLastDepth *int32 `json:"bf_last_depth,omitempty"`
-
-			// BfLastDepthTry Number of processed jobs during last backfilling scheduling cycle that had a chance to start using available resources
-			BfLastDepthTry *int32 `json:"bf_last_depth_try,omitempty"`
-
-			// BfQueueLen Number of jobs pending to be processed by backfilling algorithm
-			BfQueueLen *int32 `json:"bf_queue_len,omitempty"`
-
-			// BfQueueLenMean Mean number of jobs pending to be processed by backfilling algorithm
-			BfQueueLenMean *int64 `json:"bf_queue_len_mean,omitempty"`
-
-			// BfQueueLenSum Total number of jobs pending to be processed by backfilling algorithm since last reset
-			BfQueueLenSum *int32 `json:"bf_queue_len_sum,omitempty"`
-
-			// BfTableSize Number of different time slots tested by the backfill scheduler in its last iteration
-			BfTableSize *int32 `json:"bf_table_size,omitempty"`
-
-			// BfTableSizeMean Mean number of different time slots tested by the backfill scheduler
-			BfTableSizeMean *int64 `json:"bf_table_size_mean,omitempty"`
-
-			// BfTableSizeSum Total number of different time slots tested by the backfill scheduler
-			BfTableSizeSum *int32 `json:"bf_table_size_sum,omitempty"`
-
-			// BfWhenLastCycle When the last backfill scheduling cycle happened (UNIX timestamp)
-			BfWhenLastCycle *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"bf_when_last_cycle,omitempty"`
-
-			// DbdAgentQueueSize Number of messages for SlurmDBD that are queued
-			DbdAgentQueueSize *int32 `json:"dbd_agent_queue_size,omitempty"`
-
-			// GettimeofdayLatency Latency of 1000 calls to the gettimeofday() syscall in microseconds, as measured at controller startup
-			GettimeofdayLatency *int32 `json:"gettimeofday_latency,omitempty"`
-
-			// JobStatesTs When the job state counts were gathered (UNIX timestamp)
-			JobStatesTs *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"job_states_ts,omitempty"`
-
-			// JobsCanceled Number of jobs canceled since the last reset
-			JobsCanceled *int32 `json:"jobs_canceled,omitempty"`
-
-			// JobsCompleted Number of jobs completed since last reset
-			JobsCompleted *int32 `json:"jobs_completed,omitempty"`
-
-			// JobsFailed Number of jobs failed due to slurmd or other internal issues since last reset
-			JobsFailed *int32 `json:"jobs_failed,omitempty"`
-
-			// JobsPending Number of jobs pending at the time of listed in job_state_ts
-			JobsPending *int32 `json:"jobs_pending,omitempty"`
-
-			// JobsRunning Number of jobs running at the time of listed in job_state_ts
-			JobsRunning *int32 `json:"jobs_running,omitempty"`
-
-			// JobsStarted Number of jobs started since last reset
-			JobsStarted *int32 `json:"jobs_started,omitempty"`
-
-			// JobsSubmitted Number of jobs submitted since last reset
-			JobsSubmitted *int32 `json:"jobs_submitted,omitempty"`
-
-			// PartsPacked Zero if only RPC statistic included
-			PartsPacked *int32 `json:"parts_packed,omitempty"`
-
-			// PendingRpcs Pending RPC statistics
-			PendingRpcs *[]struct {
-				// Count Number of pending RPCs queued
-				Count int32 `json:"count"`
-
-				// MessageType Message type as string
-				MessageType string `json:"message_type"`
-
-				// TypeId Message type as integer
-				TypeId int32 `json:"type_id"`
-			} `json:"pending_rpcs,omitempty"`
-
-			// PendingRpcsByHostlist Pending RPCs hostlists
-			PendingRpcsByHostlist *[]struct {
-				// Count Number of RPCs received
-				Count []string `json:"count"`
-
-				// MessageType Message type as string
-				MessageType string `json:"message_type"`
-
-				// TypeId Message type as integer
-				TypeId int32 `json:"type_id"`
-			} `json:"pending_rpcs_by_hostlist,omitempty"`
-
-			// ReqTime When the request was made (UNIX timestamp)
-			ReqTime *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"req_time,omitempty"`
-
-			// ReqTimeStart When the data in the report started (UNIX timestamp)
-			ReqTimeStart *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"req_time_start,omitempty"`
-
-			// RpcsByMessageType Most frequently issued remote procedure calls (RPCs)
-			RpcsByMessageType *[]struct {
-				// AverageTime Average time spent processing RPC in seconds
-				AverageTime struct {
-					// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-					Infinite *bool `json:"infinite,omitempty"`
-
-					// Number If "set" is True the number will be set with value; otherwise ignore number contents
-					Number *int64 `json:"number,omitempty"`
-
-					// Set True if number has been set; False if number is unset
-					Set *bool `json:"set,omitempty"`
-				} `json:"average_time"`
-
-				// Count Number of RPCs received
-				Count int32 `json:"count"`
-
-				// CycleLast Number of RPCs processed within the last RPC queue cycle
-				CycleLast int32 `json:"cycle_last"`
-
-				// CycleMax Maximum number of RPCs processed within a RPC queue cycle since start
-				CycleMax int32 `json:"cycle_max"`
-
-				// Dropped Number of RPCs dropped
-				Dropped int64 `json:"dropped"`
-
-				// MessageType Message type as string
-				MessageType string `json:"message_type"`
-
-				// Queued Number of RPCs queued
-				Queued int32 `json:"queued"`
-
-				// TotalTime Total time spent processing RPC in seconds
-				TotalTime int64 `json:"total_time"`
-
-				// TypeId Message type as integer
-				TypeId int32 `json:"type_id"`
-			} `json:"rpcs_by_message_type,omitempty"`
-
-			// RpcsByUser RPCs issued by user ID
-			RpcsByUser *[]struct {
-				// AverageTime Average time spent processing RPC in seconds
-				AverageTime struct {
-					// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-					Infinite *bool `json:"infinite,omitempty"`
-
-					// Number If "set" is True the number will be set with value; otherwise ignore number contents
-					Number *int64 `json:"number,omitempty"`
-
-					// Set True if number has been set; False if number is unset
-					Set *bool `json:"set,omitempty"`
-				} `json:"average_time"`
-
-				// Count Number of RPCs received
-				Count int32 `json:"count"`
-
-				// TotalTime Total time spent processing RPC in seconds
-				TotalTime int64 `json:"total_time"`
-
-				// User User name
-				User string `json:"user"`
-
-				// UserId User ID (numeric)
-				UserId int32 `json:"user_id"`
-			} `json:"rpcs_by_user,omitempty"`
-
-			// ScheduleCycleDepth Total number of jobs processed in scheduling cycles
-			ScheduleCycleDepth *int32 `json:"schedule_cycle_depth,omitempty"`
-
-			// ScheduleCycleLast Time in microseconds for last scheduling cycle
-			ScheduleCycleLast *int32 `json:"schedule_cycle_last,omitempty"`
-
-			// ScheduleCycleMax Max time of any scheduling cycle in microseconds since last reset
-			ScheduleCycleMax *int32 `json:"schedule_cycle_max,omitempty"`
-
-			// ScheduleCycleMean Mean time in microseconds for all scheduling cycles since last reset
-			ScheduleCycleMean *int64 `json:"schedule_cycle_mean,omitempty"`
-
-			// ScheduleCycleMeanDepth Mean of the number of jobs processed in a scheduling cycle
-			ScheduleCycleMeanDepth *int64 `json:"schedule_cycle_mean_depth,omitempty"`
-
-			// ScheduleCyclePerMinute Number of scheduling executions per minute
-			ScheduleCyclePerMinute *int64 `json:"schedule_cycle_per_minute,omitempty"`
-
-			// ScheduleCycleSum Total run time in microseconds for all scheduling cycles since last reset
-			ScheduleCycleSum *int32 `json:"schedule_cycle_sum,omitempty"`
-
-			// ScheduleCycleTotal Number of scheduling cycles since last reset
-			ScheduleCycleTotal *int32 `json:"schedule_cycle_total,omitempty"`
-
-			// ScheduleExit Reasons for which the scheduling cycle exited since last reset
-			ScheduleExit *struct {
-				// DefaultQueueDepth Reached number of jobs allowed to be tested
-				DefaultQueueDepth *int32 `json:"default_queue_depth,omitempty"`
-
-				// EndJobQueue Reached end of queue
-				EndJobQueue *int32 `json:"end_job_queue,omitempty"`
-
-				// Licenses Blocked on licenses
-				Licenses *int32 `json:"licenses,omitempty"`
-
-				// MaxJobStart Reached number of jobs allowed to start
-				MaxJobStart *int32 `json:"max_job_start,omitempty"`
-
-				// MaxRpcCnt Reached RPC limit
-				MaxRpcCnt *int32 `json:"max_rpc_cnt,omitempty"`
-
-				// MaxSchedTime Reached maximum allowed scheduler time
-				MaxSchedTime *int32 `json:"max_sched_time,omitempty"`
-			} `json:"schedule_exit,omitempty"`
-
-			// ScheduleQueueLength Number of jobs pending in queue
-			ScheduleQueueLength *int32 `json:"schedule_queue_length,omitempty"`
-
-			// ServerThreadCount Number of current active slurmctld threads
-			ServerThreadCount *int32 `json:"server_thread_count,omitempty"`
-		} `json:"statistics"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
-	JSONDefault *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Statistics statistics
-		Statistics struct {
-			// AgentCount Number of agent threads
-			AgentCount *int32 `json:"agent_count,omitempty"`
-
-			// AgentQueueSize Number of enqueued outgoing RPC requests in an internal retry list
-			AgentQueueSize *int32 `json:"agent_queue_size,omitempty"`
-
-			// AgentThreadCount Total number of active threads created by all agent threads
-			AgentThreadCount *int32 `json:"agent_thread_count,omitempty"`
-
-			// BfActive Backfill scheduler currently running
-			BfActive *bool `json:"bf_active,omitempty"`
-
-			// BfBackfilledHetJobs Number of heterogeneous job components started through backfilling since last Slurm start
-			BfBackfilledHetJobs *int32 `json:"bf_backfilled_het_jobs,omitempty"`
-
-			// BfBackfilledJobs Number of jobs started through backfilling since last slurm start
-			BfBackfilledJobs *int32 `json:"bf_backfilled_jobs,omitempty"`
-
-			// BfCycleCounter Number of backfill scheduling cycles since last reset
-			BfCycleCounter *int32 `json:"bf_cycle_counter,omitempty"`
-
-			// BfCycleLast Execution time in microseconds of last backfill scheduling cycle
-			BfCycleLast *int32 `json:"bf_cycle_last,omitempty"`
-
-			// BfCycleMax Execution time in microseconds of longest backfill scheduling cycle
-			BfCycleMax *int32 `json:"bf_cycle_max,omitempty"`
-
-			// BfCycleMean Mean time in microseconds of backfilling scheduling cycles since last reset
-			BfCycleMean *int64 `json:"bf_cycle_mean,omitempty"`
-
-			// BfCycleSum Total time in microseconds of backfilling scheduling cycles since last reset
-			BfCycleSum *int64 `json:"bf_cycle_sum,omitempty"`
-
-			// BfDepthMean Mean number of eligible to run jobs processed during all backfilling scheduling cycles since last reset
-			BfDepthMean *int64 `json:"bf_depth_mean,omitempty"`
-
-			// BfDepthMeanTry The subset of Depth Mean that the backfill scheduler attempted to schedule
-			BfDepthMeanTry *int64 `json:"bf_depth_mean_try,omitempty"`
-
-			// BfDepthSum Total number of jobs processed during all backfilling scheduling cycles since last reset
-			BfDepthSum *int32 `json:"bf_depth_sum,omitempty"`
-
-			// BfDepthTrySum Subset of bf_depth_sum that the backfill scheduler attempted to schedule
-			BfDepthTrySum *int32 `json:"bf_depth_try_sum,omitempty"`
-
-			// BfExit Reasons for which the backfill scheduling cycle exited since last reset
-			BfExit *struct {
-				// BfMaxJobStart Reached number of jobs allowed to start
-				BfMaxJobStart *int32 `json:"bf_max_job_start,omitempty"`
-
-				// BfMaxJobTest Reached number of jobs allowed to be tested
-				BfMaxJobTest *int32 `json:"bf_max_job_test,omitempty"`
-
-				// BfMaxTime Reached maximum allowed scheduler time
-				BfMaxTime *int32 `json:"bf_max_time,omitempty"`
-
-				// BfNodeSpaceSize Reached table size limit
-				BfNodeSpaceSize *int32 `json:"bf_node_space_size,omitempty"`
-
-				// EndJobQueue Reached end of queue
-				EndJobQueue *int32 `json:"end_job_queue,omitempty"`
-
-				// StateChanged System state changed
-				StateChanged *int32 `json:"state_changed,omitempty"`
-			} `json:"bf_exit,omitempty"`
-
-			// BfLastBackfilledJobs Number of jobs started through backfilling since last reset
-			BfLastBackfilledJobs *int32 `json:"bf_last_backfilled_jobs,omitempty"`
-
-			// BfLastDepth Number of processed jobs during last backfilling scheduling cycle
-			BfLastDepth *int32 `json:"bf_last_depth,omitempty"`
-
-			// BfLastDepthTry Number of processed jobs during last backfilling scheduling cycle that had a chance to start using available resources
-			BfLastDepthTry *int32 `json:"bf_last_depth_try,omitempty"`
-
-			// BfQueueLen Number of jobs pending to be processed by backfilling algorithm
-			BfQueueLen *int32 `json:"bf_queue_len,omitempty"`
-
-			// BfQueueLenMean Mean number of jobs pending to be processed by backfilling algorithm
-			BfQueueLenMean *int64 `json:"bf_queue_len_mean,omitempty"`
-
-			// BfQueueLenSum Total number of jobs pending to be processed by backfilling algorithm since last reset
-			BfQueueLenSum *int32 `json:"bf_queue_len_sum,omitempty"`
-
-			// BfTableSize Number of different time slots tested by the backfill scheduler in its last iteration
-			BfTableSize *int32 `json:"bf_table_size,omitempty"`
-
-			// BfTableSizeMean Mean number of different time slots tested by the backfill scheduler
-			BfTableSizeMean *int64 `json:"bf_table_size_mean,omitempty"`
-
-			// BfTableSizeSum Total number of different time slots tested by the backfill scheduler
-			BfTableSizeSum *int32 `json:"bf_table_size_sum,omitempty"`
-
-			// BfWhenLastCycle When the last backfill scheduling cycle happened (UNIX timestamp)
-			BfWhenLastCycle *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"bf_when_last_cycle,omitempty"`
-
-			// DbdAgentQueueSize Number of messages for SlurmDBD that are queued
-			DbdAgentQueueSize *int32 `json:"dbd_agent_queue_size,omitempty"`
-
-			// GettimeofdayLatency Latency of 1000 calls to the gettimeofday() syscall in microseconds, as measured at controller startup
-			GettimeofdayLatency *int32 `json:"gettimeofday_latency,omitempty"`
-
-			// JobStatesTs When the job state counts were gathered (UNIX timestamp)
-			JobStatesTs *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"job_states_ts,omitempty"`
-
-			// JobsCanceled Number of jobs canceled since the last reset
-			JobsCanceled *int32 `json:"jobs_canceled,omitempty"`
-
-			// JobsCompleted Number of jobs completed since last reset
-			JobsCompleted *int32 `json:"jobs_completed,omitempty"`
-
-			// JobsFailed Number of jobs failed due to slurmd or other internal issues since last reset
-			JobsFailed *int32 `json:"jobs_failed,omitempty"`
-
-			// JobsPending Number of jobs pending at the time of listed in job_state_ts
-			JobsPending *int32 `json:"jobs_pending,omitempty"`
-
-			// JobsRunning Number of jobs running at the time of listed in job_state_ts
-			JobsRunning *int32 `json:"jobs_running,omitempty"`
-
-			// JobsStarted Number of jobs started since last reset
-			JobsStarted *int32 `json:"jobs_started,omitempty"`
-
-			// JobsSubmitted Number of jobs submitted since last reset
-			JobsSubmitted *int32 `json:"jobs_submitted,omitempty"`
-
-			// PartsPacked Zero if only RPC statistic included
-			PartsPacked *int32 `json:"parts_packed,omitempty"`
-
-			// PendingRpcs Pending RPC statistics
-			PendingRpcs *[]struct {
-				// Count Number of pending RPCs queued
-				Count int32 `json:"count"`
-
-				// MessageType Message type as string
-				MessageType string `json:"message_type"`
-
-				// TypeId Message type as integer
-				TypeId int32 `json:"type_id"`
-			} `json:"pending_rpcs,omitempty"`
-
-			// PendingRpcsByHostlist Pending RPCs hostlists
-			PendingRpcsByHostlist *[]struct {
-				// Count Number of RPCs received
-				Count []string `json:"count"`
-
-				// MessageType Message type as string
-				MessageType string `json:"message_type"`
-
-				// TypeId Message type as integer
-				TypeId int32 `json:"type_id"`
-			} `json:"pending_rpcs_by_hostlist,omitempty"`
-
-			// ReqTime When the request was made (UNIX timestamp)
-			ReqTime *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"req_time,omitempty"`
-
-			// ReqTimeStart When the data in the report started (UNIX timestamp)
-			ReqTimeStart *struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"req_time_start,omitempty"`
-
-			// RpcsByMessageType Most frequently issued remote procedure calls (RPCs)
-			RpcsByMessageType *[]struct {
-				// AverageTime Average time spent processing RPC in seconds
-				AverageTime struct {
-					// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-					Infinite *bool `json:"infinite,omitempty"`
-
-					// Number If "set" is True the number will be set with value; otherwise ignore number contents
-					Number *int64 `json:"number,omitempty"`
-
-					// Set True if number has been set; False if number is unset
-					Set *bool `json:"set,omitempty"`
-				} `json:"average_time"`
-
-				// Count Number of RPCs received
-				Count int32 `json:"count"`
-
-				// CycleLast Number of RPCs processed within the last RPC queue cycle
-				CycleLast int32 `json:"cycle_last"`
-
-				// CycleMax Maximum number of RPCs processed within a RPC queue cycle since start
-				CycleMax int32 `json:"cycle_max"`
-
-				// Dropped Number of RPCs dropped
-				Dropped int64 `json:"dropped"`
-
-				// MessageType Message type as string
-				MessageType string `json:"message_type"`
-
-				// Queued Number of RPCs queued
-				Queued int32 `json:"queued"`
-
-				// TotalTime Total time spent processing RPC in seconds
-				TotalTime int64 `json:"total_time"`
-
-				// TypeId Message type as integer
-				TypeId int32 `json:"type_id"`
-			} `json:"rpcs_by_message_type,omitempty"`
-
-			// RpcsByUser RPCs issued by user ID
-			RpcsByUser *[]struct {
-				// AverageTime Average time spent processing RPC in seconds
-				AverageTime struct {
-					// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-					Infinite *bool `json:"infinite,omitempty"`
-
-					// Number If "set" is True the number will be set with value; otherwise ignore number contents
-					Number *int64 `json:"number,omitempty"`
-
-					// Set True if number has been set; False if number is unset
-					Set *bool `json:"set,omitempty"`
-				} `json:"average_time"`
-
-				// Count Number of RPCs received
-				Count int32 `json:"count"`
-
-				// TotalTime Total time spent processing RPC in seconds
-				TotalTime int64 `json:"total_time"`
-
-				// User User name
-				User string `json:"user"`
-
-				// UserId User ID (numeric)
-				UserId int32 `json:"user_id"`
-			} `json:"rpcs_by_user,omitempty"`
-
-			// ScheduleCycleDepth Total number of jobs processed in scheduling cycles
-			ScheduleCycleDepth *int32 `json:"schedule_cycle_depth,omitempty"`
-
-			// ScheduleCycleLast Time in microseconds for last scheduling cycle
-			ScheduleCycleLast *int32 `json:"schedule_cycle_last,omitempty"`
-
-			// ScheduleCycleMax Max time of any scheduling cycle in microseconds since last reset
-			ScheduleCycleMax *int32 `json:"schedule_cycle_max,omitempty"`
-
-			// ScheduleCycleMean Mean time in microseconds for all scheduling cycles since last reset
-			ScheduleCycleMean *int64 `json:"schedule_cycle_mean,omitempty"`
-
-			// ScheduleCycleMeanDepth Mean of the number of jobs processed in a scheduling cycle
-			ScheduleCycleMeanDepth *int64 `json:"schedule_cycle_mean_depth,omitempty"`
-
-			// ScheduleCyclePerMinute Number of scheduling executions per minute
-			ScheduleCyclePerMinute *int64 `json:"schedule_cycle_per_minute,omitempty"`
-
-			// ScheduleCycleSum Total run time in microseconds for all scheduling cycles since last reset
-			ScheduleCycleSum *int32 `json:"schedule_cycle_sum,omitempty"`
-
-			// ScheduleCycleTotal Number of scheduling cycles since last reset
-			ScheduleCycleTotal *int32 `json:"schedule_cycle_total,omitempty"`
-
-			// ScheduleExit Reasons for which the scheduling cycle exited since last reset
-			ScheduleExit *struct {
-				// DefaultQueueDepth Reached number of jobs allowed to be tested
-				DefaultQueueDepth *int32 `json:"default_queue_depth,omitempty"`
-
-				// EndJobQueue Reached end of queue
-				EndJobQueue *int32 `json:"end_job_queue,omitempty"`
-
-				// Licenses Blocked on licenses
-				Licenses *int32 `json:"licenses,omitempty"`
-
-				// MaxJobStart Reached number of jobs allowed to start
-				MaxJobStart *int32 `json:"max_job_start,omitempty"`
-
-				// MaxRpcCnt Reached RPC limit
-				MaxRpcCnt *int32 `json:"max_rpc_cnt,omitempty"`
-
-				// MaxSchedTime Reached maximum allowed scheduler time
-				MaxSchedTime *int32 `json:"max_sched_time,omitempty"`
-			} `json:"schedule_exit,omitempty"`
-
-			// ScheduleQueueLength Number of jobs pending in queue
-			ScheduleQueueLength *int32 `json:"schedule_queue_length,omitempty"`
-
-			// ServerThreadCount Number of current active slurmctld threads
-			ServerThreadCount *int32 `json:"server_thread_count,omitempty"`
-		} `json:"statistics"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
+	JSON200      *V0041OpenapiDiagResp
+	YAML200      *V0041OpenapiDiagResp
+	JSONDefault  *V0041OpenapiDiagResp
+	YAMLDefault  *V0041OpenapiDiagResp
 }
 
 // Status returns HTTPResponse.Status
@@ -19998,162 +17765,10 @@ func (r SlurmV0041GetDiagResponse) StatusCode() int {
 type SlurmV0041PostJobAllocateResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// JobId Submitted Job ID
-		JobId *int32 `json:"job_id,omitempty"`
-
-		// JobSubmitUserMsg Job submission user message
-		JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
-	JSONDefault *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// JobId Submitted Job ID
-		JobId *int32 `json:"job_id,omitempty"`
-
-		// JobSubmitUserMsg Job submission user message
-		JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
+	JSON200      *V0041OpenapiJobAllocResp
+	YAML200      *V0041OpenapiJobAllocResp
+	JSONDefault  *V0041OpenapiJobAllocResp
+	YAMLDefault  *V0041OpenapiJobAllocResp
 }
 
 // Status returns HTTPResponse.Status
@@ -20175,206 +17790,10 @@ func (r SlurmV0041PostJobAllocateResponse) StatusCode() int {
 type SlurmV0041PostJobSubmitResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// JobId Submitted Job ID
-		JobId *int32 `json:"job_id,omitempty"`
-
-		// JobSubmitUserMsg Job submission user message
-		JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Result Job submission
-		// Deprecated:
-		Result *struct {
-			// Error Error message
-			Error *string `json:"error,omitempty"`
-
-			// ErrorCode Error code
-			ErrorCode *int32 `json:"error_code,omitempty"`
-
-			// JobId New job ID
-			JobId *int32 `json:"job_id,omitempty"`
-
-			// JobSubmitUserMsg Message to user from job_submit plugin
-			JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-			// StepId New job step ID
-			StepId *string `json:"step_id,omitempty"`
-		} `json:"result,omitempty"`
-
-		// StepId Submitted Step ID
-		StepId *string `json:"step_id,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
-	JSONDefault *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// JobId Submitted Job ID
-		JobId *int32 `json:"job_id,omitempty"`
-
-		// JobSubmitUserMsg Job submission user message
-		JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Result Job submission
-		// Deprecated:
-		Result *struct {
-			// Error Error message
-			Error *string `json:"error,omitempty"`
-
-			// ErrorCode Error code
-			ErrorCode *int32 `json:"error_code,omitempty"`
-
-			// JobId New job ID
-			JobId *int32 `json:"job_id,omitempty"`
-
-			// JobSubmitUserMsg Message to user from job_submit plugin
-			JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-			// StepId New job step ID
-			StepId *string `json:"step_id,omitempty"`
-		} `json:"result,omitempty"`
-
-		// StepId Submitted Step ID
-		StepId *string `json:"step_id,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
+	JSON200      *V0041OpenapiJobSubmitResponse
+	YAML200      *V0041OpenapiJobSubmitResponse
+	JSONDefault  *V0041OpenapiJobSubmitResponse
+	YAMLDefault  *V0041OpenapiJobSubmitResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -20397,7 +17816,9 @@ type SlurmV0041DeleteJobResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -20420,7 +17841,9 @@ type SlurmV0041GetJobResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiJobInfoResp
+	YAML200      *V0041OpenapiJobInfoResp
 	JSONDefault  *V0041OpenapiJobInfoResp
+	YAMLDefault  *V0041OpenapiJobInfoResp
 }
 
 // Status returns HTTPResponse.Status
@@ -20442,210 +17865,10 @@ func (r SlurmV0041GetJobResponse) StatusCode() int {
 type SlurmV0041PostJobResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// JobId First updated Job ID - Use results instead
-		// Deprecated:
-		JobId *string `json:"job_id,omitempty"`
-
-		// JobSubmitUserMsg First updated Job submission user message - Use results instead
-		// Deprecated:
-		JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Results Job update results
-		Results *[]struct {
-			// Error Verbose update status or error
-			Error *string `json:"error,omitempty"`
-
-			// ErrorCode Verbose update status or error
-			ErrorCode *int32 `json:"error_code,omitempty"`
-
-			// JobId Job ID for updated job
-			JobId *int32 `json:"job_id,omitempty"`
-
-			// StepId Step ID for updated job
-			StepId *string `json:"step_id,omitempty"`
-
-			// Why Update response message
-			Why *string `json:"why,omitempty"`
-		} `json:"results,omitempty"`
-
-		// StepId First updated Step ID - Use results instead
-		// Deprecated:
-		StepId *string `json:"step_id,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
-	JSONDefault *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// JobId First updated Job ID - Use results instead
-		// Deprecated:
-		JobId *string `json:"job_id,omitempty"`
-
-		// JobSubmitUserMsg First updated Job submission user message - Use results instead
-		// Deprecated:
-		JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Results Job update results
-		Results *[]struct {
-			// Error Verbose update status or error
-			Error *string `json:"error,omitempty"`
-
-			// ErrorCode Verbose update status or error
-			ErrorCode *int32 `json:"error_code,omitempty"`
-
-			// JobId Job ID for updated job
-			JobId *int32 `json:"job_id,omitempty"`
-
-			// StepId Step ID for updated job
-			StepId *string `json:"step_id,omitempty"`
-
-			// Why Update response message
-			Why *string `json:"why,omitempty"`
-		} `json:"results,omitempty"`
-
-		// StepId First updated Step ID - Use results instead
-		// Deprecated:
-		StepId *string `json:"step_id,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
+	JSON200      *V0041OpenapiJobPostResponse
+	YAML200      *V0041OpenapiJobPostResponse
+	JSONDefault  *V0041OpenapiJobPostResponse
+	YAMLDefault  *V0041OpenapiJobPostResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -20667,216 +17890,10 @@ func (r SlurmV0041PostJobResponse) StatusCode() int {
 type SlurmV0041DeleteJobsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Status resultant status of signal request
-		Status []struct {
-			Error *struct {
-				// Code Numeric error encountered signaling job
-				Code *int32 `json:"code,omitempty"`
-
-				// Message Error message why signaling job failed
-				Message *string `json:"message,omitempty"`
-
-				// String String error encountered signaling job
-				String *string `json:"string,omitempty"`
-			} `json:"error,omitempty"`
-			Federation *struct {
-				// Sibling Name of federation sibling (may be empty for non-federation)
-				Sibling *string `json:"sibling,omitempty"`
-			} `json:"federation,omitempty"`
-
-			// JobId Job ID that signaling failed
-			JobId struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"job_id"`
-
-			// StepId Job or Step ID that signaling failed
-			StepId string `json:"step_id"`
-		} `json:"status"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
-	JSONDefault *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Status resultant status of signal request
-		Status []struct {
-			Error *struct {
-				// Code Numeric error encountered signaling job
-				Code *int32 `json:"code,omitempty"`
-
-				// Message Error message why signaling job failed
-				Message *string `json:"message,omitempty"`
-
-				// String String error encountered signaling job
-				String *string `json:"string,omitempty"`
-			} `json:"error,omitempty"`
-			Federation *struct {
-				// Sibling Name of federation sibling (may be empty for non-federation)
-				Sibling *string `json:"sibling,omitempty"`
-			} `json:"federation,omitempty"`
-
-			// JobId Job ID that signaling failed
-			JobId struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int32 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"job_id"`
-
-			// StepId Job or Step ID that signaling failed
-			StepId string `json:"step_id"`
-		} `json:"status"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
+	JSON200      *V0041OpenapiKillJobsResp
+	YAML200      *V0041OpenapiKillJobsResp
+	JSONDefault  *V0041OpenapiKillJobsResp
+	YAMLDefault  *V0041OpenapiKillJobsResp
 }
 
 // Status returns HTTPResponse.Status
@@ -20899,7 +17916,9 @@ type SlurmV0041GetJobsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiJobInfoResp
+	YAML200      *V0041OpenapiJobInfoResp
 	JSONDefault  *V0041OpenapiJobInfoResp
+	YAMLDefault  *V0041OpenapiJobInfoResp
 }
 
 // Status returns HTTPResponse.Status
@@ -20922,7 +17941,9 @@ type SlurmV0041GetJobsStateResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiJobInfoResp
+	YAML200      *V0041OpenapiJobInfoResp
 	JSONDefault  *V0041OpenapiJobInfoResp
+	YAMLDefault  *V0041OpenapiJobInfoResp
 }
 
 // Status returns HTTPResponse.Status
@@ -20944,234 +17965,10 @@ func (r SlurmV0041GetJobsStateResponse) StatusCode() int {
 type SlurmV0041GetLicensesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// LastUpdate Time of last licenses change (UNIX timestamp)
-		LastUpdate struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"last_update"`
-
-		// Licenses List of licenses
-		Licenses []struct {
-			// Free Number of licenses currently available
-			Free *int32 `json:"Free,omitempty"`
-
-			// LastConsumed Last known number of licenses that were consumed in the license manager (Remote Only)
-			LastConsumed *int32 `json:"LastConsumed,omitempty"`
-
-			// LastDeficit Number of "missing licenses" from the cluster's perspective
-			LastDeficit *int32 `json:"LastDeficit,omitempty"`
-
-			// LastUpdate When the license information was last updated (UNIX Timestamp)
-			LastUpdate *int64 `json:"LastUpdate,omitempty"`
-
-			// LicenseName Name of the license
-			LicenseName *string `json:"LicenseName,omitempty"`
-
-			// Remote Indicates whether licenses are served by the database
-			Remote *bool `json:"Remote,omitempty"`
-
-			// Reserved Number of licenses reserved
-			Reserved *int32 `json:"Reserved,omitempty"`
-
-			// Total Total number of licenses present
-			Total *int32 `json:"Total,omitempty"`
-
-			// Used Number of licenses in use
-			Used *int32 `json:"Used,omitempty"`
-		} `json:"licenses"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
-	JSONDefault *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// LastUpdate Time of last licenses change (UNIX timestamp)
-		LastUpdate struct {
-			// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-			Infinite *bool `json:"infinite,omitempty"`
-
-			// Number If "set" is True the number will be set with value; otherwise ignore number contents
-			Number *int64 `json:"number,omitempty"`
-
-			// Set True if number has been set; False if number is unset
-			Set *bool `json:"set,omitempty"`
-		} `json:"last_update"`
-
-		// Licenses List of licenses
-		Licenses []struct {
-			// Free Number of licenses currently available
-			Free *int32 `json:"Free,omitempty"`
-
-			// LastConsumed Last known number of licenses that were consumed in the license manager (Remote Only)
-			LastConsumed *int32 `json:"LastConsumed,omitempty"`
-
-			// LastDeficit Number of "missing licenses" from the cluster's perspective
-			LastDeficit *int32 `json:"LastDeficit,omitempty"`
-
-			// LastUpdate When the license information was last updated (UNIX Timestamp)
-			LastUpdate *int64 `json:"LastUpdate,omitempty"`
-
-			// LicenseName Name of the license
-			LicenseName *string `json:"LicenseName,omitempty"`
-
-			// Remote Indicates whether licenses are served by the database
-			Remote *bool `json:"Remote,omitempty"`
-
-			// Reserved Number of licenses reserved
-			Reserved *int32 `json:"Reserved,omitempty"`
-
-			// Total Total number of licenses present
-			Total *int32 `json:"Total,omitempty"`
-
-			// Used Number of licenses in use
-			Used *int32 `json:"Used,omitempty"`
-		} `json:"licenses"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
+	JSON200      *V0041OpenapiLicensesResp
+	YAML200      *V0041OpenapiLicensesResp
+	JSONDefault  *V0041OpenapiLicensesResp
+	YAMLDefault  *V0041OpenapiLicensesResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21194,7 +17991,9 @@ type SlurmV0041DeleteNodeResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21217,7 +18016,9 @@ type SlurmV0041GetNodeResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiNodesResp
+	YAML200      *V0041OpenapiNodesResp
 	JSONDefault  *V0041OpenapiNodesResp
+	YAMLDefault  *V0041OpenapiNodesResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21240,7 +18041,9 @@ type SlurmV0041PostNodeResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21263,7 +18066,9 @@ type SlurmV0041GetNodesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiNodesResp
+	YAML200      *V0041OpenapiNodesResp
 	JSONDefault  *V0041OpenapiNodesResp
+	YAMLDefault  *V0041OpenapiNodesResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21286,7 +18091,9 @@ type SlurmV0041PostNodesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21309,7 +18116,9 @@ type SlurmV0041GetPartitionResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiPartitionResp
+	YAML200      *V0041OpenapiPartitionResp
 	JSONDefault  *V0041OpenapiPartitionResp
+	YAMLDefault  *V0041OpenapiPartitionResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21332,7 +18141,9 @@ type SlurmV0041GetPartitionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiPartitionResp
+	YAML200      *V0041OpenapiPartitionResp
 	JSONDefault  *V0041OpenapiPartitionResp
+	YAMLDefault  *V0041OpenapiPartitionResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21354,180 +18165,10 @@ func (r SlurmV0041GetPartitionsResponse) StatusCode() int {
 type SlurmV0041GetPingResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Pings pings
-		Pings []struct {
-			// Hostname Target for ping
-			Hostname *string `json:"hostname,omitempty"`
-
-			// Latency Number of microseconds it took to successfully ping or timeout
-			Latency *int64 `json:"latency,omitempty"`
-
-			// Mode The operating mode of the responding slurmctld
-			Mode *string `json:"mode,omitempty"`
-
-			// Pinged Ping result
-			Pinged *string `json:"pinged,omitempty"`
-		} `json:"pings"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
-	JSONDefault *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Pings pings
-		Pings []struct {
-			// Hostname Target for ping
-			Hostname *string `json:"hostname,omitempty"`
-
-			// Latency Number of microseconds it took to successfully ping or timeout
-			Latency *int64 `json:"latency,omitempty"`
-
-			// Mode The operating mode of the responding slurmctld
-			Mode *string `json:"mode,omitempty"`
-
-			// Pinged Ping result
-			Pinged *string `json:"pinged,omitempty"`
-		} `json:"pings"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
+	JSON200      *V0041OpenapiPingArrayResp
+	YAML200      *V0041OpenapiPingArrayResp
+	JSONDefault  *V0041OpenapiPingArrayResp
+	YAMLDefault  *V0041OpenapiPingArrayResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21550,7 +18191,9 @@ type SlurmV0041GetReconfigureResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21573,7 +18216,9 @@ type SlurmV0041DeleteReservationResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21596,7 +18241,9 @@ type SlurmV0041GetReservationResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiReservationResp
+	YAML200      *V0041OpenapiReservationResp
 	JSONDefault  *V0041OpenapiReservationResp
+	YAMLDefault  *V0041OpenapiReservationResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21619,7 +18266,9 @@ type SlurmV0041GetReservationsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiReservationResp
+	YAML200      *V0041OpenapiReservationResp
 	JSONDefault  *V0041OpenapiReservationResp
+	YAMLDefault  *V0041OpenapiReservationResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21642,7 +18291,9 @@ type SlurmV0041GetSharesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiSharesResp
+	YAML200      *V0041OpenapiSharesResp
 	JSONDefault  *V0041OpenapiSharesResp
+	YAMLDefault  *V0041OpenapiSharesResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21664,156 +18315,10 @@ func (r SlurmV0041GetSharesResponse) StatusCode() int {
 type SlurmdbV0041DeleteAccountResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// RemovedAccounts removed_accounts
-		RemovedAccounts []string `json:"removed_accounts"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
-	JSONDefault *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// RemovedAccounts removed_accounts
-		RemovedAccounts []string `json:"removed_accounts"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
+	JSON200      *V0041OpenapiAccountsRemovedResp
+	YAML200      *V0041OpenapiAccountsRemovedResp
+	JSONDefault  *V0041OpenapiAccountsRemovedResp
+	YAMLDefault  *V0041OpenapiAccountsRemovedResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21836,7 +18341,9 @@ type SlurmdbV0041GetAccountResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiAccountsResp
+	YAML200      *V0041OpenapiAccountsResp
 	JSONDefault  *V0041OpenapiAccountsResp
+	YAMLDefault  *V0041OpenapiAccountsResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21859,7 +18366,9 @@ type SlurmdbV0041GetAccountsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiAccountsResp
+	YAML200      *V0041OpenapiAccountsResp
 	JSONDefault  *V0041OpenapiAccountsResp
+	YAMLDefault  *V0041OpenapiAccountsResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21882,7 +18391,9 @@ type SlurmdbV0041PostAccountsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -21904,156 +18415,10 @@ func (r SlurmdbV0041PostAccountsResponse) StatusCode() int {
 type SlurmdbV0041PostAccountsAssociationResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		// AddedAccounts added_accounts
-		AddedAccounts string `json:"added_accounts"`
-
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
-	JSONDefault *struct {
-		// AddedAccounts added_accounts
-		AddedAccounts string `json:"added_accounts"`
-
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
+	JSON200      *V0041OpenapiAccountsAddCondRespStr
+	YAML200      *V0041OpenapiAccountsAddCondRespStr
+	JSONDefault  *V0041OpenapiAccountsAddCondRespStr
+	YAMLDefault  *V0041OpenapiAccountsAddCondRespStr
 }
 
 // Status returns HTTPResponse.Status
@@ -22076,7 +18441,9 @@ type SlurmdbV0041DeleteAssociationResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiAssocsRemovedResp
+	YAML200      *V0041OpenapiAssocsRemovedResp
 	JSONDefault  *V0041OpenapiAssocsRemovedResp
+	YAMLDefault  *V0041OpenapiAssocsRemovedResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22099,7 +18466,9 @@ type SlurmdbV0041GetAssociationResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiAssocsResp
+	YAML200      *V0041OpenapiAssocsResp
 	JSONDefault  *V0041OpenapiAssocsResp
+	YAMLDefault  *V0041OpenapiAssocsResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22122,7 +18491,9 @@ type SlurmdbV0041DeleteAssociationsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiAssocsRemovedResp
+	YAML200      *V0041OpenapiAssocsRemovedResp
 	JSONDefault  *V0041OpenapiAssocsRemovedResp
+	YAMLDefault  *V0041OpenapiAssocsRemovedResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22145,7 +18516,9 @@ type SlurmdbV0041GetAssociationsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiAssocsResp
+	YAML200      *V0041OpenapiAssocsResp
 	JSONDefault  *V0041OpenapiAssocsResp
+	YAMLDefault  *V0041OpenapiAssocsResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22168,7 +18541,9 @@ type SlurmdbV0041PostAssociationsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22190,156 +18565,10 @@ func (r SlurmdbV0041PostAssociationsResponse) StatusCode() int {
 type SlurmdbV0041DeleteClusterResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		// DeletedClusters deleted_clusters
-		DeletedClusters []string `json:"deleted_clusters"`
-
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
-	JSONDefault *struct {
-		// DeletedClusters deleted_clusters
-		DeletedClusters []string `json:"deleted_clusters"`
-
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
+	JSON200      *V0041OpenapiClustersRemovedResp
+	YAML200      *V0041OpenapiClustersRemovedResp
+	JSONDefault  *V0041OpenapiClustersRemovedResp
+	YAMLDefault  *V0041OpenapiClustersRemovedResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22362,7 +18591,9 @@ type SlurmdbV0041GetClusterResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiClustersResp
+	YAML200      *V0041OpenapiClustersResp
 	JSONDefault  *V0041OpenapiClustersResp
+	YAMLDefault  *V0041OpenapiClustersResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22385,7 +18616,9 @@ type SlurmdbV0041GetClustersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiClustersResp
+	YAML200      *V0041OpenapiClustersResp
 	JSONDefault  *V0041OpenapiClustersResp
+	YAMLDefault  *V0041OpenapiClustersResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22408,7 +18641,9 @@ type SlurmdbV0041PostClustersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22431,7 +18666,9 @@ type SlurmdbV0041GetConfigResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiSlurmdbdConfigResp
+	YAML200      *V0041OpenapiSlurmdbdConfigResp
 	JSONDefault  *V0041OpenapiSlurmdbdConfigResp
+	YAMLDefault  *V0041OpenapiSlurmdbdConfigResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22454,7 +18691,9 @@ type SlurmdbV0041PostConfigResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22476,336 +18715,10 @@ func (r SlurmdbV0041PostConfigResponse) StatusCode() int {
 type SlurmdbV0041GetDiagResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Statistics statistics
-		Statistics struct {
-			// RPCs List of RPCs sent to the slurmdbd
-			RPCs *[]struct {
-				// Count Number of RPCs processed
-				Count *int32 `json:"count,omitempty"`
-
-				// Rpc RPC type
-				Rpc  *string `json:"rpc,omitempty"`
-				Time *struct {
-					// Average Average RPC processing time in microseconds
-					Average *int64 `json:"average,omitempty"`
-
-					// Total Total RPC processing time in microseconds
-					Total *int64 `json:"total,omitempty"`
-				} `json:"time,omitempty"`
-			} `json:"RPCs,omitempty"`
-
-			// Rollups Rollup statistics
-			Rollups *struct {
-				Daily *struct {
-					// Count Number of daily rollups since last_run
-					Count    *int32 `json:"count,omitempty"`
-					Duration *struct {
-						// Last Total time spent doing daily daily rollup (seconds)
-						Last *int64 `json:"last,omitempty"`
-
-						// Max Longest daily rollup time (seconds)
-						Max *int64 `json:"max,omitempty"`
-
-						// Time Total time spent doing daily rollups (seconds)
-						Time *int64 `json:"time,omitempty"`
-					} `json:"duration,omitempty"`
-
-					// LastRun Last time daily rollup ran (UNIX timestamp)
-					LastRun *int64 `json:"last_run,omitempty"`
-				} `json:"daily,omitempty"`
-				Hourly *struct {
-					// Count Number of hourly rollups since last_run
-					Count    *int32 `json:"count,omitempty"`
-					Duration *struct {
-						// Last Total time spent doing last daily rollup (seconds)
-						Last *int64 `json:"last,omitempty"`
-
-						// Max Longest hourly rollup time (seconds)
-						Max *int64 `json:"max,omitempty"`
-
-						// Time Total time spent doing hourly rollups (seconds)
-						Time *int64 `json:"time,omitempty"`
-					} `json:"duration,omitempty"`
-
-					// LastRun Last time hourly rollup ran (UNIX timestamp)
-					LastRun *int64 `json:"last_run,omitempty"`
-				} `json:"hourly,omitempty"`
-				Monthly *struct {
-					// Count Number of monthly rollups since last_run
-					Count    *int32 `json:"count,omitempty"`
-					Duration *struct {
-						// Last Total time spent doing monthly daily rollup (seconds)
-						Last *int64 `json:"last,omitempty"`
-
-						// Max Longest monthly rollup time (seconds)
-						Max *int64 `json:"max,omitempty"`
-
-						// Time Total time spent doing monthly rollups (seconds)
-						Time *int64 `json:"time,omitempty"`
-					} `json:"duration,omitempty"`
-
-					// LastRun Last time monthly rollup ran (UNIX timestamp)
-					LastRun *int64 `json:"last_run,omitempty"`
-				} `json:"monthly,omitempty"`
-			} `json:"rollups,omitempty"`
-
-			// TimeStart When data collection started (UNIX timestamp)
-			TimeStart *int64 `json:"time_start,omitempty"`
-
-			// Users List of users that issued RPCs
-			Users *[]struct {
-				// Count Number of RPCs processed
-				Count *int32 `json:"count,omitempty"`
-				Time  *struct {
-					// Average Average RPC processing time in microseconds
-					Average *int64 `json:"average,omitempty"`
-
-					// Total Total RPC processing time in microseconds
-					Total *int64 `json:"total,omitempty"`
-				} `json:"time,omitempty"`
-
-				// User User ID
-				User *string `json:"user,omitempty"`
-			} `json:"users,omitempty"`
-		} `json:"statistics"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
-	JSONDefault *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Statistics statistics
-		Statistics struct {
-			// RPCs List of RPCs sent to the slurmdbd
-			RPCs *[]struct {
-				// Count Number of RPCs processed
-				Count *int32 `json:"count,omitempty"`
-
-				// Rpc RPC type
-				Rpc  *string `json:"rpc,omitempty"`
-				Time *struct {
-					// Average Average RPC processing time in microseconds
-					Average *int64 `json:"average,omitempty"`
-
-					// Total Total RPC processing time in microseconds
-					Total *int64 `json:"total,omitempty"`
-				} `json:"time,omitempty"`
-			} `json:"RPCs,omitempty"`
-
-			// Rollups Rollup statistics
-			Rollups *struct {
-				Daily *struct {
-					// Count Number of daily rollups since last_run
-					Count    *int32 `json:"count,omitempty"`
-					Duration *struct {
-						// Last Total time spent doing daily daily rollup (seconds)
-						Last *int64 `json:"last,omitempty"`
-
-						// Max Longest daily rollup time (seconds)
-						Max *int64 `json:"max,omitempty"`
-
-						// Time Total time spent doing daily rollups (seconds)
-						Time *int64 `json:"time,omitempty"`
-					} `json:"duration,omitempty"`
-
-					// LastRun Last time daily rollup ran (UNIX timestamp)
-					LastRun *int64 `json:"last_run,omitempty"`
-				} `json:"daily,omitempty"`
-				Hourly *struct {
-					// Count Number of hourly rollups since last_run
-					Count    *int32 `json:"count,omitempty"`
-					Duration *struct {
-						// Last Total time spent doing last daily rollup (seconds)
-						Last *int64 `json:"last,omitempty"`
-
-						// Max Longest hourly rollup time (seconds)
-						Max *int64 `json:"max,omitempty"`
-
-						// Time Total time spent doing hourly rollups (seconds)
-						Time *int64 `json:"time,omitempty"`
-					} `json:"duration,omitempty"`
-
-					// LastRun Last time hourly rollup ran (UNIX timestamp)
-					LastRun *int64 `json:"last_run,omitempty"`
-				} `json:"hourly,omitempty"`
-				Monthly *struct {
-					// Count Number of monthly rollups since last_run
-					Count    *int32 `json:"count,omitempty"`
-					Duration *struct {
-						// Last Total time spent doing monthly daily rollup (seconds)
-						Last *int64 `json:"last,omitempty"`
-
-						// Max Longest monthly rollup time (seconds)
-						Max *int64 `json:"max,omitempty"`
-
-						// Time Total time spent doing monthly rollups (seconds)
-						Time *int64 `json:"time,omitempty"`
-					} `json:"duration,omitempty"`
-
-					// LastRun Last time monthly rollup ran (UNIX timestamp)
-					LastRun *int64 `json:"last_run,omitempty"`
-				} `json:"monthly,omitempty"`
-			} `json:"rollups,omitempty"`
-
-			// TimeStart When data collection started (UNIX timestamp)
-			TimeStart *int64 `json:"time_start,omitempty"`
-
-			// Users List of users that issued RPCs
-			Users *[]struct {
-				// Count Number of RPCs processed
-				Count *int32 `json:"count,omitempty"`
-				Time  *struct {
-					// Average Average RPC processing time in microseconds
-					Average *int64 `json:"average,omitempty"`
-
-					// Total Total RPC processing time in microseconds
-					Total *int64 `json:"total,omitempty"`
-				} `json:"time,omitempty"`
-
-				// User User ID
-				User *string `json:"user,omitempty"`
-			} `json:"users,omitempty"`
-		} `json:"statistics"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
+	JSON200      *V0041OpenapiSlurmdbdStatsResp
+	YAML200      *V0041OpenapiSlurmdbdStatsResp
+	JSONDefault  *V0041OpenapiSlurmdbdStatsResp
+	YAMLDefault  *V0041OpenapiSlurmdbdStatsResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22828,7 +18741,9 @@ type SlurmdbV0041GetInstanceResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiInstancesResp
+	YAML200      *V0041OpenapiInstancesResp
 	JSONDefault  *V0041OpenapiInstancesResp
+	YAMLDefault  *V0041OpenapiInstancesResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22851,7 +18766,9 @@ type SlurmdbV0041GetInstancesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiInstancesResp
+	YAML200      *V0041OpenapiInstancesResp
 	JSONDefault  *V0041OpenapiInstancesResp
+	YAMLDefault  *V0041OpenapiInstancesResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22874,7 +18791,9 @@ type SlurmdbV0041GetJobResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiSlurmdbdJobsResp
+	YAML200      *V0041OpenapiSlurmdbdJobsResp
 	JSONDefault  *V0041OpenapiSlurmdbdJobsResp
+	YAMLDefault  *V0041OpenapiSlurmdbdJobsResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22897,7 +18816,9 @@ type SlurmdbV0041GetJobsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiSlurmdbdJobsResp
+	YAML200      *V0041OpenapiSlurmdbdJobsResp
 	JSONDefault  *V0041OpenapiSlurmdbdJobsResp
+	YAMLDefault  *V0041OpenapiSlurmdbdJobsResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22920,7 +18841,9 @@ type SlurmdbV0041GetQosResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiSlurmdbdQosResp
+	YAML200      *V0041OpenapiSlurmdbdQosResp
 	JSONDefault  *V0041OpenapiSlurmdbdQosResp
+	YAMLDefault  *V0041OpenapiSlurmdbdQosResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22943,7 +18866,9 @@ type SlurmdbV0041PostQosResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -22965,156 +18890,10 @@ func (r SlurmdbV0041PostQosResponse) StatusCode() int {
 type SlurmdbV0041DeleteSingleQosResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// RemovedQos removed QOS
-		RemovedQos []string `json:"removed_qos"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
-	JSONDefault *struct {
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// RemovedQos removed QOS
-		RemovedQos []string `json:"removed_qos"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
+	JSON200      *V0041OpenapiSlurmdbdQosRemovedResp
+	YAML200      *V0041OpenapiSlurmdbdQosRemovedResp
+	JSONDefault  *V0041OpenapiSlurmdbdQosRemovedResp
+	YAMLDefault  *V0041OpenapiSlurmdbdQosRemovedResp
 }
 
 // Status returns HTTPResponse.Status
@@ -23137,7 +18916,9 @@ type SlurmdbV0041GetSingleQosResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiSlurmdbdQosResp
+	YAML200      *V0041OpenapiSlurmdbdQosResp
 	JSONDefault  *V0041OpenapiSlurmdbdQosResp
+	YAMLDefault  *V0041OpenapiSlurmdbdQosResp
 }
 
 // Status returns HTTPResponse.Status
@@ -23160,7 +18941,9 @@ type SlurmdbV0041GetTresResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiTresResp
+	YAML200      *V0041OpenapiTresResp
 	JSONDefault  *V0041OpenapiTresResp
+	YAMLDefault  *V0041OpenapiTresResp
 }
 
 // Status returns HTTPResponse.Status
@@ -23183,7 +18966,9 @@ type SlurmdbV0041PostTresResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -23206,7 +18991,9 @@ type SlurmdbV0041DeleteUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -23229,7 +19016,9 @@ type SlurmdbV0041GetUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiUsersResp
+	YAML200      *V0041OpenapiUsersResp
 	JSONDefault  *V0041OpenapiUsersResp
+	YAMLDefault  *V0041OpenapiUsersResp
 }
 
 // Status returns HTTPResponse.Status
@@ -23252,7 +19041,9 @@ type SlurmdbV0041GetUsersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiUsersResp
+	YAML200      *V0041OpenapiUsersResp
 	JSONDefault  *V0041OpenapiUsersResp
+	YAMLDefault  *V0041OpenapiUsersResp
 }
 
 // Status returns HTTPResponse.Status
@@ -23275,7 +19066,9 @@ type SlurmdbV0041PostUsersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -23297,156 +19090,10 @@ func (r SlurmdbV0041PostUsersResponse) StatusCode() int {
 type SlurmdbV0041PostUsersAssociationResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		// AddedUsers added_users
-		AddedUsers string `json:"added_users"`
-
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
-	JSONDefault *struct {
-		// AddedUsers added_users
-		AddedUsers string `json:"added_users"`
-
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
+	JSON200      *V0041OpenapiUsersAddCondRespStr
+	YAML200      *V0041OpenapiUsersAddCondRespStr
+	JSONDefault  *V0041OpenapiUsersAddCondRespStr
+	YAMLDefault  *V0041OpenapiUsersAddCondRespStr
 }
 
 // Status returns HTTPResponse.Status
@@ -23468,156 +19115,10 @@ func (r SlurmdbV0041PostUsersAssociationResponse) StatusCode() int {
 type SlurmdbV0041DeleteWckeyResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		// DeletedWckeys deleted wckeys
-		DeletedWckeys []string `json:"deleted_wckeys"`
-
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
-	JSONDefault *struct {
-		// DeletedWckeys deleted wckeys
-		DeletedWckeys []string `json:"deleted_wckeys"`
-
-		// Errors Query errors
-		Errors *[]struct {
-			// Description Long form error description
-			Description *string `json:"description,omitempty"`
-
-			// Error Short form error description
-			Error *string `json:"error,omitempty"`
-
-			// ErrorNumber Slurm numeric error identifier
-			ErrorNumber *int32 `json:"error_number,omitempty"`
-
-			// Source Source of error or where error was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"errors,omitempty"`
-
-		// Meta Slurm meta values
-		Meta *struct {
-			Client *struct {
-				// Group Client group (if known)
-				Group *string `json:"group,omitempty"`
-
-				// Source Client source description
-				Source *string `json:"source,omitempty"`
-
-				// User Client user (if known)
-				User *string `json:"user,omitempty"`
-			} `json:"client,omitempty"`
-
-			// Command CLI command (if applicable)
-			Command *[]string `json:"command,omitempty"`
-			Plugin  *struct {
-				// AccountingStorage Slurm accounting plugin
-				AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-				// DataParser Slurm data_parser plugin
-				DataParser *string `json:"data_parser,omitempty"`
-
-				// Name Slurm plugin name (if applicable)
-				Name *string `json:"name,omitempty"`
-
-				// Type Slurm plugin type (if applicable)
-				Type *string `json:"type,omitempty"`
-			} `json:"plugin,omitempty"`
-			Slurm *struct {
-				// Cluster Slurm cluster name
-				Cluster *string `json:"cluster,omitempty"`
-
-				// Release Slurm release string
-				Release *string `json:"release,omitempty"`
-				Version *struct {
-					// Major Slurm release major version
-					Major *string `json:"major,omitempty"`
-
-					// Micro Slurm release micro version
-					Micro *string `json:"micro,omitempty"`
-
-					// Minor Slurm release minor version
-					Minor *string `json:"minor,omitempty"`
-				} `json:"version,omitempty"`
-			} `json:"slurm,omitempty"`
-		} `json:"meta,omitempty"`
-
-		// Warnings Query warnings
-		Warnings *[]struct {
-			// Description Long form warning description
-			Description *string `json:"description,omitempty"`
-
-			// Source Source of warning or where warning was first detected
-			Source *string `json:"source,omitempty"`
-		} `json:"warnings,omitempty"`
-	}
+	JSON200      *V0041OpenapiWckeyRemovedResp
+	YAML200      *V0041OpenapiWckeyRemovedResp
+	JSONDefault  *V0041OpenapiWckeyRemovedResp
+	YAMLDefault  *V0041OpenapiWckeyRemovedResp
 }
 
 // Status returns HTTPResponse.Status
@@ -23640,7 +19141,9 @@ type SlurmdbV0041GetWckeyResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiWckeyResp
+	YAML200      *V0041OpenapiWckeyResp
 	JSONDefault  *V0041OpenapiWckeyResp
+	YAMLDefault  *V0041OpenapiWckeyResp
 }
 
 // Status returns HTTPResponse.Status
@@ -23663,7 +19166,9 @@ type SlurmdbV0041GetWckeysResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiWckeyResp
+	YAML200      *V0041OpenapiWckeyResp
 	JSONDefault  *V0041OpenapiWckeyResp
+	YAMLDefault  *V0041OpenapiWckeyResp
 }
 
 // Status returns HTTPResponse.Status
@@ -23686,7 +19191,9 @@ type SlurmdbV0041PostWckeysResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *V0041OpenapiResp
+	YAML200      *V0041OpenapiResp
 	JSONDefault  *V0041OpenapiResp
+	YAMLDefault  *V0041OpenapiResp
 }
 
 // Status returns HTTPResponse.Status
@@ -24379,790 +19886,32 @@ func ParseSlurmV0041GetDiagResponse(rsp *http.Response) (*SlurmV0041GetDiagRespo
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Statistics statistics
-			Statistics struct {
-				// AgentCount Number of agent threads
-				AgentCount *int32 `json:"agent_count,omitempty"`
-
-				// AgentQueueSize Number of enqueued outgoing RPC requests in an internal retry list
-				AgentQueueSize *int32 `json:"agent_queue_size,omitempty"`
-
-				// AgentThreadCount Total number of active threads created by all agent threads
-				AgentThreadCount *int32 `json:"agent_thread_count,omitempty"`
-
-				// BfActive Backfill scheduler currently running
-				BfActive *bool `json:"bf_active,omitempty"`
-
-				// BfBackfilledHetJobs Number of heterogeneous job components started through backfilling since last Slurm start
-				BfBackfilledHetJobs *int32 `json:"bf_backfilled_het_jobs,omitempty"`
-
-				// BfBackfilledJobs Number of jobs started through backfilling since last slurm start
-				BfBackfilledJobs *int32 `json:"bf_backfilled_jobs,omitempty"`
-
-				// BfCycleCounter Number of backfill scheduling cycles since last reset
-				BfCycleCounter *int32 `json:"bf_cycle_counter,omitempty"`
-
-				// BfCycleLast Execution time in microseconds of last backfill scheduling cycle
-				BfCycleLast *int32 `json:"bf_cycle_last,omitempty"`
-
-				// BfCycleMax Execution time in microseconds of longest backfill scheduling cycle
-				BfCycleMax *int32 `json:"bf_cycle_max,omitempty"`
-
-				// BfCycleMean Mean time in microseconds of backfilling scheduling cycles since last reset
-				BfCycleMean *int64 `json:"bf_cycle_mean,omitempty"`
-
-				// BfCycleSum Total time in microseconds of backfilling scheduling cycles since last reset
-				BfCycleSum *int64 `json:"bf_cycle_sum,omitempty"`
-
-				// BfDepthMean Mean number of eligible to run jobs processed during all backfilling scheduling cycles since last reset
-				BfDepthMean *int64 `json:"bf_depth_mean,omitempty"`
-
-				// BfDepthMeanTry The subset of Depth Mean that the backfill scheduler attempted to schedule
-				BfDepthMeanTry *int64 `json:"bf_depth_mean_try,omitempty"`
-
-				// BfDepthSum Total number of jobs processed during all backfilling scheduling cycles since last reset
-				BfDepthSum *int32 `json:"bf_depth_sum,omitempty"`
-
-				// BfDepthTrySum Subset of bf_depth_sum that the backfill scheduler attempted to schedule
-				BfDepthTrySum *int32 `json:"bf_depth_try_sum,omitempty"`
-
-				// BfExit Reasons for which the backfill scheduling cycle exited since last reset
-				BfExit *struct {
-					// BfMaxJobStart Reached number of jobs allowed to start
-					BfMaxJobStart *int32 `json:"bf_max_job_start,omitempty"`
-
-					// BfMaxJobTest Reached number of jobs allowed to be tested
-					BfMaxJobTest *int32 `json:"bf_max_job_test,omitempty"`
-
-					// BfMaxTime Reached maximum allowed scheduler time
-					BfMaxTime *int32 `json:"bf_max_time,omitempty"`
-
-					// BfNodeSpaceSize Reached table size limit
-					BfNodeSpaceSize *int32 `json:"bf_node_space_size,omitempty"`
-
-					// EndJobQueue Reached end of queue
-					EndJobQueue *int32 `json:"end_job_queue,omitempty"`
-
-					// StateChanged System state changed
-					StateChanged *int32 `json:"state_changed,omitempty"`
-				} `json:"bf_exit,omitempty"`
-
-				// BfLastBackfilledJobs Number of jobs started through backfilling since last reset
-				BfLastBackfilledJobs *int32 `json:"bf_last_backfilled_jobs,omitempty"`
-
-				// BfLastDepth Number of processed jobs during last backfilling scheduling cycle
-				BfLastDepth *int32 `json:"bf_last_depth,omitempty"`
-
-				// BfLastDepthTry Number of processed jobs during last backfilling scheduling cycle that had a chance to start using available resources
-				BfLastDepthTry *int32 `json:"bf_last_depth_try,omitempty"`
-
-				// BfQueueLen Number of jobs pending to be processed by backfilling algorithm
-				BfQueueLen *int32 `json:"bf_queue_len,omitempty"`
-
-				// BfQueueLenMean Mean number of jobs pending to be processed by backfilling algorithm
-				BfQueueLenMean *int64 `json:"bf_queue_len_mean,omitempty"`
-
-				// BfQueueLenSum Total number of jobs pending to be processed by backfilling algorithm since last reset
-				BfQueueLenSum *int32 `json:"bf_queue_len_sum,omitempty"`
-
-				// BfTableSize Number of different time slots tested by the backfill scheduler in its last iteration
-				BfTableSize *int32 `json:"bf_table_size,omitempty"`
-
-				// BfTableSizeMean Mean number of different time slots tested by the backfill scheduler
-				BfTableSizeMean *int64 `json:"bf_table_size_mean,omitempty"`
-
-				// BfTableSizeSum Total number of different time slots tested by the backfill scheduler
-				BfTableSizeSum *int32 `json:"bf_table_size_sum,omitempty"`
-
-				// BfWhenLastCycle When the last backfill scheduling cycle happened (UNIX timestamp)
-				BfWhenLastCycle *struct {
-					// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-					Infinite *bool `json:"infinite,omitempty"`
-
-					// Number If "set" is True the number will be set with value; otherwise ignore number contents
-					Number *int64 `json:"number,omitempty"`
-
-					// Set True if number has been set; False if number is unset
-					Set *bool `json:"set,omitempty"`
-				} `json:"bf_when_last_cycle,omitempty"`
-
-				// DbdAgentQueueSize Number of messages for SlurmDBD that are queued
-				DbdAgentQueueSize *int32 `json:"dbd_agent_queue_size,omitempty"`
-
-				// GettimeofdayLatency Latency of 1000 calls to the gettimeofday() syscall in microseconds, as measured at controller startup
-				GettimeofdayLatency *int32 `json:"gettimeofday_latency,omitempty"`
-
-				// JobStatesTs When the job state counts were gathered (UNIX timestamp)
-				JobStatesTs *struct {
-					// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-					Infinite *bool `json:"infinite,omitempty"`
-
-					// Number If "set" is True the number will be set with value; otherwise ignore number contents
-					Number *int64 `json:"number,omitempty"`
-
-					// Set True if number has been set; False if number is unset
-					Set *bool `json:"set,omitempty"`
-				} `json:"job_states_ts,omitempty"`
-
-				// JobsCanceled Number of jobs canceled since the last reset
-				JobsCanceled *int32 `json:"jobs_canceled,omitempty"`
-
-				// JobsCompleted Number of jobs completed since last reset
-				JobsCompleted *int32 `json:"jobs_completed,omitempty"`
-
-				// JobsFailed Number of jobs failed due to slurmd or other internal issues since last reset
-				JobsFailed *int32 `json:"jobs_failed,omitempty"`
-
-				// JobsPending Number of jobs pending at the time of listed in job_state_ts
-				JobsPending *int32 `json:"jobs_pending,omitempty"`
-
-				// JobsRunning Number of jobs running at the time of listed in job_state_ts
-				JobsRunning *int32 `json:"jobs_running,omitempty"`
-
-				// JobsStarted Number of jobs started since last reset
-				JobsStarted *int32 `json:"jobs_started,omitempty"`
-
-				// JobsSubmitted Number of jobs submitted since last reset
-				JobsSubmitted *int32 `json:"jobs_submitted,omitempty"`
-
-				// PartsPacked Zero if only RPC statistic included
-				PartsPacked *int32 `json:"parts_packed,omitempty"`
-
-				// PendingRpcs Pending RPC statistics
-				PendingRpcs *[]struct {
-					// Count Number of pending RPCs queued
-					Count int32 `json:"count"`
-
-					// MessageType Message type as string
-					MessageType string `json:"message_type"`
-
-					// TypeId Message type as integer
-					TypeId int32 `json:"type_id"`
-				} `json:"pending_rpcs,omitempty"`
-
-				// PendingRpcsByHostlist Pending RPCs hostlists
-				PendingRpcsByHostlist *[]struct {
-					// Count Number of RPCs received
-					Count []string `json:"count"`
-
-					// MessageType Message type as string
-					MessageType string `json:"message_type"`
-
-					// TypeId Message type as integer
-					TypeId int32 `json:"type_id"`
-				} `json:"pending_rpcs_by_hostlist,omitempty"`
-
-				// ReqTime When the request was made (UNIX timestamp)
-				ReqTime *struct {
-					// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-					Infinite *bool `json:"infinite,omitempty"`
-
-					// Number If "set" is True the number will be set with value; otherwise ignore number contents
-					Number *int64 `json:"number,omitempty"`
-
-					// Set True if number has been set; False if number is unset
-					Set *bool `json:"set,omitempty"`
-				} `json:"req_time,omitempty"`
-
-				// ReqTimeStart When the data in the report started (UNIX timestamp)
-				ReqTimeStart *struct {
-					// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-					Infinite *bool `json:"infinite,omitempty"`
-
-					// Number If "set" is True the number will be set with value; otherwise ignore number contents
-					Number *int64 `json:"number,omitempty"`
-
-					// Set True if number has been set; False if number is unset
-					Set *bool `json:"set,omitempty"`
-				} `json:"req_time_start,omitempty"`
-
-				// RpcsByMessageType Most frequently issued remote procedure calls (RPCs)
-				RpcsByMessageType *[]struct {
-					// AverageTime Average time spent processing RPC in seconds
-					AverageTime struct {
-						// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-						Infinite *bool `json:"infinite,omitempty"`
-
-						// Number If "set" is True the number will be set with value; otherwise ignore number contents
-						Number *int64 `json:"number,omitempty"`
-
-						// Set True if number has been set; False if number is unset
-						Set *bool `json:"set,omitempty"`
-					} `json:"average_time"`
-
-					// Count Number of RPCs received
-					Count int32 `json:"count"`
-
-					// CycleLast Number of RPCs processed within the last RPC queue cycle
-					CycleLast int32 `json:"cycle_last"`
-
-					// CycleMax Maximum number of RPCs processed within a RPC queue cycle since start
-					CycleMax int32 `json:"cycle_max"`
-
-					// Dropped Number of RPCs dropped
-					Dropped int64 `json:"dropped"`
-
-					// MessageType Message type as string
-					MessageType string `json:"message_type"`
-
-					// Queued Number of RPCs queued
-					Queued int32 `json:"queued"`
-
-					// TotalTime Total time spent processing RPC in seconds
-					TotalTime int64 `json:"total_time"`
-
-					// TypeId Message type as integer
-					TypeId int32 `json:"type_id"`
-				} `json:"rpcs_by_message_type,omitempty"`
-
-				// RpcsByUser RPCs issued by user ID
-				RpcsByUser *[]struct {
-					// AverageTime Average time spent processing RPC in seconds
-					AverageTime struct {
-						// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-						Infinite *bool `json:"infinite,omitempty"`
-
-						// Number If "set" is True the number will be set with value; otherwise ignore number contents
-						Number *int64 `json:"number,omitempty"`
-
-						// Set True if number has been set; False if number is unset
-						Set *bool `json:"set,omitempty"`
-					} `json:"average_time"`
-
-					// Count Number of RPCs received
-					Count int32 `json:"count"`
-
-					// TotalTime Total time spent processing RPC in seconds
-					TotalTime int64 `json:"total_time"`
-
-					// User User name
-					User string `json:"user"`
-
-					// UserId User ID (numeric)
-					UserId int32 `json:"user_id"`
-				} `json:"rpcs_by_user,omitempty"`
-
-				// ScheduleCycleDepth Total number of jobs processed in scheduling cycles
-				ScheduleCycleDepth *int32 `json:"schedule_cycle_depth,omitempty"`
-
-				// ScheduleCycleLast Time in microseconds for last scheduling cycle
-				ScheduleCycleLast *int32 `json:"schedule_cycle_last,omitempty"`
-
-				// ScheduleCycleMax Max time of any scheduling cycle in microseconds since last reset
-				ScheduleCycleMax *int32 `json:"schedule_cycle_max,omitempty"`
-
-				// ScheduleCycleMean Mean time in microseconds for all scheduling cycles since last reset
-				ScheduleCycleMean *int64 `json:"schedule_cycle_mean,omitempty"`
-
-				// ScheduleCycleMeanDepth Mean of the number of jobs processed in a scheduling cycle
-				ScheduleCycleMeanDepth *int64 `json:"schedule_cycle_mean_depth,omitempty"`
-
-				// ScheduleCyclePerMinute Number of scheduling executions per minute
-				ScheduleCyclePerMinute *int64 `json:"schedule_cycle_per_minute,omitempty"`
-
-				// ScheduleCycleSum Total run time in microseconds for all scheduling cycles since last reset
-				ScheduleCycleSum *int32 `json:"schedule_cycle_sum,omitempty"`
-
-				// ScheduleCycleTotal Number of scheduling cycles since last reset
-				ScheduleCycleTotal *int32 `json:"schedule_cycle_total,omitempty"`
-
-				// ScheduleExit Reasons for which the scheduling cycle exited since last reset
-				ScheduleExit *struct {
-					// DefaultQueueDepth Reached number of jobs allowed to be tested
-					DefaultQueueDepth *int32 `json:"default_queue_depth,omitempty"`
-
-					// EndJobQueue Reached end of queue
-					EndJobQueue *int32 `json:"end_job_queue,omitempty"`
-
-					// Licenses Blocked on licenses
-					Licenses *int32 `json:"licenses,omitempty"`
-
-					// MaxJobStart Reached number of jobs allowed to start
-					MaxJobStart *int32 `json:"max_job_start,omitempty"`
-
-					// MaxRpcCnt Reached RPC limit
-					MaxRpcCnt *int32 `json:"max_rpc_cnt,omitempty"`
-
-					// MaxSchedTime Reached maximum allowed scheduler time
-					MaxSchedTime *int32 `json:"max_sched_time,omitempty"`
-				} `json:"schedule_exit,omitempty"`
-
-				// ScheduleQueueLength Number of jobs pending in queue
-				ScheduleQueueLength *int32 `json:"schedule_queue_length,omitempty"`
-
-				// ServerThreadCount Number of current active slurmctld threads
-				ServerThreadCount *int32 `json:"server_thread_count,omitempty"`
-			} `json:"statistics"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiDiagResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Statistics statistics
-			Statistics struct {
-				// AgentCount Number of agent threads
-				AgentCount *int32 `json:"agent_count,omitempty"`
-
-				// AgentQueueSize Number of enqueued outgoing RPC requests in an internal retry list
-				AgentQueueSize *int32 `json:"agent_queue_size,omitempty"`
-
-				// AgentThreadCount Total number of active threads created by all agent threads
-				AgentThreadCount *int32 `json:"agent_thread_count,omitempty"`
-
-				// BfActive Backfill scheduler currently running
-				BfActive *bool `json:"bf_active,omitempty"`
-
-				// BfBackfilledHetJobs Number of heterogeneous job components started through backfilling since last Slurm start
-				BfBackfilledHetJobs *int32 `json:"bf_backfilled_het_jobs,omitempty"`
-
-				// BfBackfilledJobs Number of jobs started through backfilling since last slurm start
-				BfBackfilledJobs *int32 `json:"bf_backfilled_jobs,omitempty"`
-
-				// BfCycleCounter Number of backfill scheduling cycles since last reset
-				BfCycleCounter *int32 `json:"bf_cycle_counter,omitempty"`
-
-				// BfCycleLast Execution time in microseconds of last backfill scheduling cycle
-				BfCycleLast *int32 `json:"bf_cycle_last,omitempty"`
-
-				// BfCycleMax Execution time in microseconds of longest backfill scheduling cycle
-				BfCycleMax *int32 `json:"bf_cycle_max,omitempty"`
-
-				// BfCycleMean Mean time in microseconds of backfilling scheduling cycles since last reset
-				BfCycleMean *int64 `json:"bf_cycle_mean,omitempty"`
-
-				// BfCycleSum Total time in microseconds of backfilling scheduling cycles since last reset
-				BfCycleSum *int64 `json:"bf_cycle_sum,omitempty"`
-
-				// BfDepthMean Mean number of eligible to run jobs processed during all backfilling scheduling cycles since last reset
-				BfDepthMean *int64 `json:"bf_depth_mean,omitempty"`
-
-				// BfDepthMeanTry The subset of Depth Mean that the backfill scheduler attempted to schedule
-				BfDepthMeanTry *int64 `json:"bf_depth_mean_try,omitempty"`
-
-				// BfDepthSum Total number of jobs processed during all backfilling scheduling cycles since last reset
-				BfDepthSum *int32 `json:"bf_depth_sum,omitempty"`
-
-				// BfDepthTrySum Subset of bf_depth_sum that the backfill scheduler attempted to schedule
-				BfDepthTrySum *int32 `json:"bf_depth_try_sum,omitempty"`
-
-				// BfExit Reasons for which the backfill scheduling cycle exited since last reset
-				BfExit *struct {
-					// BfMaxJobStart Reached number of jobs allowed to start
-					BfMaxJobStart *int32 `json:"bf_max_job_start,omitempty"`
-
-					// BfMaxJobTest Reached number of jobs allowed to be tested
-					BfMaxJobTest *int32 `json:"bf_max_job_test,omitempty"`
-
-					// BfMaxTime Reached maximum allowed scheduler time
-					BfMaxTime *int32 `json:"bf_max_time,omitempty"`
-
-					// BfNodeSpaceSize Reached table size limit
-					BfNodeSpaceSize *int32 `json:"bf_node_space_size,omitempty"`
-
-					// EndJobQueue Reached end of queue
-					EndJobQueue *int32 `json:"end_job_queue,omitempty"`
-
-					// StateChanged System state changed
-					StateChanged *int32 `json:"state_changed,omitempty"`
-				} `json:"bf_exit,omitempty"`
-
-				// BfLastBackfilledJobs Number of jobs started through backfilling since last reset
-				BfLastBackfilledJobs *int32 `json:"bf_last_backfilled_jobs,omitempty"`
-
-				// BfLastDepth Number of processed jobs during last backfilling scheduling cycle
-				BfLastDepth *int32 `json:"bf_last_depth,omitempty"`
-
-				// BfLastDepthTry Number of processed jobs during last backfilling scheduling cycle that had a chance to start using available resources
-				BfLastDepthTry *int32 `json:"bf_last_depth_try,omitempty"`
-
-				// BfQueueLen Number of jobs pending to be processed by backfilling algorithm
-				BfQueueLen *int32 `json:"bf_queue_len,omitempty"`
-
-				// BfQueueLenMean Mean number of jobs pending to be processed by backfilling algorithm
-				BfQueueLenMean *int64 `json:"bf_queue_len_mean,omitempty"`
-
-				// BfQueueLenSum Total number of jobs pending to be processed by backfilling algorithm since last reset
-				BfQueueLenSum *int32 `json:"bf_queue_len_sum,omitempty"`
-
-				// BfTableSize Number of different time slots tested by the backfill scheduler in its last iteration
-				BfTableSize *int32 `json:"bf_table_size,omitempty"`
-
-				// BfTableSizeMean Mean number of different time slots tested by the backfill scheduler
-				BfTableSizeMean *int64 `json:"bf_table_size_mean,omitempty"`
-
-				// BfTableSizeSum Total number of different time slots tested by the backfill scheduler
-				BfTableSizeSum *int32 `json:"bf_table_size_sum,omitempty"`
-
-				// BfWhenLastCycle When the last backfill scheduling cycle happened (UNIX timestamp)
-				BfWhenLastCycle *struct {
-					// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-					Infinite *bool `json:"infinite,omitempty"`
-
-					// Number If "set" is True the number will be set with value; otherwise ignore number contents
-					Number *int64 `json:"number,omitempty"`
-
-					// Set True if number has been set; False if number is unset
-					Set *bool `json:"set,omitempty"`
-				} `json:"bf_when_last_cycle,omitempty"`
-
-				// DbdAgentQueueSize Number of messages for SlurmDBD that are queued
-				DbdAgentQueueSize *int32 `json:"dbd_agent_queue_size,omitempty"`
-
-				// GettimeofdayLatency Latency of 1000 calls to the gettimeofday() syscall in microseconds, as measured at controller startup
-				GettimeofdayLatency *int32 `json:"gettimeofday_latency,omitempty"`
-
-				// JobStatesTs When the job state counts were gathered (UNIX timestamp)
-				JobStatesTs *struct {
-					// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-					Infinite *bool `json:"infinite,omitempty"`
-
-					// Number If "set" is True the number will be set with value; otherwise ignore number contents
-					Number *int64 `json:"number,omitempty"`
-
-					// Set True if number has been set; False if number is unset
-					Set *bool `json:"set,omitempty"`
-				} `json:"job_states_ts,omitempty"`
-
-				// JobsCanceled Number of jobs canceled since the last reset
-				JobsCanceled *int32 `json:"jobs_canceled,omitempty"`
-
-				// JobsCompleted Number of jobs completed since last reset
-				JobsCompleted *int32 `json:"jobs_completed,omitempty"`
-
-				// JobsFailed Number of jobs failed due to slurmd or other internal issues since last reset
-				JobsFailed *int32 `json:"jobs_failed,omitempty"`
-
-				// JobsPending Number of jobs pending at the time of listed in job_state_ts
-				JobsPending *int32 `json:"jobs_pending,omitempty"`
-
-				// JobsRunning Number of jobs running at the time of listed in job_state_ts
-				JobsRunning *int32 `json:"jobs_running,omitempty"`
-
-				// JobsStarted Number of jobs started since last reset
-				JobsStarted *int32 `json:"jobs_started,omitempty"`
-
-				// JobsSubmitted Number of jobs submitted since last reset
-				JobsSubmitted *int32 `json:"jobs_submitted,omitempty"`
-
-				// PartsPacked Zero if only RPC statistic included
-				PartsPacked *int32 `json:"parts_packed,omitempty"`
-
-				// PendingRpcs Pending RPC statistics
-				PendingRpcs *[]struct {
-					// Count Number of pending RPCs queued
-					Count int32 `json:"count"`
-
-					// MessageType Message type as string
-					MessageType string `json:"message_type"`
-
-					// TypeId Message type as integer
-					TypeId int32 `json:"type_id"`
-				} `json:"pending_rpcs,omitempty"`
-
-				// PendingRpcsByHostlist Pending RPCs hostlists
-				PendingRpcsByHostlist *[]struct {
-					// Count Number of RPCs received
-					Count []string `json:"count"`
-
-					// MessageType Message type as string
-					MessageType string `json:"message_type"`
-
-					// TypeId Message type as integer
-					TypeId int32 `json:"type_id"`
-				} `json:"pending_rpcs_by_hostlist,omitempty"`
-
-				// ReqTime When the request was made (UNIX timestamp)
-				ReqTime *struct {
-					// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-					Infinite *bool `json:"infinite,omitempty"`
-
-					// Number If "set" is True the number will be set with value; otherwise ignore number contents
-					Number *int64 `json:"number,omitempty"`
-
-					// Set True if number has been set; False if number is unset
-					Set *bool `json:"set,omitempty"`
-				} `json:"req_time,omitempty"`
-
-				// ReqTimeStart When the data in the report started (UNIX timestamp)
-				ReqTimeStart *struct {
-					// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-					Infinite *bool `json:"infinite,omitempty"`
-
-					// Number If "set" is True the number will be set with value; otherwise ignore number contents
-					Number *int64 `json:"number,omitempty"`
-
-					// Set True if number has been set; False if number is unset
-					Set *bool `json:"set,omitempty"`
-				} `json:"req_time_start,omitempty"`
-
-				// RpcsByMessageType Most frequently issued remote procedure calls (RPCs)
-				RpcsByMessageType *[]struct {
-					// AverageTime Average time spent processing RPC in seconds
-					AverageTime struct {
-						// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-						Infinite *bool `json:"infinite,omitempty"`
-
-						// Number If "set" is True the number will be set with value; otherwise ignore number contents
-						Number *int64 `json:"number,omitempty"`
-
-						// Set True if number has been set; False if number is unset
-						Set *bool `json:"set,omitempty"`
-					} `json:"average_time"`
-
-					// Count Number of RPCs received
-					Count int32 `json:"count"`
-
-					// CycleLast Number of RPCs processed within the last RPC queue cycle
-					CycleLast int32 `json:"cycle_last"`
-
-					// CycleMax Maximum number of RPCs processed within a RPC queue cycle since start
-					CycleMax int32 `json:"cycle_max"`
-
-					// Dropped Number of RPCs dropped
-					Dropped int64 `json:"dropped"`
-
-					// MessageType Message type as string
-					MessageType string `json:"message_type"`
-
-					// Queued Number of RPCs queued
-					Queued int32 `json:"queued"`
-
-					// TotalTime Total time spent processing RPC in seconds
-					TotalTime int64 `json:"total_time"`
-
-					// TypeId Message type as integer
-					TypeId int32 `json:"type_id"`
-				} `json:"rpcs_by_message_type,omitempty"`
-
-				// RpcsByUser RPCs issued by user ID
-				RpcsByUser *[]struct {
-					// AverageTime Average time spent processing RPC in seconds
-					AverageTime struct {
-						// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-						Infinite *bool `json:"infinite,omitempty"`
-
-						// Number If "set" is True the number will be set with value; otherwise ignore number contents
-						Number *int64 `json:"number,omitempty"`
-
-						// Set True if number has been set; False if number is unset
-						Set *bool `json:"set,omitempty"`
-					} `json:"average_time"`
-
-					// Count Number of RPCs received
-					Count int32 `json:"count"`
-
-					// TotalTime Total time spent processing RPC in seconds
-					TotalTime int64 `json:"total_time"`
-
-					// User User name
-					User string `json:"user"`
-
-					// UserId User ID (numeric)
-					UserId int32 `json:"user_id"`
-				} `json:"rpcs_by_user,omitempty"`
-
-				// ScheduleCycleDepth Total number of jobs processed in scheduling cycles
-				ScheduleCycleDepth *int32 `json:"schedule_cycle_depth,omitempty"`
-
-				// ScheduleCycleLast Time in microseconds for last scheduling cycle
-				ScheduleCycleLast *int32 `json:"schedule_cycle_last,omitempty"`
-
-				// ScheduleCycleMax Max time of any scheduling cycle in microseconds since last reset
-				ScheduleCycleMax *int32 `json:"schedule_cycle_max,omitempty"`
-
-				// ScheduleCycleMean Mean time in microseconds for all scheduling cycles since last reset
-				ScheduleCycleMean *int64 `json:"schedule_cycle_mean,omitempty"`
-
-				// ScheduleCycleMeanDepth Mean of the number of jobs processed in a scheduling cycle
-				ScheduleCycleMeanDepth *int64 `json:"schedule_cycle_mean_depth,omitempty"`
-
-				// ScheduleCyclePerMinute Number of scheduling executions per minute
-				ScheduleCyclePerMinute *int64 `json:"schedule_cycle_per_minute,omitempty"`
-
-				// ScheduleCycleSum Total run time in microseconds for all scheduling cycles since last reset
-				ScheduleCycleSum *int32 `json:"schedule_cycle_sum,omitempty"`
-
-				// ScheduleCycleTotal Number of scheduling cycles since last reset
-				ScheduleCycleTotal *int32 `json:"schedule_cycle_total,omitempty"`
-
-				// ScheduleExit Reasons for which the scheduling cycle exited since last reset
-				ScheduleExit *struct {
-					// DefaultQueueDepth Reached number of jobs allowed to be tested
-					DefaultQueueDepth *int32 `json:"default_queue_depth,omitempty"`
-
-					// EndJobQueue Reached end of queue
-					EndJobQueue *int32 `json:"end_job_queue,omitempty"`
-
-					// Licenses Blocked on licenses
-					Licenses *int32 `json:"licenses,omitempty"`
-
-					// MaxJobStart Reached number of jobs allowed to start
-					MaxJobStart *int32 `json:"max_job_start,omitempty"`
-
-					// MaxRpcCnt Reached RPC limit
-					MaxRpcCnt *int32 `json:"max_rpc_cnt,omitempty"`
-
-					// MaxSchedTime Reached maximum allowed scheduler time
-					MaxSchedTime *int32 `json:"max_sched_time,omitempty"`
-				} `json:"schedule_exit,omitempty"`
-
-				// ScheduleQueueLength Number of jobs pending in queue
-				ScheduleQueueLength *int32 `json:"schedule_queue_length,omitempty"`
-
-				// ServerThreadCount Number of current active slurmctld threads
-				ServerThreadCount *int32 `json:"server_thread_count,omitempty"`
-			} `json:"statistics"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiDiagResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiDiagResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiDiagResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -25184,172 +19933,32 @@ func ParseSlurmV0041PostJobAllocateResponse(rsp *http.Response) (*SlurmV0041Post
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// JobId Submitted Job ID
-			JobId *int32 `json:"job_id,omitempty"`
-
-			// JobSubmitUserMsg Job submission user message
-			JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiJobAllocResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// JobId Submitted Job ID
-			JobId *int32 `json:"job_id,omitempty"`
-
-			// JobSubmitUserMsg Job submission user message
-			JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiJobAllocResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiJobAllocResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiJobAllocResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -25371,216 +19980,32 @@ func ParseSlurmV0041PostJobSubmitResponse(rsp *http.Response) (*SlurmV0041PostJo
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// JobId Submitted Job ID
-			JobId *int32 `json:"job_id,omitempty"`
-
-			// JobSubmitUserMsg Job submission user message
-			JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Result Job submission
-			// Deprecated:
-			Result *struct {
-				// Error Error message
-				Error *string `json:"error,omitempty"`
-
-				// ErrorCode Error code
-				ErrorCode *int32 `json:"error_code,omitempty"`
-
-				// JobId New job ID
-				JobId *int32 `json:"job_id,omitempty"`
-
-				// JobSubmitUserMsg Message to user from job_submit plugin
-				JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-				// StepId New job step ID
-				StepId *string `json:"step_id,omitempty"`
-			} `json:"result,omitempty"`
-
-			// StepId Submitted Step ID
-			StepId *string `json:"step_id,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiJobSubmitResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// JobId Submitted Job ID
-			JobId *int32 `json:"job_id,omitempty"`
-
-			// JobSubmitUserMsg Job submission user message
-			JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Result Job submission
-			// Deprecated:
-			Result *struct {
-				// Error Error message
-				Error *string `json:"error,omitempty"`
-
-				// ErrorCode Error code
-				ErrorCode *int32 `json:"error_code,omitempty"`
-
-				// JobId New job ID
-				JobId *int32 `json:"job_id,omitempty"`
-
-				// JobSubmitUserMsg Message to user from job_submit plugin
-				JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-				// StepId New job step ID
-				StepId *string `json:"step_id,omitempty"`
-			} `json:"result,omitempty"`
-
-			// StepId Submitted Step ID
-			StepId *string `json:"step_id,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiJobSubmitResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiJobSubmitResponse
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiJobSubmitResponse
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -25615,6 +20040,20 @@ func ParseSlurmV0041DeleteJobResponse(rsp *http.Response) (*SlurmV0041DeleteJobR
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -25648,6 +20087,20 @@ func ParseSlurmV0041GetJobResponse(rsp *http.Response) (*SlurmV0041GetJobRespons
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiJobInfoResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiJobInfoResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -25668,220 +20121,32 @@ func ParseSlurmV0041PostJobResponse(rsp *http.Response) (*SlurmV0041PostJobRespo
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// JobId First updated Job ID - Use results instead
-			// Deprecated:
-			JobId *string `json:"job_id,omitempty"`
-
-			// JobSubmitUserMsg First updated Job submission user message - Use results instead
-			// Deprecated:
-			JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Results Job update results
-			Results *[]struct {
-				// Error Verbose update status or error
-				Error *string `json:"error,omitempty"`
-
-				// ErrorCode Verbose update status or error
-				ErrorCode *int32 `json:"error_code,omitempty"`
-
-				// JobId Job ID for updated job
-				JobId *int32 `json:"job_id,omitempty"`
-
-				// StepId Step ID for updated job
-				StepId *string `json:"step_id,omitempty"`
-
-				// Why Update response message
-				Why *string `json:"why,omitempty"`
-			} `json:"results,omitempty"`
-
-			// StepId First updated Step ID - Use results instead
-			// Deprecated:
-			StepId *string `json:"step_id,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiJobPostResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// JobId First updated Job ID - Use results instead
-			// Deprecated:
-			JobId *string `json:"job_id,omitempty"`
-
-			// JobSubmitUserMsg First updated Job submission user message - Use results instead
-			// Deprecated:
-			JobSubmitUserMsg *string `json:"job_submit_user_msg,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Results Job update results
-			Results *[]struct {
-				// Error Verbose update status or error
-				Error *string `json:"error,omitempty"`
-
-				// ErrorCode Verbose update status or error
-				ErrorCode *int32 `json:"error_code,omitempty"`
-
-				// JobId Job ID for updated job
-				JobId *int32 `json:"job_id,omitempty"`
-
-				// StepId Step ID for updated job
-				StepId *string `json:"step_id,omitempty"`
-
-				// Why Update response message
-				Why *string `json:"why,omitempty"`
-			} `json:"results,omitempty"`
-
-			// StepId First updated Step ID - Use results instead
-			// Deprecated:
-			StepId *string `json:"step_id,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiJobPostResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiJobPostResponse
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiJobPostResponse
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -25903,226 +20168,32 @@ func ParseSlurmV0041DeleteJobsResponse(rsp *http.Response) (*SlurmV0041DeleteJob
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Status resultant status of signal request
-			Status []struct {
-				Error *struct {
-					// Code Numeric error encountered signaling job
-					Code *int32 `json:"code,omitempty"`
-
-					// Message Error message why signaling job failed
-					Message *string `json:"message,omitempty"`
-
-					// String String error encountered signaling job
-					String *string `json:"string,omitempty"`
-				} `json:"error,omitempty"`
-				Federation *struct {
-					// Sibling Name of federation sibling (may be empty for non-federation)
-					Sibling *string `json:"sibling,omitempty"`
-				} `json:"federation,omitempty"`
-
-				// JobId Job ID that signaling failed
-				JobId struct {
-					// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-					Infinite *bool `json:"infinite,omitempty"`
-
-					// Number If "set" is True the number will be set with value; otherwise ignore number contents
-					Number *int32 `json:"number,omitempty"`
-
-					// Set True if number has been set; False if number is unset
-					Set *bool `json:"set,omitempty"`
-				} `json:"job_id"`
-
-				// StepId Job or Step ID that signaling failed
-				StepId string `json:"step_id"`
-			} `json:"status"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiKillJobsResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Status resultant status of signal request
-			Status []struct {
-				Error *struct {
-					// Code Numeric error encountered signaling job
-					Code *int32 `json:"code,omitempty"`
-
-					// Message Error message why signaling job failed
-					Message *string `json:"message,omitempty"`
-
-					// String String error encountered signaling job
-					String *string `json:"string,omitempty"`
-				} `json:"error,omitempty"`
-				Federation *struct {
-					// Sibling Name of federation sibling (may be empty for non-federation)
-					Sibling *string `json:"sibling,omitempty"`
-				} `json:"federation,omitempty"`
-
-				// JobId Job ID that signaling failed
-				JobId struct {
-					// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-					Infinite *bool `json:"infinite,omitempty"`
-
-					// Number If "set" is True the number will be set with value; otherwise ignore number contents
-					Number *int32 `json:"number,omitempty"`
-
-					// Set True if number has been set; False if number is unset
-					Set *bool `json:"set,omitempty"`
-				} `json:"job_id"`
-
-				// StepId Job or Step ID that signaling failed
-				StepId string `json:"step_id"`
-			} `json:"status"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiKillJobsResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiKillJobsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiKillJobsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -26157,6 +20228,20 @@ func ParseSlurmV0041GetJobsResponse(rsp *http.Response) (*SlurmV0041GetJobsRespo
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiJobInfoResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiJobInfoResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -26190,6 +20275,20 @@ func ParseSlurmV0041GetJobsStateResponse(rsp *http.Response) (*SlurmV0041GetJobs
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiJobInfoResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiJobInfoResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -26210,244 +20309,32 @@ func ParseSlurmV0041GetLicensesResponse(rsp *http.Response) (*SlurmV0041GetLicen
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// LastUpdate Time of last licenses change (UNIX timestamp)
-			LastUpdate struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"last_update"`
-
-			// Licenses List of licenses
-			Licenses []struct {
-				// Free Number of licenses currently available
-				Free *int32 `json:"Free,omitempty"`
-
-				// LastConsumed Last known number of licenses that were consumed in the license manager (Remote Only)
-				LastConsumed *int32 `json:"LastConsumed,omitempty"`
-
-				// LastDeficit Number of "missing licenses" from the cluster's perspective
-				LastDeficit *int32 `json:"LastDeficit,omitempty"`
-
-				// LastUpdate When the license information was last updated (UNIX Timestamp)
-				LastUpdate *int64 `json:"LastUpdate,omitempty"`
-
-				// LicenseName Name of the license
-				LicenseName *string `json:"LicenseName,omitempty"`
-
-				// Remote Indicates whether licenses are served by the database
-				Remote *bool `json:"Remote,omitempty"`
-
-				// Reserved Number of licenses reserved
-				Reserved *int32 `json:"Reserved,omitempty"`
-
-				// Total Total number of licenses present
-				Total *int32 `json:"Total,omitempty"`
-
-				// Used Number of licenses in use
-				Used *int32 `json:"Used,omitempty"`
-			} `json:"licenses"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiLicensesResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// LastUpdate Time of last licenses change (UNIX timestamp)
-			LastUpdate struct {
-				// Infinite True if number has been set to infinite; "set" and "number" will be ignored
-				Infinite *bool `json:"infinite,omitempty"`
-
-				// Number If "set" is True the number will be set with value; otherwise ignore number contents
-				Number *int64 `json:"number,omitempty"`
-
-				// Set True if number has been set; False if number is unset
-				Set *bool `json:"set,omitempty"`
-			} `json:"last_update"`
-
-			// Licenses List of licenses
-			Licenses []struct {
-				// Free Number of licenses currently available
-				Free *int32 `json:"Free,omitempty"`
-
-				// LastConsumed Last known number of licenses that were consumed in the license manager (Remote Only)
-				LastConsumed *int32 `json:"LastConsumed,omitempty"`
-
-				// LastDeficit Number of "missing licenses" from the cluster's perspective
-				LastDeficit *int32 `json:"LastDeficit,omitempty"`
-
-				// LastUpdate When the license information was last updated (UNIX Timestamp)
-				LastUpdate *int64 `json:"LastUpdate,omitempty"`
-
-				// LicenseName Name of the license
-				LicenseName *string `json:"LicenseName,omitempty"`
-
-				// Remote Indicates whether licenses are served by the database
-				Remote *bool `json:"Remote,omitempty"`
-
-				// Reserved Number of licenses reserved
-				Reserved *int32 `json:"Reserved,omitempty"`
-
-				// Total Total number of licenses present
-				Total *int32 `json:"Total,omitempty"`
-
-				// Used Number of licenses in use
-				Used *int32 `json:"Used,omitempty"`
-			} `json:"licenses"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiLicensesResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiLicensesResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiLicensesResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -26482,6 +20369,20 @@ func ParseSlurmV0041DeleteNodeResponse(rsp *http.Response) (*SlurmV0041DeleteNod
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -26514,6 +20415,20 @@ func ParseSlurmV0041GetNodeResponse(rsp *http.Response) (*SlurmV0041GetNodeRespo
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiNodesResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiNodesResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -26548,6 +20463,20 @@ func ParseSlurmV0041PostNodeResponse(rsp *http.Response) (*SlurmV0041PostNodeRes
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -26580,6 +20509,20 @@ func ParseSlurmV0041GetNodesResponse(rsp *http.Response) (*SlurmV0041GetNodesRes
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiNodesResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiNodesResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -26614,6 +20557,20 @@ func ParseSlurmV0041PostNodesResponse(rsp *http.Response) (*SlurmV0041PostNodesR
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -26646,6 +20603,20 @@ func ParseSlurmV0041GetPartitionResponse(rsp *http.Response) (*SlurmV0041GetPart
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiPartitionResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiPartitionResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -26680,6 +20651,20 @@ func ParseSlurmV0041GetPartitionsResponse(rsp *http.Response) (*SlurmV0041GetPar
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiPartitionResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiPartitionResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -26700,190 +20685,32 @@ func ParseSlurmV0041GetPingResponse(rsp *http.Response) (*SlurmV0041GetPingRespo
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Pings pings
-			Pings []struct {
-				// Hostname Target for ping
-				Hostname *string `json:"hostname,omitempty"`
-
-				// Latency Number of microseconds it took to successfully ping or timeout
-				Latency *int64 `json:"latency,omitempty"`
-
-				// Mode The operating mode of the responding slurmctld
-				Mode *string `json:"mode,omitempty"`
-
-				// Pinged Ping result
-				Pinged *string `json:"pinged,omitempty"`
-			} `json:"pings"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiPingArrayResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Pings pings
-			Pings []struct {
-				// Hostname Target for ping
-				Hostname *string `json:"hostname,omitempty"`
-
-				// Latency Number of microseconds it took to successfully ping or timeout
-				Latency *int64 `json:"latency,omitempty"`
-
-				// Mode The operating mode of the responding slurmctld
-				Mode *string `json:"mode,omitempty"`
-
-				// Pinged Ping result
-				Pinged *string `json:"pinged,omitempty"`
-			} `json:"pings"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiPingArrayResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiPingArrayResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiPingArrayResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -26918,6 +20745,20 @@ func ParseSlurmV0041GetReconfigureResponse(rsp *http.Response) (*SlurmV0041GetRe
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -26950,6 +20791,20 @@ func ParseSlurmV0041DeleteReservationResponse(rsp *http.Response) (*SlurmV0041De
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -26984,6 +20839,20 @@ func ParseSlurmV0041GetReservationResponse(rsp *http.Response) (*SlurmV0041GetRe
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiReservationResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiReservationResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -27016,6 +20885,20 @@ func ParseSlurmV0041GetReservationsResponse(rsp *http.Response) (*SlurmV0041GetR
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiReservationResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiReservationResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -27050,6 +20933,20 @@ func ParseSlurmV0041GetSharesResponse(rsp *http.Response) (*SlurmV0041GetSharesR
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiSharesResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiSharesResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -27070,166 +20967,32 @@ func ParseSlurmdbV0041DeleteAccountResponse(rsp *http.Response) (*SlurmdbV0041De
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// RemovedAccounts removed_accounts
-			RemovedAccounts []string `json:"removed_accounts"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiAccountsRemovedResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// RemovedAccounts removed_accounts
-			RemovedAccounts []string `json:"removed_accounts"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiAccountsRemovedResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiAccountsRemovedResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiAccountsRemovedResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -27264,6 +21027,20 @@ func ParseSlurmdbV0041GetAccountResponse(rsp *http.Response) (*SlurmdbV0041GetAc
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiAccountsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiAccountsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -27296,6 +21073,20 @@ func ParseSlurmdbV0041GetAccountsResponse(rsp *http.Response) (*SlurmdbV0041GetA
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiAccountsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiAccountsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -27330,6 +21121,20 @@ func ParseSlurmdbV0041PostAccountsResponse(rsp *http.Response) (*SlurmdbV0041Pos
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -27350,166 +21155,32 @@ func ParseSlurmdbV0041PostAccountsAssociationResponse(rsp *http.Response) (*Slur
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// AddedAccounts added_accounts
-			AddedAccounts string `json:"added_accounts"`
-
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiAccountsAddCondRespStr
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			// AddedAccounts added_accounts
-			AddedAccounts string `json:"added_accounts"`
-
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiAccountsAddCondRespStr
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiAccountsAddCondRespStr
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiAccountsAddCondRespStr
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -27544,6 +21215,20 @@ func ParseSlurmdbV0041DeleteAssociationResponse(rsp *http.Response) (*SlurmdbV00
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiAssocsRemovedResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiAssocsRemovedResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -27576,6 +21261,20 @@ func ParseSlurmdbV0041GetAssociationResponse(rsp *http.Response) (*SlurmdbV0041G
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiAssocsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiAssocsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -27610,6 +21309,20 @@ func ParseSlurmdbV0041DeleteAssociationsResponse(rsp *http.Response) (*SlurmdbV0
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiAssocsRemovedResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiAssocsRemovedResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -27642,6 +21355,20 @@ func ParseSlurmdbV0041GetAssociationsResponse(rsp *http.Response) (*SlurmdbV0041
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiAssocsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiAssocsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -27676,6 +21403,20 @@ func ParseSlurmdbV0041PostAssociationsResponse(rsp *http.Response) (*SlurmdbV004
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -27696,166 +21437,32 @@ func ParseSlurmdbV0041DeleteClusterResponse(rsp *http.Response) (*SlurmdbV0041De
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// DeletedClusters deleted_clusters
-			DeletedClusters []string `json:"deleted_clusters"`
-
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiClustersRemovedResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			// DeletedClusters deleted_clusters
-			DeletedClusters []string `json:"deleted_clusters"`
-
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiClustersRemovedResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiClustersRemovedResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiClustersRemovedResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -27890,6 +21497,20 @@ func ParseSlurmdbV0041GetClusterResponse(rsp *http.Response) (*SlurmdbV0041GetCl
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiClustersResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiClustersResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -27922,6 +21543,20 @@ func ParseSlurmdbV0041GetClustersResponse(rsp *http.Response) (*SlurmdbV0041GetC
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiClustersResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiClustersResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -27956,6 +21591,20 @@ func ParseSlurmdbV0041PostClustersResponse(rsp *http.Response) (*SlurmdbV0041Pos
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -27988,6 +21637,20 @@ func ParseSlurmdbV0041GetConfigResponse(rsp *http.Response) (*SlurmdbV0041GetCon
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiSlurmdbdConfigResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiSlurmdbdConfigResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -28022,6 +21685,20 @@ func ParseSlurmdbV0041PostConfigResponse(rsp *http.Response) (*SlurmdbV0041PostC
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -28042,346 +21719,32 @@ func ParseSlurmdbV0041GetDiagResponse(rsp *http.Response) (*SlurmdbV0041GetDiagR
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Statistics statistics
-			Statistics struct {
-				// RPCs List of RPCs sent to the slurmdbd
-				RPCs *[]struct {
-					// Count Number of RPCs processed
-					Count *int32 `json:"count,omitempty"`
-
-					// Rpc RPC type
-					Rpc  *string `json:"rpc,omitempty"`
-					Time *struct {
-						// Average Average RPC processing time in microseconds
-						Average *int64 `json:"average,omitempty"`
-
-						// Total Total RPC processing time in microseconds
-						Total *int64 `json:"total,omitempty"`
-					} `json:"time,omitempty"`
-				} `json:"RPCs,omitempty"`
-
-				// Rollups Rollup statistics
-				Rollups *struct {
-					Daily *struct {
-						// Count Number of daily rollups since last_run
-						Count    *int32 `json:"count,omitempty"`
-						Duration *struct {
-							// Last Total time spent doing daily daily rollup (seconds)
-							Last *int64 `json:"last,omitempty"`
-
-							// Max Longest daily rollup time (seconds)
-							Max *int64 `json:"max,omitempty"`
-
-							// Time Total time spent doing daily rollups (seconds)
-							Time *int64 `json:"time,omitempty"`
-						} `json:"duration,omitempty"`
-
-						// LastRun Last time daily rollup ran (UNIX timestamp)
-						LastRun *int64 `json:"last_run,omitempty"`
-					} `json:"daily,omitempty"`
-					Hourly *struct {
-						// Count Number of hourly rollups since last_run
-						Count    *int32 `json:"count,omitempty"`
-						Duration *struct {
-							// Last Total time spent doing last daily rollup (seconds)
-							Last *int64 `json:"last,omitempty"`
-
-							// Max Longest hourly rollup time (seconds)
-							Max *int64 `json:"max,omitempty"`
-
-							// Time Total time spent doing hourly rollups (seconds)
-							Time *int64 `json:"time,omitempty"`
-						} `json:"duration,omitempty"`
-
-						// LastRun Last time hourly rollup ran (UNIX timestamp)
-						LastRun *int64 `json:"last_run,omitempty"`
-					} `json:"hourly,omitempty"`
-					Monthly *struct {
-						// Count Number of monthly rollups since last_run
-						Count    *int32 `json:"count,omitempty"`
-						Duration *struct {
-							// Last Total time spent doing monthly daily rollup (seconds)
-							Last *int64 `json:"last,omitempty"`
-
-							// Max Longest monthly rollup time (seconds)
-							Max *int64 `json:"max,omitempty"`
-
-							// Time Total time spent doing monthly rollups (seconds)
-							Time *int64 `json:"time,omitempty"`
-						} `json:"duration,omitempty"`
-
-						// LastRun Last time monthly rollup ran (UNIX timestamp)
-						LastRun *int64 `json:"last_run,omitempty"`
-					} `json:"monthly,omitempty"`
-				} `json:"rollups,omitempty"`
-
-				// TimeStart When data collection started (UNIX timestamp)
-				TimeStart *int64 `json:"time_start,omitempty"`
-
-				// Users List of users that issued RPCs
-				Users *[]struct {
-					// Count Number of RPCs processed
-					Count *int32 `json:"count,omitempty"`
-					Time  *struct {
-						// Average Average RPC processing time in microseconds
-						Average *int64 `json:"average,omitempty"`
-
-						// Total Total RPC processing time in microseconds
-						Total *int64 `json:"total,omitempty"`
-					} `json:"time,omitempty"`
-
-					// User User ID
-					User *string `json:"user,omitempty"`
-				} `json:"users,omitempty"`
-			} `json:"statistics"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiSlurmdbdStatsResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Statistics statistics
-			Statistics struct {
-				// RPCs List of RPCs sent to the slurmdbd
-				RPCs *[]struct {
-					// Count Number of RPCs processed
-					Count *int32 `json:"count,omitempty"`
-
-					// Rpc RPC type
-					Rpc  *string `json:"rpc,omitempty"`
-					Time *struct {
-						// Average Average RPC processing time in microseconds
-						Average *int64 `json:"average,omitempty"`
-
-						// Total Total RPC processing time in microseconds
-						Total *int64 `json:"total,omitempty"`
-					} `json:"time,omitempty"`
-				} `json:"RPCs,omitempty"`
-
-				// Rollups Rollup statistics
-				Rollups *struct {
-					Daily *struct {
-						// Count Number of daily rollups since last_run
-						Count    *int32 `json:"count,omitempty"`
-						Duration *struct {
-							// Last Total time spent doing daily daily rollup (seconds)
-							Last *int64 `json:"last,omitempty"`
-
-							// Max Longest daily rollup time (seconds)
-							Max *int64 `json:"max,omitempty"`
-
-							// Time Total time spent doing daily rollups (seconds)
-							Time *int64 `json:"time,omitempty"`
-						} `json:"duration,omitempty"`
-
-						// LastRun Last time daily rollup ran (UNIX timestamp)
-						LastRun *int64 `json:"last_run,omitempty"`
-					} `json:"daily,omitempty"`
-					Hourly *struct {
-						// Count Number of hourly rollups since last_run
-						Count    *int32 `json:"count,omitempty"`
-						Duration *struct {
-							// Last Total time spent doing last daily rollup (seconds)
-							Last *int64 `json:"last,omitempty"`
-
-							// Max Longest hourly rollup time (seconds)
-							Max *int64 `json:"max,omitempty"`
-
-							// Time Total time spent doing hourly rollups (seconds)
-							Time *int64 `json:"time,omitempty"`
-						} `json:"duration,omitempty"`
-
-						// LastRun Last time hourly rollup ran (UNIX timestamp)
-						LastRun *int64 `json:"last_run,omitempty"`
-					} `json:"hourly,omitempty"`
-					Monthly *struct {
-						// Count Number of monthly rollups since last_run
-						Count    *int32 `json:"count,omitempty"`
-						Duration *struct {
-							// Last Total time spent doing monthly daily rollup (seconds)
-							Last *int64 `json:"last,omitempty"`
-
-							// Max Longest monthly rollup time (seconds)
-							Max *int64 `json:"max,omitempty"`
-
-							// Time Total time spent doing monthly rollups (seconds)
-							Time *int64 `json:"time,omitempty"`
-						} `json:"duration,omitempty"`
-
-						// LastRun Last time monthly rollup ran (UNIX timestamp)
-						LastRun *int64 `json:"last_run,omitempty"`
-					} `json:"monthly,omitempty"`
-				} `json:"rollups,omitempty"`
-
-				// TimeStart When data collection started (UNIX timestamp)
-				TimeStart *int64 `json:"time_start,omitempty"`
-
-				// Users List of users that issued RPCs
-				Users *[]struct {
-					// Count Number of RPCs processed
-					Count *int32 `json:"count,omitempty"`
-					Time  *struct {
-						// Average Average RPC processing time in microseconds
-						Average *int64 `json:"average,omitempty"`
-
-						// Total Total RPC processing time in microseconds
-						Total *int64 `json:"total,omitempty"`
-					} `json:"time,omitempty"`
-
-					// User User ID
-					User *string `json:"user,omitempty"`
-				} `json:"users,omitempty"`
-			} `json:"statistics"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiSlurmdbdStatsResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiSlurmdbdStatsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiSlurmdbdStatsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -28416,6 +21779,20 @@ func ParseSlurmdbV0041GetInstanceResponse(rsp *http.Response) (*SlurmdbV0041GetI
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiInstancesResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiInstancesResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -28448,6 +21825,20 @@ func ParseSlurmdbV0041GetInstancesResponse(rsp *http.Response) (*SlurmdbV0041Get
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiInstancesResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiInstancesResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -28482,6 +21873,20 @@ func ParseSlurmdbV0041GetJobResponse(rsp *http.Response) (*SlurmdbV0041GetJobRes
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiSlurmdbdJobsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiSlurmdbdJobsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -28514,6 +21919,20 @@ func ParseSlurmdbV0041GetJobsResponse(rsp *http.Response) (*SlurmdbV0041GetJobsR
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiSlurmdbdJobsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiSlurmdbdJobsResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -28548,6 +21967,20 @@ func ParseSlurmdbV0041GetQosResponse(rsp *http.Response) (*SlurmdbV0041GetQosRes
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiSlurmdbdQosResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiSlurmdbdQosResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -28581,6 +22014,20 @@ func ParseSlurmdbV0041PostQosResponse(rsp *http.Response) (*SlurmdbV0041PostQosR
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -28601,166 +22048,32 @@ func ParseSlurmdbV0041DeleteSingleQosResponse(rsp *http.Response) (*SlurmdbV0041
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// RemovedQos removed QOS
-			RemovedQos []string `json:"removed_qos"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiSlurmdbdQosRemovedResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// RemovedQos removed QOS
-			RemovedQos []string `json:"removed_qos"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiSlurmdbdQosRemovedResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiSlurmdbdQosRemovedResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiSlurmdbdQosRemovedResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -28795,6 +22108,20 @@ func ParseSlurmdbV0041GetSingleQosResponse(rsp *http.Response) (*SlurmdbV0041Get
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiSlurmdbdQosResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiSlurmdbdQosResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -28827,6 +22154,20 @@ func ParseSlurmdbV0041GetTresResponse(rsp *http.Response) (*SlurmdbV0041GetTresR
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiTresResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiTresResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -28861,6 +22202,20 @@ func ParseSlurmdbV0041PostTresResponse(rsp *http.Response) (*SlurmdbV0041PostTre
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -28893,6 +22248,20 @@ func ParseSlurmdbV0041DeleteUserResponse(rsp *http.Response) (*SlurmdbV0041Delet
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -28927,6 +22296,20 @@ func ParseSlurmdbV0041GetUserResponse(rsp *http.Response) (*SlurmdbV0041GetUserR
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiUsersResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiUsersResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -28959,6 +22342,20 @@ func ParseSlurmdbV0041GetUsersResponse(rsp *http.Response) (*SlurmdbV0041GetUser
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiUsersResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiUsersResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -28993,6 +22390,20 @@ func ParseSlurmdbV0041PostUsersResponse(rsp *http.Response) (*SlurmdbV0041PostUs
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -29013,166 +22424,32 @@ func ParseSlurmdbV0041PostUsersAssociationResponse(rsp *http.Response) (*Slurmdb
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// AddedUsers added_users
-			AddedUsers string `json:"added_users"`
-
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiUsersAddCondRespStr
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			// AddedUsers added_users
-			AddedUsers string `json:"added_users"`
-
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiUsersAddCondRespStr
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiUsersAddCondRespStr
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiUsersAddCondRespStr
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -29194,166 +22471,32 @@ func ParseSlurmdbV0041DeleteWckeyResponse(rsp *http.Response) (*SlurmdbV0041Dele
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// DeletedWckeys deleted wckeys
-			DeletedWckeys []string `json:"deleted_wckeys"`
-
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiWckeyRemovedResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			// DeletedWckeys deleted wckeys
-			DeletedWckeys []string `json:"deleted_wckeys"`
-
-			// Errors Query errors
-			Errors *[]struct {
-				// Description Long form error description
-				Description *string `json:"description,omitempty"`
-
-				// Error Short form error description
-				Error *string `json:"error,omitempty"`
-
-				// ErrorNumber Slurm numeric error identifier
-				ErrorNumber *int32 `json:"error_number,omitempty"`
-
-				// Source Source of error or where error was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"errors,omitempty"`
-
-			// Meta Slurm meta values
-			Meta *struct {
-				Client *struct {
-					// Group Client group (if known)
-					Group *string `json:"group,omitempty"`
-
-					// Source Client source description
-					Source *string `json:"source,omitempty"`
-
-					// User Client user (if known)
-					User *string `json:"user,omitempty"`
-				} `json:"client,omitempty"`
-
-				// Command CLI command (if applicable)
-				Command *[]string `json:"command,omitempty"`
-				Plugin  *struct {
-					// AccountingStorage Slurm accounting plugin
-					AccountingStorage *string `json:"accounting_storage,omitempty"`
-
-					// DataParser Slurm data_parser plugin
-					DataParser *string `json:"data_parser,omitempty"`
-
-					// Name Slurm plugin name (if applicable)
-					Name *string `json:"name,omitempty"`
-
-					// Type Slurm plugin type (if applicable)
-					Type *string `json:"type,omitempty"`
-				} `json:"plugin,omitempty"`
-				Slurm *struct {
-					// Cluster Slurm cluster name
-					Cluster *string `json:"cluster,omitempty"`
-
-					// Release Slurm release string
-					Release *string `json:"release,omitempty"`
-					Version *struct {
-						// Major Slurm release major version
-						Major *string `json:"major,omitempty"`
-
-						// Micro Slurm release micro version
-						Micro *string `json:"micro,omitempty"`
-
-						// Minor Slurm release minor version
-						Minor *string `json:"minor,omitempty"`
-					} `json:"version,omitempty"`
-				} `json:"slurm,omitempty"`
-			} `json:"meta,omitempty"`
-
-			// Warnings Query warnings
-			Warnings *[]struct {
-				// Description Long form warning description
-				Description *string `json:"description,omitempty"`
-
-				// Source Source of warning or where warning was first detected
-				Source *string `json:"source,omitempty"`
-			} `json:"warnings,omitempty"`
-		}
+		var dest V0041OpenapiWckeyRemovedResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiWckeyRemovedResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiWckeyRemovedResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -29388,6 +22531,20 @@ func ParseSlurmdbV0041GetWckeyResponse(rsp *http.Response) (*SlurmdbV0041GetWcke
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiWckeyResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiWckeyResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -29420,6 +22577,20 @@ func ParseSlurmdbV0041GetWckeysResponse(rsp *http.Response) (*SlurmdbV0041GetWck
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiWckeyResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiWckeyResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
 
 	}
 
@@ -29454,6 +22625,20 @@ func ParseSlurmdbV0041PostWckeysResponse(rsp *http.Response) (*SlurmdbV0041PostW
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && true:
+		var dest V0041OpenapiResp
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAMLDefault = &dest
+
 	}
 
 	return response, nil
@@ -29462,563 +22647,515 @@ func ParseSlurmdbV0041PostWckeysResponse(rsp *http.Response) (*SlurmdbV0041PostW
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"usjnfV2kVD40DOAKF4n0+ofXP7z+4fUPr394/cPrH17/+J30D/UBRZpivlV9ghBBGXlEBy88UrnRge1b",
-	"iB2rwxIvicERM8jIkgHOAMR2/8tss19UR2/h99uHd9+8++Zv3779zJZvdY9AImOGUoSCPgdxuaI+vnv3",
-	"t28nTMjv2VJLyI4JPhXymsXbL1CdfLotn27Lp9vy6ba8b6VPt+XTbfl0Wz7dlk+35dNt+XRbPt2WT7fl",
-	"0235dFs+3ZZPt+XTbXk/Y59uy6fb8um2fLotn27Lp9vy6bZ8ui2fbsun2/Lptny6LZ9uy6fb8um2fLot",
-	"7yLg0235dFs+3ZZPt+XTbfl0Wz7dlk+35dNt+XRbPt2WT7fl0235dFs+3ZZPt+UP0z7dlk+35dNt+XRb",
-	"nqI+3Zanqk+35Unp0235dFuefD7dlk+35dNt+XRbPt2WT7flzck+3ZZPt+XTbfl0Wz7dlk+35dNteYXB",
-	"p9vy6bZ8ui2fbsun2/Lptny6rT8o3RYEYVvWszHV7IMlO1C3PWqyR032qMkeNdmjJnvUZI+a7FGTPWqy",
-	"R032qMkeNdmjJnvUZI+a7FGTPWqyR032qMn+usijJnvUZI+a7FGTPWqyR032qMkeNdmjJnvUZI+a7FGT",
-	"PWqyR032qMkeU9ejJnsKe9Rkj5rsUZM9arJHTfaoyR412aMme9Rkj5rsUZM9arJHTfaoyR412aMmewhP",
-	"j5rsSelRkz1FPWqyp6pHTfaoyR412aMme/J51GSPmuxRkz1JPWqyR032qMkeNdmjJnvUZI+a7FGTPWqy",
-	"R032qMkeNdmjJnvUZI+a7FGTPWqyR03+GqjJR8epmrHn0Jv40DuxLP8nmhiDjjnZoRUlSaxWoTpp/+vd",
-	"L0gfA9vgKf33f19Z7Ez1J9q9K2dlNOh3795p9DcQfuBAleeJUV7ffhZagxXRhqTYgvuljo1W91DFVkyp",
-	"EzJ6753jW8psrRZQqps5AKE+orXjADvbMC7PbSZ0KRyzpODgfEk4jUyDYKSnK0pamxsKHlmNDIDxzFam",
-	"XcbR44ZwYv58xMIYBmMiAfWmHb7W4RJ14QbMKkDYcxAEVGsaShZiZsNUrO2mTqgkhOJ+AB2REiHwmtjD",
-	"OW3+JXrqVZkRZ8cAhgk1K3j/uQN5ogfVEZSiV3SF7jP2mNnh1BwkM00YdO4TK8seU2yagDlpGoTdW86F",
-	"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",
-	"///OwknsHXEHAA==",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
