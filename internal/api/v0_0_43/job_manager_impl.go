@@ -387,9 +387,22 @@ func (m *JobManagerImpl) Submit(ctx context.Context, job *interfaces.JobSubmissi
 	}
 
 	// Create the request body
+	// According to the API spec, we need to provide the job details AND the script separately
+	// The script field at the top level is deprecated but still might be required
 	requestBody := SlurmV0043PostJobSubmitJSONRequestBody{
 		Job: jobDesc,
 	}
+	
+	// The API documentation shows the script should be at the top level too
+	// Even though it's deprecated, some SLURM versions might require it
+	if jobDesc.Script != nil {
+		requestBody.Script = jobDesc.Script
+	}
+	
+	// Debug logging - commented out for production
+	// if reqBytes, err := json.Marshal(requestBody); err == nil {
+	// 	fmt.Printf("DEBUG: Sending job submission request: %s\n", string(reqBytes))
+	// }
 
 	// Call the generated OpenAPI client
 	resp, err := m.client.apiClient.SlurmV0043PostJobSubmitWithResponse(ctx, requestBody)
@@ -479,6 +492,10 @@ func convertJobSubmissionToAPI(job *interfaces.JobSubmission) (*V0043JobDescMsg,
 
 	if job.WorkingDir != "" {
 		jobDesc.CurrentWorkingDirectory = &job.WorkingDir
+	} else {
+		// SLURM requires a working directory - default to /tmp if not specified
+		defaultWorkDir := "/tmp"
+		jobDesc.CurrentWorkingDirectory = &defaultWorkDir
 	}
 
 	// Resource requirements
@@ -521,13 +538,28 @@ func convertJobSubmissionToAPI(job *interfaces.JobSubmission) (*V0043JobDescMsg,
 	}
 
 	// Environment variables
-	if len(job.Environment) > 0 {
-		envVars := make([]string, 0, len(job.Environment))
-		for key, value := range job.Environment {
-			envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
+	// Always provide at least minimal environment to avoid SLURM write errors
+	envVars := make([]string, 0)
+	
+	// Add default PATH if not provided
+	hasPath := false
+	for key := range job.Environment {
+		if key == "PATH" {
+			hasPath = true
+			break
 		}
-		jobDesc.Environment = &envVars
 	}
+	
+	if !hasPath {
+		envVars = append(envVars, "PATH=/usr/bin:/bin")
+	}
+	
+	// Add user-provided environment
+	for key, value := range job.Environment {
+		envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
+	}
+	
+	jobDesc.Environment = &envVars
 
 	// Args
 	if len(job.Args) > 0 {

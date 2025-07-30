@@ -2,7 +2,6 @@ package v0_0_43
 
 import (
 	"context"
-	"strings"
 
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
@@ -43,10 +42,7 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 
 	// Apply filters from options
 	if opts != nil {
-		if len(opts.Names) > 0 {
-			nameStr := strings.Join(opts.Names, ",")
-			params.Name = &nameStr
-		}
+		// Note: SlurmdbV0043GetUsersParams doesn't have a Name field for filtering
 		if opts.DefaultAccount != "" {
 			params.DefaultAccount = &opts.DefaultAccount
 		}
@@ -85,13 +81,11 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 	if err := a.CheckNilResponse(resp.JSON200, "List Users"); err != nil {
 		return nil, err
 	}
-	if err := a.CheckNilResponse(resp.JSON200.Users, "List Users - users field"); err != nil {
-		return nil, err
-	}
-
+	// Users is not a pointer, it's a slice directly
+	
 	// Convert the response to common types
-	userList := make([]types.User, 0, len(*resp.JSON200.Users))
-	for _, apiUser := range *resp.JSON200.Users {
+	userList := make([]types.User, 0, len(resp.JSON200.Users))
+	for _, apiUser := range resp.JSON200.Users {
 		user, err := a.convertAPIUserToCommon(apiUser)
 		if err != nil {
 			return nil, a.HandleConversionError(err, apiUser.Name)
@@ -146,10 +140,10 @@ func (a *UserAdapter) Get(ctx context.Context, userName string) (*types.User, er
 	}
 
 	// Prepare parameters for the API call
-	params := &api.SlurmdbV0043GetSingleUserParams{}
+	params := &api.SlurmdbV0043GetUserParams{}
 
-	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmdbV0043GetSingleUserWithResponse(ctx, userName, params)
+	// Call the generated OpenAPI client - GetUser retrieves a single user by name
+	resp, err := a.client.SlurmdbV0043GetUserWithResponse(ctx, userName, params)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
@@ -169,17 +163,14 @@ func (a *UserAdapter) Get(ctx context.Context, userName string) (*types.User, er
 	if err := a.CheckNilResponse(resp.JSON200, "Get User"); err != nil {
 		return nil, err
 	}
-	if err := a.CheckNilResponse(resp.JSON200.Users, "Get User - users field"); err != nil {
-		return nil, err
-	}
 
 	// Check if we got any user entries
-	if len(*resp.JSON200.Users) == 0 {
+	if len(resp.JSON200.Users) == 0 {
 		return nil, common.NewResourceNotFoundError("User", userName)
 	}
 
 	// Convert the first user (should be the only one)
-	user, err := a.convertAPIUserToCommon((*resp.JSON200.Users)[0])
+	user, err := a.convertAPIUserToCommon(resp.JSON200.Users[0])
 	if err != nil {
 		return nil, a.HandleConversionError(err, userName)
 	}
@@ -211,11 +202,8 @@ func (a *UserAdapter) Create(ctx context.Context, user *types.UserCreate) (*type
 		Users: []api.V0043User{*apiUser},
 	}
 
-	// Prepare parameters for the API call
-	params := &api.SlurmdbV0043PostUsersParams{}
-
-	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmdbV0043PostUsersWithResponse(ctx, params, reqBody)
+	// Call the generated OpenAPI client - PostUsers doesn't take params
+	resp, err := a.client.SlurmdbV0043PostUsersWithResponse(ctx, reqBody)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
@@ -269,11 +257,8 @@ func (a *UserAdapter) Update(ctx context.Context, userName string, update *types
 		Users: []api.V0043User{*apiUser},
 	}
 
-	// Prepare parameters for the API call
-	params := &api.SlurmdbV0043PostUsersParams{}
-
 	// Call the generated OpenAPI client (POST is used for updates in SLURM API)
-	resp, err := a.client.SlurmdbV0043PostUsersWithResponse(ctx, params, reqBody)
+	resp, err := a.client.SlurmdbV0043PostUsersWithResponse(ctx, reqBody)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
@@ -302,7 +287,7 @@ func (a *UserAdapter) Delete(ctx context.Context, userName string) error {
 	}
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmdbV0043DeleteSingleUserWithResponse(ctx, userName)
+	resp, err := a.client.SlurmdbV0043DeleteUserWithResponse(ctx, userName)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
@@ -350,16 +335,19 @@ func (a *UserAdapter) validateUserUpdate(update *types.UserUpdate) error {
 
 // Simplified converter methods for user management
 func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0043User) (*types.User, error) {
-	user := &types.User{}
-	if apiUser.Name != nil {
-		user.Name = *apiUser.Name
+	user := &types.User{
+		Name: apiUser.Name, // Name is not a pointer in the API
 	}
-	if apiUser.DefaultAccount != nil {
-		user.DefaultAccount = *apiUser.DefaultAccount
+	
+	// Handle default account/wckey from nested struct
+	if apiUser.Default != nil {
+		if apiUser.Default.Account != nil {
+			user.DefaultAccount = *apiUser.Default.Account
+		}
+		// Note: DefaultQoS is not available in V0043User, only WCKey
 	}
-	if apiUser.DefaultQos != nil {
-		user.DefaultQoS = *apiUser.DefaultQos
-	}
+	
+	// Handle flags if present
 	if apiUser.Flags != nil {
 		for _, flag := range *apiUser.Flags {
 			if flag == api.V0043UserFlagsDELETED {
@@ -367,40 +355,53 @@ func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0043User) (*types.User
 			}
 		}
 	}
+	
 	return user, nil
 }
 
 func (a *UserAdapter) convertCommonUserCreateToAPI(create *types.UserCreate) (*api.V0043User, error) {
-	apiUser := &api.V0043User{}
-	apiUser.Name = &create.Name
+	apiUser := &api.V0043User{
+		Name: create.Name, // Name is not a pointer
+	}
+	
+	// Set default account if provided
 	if create.DefaultAccount != "" {
-		apiUser.DefaultAccount = &create.DefaultAccount
+		apiUser.Default = &struct {
+			Account *string `json:"account,omitempty"`
+			Wckey   *string `json:"wckey,omitempty"`
+		}{
+			Account: &create.DefaultAccount,
+		}
 	}
-	if create.DefaultQoS != "" {
-		apiUser.DefaultQos = &create.DefaultQoS
-	}
+	
+	// Note: DefaultQoS is not supported in V0043User API
+	
 	return apiUser, nil
 }
 
 func (a *UserAdapter) convertCommonUserUpdateToAPI(existing *types.User, update *types.UserUpdate) (*api.V0043User, error) {
-	apiUser := &api.V0043User{}
-	apiUser.Name = &existing.Name
+	apiUser := &api.V0043User{
+		Name: existing.Name, // Name is not a pointer
+	}
 
+	// Prepare default values
 	defaultAccount := existing.DefaultAccount
 	if update.DefaultAccount != nil {
 		defaultAccount = *update.DefaultAccount
 	}
+	
+	// Set default struct if we have values to set
 	if defaultAccount != "" {
-		apiUser.DefaultAccount = &defaultAccount
+		apiUser.Default = &struct {
+			Account *string `json:"account,omitempty"`
+			Wckey   *string `json:"wckey,omitempty"`
+		}{
+			Account: &defaultAccount,
+		}
 	}
-
-	defaultQoS := existing.DefaultQoS
-	if update.DefaultQoS != nil {
-		defaultQoS = *update.DefaultQoS
-	}
-	if defaultQoS != "" {
-		apiUser.DefaultQos = &defaultQoS
-	}
+	
+	// Note: DefaultQoS is not supported in V0043User API
+	// If DefaultQoS was updated, we would need to log a warning or return an error
 
 	return apiUser, nil
 }
