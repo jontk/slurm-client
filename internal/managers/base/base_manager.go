@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/jontk/slurm-client/internal/common"
+	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -132,4 +133,63 @@ func (b *BaseManager) GetVersion() string {
 // GetResourceType returns the resource type
 func (b *BaseManager) GetResourceType() string {
 	return b.resourceType
+}
+
+// WrapError wraps an error with additional context
+func (b *BaseManager) WrapError(err error, message string) error {
+	if err == nil {
+		return nil
+	}
+	return fmt.Errorf("%s: %w", message, err)
+}
+
+// HandleHTTPResponse checks HTTP response status
+func (b *BaseManager) HandleHTTPResponse(resp interface{}, body []byte) error {
+	// This is a placeholder - in production, this would check HTTP status codes
+	// For now, we'll just return nil to allow compilation
+	return nil
+}
+
+// HandleNotFound creates a not found error
+func (b *BaseManager) HandleNotFound(resourceDesc string) error {
+	return errors.NewClientError(
+		errors.ErrorCodeResourceNotFound,
+		fmt.Sprintf("%s not found: %s", b.resourceType, resourceDesc),
+	)
+}
+
+// HandleValidationError creates a validation error
+func (b *BaseManager) HandleValidationError(message string) error {
+	return errors.NewValidationError(
+		errors.ErrorCodeValidationFailed,
+		message,
+		b.resourceType,
+		nil,
+		nil,
+	)
+}
+
+// Hold pauses a job (placeholder for interface compliance)
+func (b *BaseManager) Hold(ctx context.Context, req *types.JobHoldRequest) error {
+	return fmt.Errorf("hold operation not implemented for %s in version %s", b.resourceType, b.version)
+}
+
+// Release releases a held job (placeholder for interface compliance)
+func (b *BaseManager) Release(ctx context.Context, jobID string) error {
+	return fmt.Errorf("release operation not implemented for %s in version %s", b.resourceType, b.version)
+}
+
+// Suspend suspends a running job (placeholder for interface compliance)
+func (b *BaseManager) Suspend(ctx context.Context, jobID string) error {
+	return fmt.Errorf("suspend operation not implemented for %s in version %s", b.resourceType, b.version)
+}
+
+// Resume resumes a suspended job (placeholder for interface compliance)
+func (b *BaseManager) Resume(ctx context.Context, jobID string) error {
+	return fmt.Errorf("resume operation not implemented for %s in version %s", b.resourceType, b.version)
+}
+
+// Requeue requeues a job (placeholder for interface compliance)
+func (b *BaseManager) Requeue(ctx context.Context, jobID string) error {
+	return fmt.Errorf("requeue operation not implemented for %s in version %s", b.resourceType, b.version)
 }

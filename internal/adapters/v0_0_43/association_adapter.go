@@ -196,22 +196,28 @@ func (a *AssociationAdapter) Create(ctx context.Context, association *types.Asso
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
+	if association == nil {
+		return nil, a.HandleValidationError("association is required")
+	}
+	
+	// Validate the association
 	if err := a.validateAssociationCreate(association); err != nil {
 		return nil, err
 	}
+	
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
 
 	// Convert to API format
-	apiAssociation, err := a.convertCommonAssociationCreateToAPI(association)
+	apiAssoc, err := a.convertCommonAssociationCreateToAPI(association)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create request body
 	reqBody := api.SlurmdbV0043PostAssociationsJSONRequestBody{
-		Associations: []api.V0043Assoc{*apiAssociation},
+		Associations: []api.V0043Assoc{*apiAssoc},
 	}
 
 	// Call the generated OpenAPI client
@@ -248,10 +254,15 @@ func (a *AssociationAdapter) Update(ctx context.Context, associationID string, u
 	if err := a.ValidateResourceName(associationID, "associationID"); err != nil {
 		return err
 	}
-	if err := a.validateAssociationUpdate(update); err != nil {
-		return err
+	if update == nil {
+		return a.HandleValidationError("update is required")
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
+		return err
+	}
+
+	// Validate the association update
+	if err := a.validateAssociationUpdate(update); err != nil {
 		return err
 	}
 
@@ -262,14 +273,14 @@ func (a *AssociationAdapter) Update(ctx context.Context, associationID string, u
 	}
 
 	// Convert to API format and apply updates
-	apiAssociation, err := a.convertCommonAssociationUpdateToAPI(existingAssociation, update)
+	apiAssoc, err := a.convertCommonAssociationUpdateToAPI(existingAssociation, update)
 	if err != nil {
 		return err
 	}
 
 	// Create request body
 	reqBody := api.SlurmdbV0043PostAssociationsJSONRequestBody{
-		Associations: []api.V0043Assoc{*apiAssociation},
+		Associations: []api.V0043Assoc{*apiAssoc},
 	}
 
 	// Call the generated OpenAPI client (POST is used for updates in SLURM API)
