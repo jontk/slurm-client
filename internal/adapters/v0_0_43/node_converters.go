@@ -1,7 +1,6 @@
 package v0_0_43
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/jontk/slurm-client/internal/common/types"

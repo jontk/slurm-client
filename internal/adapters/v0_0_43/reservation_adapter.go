@@ -2,7 +2,6 @@ package v0_0_43
 
 import (
 	"context"
-	"strings"
 
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
@@ -43,13 +42,11 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 
 	// Apply filters from options
 	if opts != nil {
-		if len(opts.Names) > 0 {
-			nameStr := strings.Join(opts.Names, ",")
-			params.ReservationName = &nameStr
-		}
+		// Note: v0.0.43 doesn't have a ReservationName parameter for filtering
+		// We'll have to filter client-side
 		if opts.UpdateTime != nil {
-			updateTime := opts.UpdateTime.Unix()
-			params.UpdateTime = &updateTime
+			updateTimeStr := opts.UpdateTime.Format("2006-01-02T15:04:05")
+			params.UpdateTime = &updateTimeStr
 		}
 	}
 
@@ -79,13 +76,18 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 	}
 
 	// Convert the response to common types
-	reservationList := make([]types.Reservation, 0, len(*resp.JSON200.Reservations))
-	for _, apiReservation := range *resp.JSON200.Reservations {
+	reservationList := make([]types.Reservation, 0, len(resp.JSON200.Reservations))
+	for _, apiReservation := range resp.JSON200.Reservations {
 		reservation, err := a.convertAPIReservationToCommon(apiReservation)
 		if err != nil {
 			return nil, a.HandleConversionError(err, apiReservation.Name)
 		}
 		reservationList = append(reservationList, *reservation)
+	}
+
+	// Apply client-side filtering if needed
+	if opts != nil {
+		reservationList = a.filterReservationList(reservationList, opts)
 	}
 
 	// Apply pagination
@@ -94,8 +96,6 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 		listOpts.Limit = opts.Limit
 		listOpts.Offset = opts.Offset
 	}
-
-	// Apply pagination
 	start := listOpts.Offset
 	if start < 0 {
 		start = 0
@@ -163,12 +163,12 @@ func (a *ReservationAdapter) Get(ctx context.Context, reservationName string) (*
 	}
 
 	// Check if we got any reservation entries
-	if len(*resp.JSON200.Reservations) == 0 {
+	if len(resp.JSON200.Reservations) == 0 {
 		return nil, common.NewResourceNotFoundError("Reservation", reservationName)
 	}
 
 	// Convert the first reservation (should be the only one)
-	reservation, err := a.convertAPIReservationToCommon((*resp.JSON200.Reservations)[0])
+	reservation, err := a.convertAPIReservationToCommon(resp.JSON200.Reservations[0])
 	if err != nil {
 		return nil, a.HandleConversionError(err, reservationName)
 	}
@@ -195,16 +195,15 @@ func (a *ReservationAdapter) Create(ctx context.Context, reservation *types.Rese
 		return nil, err
 	}
 
-	// Create request body
-	reqBody := api.SlurmV0043PostReservationJSONRequestBody{
-		Reservations: []api.V0043ReservationInfo{*apiReservation},
+	// Create request body - PostReservation expects a V0043ReservationDescMsg
+	apiReservationDesc, err := a.convertAPIReservationInfoToDescMsg(apiReservation)
+	if err != nil {
+		return nil, err
 	}
-
-	// Prepare parameters for the API call
-	params := &api.SlurmV0043PostReservationParams{}
+	reqBody := *apiReservationDesc
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0043PostReservationWithResponse(ctx, params, reqBody)
+	resp, err := a.client.SlurmV0043PostReservationWithResponse(ctx, reqBody)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
@@ -253,16 +252,15 @@ func (a *ReservationAdapter) Update(ctx context.Context, reservationName string,
 		return err
 	}
 
-	// Create request body
-	reqBody := api.SlurmV0043PostReservationJSONRequestBody{
-		Reservations: []api.V0043ReservationInfo{*apiReservation},
+	// Create request body - PostReservation expects a V0043ReservationDescMsg
+	apiReservationDesc, err := a.convertAPIReservationInfoToDescMsg(apiReservation)
+	if err != nil {
+		return err
 	}
-
-	// Prepare parameters for the API call
-	params := &api.SlurmV0043PostReservationParams{}
+	reqBody := *apiReservationDesc
 
 	// Call the generated OpenAPI client (POST is used for updates in SLURM API)
-	resp, err := a.client.SlurmV0043PostReservationWithResponse(ctx, params, reqBody)
+	resp, err := a.client.SlurmV0043PostReservationWithResponse(ctx, reqBody)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
@@ -324,10 +322,10 @@ func (a *ReservationAdapter) validateReservationCreate(reservation *types.Reserv
 	if reservation.StartTime.IsZero() {
 		return common.NewValidationError("start time is required", "startTime", reservation.StartTime)
 	}
-	if reservation.EndTime.IsZero() {
+	if reservation.EndTime == nil || reservation.EndTime.IsZero() {
 		return common.NewValidationError("end time is required", "endTime", reservation.EndTime)
 	}
-	if reservation.StartTime.After(reservation.EndTime) {
+	if reservation.StartTime.After(*reservation.EndTime) {
 		return common.NewValidationError("start time cannot be after end time", "startTime/endTime", nil)
 	}
 	return nil
@@ -371,4 +369,43 @@ func (a *ReservationAdapter) convertCommonReservationUpdateToAPI(existing *types
 	apiReservation.Name = &existing.Name
 	// TODO: Add more field conversions as needed
 	return apiReservation, nil
+}
+
+// filterReservationList applies client-side filtering to the reservation list
+func (a *ReservationAdapter) filterReservationList(reservations []types.Reservation, opts *types.ReservationListOptions) []types.Reservation {
+	if opts == nil || len(opts.Names) == 0 {
+		return reservations
+	}
+
+	// Create a map for quick lookup
+	nameFilter := make(map[string]bool)
+	for _, name := range opts.Names {
+		nameFilter[name] = true
+	}
+
+	// Filter reservations by name
+	var filtered []types.Reservation
+	for _, reservation := range reservations {
+		if nameFilter[reservation.Name] {
+			filtered = append(filtered, reservation)
+		}
+	}
+
+	return filtered
+}
+
+// convertAPIReservationInfoToDescMsg converts V0043ReservationInfo to V0043ReservationDescMsg
+func (a *ReservationAdapter) convertAPIReservationInfoToDescMsg(info *api.V0043ReservationInfo) (*api.V0043ReservationDescMsg, error) {
+	// Create a new V0043ReservationDescMsg
+	descMsg := &api.V0043ReservationDescMsg{}
+	
+	// Convert fields from ReservationInfo to ReservationDescMsg
+	if info.Name != nil {
+		descMsg.Name = info.Name
+	}
+	
+	// TODO: Add more field conversions as needed
+	// Note: V0043ReservationDescMsg has different field names/types than V0043ReservationInfo
+	
+	return descMsg, nil
 }

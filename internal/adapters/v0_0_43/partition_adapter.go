@@ -8,6 +8,7 @@ import (
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
+	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // PartitionAdapter implements the PartitionAdapter interface for v0.0.43
@@ -43,13 +44,11 @@ func (a *PartitionAdapter) List(ctx context.Context, opts *types.PartitionListOp
 
 	// Apply filters from options
 	if opts != nil {
-		if len(opts.Names) > 0 {
-			nameStr := strings.Join(opts.Names, ",")
-			params.PartitionName = &nameStr
-		}
+		// Note: v0.0.43 doesn't have a PartitionName parameter for filtering
+		// We'll have to filter client-side
 		if opts.UpdateTime != nil {
-			updateTime := opts.UpdateTime.Unix()
-			params.UpdateTime = &updateTime
+			updateTimeStr := opts.UpdateTime.Format("2006-01-02T15:04:05")
+			params.UpdateTime = &updateTimeStr
 		}
 	}
 
@@ -79,11 +78,15 @@ func (a *PartitionAdapter) List(ctx context.Context, opts *types.PartitionListOp
 	}
 
 	// Convert the response to common types
-	partitionList := make([]types.Partition, 0, len(*resp.JSON200.Partitions))
-	for _, apiPartition := range *resp.JSON200.Partitions {
+	partitionList := make([]types.Partition, 0, len(resp.JSON200.Partitions))
+	for _, apiPartition := range resp.JSON200.Partitions {
 		partition, err := a.convertAPIPartitionToCommon(apiPartition)
 		if err != nil {
-			return nil, a.HandleConversionError(err, apiPartition.Name)
+			partitionName := ""
+			if apiPartition.Name != nil {
+				partitionName = *apiPartition.Name
+			}
+			return nil, a.HandleConversionError(err, partitionName)
 		}
 		partitionList = append(partitionList, *partition)
 	}
@@ -168,12 +171,12 @@ func (a *PartitionAdapter) Get(ctx context.Context, partitionName string) (*type
 	}
 
 	// Check if we got any partition entries
-	if len(*resp.JSON200.Partitions) == 0 {
+	if len(resp.JSON200.Partitions) == 0 {
 		return nil, common.NewResourceNotFoundError("Partition", partitionName)
 	}
 
 	// Convert the first partition (should be the only one)
-	partition, err := a.convertAPIPartitionToCommon((*resp.JSON200.Partitions)[0])
+	partition, err := a.convertAPIPartitionToCommon(resp.JSON200.Partitions[0])
 	if err != nil {
 		return nil, a.HandleConversionError(err, partitionName)
 	}
@@ -183,139 +186,29 @@ func (a *PartitionAdapter) Get(ctx context.Context, partitionName string) (*type
 
 // Create creates a new partition
 func (a *PartitionAdapter) Create(ctx context.Context, partition *types.PartitionCreate) (*types.PartitionCreateResponse, error) {
-	// Use base validation
-	if err := a.ValidateContext(ctx); err != nil {
-		return nil, err
-	}
-	if err := a.validatePartitionCreate(partition); err != nil {
-		return nil, err
-	}
-	if err := a.CheckClientInitialized(a.client); err != nil {
-		return nil, err
-	}
-
-	// Convert to API format
-	apiPartition, err := a.convertCommonPartitionCreateToAPI(partition)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create request body
-	reqBody := api.SlurmV0043PostPartitionJSONRequestBody{
-		Partitions: []api.V0043PartitionInfo{*apiPartition},
-	}
-
-	// Prepare parameters for the API call
-	params := &api.SlurmV0043PostPartitionParams{}
-
-	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0043PostPartitionWithResponse(ctx, params, reqBody)
-	if err != nil {
-		return nil, a.HandleAPIError(err)
-	}
-
-	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
-	if resp.JSON200 != nil {
-		apiErrors = resp.JSON200.Errors
-	}
-
-	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
-		return nil, err
-	}
-
-	return &types.PartitionCreateResponse{
-		PartitionName: partition.Name,
-	}, nil
+	// v0.0.43 doesn't support partition creation through the REST API
+	return nil, errors.NewClientError(
+		errors.ErrorCodeUnsupportedOperation,
+		"partition creation not supported in v0.0.43",
+		"Method not allowed (405)")
 }
 
 // Update updates an existing partition
 func (a *PartitionAdapter) Update(ctx context.Context, partitionName string, update *types.PartitionUpdate) error {
-	// Use base validation
-	if err := a.ValidateContext(ctx); err != nil {
-		return err
-	}
-	if err := a.ValidateResourceName(partitionName, "partitionName"); err != nil {
-		return err
-	}
-	if err := a.validatePartitionUpdate(update); err != nil {
-		return err
-	}
-	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
-	}
-
-	// First, get the existing partition to merge updates
-	existingPartition, err := a.Get(ctx, partitionName)
-	if err != nil {
-		return err
-	}
-
-	// Convert to API format and apply updates
-	apiPartition, err := a.convertCommonPartitionUpdateToAPI(existingPartition, update)
-	if err != nil {
-		return err
-	}
-
-	// Create request body
-	reqBody := api.SlurmV0043PostPartitionJSONRequestBody{
-		Partitions: []api.V0043PartitionInfo{*apiPartition},
-	}
-
-	// Prepare parameters for the API call
-	params := &api.SlurmV0043PostPartitionParams{}
-
-	// Call the generated OpenAPI client (POST is used for updates in SLURM API)
-	resp, err := a.client.SlurmV0043PostPartitionWithResponse(ctx, params, reqBody)
-	if err != nil {
-		return a.HandleAPIError(err)
-	}
-
-	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
-	if resp.JSON200 != nil {
-		apiErrors = resp.JSON200.Errors
-	}
-
-	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
+	// v0.0.43 doesn't support partition updates through the REST API
+	return errors.NewClientError(
+		errors.ErrorCodeUnsupportedOperation,
+		"partition updates not supported in v0.0.43",
+		"Method not allowed (405)")
 }
 
 // Delete deletes a partition
 func (a *PartitionAdapter) Delete(ctx context.Context, partitionName string) error {
-	// Use base validation
-	if err := a.ValidateContext(ctx); err != nil {
-		return err
-	}
-	if err := a.ValidateResourceName(partitionName, "partitionName"); err != nil {
-		return err
-	}
-	if err := a.CheckClientInitialized(a.client); err != nil {
-		return err
-	}
-
-	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0043DeletePartitionWithResponse(ctx, partitionName)
-	if err != nil {
-		return a.HandleAPIError(err)
-	}
-
-	// Use common response error handling
-	var apiErrors *api.V0043OpenapiErrors
-	if resp.JSON200 != nil {
-		apiErrors = resp.JSON200.Errors
-	}
-
-	// Create adapter with special handling for 204 (No Content) status
-	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-
-	// For DELETE operations, 204 is also a success
-	if resp.StatusCode() == 204 {
-		return nil
-	}
-
-	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
+	// v0.0.43 doesn't support partition deletion through the REST API
+	return errors.NewClientError(
+		errors.ErrorCodeUnsupportedOperation,
+		"partition deletion not supported in v0.0.43",
+		"Method not allowed (405)")
 }
 
 // validatePartitionCreate validates partition creation request
@@ -430,4 +323,94 @@ func (a *PartitionAdapter) matchesPartitionFilters(partition types.Partition, op
 	}
 
 	return true
+}
+
+// convertAPIPartitionToCommon converts a v0.0.43 API Partition to common Partition type
+func (a *PartitionAdapter) convertAPIPartitionToCommon(apiPartition api.V0043PartitionInfo) (*types.Partition, error) {
+	partition := &types.Partition{}
+
+	// Basic fields
+	if apiPartition.Name != nil {
+		partition.Name = *apiPartition.Name
+	}
+	
+	// State
+	if apiPartition.Partition != nil && apiPartition.Partition.State != nil {
+		// Convert from slice to string if needed
+		if len(*apiPartition.Partition.State) > 0 {
+			partition.State = types.PartitionState((*apiPartition.Partition.State)[0])
+		}
+	}
+
+	// Nodes
+	if apiPartition.Nodes != nil {
+		if apiPartition.Nodes.Configured != nil {
+			partition.Nodes = *apiPartition.Nodes.Configured  
+		}
+		if apiPartition.Nodes.Total != nil {
+			partition.TotalNodes = int32(*apiPartition.Nodes.Total)
+		}
+	}
+
+	// Limits and timeouts
+	if apiPartition.Maximums != nil {
+		if apiPartition.Maximums.Nodes != nil && apiPartition.Maximums.Nodes.Number != nil {
+			partition.MaxNodes = int32(*apiPartition.Maximums.Nodes.Number)
+		}
+		if apiPartition.Maximums.Time != nil && apiPartition.Maximums.Time.Number != nil {
+			partition.MaxTime = int32(*apiPartition.Maximums.Time.Number)
+		}
+	}
+
+	if apiPartition.Minimums != nil {
+		if apiPartition.Minimums.Nodes != nil {
+			partition.MinNodes = int32(*apiPartition.Minimums.Nodes)
+		}
+	}
+
+	if apiPartition.Defaults != nil {
+		if apiPartition.Defaults.Time != nil && apiPartition.Defaults.Time.Number != nil {
+			partition.DefaultTime = int32(*apiPartition.Defaults.Time.Number)
+		}
+	}
+
+	// Priority
+	if apiPartition.Priority != nil {
+		if apiPartition.Priority.JobFactor != nil {
+			partition.Priority = int32(*apiPartition.Priority.JobFactor)
+		}
+	}
+
+	// Accounts
+	if apiPartition.Accounts != nil {
+		if apiPartition.Accounts.Allowed != nil {
+			// Convert comma-separated string to slice
+			partition.AllowAccounts = strings.Split(*apiPartition.Accounts.Allowed, ",")
+		}
+		if apiPartition.Accounts.Deny != nil {
+			// Convert comma-separated string to slice
+			partition.DenyAccounts = strings.Split(*apiPartition.Accounts.Deny, ",")
+		}
+	}
+
+	// QoS
+	if apiPartition.Qos != nil {
+		if apiPartition.Qos.Allowed != nil {
+			// Convert comma-separated string to slice
+			partition.AllowQoS = strings.Split(*apiPartition.Qos.Allowed, ",")
+		}
+		if apiPartition.Qos.Deny != nil {
+			// Convert comma-separated string to slice
+			partition.DenyQoS = strings.Split(*apiPartition.Qos.Deny, ",")
+		}
+		if apiPartition.Qos.Assigned != nil {
+			partition.QoS = *apiPartition.Qos.Assigned
+		}
+	}
+
+	// Flags - v0.0.43 doesn't have a direct Flags field
+	// These might be determined from other fields or defaults
+	// For now, we'll leave them as false
+
+	return partition, nil
 }
