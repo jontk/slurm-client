@@ -1,6 +1,7 @@
 package v0_0_41
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -10,10 +11,19 @@ import (
 
 // convertAPIJobToCommon converts a v0.0.41 API Job to common Job type
 func (a *JobAdapter) convertAPIJobToCommon(apiJob interface{}) (*types.Job, error) {
-	// Use map interface for handling anonymous structs in v0.0.41
+	// v0.0.41 uses anonymous structs, so we need to handle reflection
+	// Try to convert to map first (in case it's already been marshalled/unmarshalled)
 	jobData, ok := apiJob.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("unexpected job data type: %T", apiJob)
+		// If not a map, try to convert via JSON marshalling
+		jsonBytes, err := json.Marshal(apiJob)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal job data: %w", err)
+		}
+		
+		if err := json.Unmarshal(jsonBytes, &jobData); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal job data to map: %w", err)
+		}
 	}
 
 	job := &types.Job{}
