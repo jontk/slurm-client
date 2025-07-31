@@ -77,7 +77,7 @@ func TestJobAnalyticsComprehensive(t *testing.T) {
 }
 
 // testResourceUtilizationAnalytics tests resource utilization tracking
-func testResourceUtilizationAnalytics(t *testing.T, client *slurm.Client) {
+func testResourceUtilizationAnalytics(t *testing.T, client slurm.SlurmClient) {
 	ctx := context.Background()
 
 	// Test getting utilization for a running job
@@ -111,7 +111,7 @@ func testResourceUtilizationAnalytics(t *testing.T, client *slurm.Client) {
 }
 
 // testLiveMetricsMonitoring tests real-time metrics monitoring
-func testLiveMetricsMonitoring(t *testing.T, client *slurm.Client) {
+func testLiveMetricsMonitoring(t *testing.T, client slurm.SlurmClient) {
 	ctx := context.Background()
 
 	// Test getting live metrics for a running job
@@ -166,7 +166,7 @@ func testLiveMetricsMonitoring(t *testing.T, client *slurm.Client) {
 }
 
 // testEfficiencyAnalysis tests job efficiency calculations
-func testEfficiencyAnalysis(t *testing.T, client *slurm.Client) {
+func testEfficiencyAnalysis(t *testing.T, client slurm.SlurmClient) {
 	ctx := context.Background()
 
 	// Test getting efficiency metrics
@@ -200,7 +200,7 @@ func testEfficiencyAnalysis(t *testing.T, client *slurm.Client) {
 }
 
 // testPerformanceHistory tests historical performance data retrieval
-func testPerformanceHistory(t *testing.T, client *slurm.Client) {
+func testPerformanceHistory(t *testing.T, client slurm.SlurmClient) {
 	ctx := context.Background()
 
 	// Test getting performance history
@@ -236,7 +236,7 @@ func testPerformanceHistory(t *testing.T, client *slurm.Client) {
 }
 
 // testResourceTrends tests resource usage trend analysis
-func testResourceTrends(t *testing.T, client *slurm.Client) {
+func testResourceTrends(t *testing.T, client slurm.SlurmClient) {
 	ctx := context.Background()
 
 	// Test getting resource trends
@@ -275,7 +275,7 @@ func testResourceTrends(t *testing.T, client *slurm.Client) {
 }
 
 // testJobStepAnalytics tests job step-level analytics
-func testJobStepAnalytics(t *testing.T, client *slurm.Client) {
+func testJobStepAnalytics(t *testing.T, client slurm.SlurmClient) {
 	ctx := context.Background()
 
 	jobID := "1001"
@@ -315,7 +315,7 @@ func testJobStepAnalytics(t *testing.T, client *slurm.Client) {
 }
 
 // testBatchJobAnalysis tests batch job analysis functionality
-func testBatchJobAnalysis(t *testing.T, client *slurm.Client) {
+func testBatchJobAnalysis(t *testing.T, client slurm.SlurmClient) {
 	ctx := context.Background()
 
 	// Test analyzing multiple jobs
@@ -351,7 +351,7 @@ func testBatchJobAnalysis(t *testing.T, client *slurm.Client) {
 }
 
 // testOptimizationRecommendations tests optimization recommendation generation
-func testOptimizationRecommendations(t *testing.T, client *slurm.Client) {
+func testOptimizationRecommendations(t *testing.T, client slurm.SlurmClient) {
 	ctx := context.Background()
 
 	// Get efficiency with recommendations
@@ -401,7 +401,7 @@ func testOptimizationRecommendations(t *testing.T, client *slurm.Client) {
 }
 
 // testWorkflowPerformance tests workflow performance analysis
-func testWorkflowPerformance(t *testing.T, client *slurm.Client) {
+func testWorkflowPerformance(t *testing.T, client slurm.SlurmClient) {
 	ctx := context.Background()
 
 	// Test workflow performance analysis
@@ -428,7 +428,7 @@ func testWorkflowPerformance(t *testing.T, client *slurm.Client) {
 }
 
 // testAnalyticsErrorScenarios tests error handling in analytics
-func testAnalyticsErrorScenarios(t *testing.T, client *slurm.Client) {
+func testAnalyticsErrorScenarios(t *testing.T, client slurm.SlurmClient) {
 	ctx := context.Background()
 
 	// Test with non-existent job

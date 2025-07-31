@@ -9,7 +9,7 @@ import (
 	"github.com/jontk/slurm-client/pkg/auth"
 )
 
-func main() {
+func testV0041() {
 	// Get JWT token from environment or use test token
 	token := os.Getenv("SLURM_JWT_TOKEN")
 	if token == "" {

@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
-	"time"
 
 	"github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/internal/interfaces"
@@ -103,15 +102,17 @@ func demonstrateHierarchyNavigation(ctx context.Context, client interfaces.Slurm
 	
 	if hierarchy != nil {
 		fmt.Printf("\nAccount Hierarchy Structure:\n")
-		fmt.Printf("  Root: %s\n", hierarchy.RootAccount)
-		fmt.Printf("  Total Levels: %d\n", hierarchy.TotalLevels)
-		fmt.Printf("  Total Accounts: %d\n", hierarchy.TotalAccounts)
+		if hierarchy.Account != nil {
+			fmt.Printf("  Account: %s\n", hierarchy.Account.Name)
+		}
+		fmt.Printf("  Level: %d\n", hierarchy.Level)
+		fmt.Printf("  Total Sub-Accounts: %d\n", hierarchy.TotalSubAccounts)
 		fmt.Printf("  Total Users: %d\n", hierarchy.TotalUsers)
 		
 		// Display tree structure
-		if hierarchy.Tree != nil {
+		if len(hierarchy.ChildAccounts) > 0 {
 			fmt.Printf("\nHierarchy Tree:\n")
-			printAccountTree(hierarchy.Tree, 0)
+			printAccountHierarchy(hierarchy, 0)
 		}
 	}
 	
@@ -223,11 +224,11 @@ func demonstrateFairShareAnalysis(ctx context.Context, client interfaces.SlurmCl
 	fmt.Printf("\n\nJob Priority Calculation for %s:\n", userName)
 	jobSubmission := &interfaces.JobSubmission{
 		Script:    "#!/bin/bash\necho 'Test job for priority calculation'",
-		Account:   accountName,
+		// Account field doesn't exist in JobSubmission
 		Partition: "compute",
 		CPUs:      4,
 		Memory:    8192,
-		TimeLimit: "02:00:00",
+		TimeLimit: 120, // 2 hours in minutes
 	}
 	
 	priority, err := userManager.CalculateJobPriority(ctx, userName, jobSubmission)
@@ -267,7 +268,8 @@ func validateUserAccountAccess(ctx context.Context, client interfaces.SlurmClien
 			fmt.Printf("Error validating access: %v\n", err)
 		}
 	} else if userValidation != nil {
-		fmt.Printf("  Access Allowed: %v\n", userValidation.IsAllowed)
+		// IsAllowed field doesn't exist in UserAccessValidation
+		// fmt.Printf("  Access Allowed: %v\n", userValidation.IsAllowed)
 		fmt.Printf("  Reason: %s\n", userValidation.Reason)
 		if len(userValidation.Permissions) > 0 {
 			fmt.Printf("  Permissions: %v\n", userValidation.Permissions)
@@ -284,8 +286,10 @@ func validateUserAccountAccess(ctx context.Context, client interfaces.SlurmClien
 			fmt.Printf("Error validating access: %v\n", err)
 		}
 	} else if accountValidation != nil {
-		fmt.Printf("  Access Allowed: %v\n", accountValidation.IsAllowed)
-		fmt.Printf("  Validated At: %v\n", accountValidation.ValidatedAt)
+		// IsAllowed field doesn't exist in UserAccessValidation
+		// fmt.Printf("  Access Allowed: %v\n", accountValidation.IsAllowed)
+		fmt.Printf("  Has Access: %v\n", accountValidation.HasAccess)
+		fmt.Printf("  Access Level: %s\n", accountValidation.AccessLevel)
 	}
 }
 
@@ -317,11 +321,11 @@ func showUserAccountAssociations(ctx context.Context, client interfaces.SlurmCli
 	
 	for _, acc := range accounts {
 		fmt.Fprintf(w, "%s\t%s\t%v\t%s\t%s\n",
-			acc.Name,
-			acc.Role,
+			acc.AccountName,
+			"User", // Role field doesn't exist
 			acc.IsDefault,
-			strings.Join(acc.Partitions, ","),
-			strings.Join(acc.QoS, ","))
+			acc.Partition, // Partitions is a single string
+			acc.QoS) // QoS is a single string)
 	}
 	w.Flush()
 	
@@ -340,14 +344,12 @@ func showUserAccountAssociations(ctx context.Context, client interfaces.SlurmCli
 	associations, err := userManager.GetUserAccountAssociations(ctx, userName, opts)
 	if err == nil && len(associations) > 0 {
 		for i, assoc := range associations {
-			fmt.Printf("\n%d. %s/%s:\n", i+1, assoc.Account, assoc.Partition)
+			fmt.Printf("\n%d. %s/%s:\n", i+1, assoc.AccountName, assoc.Partition)
 			fmt.Printf("   Role: %s\n", assoc.Role)
 			fmt.Printf("   Permissions: %v\n", assoc.Permissions)
 			fmt.Printf("   Max Jobs: %d\n", assoc.MaxJobs)
 			fmt.Printf("   Priority: %d\n", assoc.Priority)
-			if assoc.CreatedAt != nil {
-				fmt.Printf("   Created: %v\n", assoc.CreatedAt.Format(time.RFC3339))
-			}
+			// CreatedAt field doesn't exist in UserAccountAssociation
 		}
 	}
 }
@@ -372,7 +374,7 @@ func demonstrateBulkOperations(ctx context.Context, client interfaces.SlurmClien
 		for userName, accounts := range bulkAccounts {
 			fmt.Printf("\n%s has %d accounts:\n", userName, len(accounts))
 			for _, acc := range accounts {
-				fmt.Printf("  - %s (role: %s)\n", acc.Name, acc.Role)
+				fmt.Printf("  - %s\n", acc.AccountName)
 			}
 		}
 	}
@@ -401,12 +403,14 @@ func demonstrateBulkOperations(ctx context.Context, client interfaces.SlurmClien
 
 // Helper functions for displaying data
 
-func printAccountTree(node *interfaces.AccountHierarchyNode, level int) {
-	indent := strings.Repeat("  ", level)
-	fmt.Printf("%s├─ %s (users: %d)\n", indent, node.Name, node.UserCount)
+func printAccountHierarchy(hierarchy *interfaces.AccountHierarchy, depth int) {
+	indent := strings.Repeat("  ", depth)
+	if hierarchy.Account != nil {
+		fmt.Printf("%s├─ %s (users: %d)\n", indent, hierarchy.Account.Name, hierarchy.TotalUsers)
+	}
 	
-	for _, child := range node.Children {
-		printAccountTree(child, level+1)
+	for _, child := range hierarchy.ChildAccounts {
+		printAccountHierarchy(child, depth+1)
 	}
 }
 
@@ -427,10 +431,10 @@ func displayUserQuotas(quotas *interfaces.UserQuota) {
 }
 
 func displayAccountQuotas(quotas *interfaces.AccountQuota) {
-	fmt.Printf("  Account: %s\n", quotas.AccountName)
-	fmt.Printf("  Description: %s\n", quotas.Description)
+	// AccountName and Description fields don't exist in AccountQuota
+	fmt.Printf("  CPU Limit: %d\n", quotas.CPULimit)
 	fmt.Printf("  Max Jobs: %d\n", quotas.MaxJobs)
-	fmt.Printf("  Max Submit Jobs: %d\n", quotas.MaxSubmitJobs)
+	fmt.Printf("  Jobs Used: %d\n", quotas.JobsUsed)
 	fmt.Printf("  Max Wall Time: %d minutes\n", quotas.MaxWallTime)
 	
 	if len(quotas.MaxTRES) > 0 {
@@ -442,13 +446,13 @@ func displayAccountQuotas(quotas *interfaces.AccountQuota) {
 }
 
 func displayAccountUsage(usage *interfaces.AccountUsage) {
-	fmt.Printf("  CPU Hours Used: %.2f\n", usage.CPUHoursUsed)
-	fmt.Printf("  Running Jobs: %d\n", usage.RunningJobs)
-	fmt.Printf("  Pending Jobs: %d\n", usage.PendingJobs)
-	fmt.Printf("  Total Jobs: %d\n", usage.TotalJobs)
+	fmt.Printf("  CPU Hours: %.2f\n", usage.CPUHours)
+	fmt.Printf("  Jobs Completed: %d\n", usage.JobsCompleted)
+	fmt.Printf("  Jobs Failed: %d\n", usage.JobsFailed)
+	fmt.Printf("  Total Jobs: %d\n", usage.JobCount)
 	fmt.Printf("  Period: %s to %s\n", 
-		usage.PeriodStart.Format("2006-01-02"),
-		usage.PeriodEnd.Format("2006-01-02"))
+		usage.StartTime.Format("2006-01-02"),
+		usage.EndTime.Format("2006-01-02"))
 }
 
 func displayUserFairShare(fairShare *interfaces.UserFairShare) {

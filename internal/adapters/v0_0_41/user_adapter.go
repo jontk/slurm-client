@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
 	"github.com/jontk/slurm-client/pkg/errors"
@@ -360,7 +359,14 @@ func (a *UserAdapter) GetWCKeys(ctx context.Context, name string) ([]types.WCKey
 		return nil, err
 	}
 
-	return user.WCKeys, nil
+	// Convert string WCKeys to types.WCKey
+	wckeys := make([]types.WCKey, 0, len(user.WCKeys))
+	for _, key := range user.WCKeys {
+		wckeys = append(wckeys, types.WCKey{
+			Name: key,
+		})
+	}
+	return wckeys, nil
 }
 
 // SetCoordinatorStatus sets whether a user is a coordinator for accounts

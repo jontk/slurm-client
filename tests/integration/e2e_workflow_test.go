@@ -363,13 +363,11 @@ func (suite *E2EWorkflowTestSuite) TestResourceRelationshipWorkflow() {
 			break
 		}
 		
-		suite.T().Logf("Partition '%s': %d total nodes, %d allocated nodes", 
-			partition.Name, partition.TotalNodes, partition.AllocatedNodes)
+		suite.T().Logf("Partition '%s': %d total nodes", 
+			partition.Name, partition.TotalNodes)
 		
 		// Validate partition resources
 		suite.GreaterOrEqual(partition.TotalNodes, int32(0), "Total nodes should be non-negative")
-		suite.GreaterOrEqual(partition.AllocatedNodes, int32(0), "Allocated nodes should be non-negative")
-		suite.LessOrEqual(partition.AllocatedNodes, partition.TotalNodes, "Allocated should not exceed total")
 	}
 
 	// Step 3: Test job submission with specific constraints

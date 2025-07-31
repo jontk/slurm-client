@@ -11,10 +11,8 @@ func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0042User) (*types.User
 		Name: apiUser.Name,
 	}
 
-	// Old name (for tracking user renames)
-	if apiUser.OldName != nil {
-		user.OldName = *apiUser.OldName
-	}
+	// Old name - not in common User type
+	// Skip OldName handling
 
 	// Default account and wckey
 	if apiUser.Default != nil {
@@ -28,60 +26,57 @@ func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0042User) (*types.User
 
 	// Administrator level
 	if apiUser.AdministratorLevel != nil {
-		user.AdminLevel = a.convertAdminLevelToString(apiUser.AdministratorLevel)
+		// Convert to AdminLevel type
+		adminStr := a.convertAdminLevelToString(apiUser.AdministratorLevel)
+		user.AdminLevel = types.AdminLevel(adminStr)
 	}
 
-	// Flags
-	if apiUser.Flags != nil && len(*apiUser.Flags) > 0 {
-		user.Flags = *apiUser.Flags
-	}
+	// Flags - not in common User type
+	// Skip Flags handling
 
 	// Coordinators
 	if apiUser.Coordinators != nil && len(*apiUser.Coordinators) > 0 {
-		coordinators := make([]string, 0, len(*apiUser.Coordinators))
+		coordinators := make([]types.UserCoordinator, 0, len(*apiUser.Coordinators))
 		for _, coord := range *apiUser.Coordinators {
-			if coord.Name != nil {
-				coordinators = append(coordinators, *coord.Name)
+			// coord has Name field as string, not pointer
+			if coord.Name != "" {
+				coordinators = append(coordinators, types.UserCoordinator{
+					AccountName: coord.Name,
+				})
 			}
 		}
-		user.CoordinatorOf = coordinators
+		user.Coordinators = coordinators
 	}
 
 	// Associations
 	if apiUser.Associations != nil && len(*apiUser.Associations) > 0 {
-		// Store association count
-		user.AssociationCount = len(*apiUser.Associations)
+		// Convert associations to user associations
+		associations := make([]types.UserAssociation, 0, len(*apiUser.Associations))
 		
 		// Extract account list from associations
 		accountMap := make(map[string]bool)
 		for _, assoc := range *apiUser.Associations {
+			userAssoc := types.UserAssociation{}
 			if assoc.Account != nil {
+				userAssoc.AccountName = *assoc.Account
 				accountMap[*assoc.Account] = true
 			}
+			if assoc.Cluster != nil {
+				userAssoc.Cluster = *assoc.Cluster
+			}
+			if assoc.Partition != nil {
+				userAssoc.Partition = *assoc.Partition
+			}
+			// User field is string
+			userAssoc.UserName = assoc.User
+			associations = append(associations, userAssoc)
 		}
+		user.Associations = associations
 		
+		// Convert accounts to list
 		user.Accounts = make([]string, 0, len(accountMap))
 		for account := range accountMap {
 			user.Accounts = append(user.Accounts, account)
-		}
-		
-		// Find primary association details
-		for _, assoc := range *apiUser.Associations {
-			// If this matches the default account, capture some details
-			if assoc.Account != nil && *assoc.Account == user.DefaultAccount {
-				if assoc.Qos != nil && len(*assoc.Qos) > 0 {
-					user.DefaultQoS = (*assoc.Qos)[0]
-				}
-				if assoc.MaxJobs != nil && assoc.MaxJobs.Number > 0 {
-					maxJobs := uint32(assoc.MaxJobs.Number)
-					user.MaxJobs = &maxJobs
-				}
-				if assoc.MaxCpus != nil && assoc.MaxCpus.Number > 0 {
-					maxCPUs := uint32(assoc.MaxCpus.Number)
-					user.MaxCPUs = &maxCPUs
-				}
-				break
-			}
 		}
 	}
 
@@ -89,8 +84,9 @@ func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0042User) (*types.User
 	if apiUser.Wckeys != nil && len(*apiUser.Wckeys) > 0 {
 		wckeys := make([]string, 0, len(*apiUser.Wckeys))
 		for _, wckey := range *apiUser.Wckeys {
-			if wckey.Name != nil {
-				wckeys = append(wckeys, *wckey.Name)
+			// wckey.Name is string, not pointer
+			if wckey.Name != "" {
+				wckeys = append(wckeys, wckey.Name)
 			}
 		}
 		user.WCKeys = wckeys
@@ -111,15 +107,16 @@ func (a *UserAdapter) convertAdminLevelToString(level *api.V0042AdminLvl) string
 
 // convertCommonUserCreateToAPI converts common user create request to v0.0.42 API format
 func (a *UserAdapter) convertCommonUserCreateToAPI(req *types.UserCreateRequest) (*api.SlurmdbV0042PostUsersJSONRequestBody, error) {
-	apiReq := &api.SlurmdbV0042PostUsersJSONRequestBody{
-		Users: &[]api.V0042User{
-			{
-				Name: req.Name,
-			},
+	users := []api.V0042User{
+		{
+			Name: req.Name,
 		},
 	}
+	apiReq := &api.SlurmdbV0042PostUsersJSONRequestBody{
+		Users: users,
+	}
 
-	user := &(*apiReq.Users)[0]
+	user := &apiReq.Users[0]
 
 	// Default account and wckey
 	if req.DefaultAccount != "" || req.DefaultWCKey != "" {
@@ -138,26 +135,16 @@ func (a *UserAdapter) convertCommonUserCreateToAPI(req *types.UserCreateRequest)
 
 	// Administrator level
 	if req.AdminLevel != "" && req.AdminLevel != "None" {
-		adminLevel := api.V0042AdminLvl{req.AdminLevel}
+		// Convert AdminLevel type to string array
+		adminLevel := []string{string(req.AdminLevel)}
 		user.AdministratorLevel = &adminLevel
 	}
 
-	// Flags
-	if len(req.Flags) > 0 {
-		flags := api.V0042UserFlags(req.Flags)
-		user.Flags = &flags
-	}
+	// Flags - not in UserCreate type
+	// Skip Flags handling
 
-	// Coordinators
-	if len(req.CoordinatorOf) > 0 {
-		coords := make(api.V0042CoordList, len(req.CoordinatorOf))
-		for i, coordName := range req.CoordinatorOf {
-			coords[i] = api.V0042Coord{
-				Name: &coordName,
-			}
-		}
-		user.Coordinators = &coords
-	}
+	// Coordinators - not in UserCreate type
+	// Skip Coordinators handling
 
 	return apiReq, nil
 }

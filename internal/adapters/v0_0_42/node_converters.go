@@ -1,7 +1,6 @@
 package v0_0_42
 
 import (
-	"strings"
 	"time"
 
 	"github.com/jontk/slurm-client/internal/common/types"

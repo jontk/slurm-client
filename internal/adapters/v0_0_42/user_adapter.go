@@ -3,7 +3,6 @@ package v0_0_42
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
@@ -41,18 +40,16 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 
 	// Apply filters from options
 	if opts != nil {
-		if len(opts.Names) > 0 {
-			userStr := strings.Join(opts.Names, ",")
-			params.Name = &userStr
-		}
+		// v0.0.42 doesn't support user name filtering in the API params
+		// We'll need to filter client-side
 		if opts.DefaultAccount != "" {
 			params.DefaultAccount = &opts.DefaultAccount
 		}
-		if opts.WithAssociations {
+		if opts.WithAssocs {
 			withAssoc := "true"
 			params.WithAssocs = &withAssoc
 		}
-		if opts.WithCoordinators {
+		if opts.WithCoords {
 			withCoord := "true"
 			params.WithCoords = &withCoord
 		}
@@ -70,7 +67,7 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return nil, a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, a.HandleHTTPResponse(resp.HTTPResponse, resp.Body)
 	}
 
 	// Check for API response
@@ -80,17 +77,31 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 
 	// Convert the response to common types
 	userList := &types.UserList{
-		Users: make([]*types.User, 0),
+		Users: make([]types.User, 0),
 	}
 
 	if resp.JSON200.Users != nil {
-		for _, apiUser := range *resp.JSON200.Users {
+		for _, apiUser := range resp.JSON200.Users {
 			user, err := a.convertAPIUserToCommon(apiUser)
 			if err != nil {
 				// Log conversion error but continue
 				continue
 			}
-			userList.Users = append(userList.Users, user)
+			userList.Users = append(userList.Users, *user)
+		}
+		
+		// Apply client-side filtering if needed
+		if opts != nil && len(opts.Names) > 0 {
+			filtered := make([]types.User, 0, len(userList.Users))
+			for _, user := range userList.Users {
+				for _, name := range opts.Names {
+					if user.Name == name {
+						filtered = append(filtered, user)
+						break
+					}
+				}
+			}
+			userList.Users = filtered
 		}
 	}
 
@@ -122,17 +133,26 @@ func (a *UserAdapter) Get(ctx context.Context, name string) (*types.User, error)
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return nil, a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, a.HandleHTTPResponse(resp.HTTPResponse, resp.Body)
 	}
 
 	// Check for API response
-	if resp.JSON200 == nil || resp.JSON200.Users == nil || len(*resp.JSON200.Users) == 0 {
+	if resp.JSON200 == nil || len(resp.JSON200.Users) == 0 {
 		return nil, fmt.Errorf("user %s not found", name)
 	}
 
-	// Convert the first user in the response
-	users := *resp.JSON200.Users
-	return a.convertAPIUserToCommon(users[0])
+	// Find the specific user by name
+	for _, apiUser := range resp.JSON200.Users {
+		user, err := a.convertAPIUserToCommon(apiUser)
+		if err != nil {
+			continue
+		}
+		if user.Name == name {
+			return user, nil
+		}
+	}
+
+	return nil, fmt.Errorf("user %s not found", name)
 }
 
 // Create creates a new user
@@ -154,20 +174,19 @@ func (a *UserAdapter) Create(ctx context.Context, user *types.UserCreate) (*type
 	}
 
 	// Call the API
-	resp, err := a.client.SlurmdbV0042PostUsersWithResponse(ctx, apiUser)
+	resp, err := a.client.SlurmdbV0042PostUsersWithResponse(ctx, *apiUser)
 	if err != nil {
 		return nil, a.WrapError(err, "failed to create user")
 	}
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return nil, a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, a.HandleHTTPResponse(resp.HTTPResponse, resp.Body)
 	}
 
 	// Return success response
 	return &types.UserCreateResponse{
-		Success: true,
-		Message: "User created successfully",
+		UserName: user.Name,
 	}, nil
 }
 
@@ -208,7 +227,7 @@ func (a *UserAdapter) Delete(ctx context.Context, name string) error {
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return a.HandleHTTPResponse(resp.HTTPResponse, resp.Body)
 	}
 
 	return nil

@@ -2,12 +2,10 @@ package v0_0_40
 
 import (
 	"context"
-	"strings"
 
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
-	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
@@ -44,13 +42,10 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 
 	// Apply filters from options
 	if opts != nil {
-		if len(opts.Names) > 0 {
-			nameStr := strings.Join(opts.Names, ",")
-			params.User = &nameStr
-		}
-		if len(opts.Accounts) > 0 {
-			accountStr := strings.Join(opts.Accounts, ",")
-			params.Account = &accountStr
+		// v0.0.40 doesn't support user name filtering in params
+		// We'll need to filter client-side
+		if opts.DefaultAccount != "" {
+			params.DefaultAccount = &opts.DefaultAccount
 		}
 		if opts.WithDeleted {
 			withDeleted := "true"
@@ -215,7 +210,7 @@ func (a *UserAdapter) Create(ctx context.Context, user *types.UserCreate) (*type
 
 	// Create request body
 	reqBody := api.SlurmdbV0040PostUsersJSONRequestBody{
-		Users: &[]api.V0040User{*apiUser},
+		Users: []api.V0040User{*apiUser},
 	}
 
 	// Call the generated OpenAPI client
@@ -237,7 +232,7 @@ func (a *UserAdapter) Create(ctx context.Context, user *types.UserCreate) (*type
 
 	// Create response object with created user information
 	createResponse := &types.UserCreateResponse{
-		Name: user.Name,
+		UserName: user.Name,
 		// Add any additional response fields from API if available
 	}
 
@@ -274,7 +269,7 @@ func (a *UserAdapter) Update(ctx context.Context, userName string, update *types
 
 	// Create request body
 	reqBody := api.SlurmdbV0040PostUsersJSONRequestBody{
-		Users: &[]api.V0040User{*apiUser},
+		Users: []api.V0040User{*apiUser},
 	}
 
 	// Call the generated OpenAPI client
@@ -339,15 +334,8 @@ func (a *UserAdapter) filterUserList(users []types.User, opts *types.UserListOpt
 			continue
 		}
 
-		// Apply DefaultWCKey filter
-		if opts.DefaultWCKey != "" && user.DefaultWCKey != opts.DefaultWCKey {
-			continue
-		}
-
-		// Apply AdminLevel filter
-		if opts.AdminLevel != "" && user.AdminLevel != opts.AdminLevel {
-			continue
-		}
+		// v0.0.40 doesn't support DefaultWCKey or AdminLevel filters in options
+		// Skip these filters
 
 		filtered = append(filtered, user)
 	}
@@ -372,7 +360,7 @@ func (a *UserAdapter) validateUserUpdate(update *types.UserUpdate) error {
 		return common.NewValidationError("user update data is required", "update", nil)
 	}
 	// At least one field should be provided for update
-	if update.DefaultAccount == nil && update.DefaultWCKey == nil && update.AdminLevel == nil && update.Flags == nil {
+	if update.DefaultAccount == nil && update.DefaultWCKey == nil && update.AdminLevel == nil {
 		return common.NewValidationError("at least one field must be provided for update", "update", update)
 	}
 	return nil

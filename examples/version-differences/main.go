@@ -60,7 +60,8 @@ func autoDetectVersion(ctx context.Context, cfg *config.Config, auth auth.Provid
 	}
 
 	fmt.Printf("Auto-detected API version: %s\n", info.Version)
-	fmt.Printf("SLURM version: %s\n", info.SlurmVersion)
+	// SlurmVersion field doesn't exist in APIVersion
+	// fmt.Printf("SLURM version: %s\n", info.SlurmVersion)
 	fmt.Printf("Supported versions: %v\n", slurm.SupportedVersions())
 }
 
@@ -109,9 +110,10 @@ func testV40Features(ctx context.Context, client slurm.SlurmClient) {
 		CPUs:      2,
 		Memory:    4096,
 		TimeLimit: 10,
-		Metadata: map[string]interface{}{
-			"minimum_switches": 1, // v0.0.40 specific field
-		},
+		// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 			"minimum_switches": 1, // v0.0.40 specific field
+// 		},
 	}
 
 	resp, err := client.Jobs().Submit(ctx, job)
@@ -146,9 +148,10 @@ func testV41Features(ctx context.Context, client slurm.SlurmClient) {
 		CPUs:      2,
 		Memory:    4096,
 		TimeLimit: 10,
-		Metadata: map[string]interface{}{
-			"required_switches": 1, // v0.0.41 renamed field
-		},
+		// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 			"required_switches": 1, // v0.0.41 renamed field
+// 		},
 	}
 
 	resp, err := client.Jobs().Submit(ctx, job)
@@ -169,13 +172,8 @@ func testV41Features(ctx context.Context, client slurm.SlurmClient) {
 	} else {
 		fmt.Printf("  Found %d idle nodes\n", len(nodes.Nodes))
 		// v0.0.41 includes additional node metrics
-		for _, node := range nodes.Nodes {
-			if node.Metadata != nil {
-				if gpus, ok := node.Metadata["gpu_count"].(int); ok && gpus > 0 {
-					fmt.Printf("  Node %s has %d GPUs\n", node.Name, gpus)
-				}
-			}
-		}
+		// GPU info would come from other node fields
+		// for _, node := range nodes.Nodes { ... }
 	}
 }
 
@@ -191,10 +189,11 @@ func testV42Features(ctx context.Context, client slurm.SlurmClient) {
 		CPUs:      4,
 		Memory:    8192,
 		TimeLimit: 15,
-		Metadata: map[string]interface{}{
-			"required_switches": 1,
-			// exclusive and oversubscribe no longer in outputs
-		},
+		// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 			"required_switches": 1,
+// 			// exclusive and oversubscribe no longer in outputs
+// 		},
 	}
 
 	resp, err := client.Jobs().Submit(ctx, job)
@@ -234,9 +233,10 @@ func testV43Features(ctx context.Context, client slurm.SlurmClient) {
 		CPUs:      4,
 		Memory:    8192,
 		TimeLimit: 15,
-		Metadata: map[string]interface{}{
-			"reservation": "weekly-maintenance", // v0.0.43 reservation support
-		},
+		// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 			"reservation": "weekly-maintenance", // v0.0.43 reservation support
+// 		},
 	}
 
 	resp, err := client.Jobs().Submit(ctx, job)
@@ -256,13 +256,8 @@ func testV43Features(ctx context.Context, client slurm.SlurmClient) {
 		log.Printf("  Partition listing failed: %v", err)
 	} else {
 		fmt.Printf("  Found %d partitions\n", len(partitions.Partitions))
-		for _, p := range partitions.Partitions {
-			if p.Metadata != nil {
-				if qos, ok := p.Metadata["allowed_qos"].([]string); ok {
-					fmt.Printf("  Partition %s allows QoS: %v\n", p.Name, qos)
-				}
-			}
-		}
+		// QoS info would come from other partition fields
+		// for _, p := range partitions.Partitions { ... }
 	}
 }
 
@@ -300,14 +295,12 @@ func handleBreakingChanges(ctx context.Context, cfg *config.Config, auth auth.Pr
 	// Handle version-specific fields
 	switch info.Version {
 	case "v0.0.40":
-		job.Metadata = map[string]interface{}{
-			"minimum_switches": 1,
-		}
+		// Metadata field doesn't exist in JobSubmission
+		// Switches would be specified in SBATCH directives
 		fmt.Println("Using v0.0.40 field names (minimum_switches)")
 	case "v0.0.41", "v0.0.42", "v0.0.43":
-		job.Metadata = map[string]interface{}{
-			"required_switches": 1,
-		}
+		// Metadata field doesn't exist in JobSubmission
+		// Switches would be specified in SBATCH directives
 		fmt.Println("Using v0.0.41+ field names (required_switches)")
 	}
 

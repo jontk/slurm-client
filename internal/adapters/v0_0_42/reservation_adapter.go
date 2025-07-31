@@ -3,7 +3,6 @@ package v0_0_42
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
@@ -53,7 +52,7 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return nil, a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, a.HandleHTTPResponse(resp.HTTPResponse, resp.Body)
 	}
 
 	// Check for API response
@@ -63,11 +62,11 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 
 	// Convert the response to common types
 	reservationList := &types.ReservationList{
-		Reservations: make([]*types.Reservation, 0),
+		Reservations: make([]types.Reservation, 0),
 	}
 
 	if resp.JSON200.Reservations != nil {
-		for _, apiReservation := range *resp.JSON200.Reservations {
+		for _, apiReservation := range resp.JSON200.Reservations {
 			reservation, err := a.convertAPIReservationToCommon(apiReservation)
 			if err != nil {
 				// Log conversion error but continue
@@ -88,7 +87,7 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 				}
 			}
 			
-			reservationList.Reservations = append(reservationList.Reservations, reservation)
+			reservationList.Reservations = append(reservationList.Reservations, *reservation)
 		}
 	}
 
@@ -118,16 +117,16 @@ func (a *ReservationAdapter) Get(ctx context.Context, name string) (*types.Reser
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return nil, a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, a.HandleHTTPResponse(resp.HTTPResponse, resp.Body)
 	}
 
 	// Check for API response
-	if resp.JSON200 == nil || resp.JSON200.Reservations == nil || len(*resp.JSON200.Reservations) == 0 {
+	if resp.JSON200 == nil || resp.JSON200.Reservations == nil || len(resp.JSON200.Reservations) == 0 {
 		return nil, fmt.Errorf("reservation %s not found", name)
 	}
 
 	// Convert the first reservation in the response
-	reservations := *resp.JSON200.Reservations
+	reservations := resp.JSON200.Reservations
 	return a.convertAPIReservationToCommon(reservations[0])
 }
 
@@ -143,28 +142,8 @@ func (a *ReservationAdapter) Create(ctx context.Context, reservation *types.Rese
 		return nil, err
 	}
 
-	// Convert common reservation to API format
-	apiReservation, err := a.convertCommonReservationCreateToAPI(reservation)
-	if err != nil {
-		return nil, a.WrapError(err, "failed to convert reservation create request")
-	}
-
-	// Call the API
-	resp, err := a.client.SlurmV0042PostReservationWithResponse(ctx, apiReservation)
-	if err != nil {
-		return nil, a.WrapError(err, "failed to create reservation")
-	}
-
-	// Check response status
-	if resp.StatusCode() != 200 {
-		return nil, a.HandleAPIError(resp.StatusCode(), resp.Body)
-	}
-
-	// Return success response
-	return &types.ReservationCreateResponse{
-		Success: true,
-		Message: "Reservation created successfully",
-	}, nil
+	// v0.0.42 doesn't support reservation creation via API
+	return nil, fmt.Errorf("reservation creation not supported via v0.0.42 REST API")
 }
 
 // Update updates an existing reservation
@@ -204,7 +183,7 @@ func (a *ReservationAdapter) Delete(ctx context.Context, name string) error {
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return a.HandleHTTPResponse(resp.HTTPResponse, resp.Body)
 	}
 
 	return nil

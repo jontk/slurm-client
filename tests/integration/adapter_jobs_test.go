@@ -212,15 +212,3 @@ func TestJobsWithRealServer(t *testing.T) {
 	})
 }
 
-// tokenTransport adds the SLURM JWT token to requests
-type tokenTransport struct {
-	token string
-	base  http.RoundTripper
-}
-
-func (t *tokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	// Clone the request to avoid modifying the original
-	r := req.Clone(req.Context())
-	r.Header.Set("X-SLURM-USER-TOKEN", t.token)
-	return t.base.RoundTrip(r)
-}

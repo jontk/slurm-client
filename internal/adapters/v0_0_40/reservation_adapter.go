@@ -2,7 +2,7 @@ package v0_0_40
 
 import (
 	"context"
-	"strings"
+	"fmt"
 
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
@@ -44,13 +44,11 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 
 	// Apply filters from options
 	if opts != nil {
-		if len(opts.Names) > 0 {
-			nameStr := strings.Join(opts.Names, ",")
-			params.ReservationName = &nameStr
-		}
+		// v0.0.40 doesn't support reservation name filtering in params
+		// We'll need to filter client-side
 		if opts.UpdateTime != nil {
-			updateTime := opts.UpdateTime.Unix()
-			params.UpdateTime = &updateTime
+			updateTimeStr := fmt.Sprintf("%d", opts.UpdateTime.Unix())
+			params.UpdateTime = &updateTimeStr
 		}
 	}
 
@@ -86,6 +84,21 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 		if err != nil {
 			return nil, a.HandleConversionError(err, apiReservation.Name)
 		}
+		
+		// Apply client-side filtering if needed
+		if opts != nil && len(opts.Names) > 0 {
+			found := false
+			for _, name := range opts.Names {
+				if reservation.Name == name {
+					found = true
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		}
+		
 		reservationList = append(reservationList, *reservation)
 	}
 
@@ -150,48 +163,8 @@ func (a *ReservationAdapter) Get(ctx context.Context, reservationName string) (*
 
 // Create creates a new reservation
 func (a *ReservationAdapter) Create(ctx context.Context, reservation *types.ReservationCreate) (*types.ReservationCreateResponse, error) {
-	// Use base validation
-	if err := a.ValidateContext(ctx); err != nil {
-		return nil, err
-	}
-	if err := a.validateReservationCreate(reservation); err != nil {
-		return nil, err
-	}
-	if err := a.CheckClientInitialized(a.client); err != nil {
-		return nil, err
-	}
-
-	// Convert to API format
-	apiReservation, err := a.convertCommonReservationCreateToAPI(reservation)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create request body
-	reqBody := api.SlurmV0040PostReservationJSONRequestBody{
-		Reservations: &[]api.V0040ReservationInfo{*apiReservation},
-	}
-
-	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0040PostReservationWithResponse(ctx, reqBody)
-	if err != nil {
-		return nil, a.HandleAPIError(err)
-	}
-
-	// Use common response error handling
-	var apiErrors *api.V0040OpenapiErrors
-	if resp.JSON200 != nil {
-		apiErrors = resp.JSON200.Errors
-	}
-
-	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
-		return nil, err
-	}
-
-	return &types.ReservationCreateResponse{
-		ReservationName: reservation.Name,
-	}, nil
+	// v0.0.40 doesn't support reservation creation
+	return nil, errors.NewNotImplementedError("reservation creation", "v0.0.40")
 }
 
 // Update updates an existing reservation
@@ -205,7 +178,7 @@ func (a *ReservationAdapter) Update(ctx context.Context, reservationName string,
 	}
 
 	// v0.0.40 doesn't support reservation updates
-	return common.NewNotImplementedError("Update Reservation is not implemented for v0.0.40")
+	return errors.NewNotImplementedError("reservation updates", "v0.0.40")
 }
 
 // Delete deletes a reservation
@@ -258,8 +231,8 @@ func (a *ReservationAdapter) validateReservationCreate(reservation *types.Reserv
 	if reservation.EndTime.IsZero() {
 		return common.NewValidationError("end time is required", "endTime", reservation.EndTime)
 	}
-	if len(reservation.Nodes) == 0 && reservation.NodeCount == 0 {
-		return common.NewValidationError("either nodes or node count is required", "nodes", reservation.Nodes)
+	if reservation.NodeList == "" && reservation.NodeCount == 0 {
+		return common.NewValidationError("either node list or node count is required", "nodeList", reservation.NodeList)
 	}
 	return nil
 }

@@ -3,7 +3,6 @@ package v0_0_41
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/jontk/slurm-client/internal/common/types"
 )

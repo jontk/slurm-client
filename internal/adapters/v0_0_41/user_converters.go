@@ -2,7 +2,6 @@ package v0_0_41
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/jontk/slurm-client/internal/common/types"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
@@ -10,311 +9,229 @@ import (
 
 // convertAPIUserToCommon converts a v0.0.41 API User to common User type
 func (a *UserAdapter) convertAPIUserToCommon(apiUser interface{}) (*types.User, error) {
-	// Type assertion to handle the anonymous struct
-	userData, ok := apiUser.(struct {
-		AdministratorLevel *[]api.V0041OpenapiUsersRespUsersAdministratorLevel `json:"administrator_level,omitempty"`
-		Associations       *[]struct {
-			Account    *string `json:"account,omitempty"`
-			Cluster    *string `json:"cluster,omitempty"`
-			Partition  *string `json:"partition,omitempty"`
-		} `json:"associations,omitempty"`
-		Coordinators       *[]struct {
-			Name *string `json:"name,omitempty"`
-		} `json:"coordinators,omitempty"`
-		Default            *struct {
-			Account *string `json:"account,omitempty"`
-			Wckey   *string `json:"wckey,omitempty"`
-		} `json:"default,omitempty"`
-		Flags              *[]api.V0041OpenapiUsersRespUsersFlags `json:"flags,omitempty"`
-		Name               *string `json:"name,omitempty"`
-		OldName            *string `json:"old_name,omitempty"`
-		Wckeys             *[]struct {
-			Cluster *string `json:"cluster,omitempty"`
-			Flags   *[]api.V0041OpenapiUsersRespUsersWckeysFlags `json:"flags,omitempty"`
-			Id      *api.V0041OpenapiUsersRespUsersWckeysId `json:"id,omitempty"`
-			Name    *string `json:"name,omitempty"`
-			User    *string `json:"user,omitempty"`
-		} `json:"wckeys,omitempty"`
-	})
+	// Use map interface for handling anonymous structs in v0.0.41
+	userData, ok := apiUser.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("unexpected user data type")
+		return nil, fmt.Errorf("unexpected user data type: %T", apiUser)
 	}
 
 	user := &types.User{}
 
-	// Basic fields
-	if userData.Name != nil {
-		user.Name = *userData.Name
-	}
-	if userData.OldName != nil {
-		user.OldName = *userData.OldName
+	// Basic fields - using safe type assertions
+	if v, ok := userData["name"]; ok {
+		if name, ok := v.(string); ok {
+			user.Name = name
+		}
 	}
 
 	// Default account and wckey
-	if userData.Default != nil {
-		if userData.Default.Account != nil {
-			user.DefaultAccount = *userData.Default.Account
-		}
-		if userData.Default.Wckey != nil {
-			user.DefaultWCKey = *userData.Default.Wckey
+	if v, ok := userData["default"]; ok {
+		if defaultData, ok := v.(map[string]interface{}); ok {
+			if acc, ok := defaultData["account"]; ok {
+				if account, ok := acc.(string); ok {
+					user.DefaultAccount = account
+				}
+			}
+			if wc, ok := defaultData["wckey"]; ok {
+				if wckey, ok := wc.(string); ok {
+					user.DefaultWCKey = wckey
+				}
+			}
 		}
 	}
 
 	// Administrator level
-	if userData.AdministratorLevel != nil && len(*userData.AdministratorLevel) > 0 {
-		// Convert the first admin level to string
-		adminLevel := string((*userData.AdministratorLevel)[0])
-		user.AdminLevel = adminLevel
-	}
-
-	// Flags
-	if userData.Flags != nil {
-		var flags []string
-		for _, flag := range *userData.Flags {
-			flags = append(flags, string(flag))
-		}
-		user.Flags = flags
-	}
-
-	// Associations (if requested)
-	if userData.Associations != nil {
-		associations := make([]types.Association, 0, len(*userData.Associations))
-		for _, apiAssoc := range *userData.Associations {
-			assoc := types.Association{
-				User: user.Name,
-			}
-
-			if apiAssoc.Account != nil {
-				assoc.Account = *apiAssoc.Account
-			}
-			if apiAssoc.Cluster != nil {
-				assoc.Cluster = *apiAssoc.Cluster
-			}
-			if apiAssoc.Partition != nil {
-				assoc.Partition = *apiAssoc.Partition
-			}
-
-			associations = append(associations, assoc)
-		}
-		user.Associations = associations
-	}
-
-	// Coordinators (accounts this user coordinates)
-	if userData.Coordinators != nil {
-		coordinators := make([]string, 0, len(*userData.Coordinators))
-		for _, coord := range *userData.Coordinators {
-			if coord.Name != nil {
-				coordinators = append(coordinators, *coord.Name)
+	if v, ok := userData["administrator_level"]; ok {
+		if levels, ok := v.([]interface{}); ok && len(levels) > 0 {
+			if level, ok := levels[0].(string); ok {
+				user.AdminLevel = types.AdminLevel(level)
 			}
 		}
-		user.CoordinatorAccounts = coordinators
+	}
+
+	// Associations
+	if v, ok := userData["associations"]; ok {
+		if assocData, ok := v.([]interface{}); ok {
+			userAssocs := make([]types.UserAssociation, 0, len(assocData))
+			for _, a := range assocData {
+				if assoc, ok := a.(map[string]interface{}); ok {
+					userAssoc := types.UserAssociation{}
+					if acc, ok := assoc["account"].(string); ok {
+						userAssoc.AccountName = acc
+					}
+					if cl, ok := assoc["cluster"].(string); ok {
+						userAssoc.Cluster = cl
+					}
+					if part, ok := assoc["partition"].(string); ok {
+						userAssoc.Partition = part
+					}
+					userAssocs = append(userAssocs, userAssoc)
+				}
+			}
+			user.Associations = userAssocs
+		}
+	}
+
+	// Coordinators
+	if v, ok := userData["coordinators"]; ok {
+		if coordData, ok := v.([]interface{}); ok {
+			for _, c := range coordData {
+				if coord, ok := c.(map[string]interface{}); ok {
+					if acc, ok := coord["account"].(string); ok {
+						user.Coordinators = append(user.Coordinators, types.UserCoordinator{
+							AccountName: acc,
+						})
+					}
+				}
+			}
+		}
 	}
 
 	// WCKeys
-	if userData.Wckeys != nil {
-		wckeys := make([]types.WCKey, 0, len(*userData.Wckeys))
-		for _, apiWckey := range *userData.Wckeys {
-			wckey := types.WCKey{}
-
-			if apiWckey.Id != nil && apiWckey.Id.Number != nil {
-				wckey.ID = uint32(*apiWckey.Id.Number)
-			}
-			if apiWckey.Name != nil {
-				wckey.Name = *apiWckey.Name
-			}
-			if apiWckey.User != nil {
-				wckey.User = *apiWckey.User
-			}
-			if apiWckey.Cluster != nil {
-				wckey.Cluster = *apiWckey.Cluster
-			}
-
-			// Flags
-			if apiWckey.Flags != nil {
-				var flags []string
-				for _, flag := range *apiWckey.Flags {
-					flags = append(flags, string(flag))
+	if v, ok := userData["wckeys"]; ok {
+		if wckeyData, ok := v.([]interface{}); ok {
+			wckeys := make([]string, 0, len(wckeyData))
+			for _, w := range wckeyData {
+				if wckey, ok := w.(map[string]interface{}); ok {
+					if name, ok := wckey["name"].(string); ok {
+						wckeys = append(wckeys, name)
+					}
 				}
-				wckey.Flags = flags
 			}
-
-			wckeys = append(wckeys, wckey)
+			user.WCKeys = wckeys
 		}
-		user.WCKeys = wckeys
 	}
+
+	// Skip complex nested structures for now
+	// These would need detailed mapping based on the actual API response structure
 
 	return user, nil
 }
 
-// convertCommonToAPIUser converts common User to v0.0.41 API request
+// convertCommonToAPIUser converts common User to API format
 func (a *UserAdapter) convertCommonToAPIUser(user *types.User) *api.V0041OpenapiUsersResp {
-	req := &api.V0041OpenapiUsersResp{
+	apiUser := &api.V0041OpenapiUsersResp{
 		Users: []struct {
+			// AdministratorLevel AdminLevel granted to the user
 			AdministratorLevel *[]api.V0041OpenapiUsersRespUsersAdministratorLevel `json:"administrator_level,omitempty"`
-			Associations       *[]struct {
-				Account    *string `json:"account,omitempty"`
-				Cluster    *string `json:"cluster,omitempty"`
-				Partition  *string `json:"partition,omitempty"`
-			} `json:"associations,omitempty"`
-			Coordinators       *[]struct {
-				Name *string `json:"name,omitempty"`
-			} `json:"coordinators,omitempty"`
-			Default            *struct {
+
+			// Associations Associations created for this user
+			Associations *[]struct {
+				// Account Account
 				Account *string `json:"account,omitempty"`
-				Wckey   *string `json:"wckey,omitempty"`
-			} `json:"default,omitempty"`
-			Flags              *[]api.V0041OpenapiUsersRespUsersFlags `json:"flags,omitempty"`
-			Name               *string `json:"name,omitempty"`
-			OldName            *string `json:"old_name,omitempty"`
-			Wckeys             *[]struct {
+
+				// Cluster Cluster
 				Cluster *string `json:"cluster,omitempty"`
-				Flags   *[]api.V0041OpenapiUsersRespUsersWckeysFlags `json:"flags,omitempty"`
-				Id      *api.V0041OpenapiUsersRespUsersWckeysId `json:"id,omitempty"`
-				Name    *string `json:"name,omitempty"`
-				User    *string `json:"user,omitempty"`
+
+				// Id Numeric association ID
+				Id *int32 `json:"id,omitempty"`
+
+				// Partition Partition
+				Partition *string `json:"partition,omitempty"`
+
+				// User User name
+				User string `json:"user"`
+			} `json:"associations,omitempty"`
+
+			// Coordinators Accounts this user is a coordinator for
+			Coordinators *[]struct {
+				// Direct Indicates whether the coordinator was directly assigned to this account
+				Direct *bool `json:"direct,omitempty"`
+
+				// Name User name
+				Name string `json:"name"`
+			} `json:"coordinators,omitempty"`
+			Default *struct {
+				// Account Default bank account name
+				Account *string `json:"account,omitempty"`
+
+				// Wckey Default wckey name
+				Wckey *string `json:"wckey,omitempty"`
+			} `json:"default,omitempty"`
+
+			// Flags flags for a user
+			Flags *[]api.V0041OpenapiUsersRespUsersFlags `json:"flags,omitempty"`
+
+			// Name User name
+			Name string `json:"name"`
+
+			// OldName Previous user name
+			OldName *string `json:"old_name,omitempty"`
+
+			// Wckeys List of available WCKeys
+			Wckeys *[]struct {
+				// Accounting Accounting records containing related resource usage
+				Accounting *[]struct {
+					// TRES Trackable resources
+					TRES *struct {
+						// Count TRES count (0 if listed generically)
+						Count *int64 `json:"count,omitempty"`
+
+						// Id ID used in database
+						Id *int32 `json:"id,omitempty"`
+
+						// Name TRES name (if applicable)
+						Name *string `json:"name,omitempty"`
+
+						// Type TRES type (CPU, MEM, etc)
+						Type string `json:"type"`
+					} `json:"TRES,omitempty"`
+					Allocated *struct {
+						// Seconds Number of cpu seconds allocated
+						Seconds *int64 `json:"seconds,omitempty"`
+					} `json:"allocated,omitempty"`
+
+					// Id Association ID or Workload characterization key ID
+					Id *int32 `json:"id,omitempty"`
+
+					// Start When the record was started
+					Start *int64 `json:"start,omitempty"`
+				} `json:"accounting,omitempty"`
+
+				// Cluster Cluster name
+				Cluster string `json:"cluster"`
+
+				// Flags Flags associated with the WCKey
+				Flags *[]api.V0041OpenapiUsersRespUsersWckeysFlags `json:"flags,omitempty"`
+
+				// Id Unique ID for this user-cluster-wckey combination
+				Id *int32 `json:"id,omitempty"`
+
+				// Name WCKey name
+				Name string `json:"name"`
+
+				// User User name
+				User string `json:"user"`
 			} `json:"wckeys,omitempty"`
 		}{
-			{},
+			{
+				Name: user.Name,
+			},
 		},
 	}
 
-	usr := &req.Users[0]
-
-	// Set basic fields
-	if user.Name != "" {
-		usr.Name = &user.Name
-	}
-	if user.OldName != "" {
-		usr.OldName = &user.OldName
+	// Set admin level
+	if user.AdminLevel != "" {
+		level := api.V0041OpenapiUsersRespUsersAdministratorLevel(user.AdminLevel)
+		apiUser.Users[0].AdministratorLevel = &[]api.V0041OpenapiUsersRespUsersAdministratorLevel{level}
 	}
 
 	// Set default account and wckey
 	if user.DefaultAccount != "" || user.DefaultWCKey != "" {
-		usr.Default = &struct {
+		apiUser.Users[0].Default = &struct {
+			// Account Default bank account name
 			Account *string `json:"account,omitempty"`
-			Wckey   *string `json:"wckey,omitempty"`
+
+			// Wckey Default wckey name
+			Wckey *string `json:"wckey,omitempty"`
 		}{}
 		if user.DefaultAccount != "" {
-			usr.Default.Account = &user.DefaultAccount
+			apiUser.Users[0].Default.Account = &user.DefaultAccount
 		}
 		if user.DefaultWCKey != "" {
-			usr.Default.Wckey = &user.DefaultWCKey
+			apiUser.Users[0].Default.Wckey = &user.DefaultWCKey
 		}
 	}
 
-	// Set administrator level
-	if user.AdminLevel != "" {
-		adminLevels := []api.V0041OpenapiUsersRespUsersAdministratorLevel{}
-		switch strings.ToLower(user.AdminLevel) {
-		case "administrator":
-			adminLevels = append(adminLevels, api.V0041OpenapiUsersRespUsersAdministratorLevelAdministrator)
-		case "operator":
-			adminLevels = append(adminLevels, api.V0041OpenapiUsersRespUsersAdministratorLevelOperator)
-		case "none":
-			adminLevels = append(adminLevels, api.V0041OpenapiUsersRespUsersAdministratorLevelNone)
-		}
-		if len(adminLevels) > 0 {
-			usr.AdministratorLevel = &adminLevels
-		}
-	}
-
-	// Convert flags
-	if len(user.Flags) > 0 {
-		flags := make([]api.V0041OpenapiUsersRespUsersFlags, 0, len(user.Flags))
-		for _, flag := range user.Flags {
-			// Map common flags to API flags
-			switch strings.ToLower(flag) {
-			case "deleted":
-				flags = append(flags, api.V0041OpenapiUsersRespUsersFlagsDELETED)
-			case "exact":
-				flags = append(flags, api.V0041OpenapiUsersRespUsersFlagsExact)
-			case "noupdate":
-				flags = append(flags, api.V0041OpenapiUsersRespUsersFlagsNoUpdate)
-			case "nousersarecoords":
-				flags = append(flags, api.V0041OpenapiUsersRespUsersFlagsNoUsersAreCoords)
-			case "usersarecoords":
-				flags = append(flags, api.V0041OpenapiUsersRespUsersFlagsUsersAreCoords)
-			}
-		}
-		if len(flags) > 0 {
-			usr.Flags = &flags
-		}
-	}
-
-	// Convert coordinators
-	if len(user.CoordinatorAccounts) > 0 {
-		coords := make([]struct {
-			Name *string `json:"name,omitempty"`
-		}, 0, len(user.CoordinatorAccounts))
-		for _, coordName := range user.CoordinatorAccounts {
-			coordNameCopy := coordName // Create a copy to avoid pointer issues
-			coords = append(coords, struct {
-				Name *string `json:"name,omitempty"`
-			}{
-				Name: &coordNameCopy,
-			})
-		}
-		usr.Coordinators = &coords
-	}
-
-	// Convert WCKeys
-	if len(user.WCKeys) > 0 {
-		wckeys := make([]struct {
-			Cluster *string `json:"cluster,omitempty"`
-			Flags   *[]api.V0041OpenapiUsersRespUsersWckeysFlags `json:"flags,omitempty"`
-			Id      *api.V0041OpenapiUsersRespUsersWckeysId `json:"id,omitempty"`
-			Name    *string `json:"name,omitempty"`
-			User    *string `json:"user,omitempty"`
-		}, 0, len(user.WCKeys))
-
-		for _, wckey := range user.WCKeys {
-			apiWckey := struct {
-				Cluster *string `json:"cluster,omitempty"`
-				Flags   *[]api.V0041OpenapiUsersRespUsersWckeysFlags `json:"flags,omitempty"`
-				Id      *api.V0041OpenapiUsersRespUsersWckeysId `json:"id,omitempty"`
-				Name    *string `json:"name,omitempty"`
-				User    *string `json:"user,omitempty"`
-			}{}
-
-			if wckey.Name != "" {
-				apiWckey.Name = &wckey.Name
-			}
-			if wckey.User != "" {
-				apiWckey.User = &wckey.User
-			}
-			if wckey.Cluster != "" {
-				apiWckey.Cluster = &wckey.Cluster
-			}
-
-			// Convert wckey flags
-			if len(wckey.Flags) > 0 {
-				wckeyFlags := make([]api.V0041OpenapiUsersRespUsersWckeysFlags, 0, len(wckey.Flags))
-				for _, flag := range wckey.Flags {
-					switch strings.ToLower(flag) {
-					case "deleted":
-						wckeyFlags = append(wckeyFlags, api.V0041OpenapiUsersRespUsersWckeysFlagsDELETED)
-					case "exact":
-						wckeyFlags = append(wckeyFlags, api.V0041OpenapiUsersRespUsersWckeysFlagsExact)
-					case "noupdate":
-						wckeyFlags = append(wckeyFlags, api.V0041OpenapiUsersRespUsersWckeysFlagsNoUpdate)
-					}
-				}
-				if len(wckeyFlags) > 0 {
-					apiWckey.Flags = &wckeyFlags
-				}
-			}
-
-			wckeys = append(wckeys, apiWckey)
-		}
-		usr.Wckeys = &wckeys
-	}
-
-	return req
-}
-
-// convertCommonToAPIUserUpdate converts common UserUpdate to v0.0.41 API request
-func (a *UserAdapter) convertCommonToAPIUserUpdate(update *types.UserUpdate) *api.V0041OpenapiUsersResp {
-	// For v0.0.41, updates are done by sending the full user object
-	// This is a placeholder that would need the full user data
-	return nil
+	return apiUser
 }

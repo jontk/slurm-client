@@ -430,7 +430,6 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 				CPUs:      4,
 				Memory:    16 * 1024 * 1024 * 1024,
 				TimeLimit: 720, // 12 hours
-				GRES:      "gpu:2",
 			},
 		},
 	}
@@ -467,7 +466,7 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 
 				if priority != nil {
 					estStart := "Unknown"
-					if priority.EstimatedStart != nil {
+					if !priority.EstimatedStart.IsZero() {
 						estStart = priority.EstimatedStart.Format("Jan 02 15:04")
 					}
 					
@@ -491,7 +490,7 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 
 			if priority != nil {
 				estStart := "Unknown"
-				if priority.EstimatedStart != nil {
+				if !priority.EstimatedStart.IsZero() {
 					estStart = priority.EstimatedStart.Format("Jan 02 15:04")
 				}
 				
@@ -512,7 +511,7 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 		
 		// Use medium job as example
 		mediumJob := scenarios[1].job
-		mediumJob.Account = accounts[0].Name
+		mediumJob.Partition = accounts[0].AccountName
 		
 		priority, err := userManager.CalculateJobPriority(ctx, userName, &mediumJob)
 		if err == nil && priority != nil && priority.Factors != nil {
@@ -529,12 +528,13 @@ func displayUserFairShareReport(fairShare *interfaces.UserFairShare) {
 	fmt.Printf("  Fair-Share Factor: %.6f\n", fairShare.FairShareFactor)
 	fmt.Printf("  Normalized Shares: %.6f\n", fairShare.NormalizedShares)
 	fmt.Printf("  Effective Usage: %.6f\n", fairShare.EffectiveUsage)
-	fmt.Printf("  Raw Usage: %.6f\n", fairShare.RawUsage)
+	// RawUsage field doesn't exist in UserFairShare
 	fmt.Printf("  Raw Shares: %d\n", fairShare.RawShares)
 	fmt.Printf("  Hierarchical Level: %d\n", fairShare.Level)
 	
-	if fairShare.LastUpdate != nil {
-		fmt.Printf("  Last Updated: %v\n", fairShare.LastUpdate.Format(time.RFC3339))
+	// LastUpdate field doesn't exist in UserFairShare/AccountFairShare
+	if !fairShare.LastDecay.IsZero() {
+		fmt.Printf("  Last Decay: %v\n", fairShare.LastDecay.Format(time.RFC3339))
 	}
 
 	if fairShare.PriorityFactors != nil {
@@ -561,12 +561,13 @@ func displayAccountFairShareReport(fairShare *interfaces.AccountFairShare) {
 	fmt.Printf("  Total Users: %d (Active: %d)\n", fairShare.UserCount, fairShare.ActiveUsers)
 	fmt.Printf("  Total Jobs: %d\n", fairShare.JobCount)
 	
-	if fairShare.ChildAccounts > 0 {
-		fmt.Printf("  Child Accounts: %d\n", fairShare.ChildAccounts)
+	if len(fairShare.Children) > 0 {
+		fmt.Printf("  Child Accounts: %d\n", len(fairShare.Children))
 	}
 	
-	if fairShare.LastUpdate != nil {
-		fmt.Printf("  Last Updated: %v\n", fairShare.LastUpdate.Format(time.RFC3339))
+	// LastUpdate field doesn't exist in UserFairShare/AccountFairShare
+	if !fairShare.LastDecay.IsZero() {
+		fmt.Printf("  Last Decay: %v\n", fairShare.LastDecay.Format(time.RFC3339))
 	}
 }
 

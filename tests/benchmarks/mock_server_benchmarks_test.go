@@ -54,8 +54,8 @@ func BenchmarkMockServerAnalyticsOverhead(b *testing.B) {
 	}
 }
 
-// BenchmarkAnalyticsMemoryUsage measures memory allocations for analytics operations
-func BenchmarkAnalyticsMemoryUsage(b *testing.B) {
+// BenchmarkMockServerAnalyticsMemoryUsage measures memory allocations for analytics operations
+func BenchmarkMockServerAnalyticsMemoryUsage(b *testing.B) {
 	mockServer := mocks.NewMockSlurmServerForVersion("v0.0.42")
 	defer mockServer.Close()
 
@@ -117,7 +117,7 @@ func BenchmarkAnalyticsConcurrency(b *testing.B) {
 }
 
 // BenchmarkAnalyticsVersionComparison compares performance across API versions
-func BenchmarkAnalyticsVersionComparison(b *testing.B) {
+func BenchmarkMockServerAnalyticsVersionComparison(b *testing.B) {
 	versions := []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43"}
 	
 	for _, version := range versions {
@@ -142,7 +142,7 @@ func BenchmarkAnalyticsVersionComparison(b *testing.B) {
 }
 
 // BenchmarkAnalyticsLatencyDistribution measures response time distribution
-func BenchmarkAnalyticsLatencyDistribution(b *testing.B) {
+func BenchmarkMockServerAnalyticsLatencyDistribution(b *testing.B) {
 	mockServer := mocks.NewMockSlurmServerForVersion("v0.0.42")
 	defer mockServer.Close()
 

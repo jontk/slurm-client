@@ -2,11 +2,9 @@ package v0_0_41
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/jontk/slurm-client/internal/common/types"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 )
 
 // convertAPIPartitionToCommon converts a v0.0.41 API Partition to common Partition type

@@ -310,47 +310,6 @@ func (suite *RealServerTestSuite) TestGetStats() {
 	suite.T().Logf("    Completed Jobs: %d", stats.CompletedJobs)
 }
 
-// fetchJWTTokenViaSSH fetches a JWT token from the server via SSH
-func fetchJWTTokenViaSSH() (string, error) {
-	// Get SSH configuration from environment
-	sshHost := os.Getenv("SLURM_SSH_HOST")
-	if sshHost == "" {
-		sshHost = "rocky9"
-	}
-	
-	sshUser := os.Getenv("SLURM_SSH_USER")
-	if sshUser == "" {
-		sshUser = "root"
-	}
-	
-	// Command to get JWT token
-	cmd := exec.Command("ssh", 
-		"-o", "StrictHostKeyChecking=no",
-		"-o", "UserKnownHostsFile=/dev/null",
-		sshUser+"@"+sshHost,
-		"unset SLURM_JWT; /opt/slurm/current/bin/scontrol token | grep SLURM_JWT | cut -d= -f2")
-	
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("SSH command failed: %v, output: %s", err, string(output))
-	}
-	
-	token := strings.TrimSpace(string(output))
-	if token == "" {
-		return "", fmt.Errorf("no token found in output: %s", string(output))
-	}
-	
-	// Remove any "Warning:" lines from SSH
-	lines := strings.Split(token, "\n")
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "eyJ") { // JWT tokens start with "eyJ"
-			return line, nil
-		}
-	}
-	
-	return "", fmt.Errorf("no valid JWT token found in output: %s", string(output))
-}
 
 // TestRealServer runs the test suite
 func TestRealServer(t *testing.T) {

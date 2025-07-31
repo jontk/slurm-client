@@ -2,12 +2,10 @@ package v0_0_41
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jontk/slurm-client/internal/common/types"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 )
 
 // convertAPIJobToCommon converts a v0.0.41 API Job to common Job type

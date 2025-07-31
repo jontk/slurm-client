@@ -680,7 +680,7 @@ func benchmarkFairShareOperation(b *testing.B, operation string, hierarchyDepth 
 			// Create job submission with varying complexity
 			jobSubmission := &interfaces.JobSubmission{
 				Script:    "#!/bin/bash\necho 'benchmark job'",
-				Account:   fmt.Sprintf("account%d", i%10),
+				// Account field doesn't exist in JobSubmission
 				Partition: "compute",
 				CPUs:      1 + (i % 16),
 				Memory:    1024 * (1 + (i % 8)),
@@ -688,7 +688,7 @@ func benchmarkFairShareOperation(b *testing.B, operation string, hierarchyDepth 
 			
 			if hierarchyDepth > 1 {
 				// Add more complex resource requirements
-				jobSubmission.TimeLimit = fmt.Sprintf("%02d:00:00", 1+(i%24))
+				jobSubmission.TimeLimit = 60 * (1 + (i % 24)) // in minutes
 				jobSubmission.Nodes = 1 + (i % 4)
 			}
 			

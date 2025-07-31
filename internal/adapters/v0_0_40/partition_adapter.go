@@ -183,19 +183,19 @@ func (a *PartitionAdapter) Get(ctx context.Context, partitionName string) (*type
 // Create creates a new partition
 func (a *PartitionAdapter) Create(ctx context.Context, partition *types.PartitionCreate) (*types.PartitionCreateResponse, error) {
 	// v0.0.40 doesn't support partition creation
-	return nil, common.NewAPIError("partition creation not supported in v0.0.40", 405, nil)
+	return nil, errors.NewNotImplementedError("partition creation", "v0.0.40")
 }
 
 // Update updates an existing partition
 func (a *PartitionAdapter) Update(ctx context.Context, partitionName string, update *types.PartitionUpdate) error {
 	// v0.0.40 doesn't support partition updates
-	return common.NewAPIError("partition updates not supported in v0.0.40", 405, nil)
+	return errors.NewNotImplementedError("partition updates", "v0.0.40")
 }
 
 // Delete deletes a partition
 func (a *PartitionAdapter) Delete(ctx context.Context, partitionName string) error {
 	// v0.0.40 doesn't support partition deletion
-	return common.NewAPIError("partition deletion not supported in v0.0.40", 405, nil)
+	return errors.NewNotImplementedError("partition deletion", "v0.0.40")
 }
 
 // convertAPIPartitionToCommon converts a v0.0.40 API Partition to common Partition type

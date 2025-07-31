@@ -74,10 +74,8 @@ python3 train_model.py --gpu 0 --batch-size 128
 		CPUs:      8,
 		Memory:    32768, // 32GB
 		TimeLimit: 120,
-		Metadata: map[string]interface{}{
-			"gres":       "gpu:1",
-			"constraint": "gpu_mem_32gb",
-		},
+		// Note: GRES and constraints would be specified in the SBATCH script
+		// as JobSubmission doesn't have a Metadata field
 	}
 
 	resp1, err := client.Jobs().Submit(ctx, singleGPUJob)
@@ -111,11 +109,12 @@ srun python3 distributed_train.py \
 		Memory:    131072, // 128GB total
 		TimeLimit: 360,
 		Nodes:     1, // All GPUs on same node
-		Metadata: map[string]interface{}{
-			"gres":       "gpu:4",
-			"constraint": "v100",
-			"ntasks":     4,
-		},
+		// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 			"gres":       "gpu:4",
+// 			"constraint": "v100",
+// 			"ntasks":     4,
+// 		},
 	}
 
 	resp2, err := client.Jobs().Submit(ctx, multiGPUJob)
@@ -142,9 +141,10 @@ python3 inference.py --model large_model.pt --precision fp16
 		CPUs:      16,
 		Memory:    65536,
 		TimeLimit: 60,
-		Metadata: map[string]interface{}{
-			"gres": "gpu:a100:2",
-		},
+		// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 			"gres": "gpu:a100:2",
+// 		},
 	}
 
 	resp3, err := client.Jobs().Submit(ctx, gpuTypeJob)
@@ -197,10 +197,11 @@ python3 process_large_dataset.py --input /data/huge_file.csv
 		CPUs:      8,
 		Memory:    262144, // 256GB total (32GB per CPU)
 		TimeLimit: 120,
-		Metadata: map[string]interface{}{
-			"mem-per-cpu": "32G",
-			"constraint":  "highmem",
-		},
+		// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 			"mem-per-cpu": "32G",
+// 			"constraint":  "highmem",
+// 		},
 	}
 
 	resp2, err := client.Jobs().Submit(ctx, highMemJob)
@@ -227,10 +228,11 @@ echo "Total node memory: $(free -h | grep Mem | awk '{print $2}')"
 		CPUs:      48, // Full node
 		Memory:    0,  // All available
 		TimeLimit: 60,
-		Metadata: map[string]interface{}{
-			"exclusive": true,
-			"mem":       "0",
-		},
+		// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 			"exclusive": true,
+// 			"mem":       "0",
+// 		},
 	}
 
 	resp3, err := client.Jobs().Submit(ctx, memReserveJob)
@@ -259,9 +261,10 @@ echo "Node: $SLURMD_NODENAME"
 		CPUs:      16,
 		Memory:    32768,
 		TimeLimit: 45,
-		Metadata: map[string]interface{}{
-			"constraint": "haswell|broadwell",
-		},
+		// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 			"constraint": "haswell|broadwell",
+// 		},
 	}
 
 	resp1, err := client.Jobs().Submit(ctx, archJob)
@@ -289,11 +292,12 @@ mpirun -np $SLURM_NTASKS ./mpi_application
 		Memory:    131072,
 		Nodes:     4,
 		TimeLimit: 180,
-		Metadata: map[string]interface{}{
-			"constraint": "ib&rack3",
-			"switches":   1,
-			"ntasks":     64,
-		},
+		// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 			"constraint": "ib&rack3",
+// 			"switches":   1,
+// 			"ntasks":     64,
+// 		},
 	}
 
 	resp2, err := client.Jobs().Submit(ctx, networkJob)
@@ -321,10 +325,11 @@ cat /etc/redhat-release      # Show OS version
 		CPUs:      8,
 		Memory:    16384,
 		TimeLimit: 30,
-		Metadata: map[string]interface{}{
-			"constraint": "ssd&gpu&centos7",
-			"gres":       "gpu:1",
-		},
+		// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 			"constraint": "ssd&gpu&centos7",
+// 			"gres":       "gpu:1",
+// 		},
 	}
 
 	resp3, err := client.Jobs().Submit(ctx, featureJob)
@@ -353,9 +358,10 @@ scontrol show node $SLURM_JOB_NODELIST
 		Memory:    0,   // All available
 		Nodes:     2,
 		TimeLimit: 60,
-		Metadata: map[string]interface{}{
-			"exclusive": true,
-		},
+		// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 			"exclusive": true,
+// 		},
 	}
 
 	resp1, err := client.Jobs().Submit(ctx, exclusiveJob)
@@ -381,9 +387,10 @@ echo "Allocated memory: ${SLURM_MEM_PER_NODE}MB"
 		CPUs:      2,
 		Memory:    8192,
 		TimeLimit: 30,
-		Metadata: map[string]interface{}{
-			"oversubscribe": true,
-		},
+		// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 			"oversubscribe": true,
+// 		},
 	}
 
 	resp2, err := client.Jobs().Submit(ctx, sharedJob)
@@ -412,11 +419,12 @@ srun ./numa_optimized_app
 		CPUs:      8, // 4 tasks * 2 CPUs
 		Memory:    16384,
 		TimeLimit: 45,
-		Metadata: map[string]interface{}{
-			"cpu-bind":       "cores",
-			"ntasks":         4,
-			"cpus-per-task":  2,
-		},
+		// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 			"cpu-bind":       "cores",
+// 			"ntasks":         4,
+// 			"cpus-per-task":  2,
+// 		},
 	}
 
 	resp3, err := client.Jobs().Submit(ctx, coreBindJob)
@@ -504,10 +512,11 @@ python3 gpu_workload.py
 			CPUs:      8,
 			Memory:    32768,
 			TimeLimit: 60,
-			Metadata: map[string]interface{}{
-				"gres":     "gpu:1",
-				"nodelist": gpuNodes[0],
-			},
+			// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 				"gres":     "gpu:1",
+// 				"nodelist": gpuNodes[0],
+// 			},
 		}
 
 		resp, err := client.Jobs().Submit(ctx, gpuJob)
@@ -533,9 +542,10 @@ python3 memory_analysis.py --use-all-memory
 			CPUs:      16,
 			Memory:    262144, // 256GB
 			TimeLimit: 90,
-			Metadata: map[string]interface{}{
-				"nodelist": highMemNodes[0],
-			},
+			// Metadata would be in SBATCH directives
+// 		// Removed: Metadata: map[string]interface{}{
+// 				"nodelist": highMemNodes[0],
+// 			},
 		}
 
 		resp, err := client.Jobs().Submit(ctx, memJob)

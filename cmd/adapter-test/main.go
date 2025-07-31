@@ -34,7 +34,7 @@ func main() {
 	cfg.Debug = true
 
 	// Create JWT authentication provider
-	authProvider := auth.NewJWTAuth(jwtToken)
+	authProvider := auth.NewTokenAuth(jwtToken)
 
 	// Create factory
 	clientFactory, err := factory.NewClientFactory(
@@ -67,7 +67,7 @@ func main() {
 	} else {
 		fmt.Printf("Found %d jobs (showing up to 5)\n", jobs.Total)
 		for i, job := range jobs.Jobs {
-			fmt.Printf("  [%d] Job %d: %s (State: %s)\n", i+1, job.JobID, job.JobName, job.State)
+			fmt.Printf("  [%d] Job %s: %s (State: %s)\n", i+1, job.ID, job.Name, job.State)
 		}
 	}
 
@@ -75,14 +75,11 @@ func main() {
 	fmt.Println("\n=== Testing Job Submission ===")
 	testJob := &interfaces.JobSubmission{
 		Name:      fmt.Sprintf("adapter-test-%s-%d", version, time.Now().Unix()),
-		Account:   "root",
 		Partition: "sla",
 		Script:    "#!/bin/bash\necho 'Hello from adapter test'\nsleep 10\necho 'Done'",
-		StandardOutput: "/tmp/adapter-test-%j.out",
-		StandardError:  "/tmp/adapter-test-%j.err",
 		TimeLimit: 1, // 1 minute
-		NodeCount: 1,
-		Tasks:     1,
+		Nodes:     1,
+		CPUs:      1,
 		Environment: map[string]string{
 			"TEST_VAR": "adapter_test",
 		},
@@ -92,11 +89,7 @@ func main() {
 	if err != nil {
 		log.Printf("Failed to submit job: %v", err)
 	} else {
-		fmt.Printf("Successfully submitted job with ID: %d\n", submitResp.JobID)
-		fmt.Printf("  Job Name: %s\n", submitResp.JobName)
-		if submitResp.Message != "" {
-			fmt.Printf("  Message: %s\n", submitResp.Message)
-		}
+		fmt.Printf("Successfully submitted job with ID: %s\n", submitResp.JobID)
 
 		// Test 3: Get the submitted job
 		fmt.Println("\n=== Testing Get Job ===")
@@ -104,13 +97,11 @@ func main() {
 		if err != nil {
 			log.Printf("Failed to get job %d: %v", submitResp.JobID, err)
 		} else {
-			fmt.Printf("Retrieved job %d:\n", job.JobID)
-			fmt.Printf("  Name: %s\n", job.JobName)
+			fmt.Printf("Retrieved job %s:\n", job.ID)
+			fmt.Printf("  Name: %s\n", job.Name)
 			fmt.Printf("  State: %s\n", job.State)
 			fmt.Printf("  Partition: %s\n", job.Partition)
-			fmt.Printf("  Account: %s\n", job.Account)
-			fmt.Printf("  Working Directory: %s\n", job.WorkingDirectory)
-			fmt.Printf("  Standard Output: %s\n", job.StandardOutput)
+			fmt.Printf("  Working Directory: %s\n", job.WorkingDir)
 		}
 
 		// Test 4: Cancel the job
@@ -149,7 +140,7 @@ func main() {
 		fmt.Printf("Found %d partitions (showing up to 5)\n", partitions.Total)
 		for i, partition := range partitions.Partitions {
 			fmt.Printf("  [%d] Partition %s: State=%s, Nodes=%d total (%d available)\n", 
-				i+1, partition.Name, partition.State, partition.TotalNodes, partition.AvailableNodes)
+				i+1, partition.Name, partition.State, partition.TotalNodes, partition.TotalNodes)
 		}
 	}
 

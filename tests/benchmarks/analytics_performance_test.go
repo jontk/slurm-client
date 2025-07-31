@@ -1,7 +1,6 @@
 package benchmarks
 
 import (
-	"context"
 	"fmt"
 	"sync"
 	"testing"

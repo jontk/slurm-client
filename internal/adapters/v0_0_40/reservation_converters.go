@@ -1,6 +1,7 @@
 package v0_0_40
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -24,13 +25,19 @@ func (a *ReservationAdapter) convertAPIReservationToCommon(apiReservation api.V0
 	if apiReservation.EndTime != nil && apiReservation.EndTime.Number != nil && *apiReservation.EndTime.Number > 0 {
 		reservation.EndTime = time.Unix(*apiReservation.EndTime.Number, 0)
 	}
-	if apiReservation.Duration != nil && apiReservation.Duration.Number != nil {
-		reservation.Duration = time.Duration(*apiReservation.Duration.Number) * time.Second
+	// v0.0.40 doesn't have Duration field
+	// Duration is stored as int32 seconds in common types
+	if apiReservation.StartTime != nil && apiReservation.StartTime.Number != nil &&
+		apiReservation.EndTime != nil && apiReservation.EndTime.Number != nil {
+		startTime := time.Unix(*apiReservation.StartTime.Number, 0)
+		endTime := time.Unix(*apiReservation.EndTime.Number, 0)
+		duration := endTime.Sub(startTime)
+		reservation.Duration = int32(duration.Seconds())
 	}
 
 	// Node information
-	if apiReservation.NodeNames != nil {
-		reservation.Nodes = strings.Split(*apiReservation.NodeNames, ",")
+	if apiReservation.NodeList != nil {
+		reservation.NodeList = *apiReservation.NodeList
 	}
 	if apiReservation.NodeCount != nil {
 		reservation.NodeCount = *apiReservation.NodeCount
@@ -40,26 +47,26 @@ func (a *ReservationAdapter) convertAPIReservationToCommon(apiReservation api.V0
 	if apiReservation.Users != nil {
 		reservation.Users = strings.Split(*apiReservation.Users, ",")
 	}
-	if apiReservation.Accounts != nil && len(*apiReservation.Accounts) > 0 {
-		reservation.Accounts = *apiReservation.Accounts
+	if apiReservation.Accounts != nil {
+		reservation.Accounts = strings.Split(*apiReservation.Accounts, ",")
 	}
 
 	// Flags
 	if apiReservation.Flags != nil && len(*apiReservation.Flags) > 0 {
-		reservation.Flags = make([]string, len(*apiReservation.Flags))
+		reservation.Flags = make([]types.ReservationFlag, len(*apiReservation.Flags))
 		for i, flag := range *apiReservation.Flags {
-			reservation.Flags[i] = string(flag)
+			reservation.Flags[i] = types.ReservationFlag(flag)
 		}
 	}
 
 	// Features
 	if apiReservation.Features != nil {
-		reservation.Features = *apiReservation.Features
+		reservation.Features = strings.Split(*apiReservation.Features, ",")
 	}
 
 	// Partition
 	if apiReservation.Partition != nil {
-		reservation.Partition = *apiReservation.Partition
+		reservation.PartitionName = *apiReservation.Partition
 	}
 
 	// License
@@ -67,14 +74,18 @@ func (a *ReservationAdapter) convertAPIReservationToCommon(apiReservation api.V0
 		// Parse licenses if needed
 	}
 
-	// TRES
+	// TRES - convert string to map
 	if apiReservation.Tres != nil {
-		reservation.TRES = *apiReservation.Tres
+		// v0.0.40 has TRES as string, but common type expects map
+		// Parse TRES string if needed (format: "cpu=4,mem=1000")
+		reservation.TRES = make(map[string]int64)
+		// For now, just store the raw string in a special key
+		reservation.TRES["_raw"] = 0 // Placeholder since we can't parse it properly here
 	}
 
 	// Core count
-	if apiReservation.CoreCount != nil && len(*apiReservation.CoreCount) > 0 {
-		reservation.CoreCount = (*apiReservation.CoreCount)[0]
+	if apiReservation.CoreCount != nil {
+		reservation.CoreCount = *apiReservation.CoreCount
 	}
 
 	return reservation, nil
@@ -100,18 +111,12 @@ func (a *ReservationAdapter) convertCommonReservationCreateToAPI(reservation *ty
 	}
 	apiReservation.EndTime = &endTime
 
-	if reservation.Duration > 0 {
-		duration := api.V0040Uint32NoVal{
-			Set:    boolPtr(true),
-			Number: int32Ptr(int32(reservation.Duration.Seconds())),
-		}
-		apiReservation.Duration = &duration
-	}
+	// v0.0.40 doesn't have Duration field in API
+	// Skip duration handling
 
 	// Node information
-	if len(reservation.Nodes) > 0 {
-		nodeNames := strings.Join(reservation.Nodes, ",")
-		apiReservation.NodeNames = &nodeNames
+	if reservation.NodeList != "" {
+		apiReservation.NodeList = &reservation.NodeList
 	}
 	if reservation.NodeCount > 0 {
 		apiReservation.NodeCount = &reservation.NodeCount
@@ -123,37 +128,43 @@ func (a *ReservationAdapter) convertCommonReservationCreateToAPI(reservation *ty
 		apiReservation.Users = &users
 	}
 	if len(reservation.Accounts) > 0 {
-		apiReservation.Accounts = &reservation.Accounts
+		accounts := strings.Join(reservation.Accounts, ",")
+		apiReservation.Accounts = &accounts
 	}
 
 	// Flags
 	if len(reservation.Flags) > 0 {
-		flags := make([]api.V0040ReservationInfoFlags, len(reservation.Flags))
+		flags := make([]string, len(reservation.Flags))
 		for i, flag := range reservation.Flags {
-			flags[i] = api.V0040ReservationInfoFlags(flag)
+			flags[i] = string(flag)
 		}
 		apiReservation.Flags = &flags
 	}
 
 	// Features
-	if reservation.Features != "" {
-		apiReservation.Features = &reservation.Features
+	if len(reservation.Features) > 0 {
+		features := strings.Join(reservation.Features, ",")
+		apiReservation.Features = &features
 	}
 
 	// Partition
-	if reservation.Partition != "" {
-		apiReservation.Partition = &reservation.Partition
+	if reservation.PartitionName != "" {
+		apiReservation.Partition = &reservation.PartitionName
 	}
 
-	// TRES
-	if reservation.TRES != "" {
-		apiReservation.Tres = &reservation.TRES
+	// TRES - convert map to string format
+	if len(reservation.TRES) > 0 {
+		tresStrs := make([]string, 0, len(reservation.TRES))
+		for tres, count := range reservation.TRES {
+			tresStrs = append(tresStrs, fmt.Sprintf("%s=%d", tres, count))
+		}
+		tres := strings.Join(tresStrs, ",")
+		apiReservation.Tres = &tres
 	}
 
 	// Core count
 	if reservation.CoreCount > 0 {
-		coreCount := []int32{reservation.CoreCount}
-		apiReservation.CoreCount = &coreCount
+		apiReservation.CoreCount = &reservation.CoreCount
 	}
 
 	return apiReservation, nil

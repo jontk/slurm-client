@@ -2,7 +2,6 @@ package v0_0_40
 
 import (
 	"context"
-	"strings"
 
 	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"

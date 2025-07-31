@@ -144,7 +144,7 @@ func (a *QoSAdapter) Create(ctx context.Context, qos *types.QoSCreate) (*types.Q
 	}
 
 	// Convert QoSCreate to QoSCreateRequest for compatibility
-	qosCreateReq := &types.QoSCreateRequest{
+	qosCreateReq := &QoSCreateRequest{
 		Name:        qos.Name,
 		Description: qos.Description,
 		Priority:    qos.Priority,

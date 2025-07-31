@@ -111,7 +111,7 @@ func testJobEndpoints(client interfaces.SlurmClient, version string) {
 		Limit: 10,
 	}
 	jobs, err := client.Jobs().List(ctx, listOpts)
-	recordResult(version, "Jobs", "List", err, fmt.Sprintf("Listed %d jobs", len(jobs)))
+	recordResult(version, "Jobs", "List", err, fmt.Sprintf("Listed %d jobs", jobs.Total))
 
 	// Test Submit Job
 	fmt.Println("Testing: Submit Job")
@@ -158,7 +158,7 @@ func testJobEndpoints(client interfaces.SlurmClient, version string) {
 	// Test Watch Jobs (if supported)
 	fmt.Println("Testing: Watch Jobs")
 	watchOpts := &interfaces.WatchJobsOptions{
-		Since: time.Now(),
+		// No Since field in this interface
 	}
 	eventChan, err := client.Jobs().Watch(ctx, watchOpts)
 	if err == nil && eventChan != nil {
@@ -179,21 +179,24 @@ func testNodeEndpoints(client interfaces.SlurmClient, version string) {
 		Limit: 10,
 	}
 	nodes, err := client.Nodes().List(ctx, listOpts)
-	recordResult(version, "Nodes", "List", err, fmt.Sprintf("Listed %d nodes", len(nodes)))
+	recordResult(version, "Nodes", "List", err, fmt.Sprintf("Listed %d nodes", nodes.Total))
 
 	// Test Get Node
-	if len(nodes) > 0 && nodes[0].Name != "" {
+	if nodes != nil && len(nodes.Nodes) > 0 && nodes.Nodes[0].Name != "" {
 		fmt.Println("Testing: Get Node")
-		node, err := client.Nodes().Get(ctx, nodes[0].Name)
-		recordResult(version, "Nodes", "Get", err, fmt.Sprintf("Retrieved node: %s", nodes[0].Name))
+		node, err := client.Nodes().Get(ctx, nodes.Nodes[0].Name)
+		recordResult(version, "Nodes", "Get", err, fmt.Sprintf("Retrieved node: %s", nodes.Nodes[0].Name))
 
 		// Test Update Node
 		fmt.Println("Testing: Update Node")
 		updateReq := &interfaces.NodeUpdate{
-			Comment: stringPtr("Test comment"),
+			Reason: stringPtr("Test reason"),
 		}
-		err = client.Nodes().Update(ctx, nodes[0].Name, updateReq)
-		recordResult(version, "Nodes", "Update", err, "Updated node comment")
+		err = client.Nodes().Update(ctx, nodes.Nodes[0].Name, updateReq)
+		recordResult(version, "Nodes", "Update", err, "Updated node reason")
+
+		// Use the node variable to avoid unused variable error
+		_ = node
 	}
 
 	// Test Watch Nodes
@@ -215,21 +218,24 @@ func testPartitionEndpoints(client interfaces.SlurmClient, version string) {
 	fmt.Println("Testing: List Partitions")
 	listOpts := &interfaces.ListPartitionsOptions{}
 	partitions, err := client.Partitions().List(ctx, listOpts)
-	recordResult(version, "Partitions", "List", err, fmt.Sprintf("Listed %d partitions", len(partitions)))
+	recordResult(version, "Partitions", "List", err, fmt.Sprintf("Listed %d partitions", partitions.Total))
 
 	// Test Get Partition
-	if len(partitions) > 0 && partitions[0].Name != "" {
+	if partitions != nil && len(partitions.Partitions) > 0 && partitions.Partitions[0].Name != "" {
 		fmt.Println("Testing: Get Partition")
-		partition, err := client.Partitions().Get(ctx, partitions[0].Name)
-		recordResult(version, "Partitions", "Get", err, fmt.Sprintf("Retrieved partition: %s", partitions[0].Name))
+		partition, err := client.Partitions().Get(ctx, partitions.Partitions[0].Name)
+		recordResult(version, "Partitions", "Get", err, fmt.Sprintf("Retrieved partition: %s", partitions.Partitions[0].Name))
 
 		// Test Update Partition
 		fmt.Println("Testing: Update Partition")
 		updateReq := &interfaces.PartitionUpdate{
 			MaxTime: intPtr(120), // 2 hours
 		}
-		err = client.Partitions().Update(ctx, partitions[0].Name, updateReq)
+		err = client.Partitions().Update(ctx, partitions.Partitions[0].Name, updateReq)
 		recordResult(version, "Partitions", "Update", err, "Updated partition max time")
+
+		// Use the partition variable to avoid unused variable error
+		_ = partition
 	}
 }
 
@@ -239,29 +245,29 @@ func testAccountEndpoints(client interfaces.SlurmClient, version string) {
 
 	// Test List Accounts
 	fmt.Println("Testing: List Accounts")
-	accounts, err := client.Accounts().List(ctx)
-	recordResult(version, "Accounts", "List", err, fmt.Sprintf("Listed %d accounts", len(accounts)))
+	listOpts := &interfaces.ListAccountsOptions{}
+	accounts, err := client.Accounts().List(ctx, listOpts)
+	recordResult(version, "Accounts", "List", err, fmt.Sprintf("Listed %d accounts", accounts.Total))
 
 	// Test Create Account
 	fmt.Println("Testing: Create Account")
-	createReq := &interfaces.Account{
+	createReq := &interfaces.AccountCreate{
 		Name:        fmt.Sprintf("test-account-%d", time.Now().Unix()),
 		Description: "Test account for adapter testing",
 	}
-	err = client.Accounts().Create(ctx, createReq)
+	createResp, err := client.Accounts().Create(ctx, createReq)
 	recordResult(version, "Accounts", "Create", err, fmt.Sprintf("Created account: %s", createReq.Name))
 
 	// Test Get Account
-	if err == nil {
+	if err == nil && createResp != nil {
 		fmt.Println("Testing: Get Account")
 		account, err := client.Accounts().Get(ctx, createReq.Name)
 		recordResult(version, "Accounts", "Get", err, fmt.Sprintf("Retrieved account: %v", account != nil))
 
 		// Test Update Account
 		fmt.Println("Testing: Update Account")
-		updateReq := &interfaces.Account{
-			Name:        createReq.Name,
-			Description: "Updated test account",
+		updateReq := &interfaces.AccountUpdate{
+			Description: stringPtr("Updated test account"),
 		}
 		err = client.Accounts().Update(ctx, createReq.Name, updateReq)
 		recordResult(version, "Accounts", "Update", err, "Updated account description")
@@ -279,37 +285,20 @@ func testUserEndpoints(client interfaces.SlurmClient, version string) {
 
 	// Test List Users
 	fmt.Println("Testing: List Users")
-	users, err := client.Users().List(ctx)
-	recordResult(version, "Users", "List", err, fmt.Sprintf("Listed %d users", len(users)))
+	listOpts := &interfaces.ListUsersOptions{}
+	users, err := client.Users().List(ctx, listOpts)
+	recordResult(version, "Users", "List", err, fmt.Sprintf("Listed %d users", users.Total))
 
 	// Test Get User
-	if len(users) > 0 && users[0].Name != "" {
+	if users != nil && len(users.Users) > 0 && users.Users[0].Name != "" {
 		fmt.Println("Testing: Get User")
-		user, err := client.Users().Get(ctx, users[0].Name)
-		recordResult(version, "Users", "Get", err, fmt.Sprintf("Retrieved user: %s", users[0].Name))
+		user, err := client.Users().Get(ctx, users.Users[0].Name)
+		recordResult(version, "Users", "Get", err, fmt.Sprintf("Retrieved user: %s", users.Users[0].Name))
+		_ = user
 	}
 
-	// Test Create User
-	fmt.Println("Testing: Create User")
-	createReq := &interfaces.User{
-		Name:    fmt.Sprintf("testuser%d", time.Now().Unix()),
-		Account: "root", // Assuming root account exists
-	}
-	err = client.Users().Create(ctx, createReq)
-	recordResult(version, "Users", "Create", err, fmt.Sprintf("Created user: %s", createReq.Name))
-
-	// Test Update and Delete if created
-	if err == nil {
-		// Test Update User
-		fmt.Println("Testing: Update User")
-		err = client.Users().Update(ctx, createReq.Name, createReq)
-		recordResult(version, "Users", "Update", err, "Updated user")
-
-		// Test Delete User
-		fmt.Println("Testing: Delete User")
-		err = client.Users().Delete(ctx, createReq.Name)
-		recordResult(version, "Users", "Delete", err, "Deleted user")
-	}
+	// Note: UserManager interface doesn't have Create/Update/Delete methods
+	// These operations are typically done through the account management interface
 }
 
 func testQoSEndpoints(client interfaces.SlurmClient, version string) {
@@ -318,33 +307,34 @@ func testQoSEndpoints(client interfaces.SlurmClient, version string) {
 
 	// Test List QoS
 	fmt.Println("Testing: List QoS")
-	qosList, err := client.QoS().List(ctx)
-	recordResult(version, "QoS", "List", err, fmt.Sprintf("Listed %d QoS", len(qosList)))
+	listOpts := &interfaces.ListQoSOptions{}
+	qosList, err := client.QoS().List(ctx, listOpts)
+	recordResult(version, "QoS", "List", err, fmt.Sprintf("Listed %d QoS", qosList.Total))
 
 	// Test Get QoS
-	if len(qosList) > 0 && qosList[0].Name != "" {
+	if qosList != nil && len(qosList.QoS) > 0 && qosList.QoS[0].Name != "" {
 		fmt.Println("Testing: Get QoS")
-		qos, err := client.QoS().Get(ctx, qosList[0].Name)
-		recordResult(version, "QoS", "Get", err, fmt.Sprintf("Retrieved QoS: %s", qosList[0].Name))
+		qos, err := client.QoS().Get(ctx, qosList.QoS[0].Name)
+		recordResult(version, "QoS", "Get", err, fmt.Sprintf("Retrieved QoS: %s", qosList.QoS[0].Name))
+		_ = qos
 	}
 
 	// Test Create QoS
 	fmt.Println("Testing: Create QoS")
-	createReq := &interfaces.QoS{
+	createReq := &interfaces.QoSCreate{
 		Name:        fmt.Sprintf("test-qos-%d", time.Now().Unix()),
 		Description: "Test QoS for adapter testing",
-		Priority:    intPtr(10),
+		Priority:    10,
 	}
-	err = client.QoS().Create(ctx, createReq)
+	createResp, err := client.QoS().Create(ctx, createReq)
 	recordResult(version, "QoS", "Create", err, fmt.Sprintf("Created QoS: %s", createReq.Name))
 
 	// Test Update and Delete if created
-	if err == nil {
+	if err == nil && createResp != nil {
 		// Test Update QoS
 		fmt.Println("Testing: Update QoS")
-		updateReq := &interfaces.QoS{
-			Name:        createReq.Name,
-			Description: "Updated test QoS",
+		updateReq := &interfaces.QoSUpdate{
+			Description: stringPtr("Updated test QoS"),
 			Priority:    intPtr(20),
 		}
 		err = client.QoS().Update(ctx, createReq.Name, updateReq)
@@ -365,24 +355,24 @@ func testReservationEndpoints(client interfaces.SlurmClient, version string) {
 	fmt.Println("Testing: List Reservations")
 	listOpts := &interfaces.ListReservationsOptions{}
 	reservations, err := client.Reservations().List(ctx, listOpts)
-	recordResult(version, "Reservations", "List", err, fmt.Sprintf("Listed %d reservations", len(reservations)))
+	recordResult(version, "Reservations", "List", err, fmt.Sprintf("Listed %d reservations", reservations.Total))
 
 	// Test Create Reservation
 	fmt.Println("Testing: Create Reservation")
 	startTime := time.Now().Add(1 * time.Hour)
 	endTime := startTime.Add(1 * time.Hour)
-	createReq := &interfaces.Reservation{
+	createReq := &interfaces.ReservationCreate{
 		Name:      fmt.Sprintf("test-res-%d", time.Now().Unix()),
-		StartTime: &startTime,
-		EndTime:   &endTime,
+		StartTime: startTime,
+		EndTime:   endTime,
 		NodeCount: 1,
 		Users:     []string{"root"},
 	}
-	err = client.Reservations().Create(ctx, createReq)
+	createResp, err := client.Reservations().Create(ctx, createReq)
 	recordResult(version, "Reservations", "Create", err, fmt.Sprintf("Created reservation: %s", createReq.Name))
 
 	// Test Get, Update and Delete if created
-	if err == nil {
+	if err == nil && createResp != nil {
 		// Test Get Reservation
 		fmt.Println("Testing: Get Reservation")
 		reservation, err := client.Reservations().Get(ctx, createReq.Name)
@@ -409,35 +399,43 @@ func testAssociationEndpoints(client interfaces.SlurmClient, version string) {
 
 	// Test List Associations
 	fmt.Println("Testing: List Associations")
-	associations, err := client.Associations().List(ctx)
-	recordResult(version, "Associations", "List", err, fmt.Sprintf("Listed %d associations", len(associations)))
+	listOpts := &interfaces.ListAssociationsOptions{}
+	associations, err := client.Associations().List(ctx, listOpts)
+	recordResult(version, "Associations", "List", err, fmt.Sprintf("Listed %d associations", associations.Total))
 
 	// Test Create Association
 	fmt.Println("Testing: Create Association")
-	createReq := &interfaces.Association{
+	createReq := &interfaces.AssociationCreate{
 		Account:   "root",
 		User:      "root",
 		Partition: "normal",
 	}
-	err = client.Associations().Create(ctx, createReq)
+	createResp, err := client.Associations().Create(ctx, []*interfaces.AssociationCreate{createReq})
 	recordResult(version, "Associations", "Create", err, "Created association")
+	_ = createResp
 
 	// Test Get Association
-	if len(associations) > 0 && associations[0].ID != "" {
+	if associations != nil && len(associations.Associations) > 0 && associations.Associations[0].ID != 0 {
 		fmt.Println("Testing: Get Association")
-		assoc, err := client.Associations().Get(ctx, associations[0].ID)
-		recordResult(version, "Associations", "Get", err, fmt.Sprintf("Retrieved association: %s", associations[0].ID))
+		getOpts := &interfaces.GetAssociationOptions{
+			User:    associations.Associations[0].User,
+			Account: associations.Associations[0].Account,
+			Cluster: associations.Associations[0].Cluster,
+		}
+		assoc, err := client.Associations().Get(ctx, getOpts)
+		recordResult(version, "Associations", "Get", err, fmt.Sprintf("Retrieved association: ID %d", associations.Associations[0].ID))
+		_ = assoc
 	}
 
 	// Test Update Association
-	if len(associations) > 0 && associations[0].ID != "" {
+	if associations != nil && len(associations.Associations) > 0 && associations.Associations[0].ID != 0 {
 		fmt.Println("Testing: Update Association")
-		updateReq := &interfaces.Association{
-			ID:      associations[0].ID,
-			Account: associations[0].Account,
-			User:    associations[0].User,
+		updateReq := &interfaces.AssociationUpdate{
+			Account: associations.Associations[0].Account,
+			User:    associations.Associations[0].User,
+			Comment: stringPtr("Updated association"),
 		}
-		err = client.Associations().Update(ctx, associations[0].ID, updateReq)
+		err = client.Associations().Update(ctx, []*interfaces.AssociationUpdate{updateReq})
 		recordResult(version, "Associations", "Update", err, "Updated association")
 	}
 

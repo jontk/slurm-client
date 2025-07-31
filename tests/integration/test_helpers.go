@@ -3,10 +3,10 @@ package integration
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -39,6 +39,24 @@ type TestConfig struct {
 	RequireDatabase       bool
 	SkipSlowTests         bool
 	TestResourceCleanup   bool
+}
+
+// tokenTransport adds the SLURM JWT token to requests
+type tokenTransport struct {
+	token string
+	base  http.RoundTripper
+}
+
+func (t *tokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Clone the request to avoid modifying the original
+	r := req.Clone(req.Context())
+	r.Header.Set("X-SLURM-USER-TOKEN", t.token)
+	return t.base.RoundTrip(r)
+}
+
+// intPtr is a helper function to create a pointer to an int
+func intPtr(i int) *int {
+	return &i
 }
 
 // GetTestConfig loads test configuration from environment variables

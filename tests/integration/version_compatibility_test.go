@@ -147,8 +147,8 @@ func (suite *VersionCompatibilityTestSuite) testFeatureSupport(version string, f
 	return support
 }
 
-// contains checks if a string contains a substring (case-insensitive)
-func contains(str, substr string) bool {
+// versionContains checks if a string contains a substring (case-insensitive)
+func versionContains(str, substr string) bool {
 	return len(str) >= len(substr) && 
 		   (str == substr || 
 		    len(str) > len(substr) && 

@@ -117,7 +117,7 @@ func (suite *AdapterCrossVersionTestSuite) TestPingAcrossVersions() {
 func (suite *AdapterCrossVersionTestSuite) TestVersionConsistency() {
 	ctx := context.Background()
 	
-	versionInfos := make(map[string]*interfaces.VersionInfo)
+	versionInfos := make(map[string]*interfaces.APIVersion)
 	
 	for version, client := range suite.clients {
 		versionInfo, err := client.Info().Version(ctx)

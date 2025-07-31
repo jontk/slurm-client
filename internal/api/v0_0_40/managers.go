@@ -695,35 +695,35 @@ func (m *AssociationManager) List(ctx context.Context, opts *interfaces.ListAsso
 }
 
 // Get retrieves a specific association by ID
-func (m *AssociationManager) Get(ctx context.Context, associationID string) (*interfaces.Association, error) {
+func (m *AssociationManager) Get(ctx context.Context, opts *interfaces.GetAssociationOptions) (*interfaces.Association, error) {
 	if m.impl == nil {
 		m.impl = NewAssociationManagerImpl(m.client)
 	}
-	return m.impl.Get(ctx, associationID)
+	return m.impl.Get(ctx, opts)
 }
 
-// Create creates a new association
-func (m *AssociationManager) Create(ctx context.Context, association *interfaces.AssociationCreate) (*interfaces.AssociationCreateResponse, error) {
+// Create creates new associations
+func (m *AssociationManager) Create(ctx context.Context, associations []*interfaces.AssociationCreate) (*interfaces.AssociationCreateResponse, error) {
 	if m.impl == nil {
 		m.impl = NewAssociationManagerImpl(m.client)
 	}
-	return m.impl.Create(ctx, association)
+	return m.impl.Create(ctx, associations)
 }
 
-// Update updates an existing association
-func (m *AssociationManager) Update(ctx context.Context, associationID string, update *interfaces.AssociationUpdate) error {
+// Update updates existing associations
+func (m *AssociationManager) Update(ctx context.Context, associations []*interfaces.AssociationUpdate) error {
 	if m.impl == nil {
 		m.impl = NewAssociationManagerImpl(m.client)
 	}
-	return m.impl.Update(ctx, associationID, update)
+	return m.impl.Update(ctx, associations)
 }
 
 // Delete deletes an association
-func (m *AssociationManager) Delete(ctx context.Context, associationID string) error {
+func (m *AssociationManager) Delete(ctx context.Context, opts *interfaces.DeleteAssociationOptions) error {
 	if m.impl == nil {
 		m.impl = NewAssociationManagerImpl(m.client)
 	}
-	return m.impl.Delete(ctx, associationID)
+	return m.impl.Delete(ctx, opts)
 }
 
 
@@ -749,6 +749,22 @@ func (m *AssociationManager) GetClusterAssociations(ctx context.Context, cluster
 		m.impl = NewAssociationManagerImpl(m.client)
 	}
 	return m.impl.GetClusterAssociations(ctx, clusterName)
+}
+
+// BulkDelete deletes multiple associations
+func (m *AssociationManager) BulkDelete(ctx context.Context, opts *interfaces.BulkDeleteOptions) (*interfaces.BulkDeleteResponse, error) {
+	if m.impl == nil {
+		m.impl = NewAssociationManagerImpl(m.client)
+	}
+	return m.impl.BulkDelete(ctx, opts)
+}
+
+// ValidateAssociation validates if an association exists
+func (m *AssociationManager) ValidateAssociation(ctx context.Context, user, account, cluster string) (bool, error) {
+	if m.impl == nil {
+		m.impl = NewAssociationManagerImpl(m.client)
+	}
+	return m.impl.ValidateAssociation(ctx, user, account, cluster)
 }
 
 
