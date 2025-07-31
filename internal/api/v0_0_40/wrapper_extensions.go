@@ -88,16 +88,16 @@ func (c *WrapperClient) HandleErrorResponse(statusCode int, body []byte) error {
 func (c *WrapperClient) handleHTTPError(statusCode int, body []byte) error {
 	switch statusCode {
 	case 400:
-		return errors.NewAPIError(errors.ErrorCodeAPIError, fmt.Sprintf("Bad Request: %s", string(body)), nil)
+		return errors.NewClientError(errors.ErrorCodeInvalidRequest, fmt.Sprintf("Bad Request: %s", string(body)))
 	case 401:
-		return errors.NewAuthError(errors.ErrorCodeAuthFailed, "Authentication failed")
+		return errors.NewAuthError("HTTP", "Bearer", fmt.Errorf("authentication failed"))
 	case 403:
-		return errors.NewAuthError(errors.ErrorCodeAuthFailed, "Permission denied")
+		return errors.NewAuthError("HTTP", "Bearer", fmt.Errorf("permission denied"))
 	case 404:
 		return errors.NewClientError(errors.ErrorCodeResourceNotFound, "Resource not found")
 	case 500:
-		return errors.NewAPIError(errors.ErrorCodeAPIError, fmt.Sprintf("Internal Server Error: %s", string(body)), nil)
+		return errors.NewClientError(errors.ErrorCodeServerInternal, fmt.Sprintf("Internal Server Error: %s", string(body)))
 	default:
-		return errors.NewAPIError(errors.ErrorCodeAPIError, fmt.Sprintf("HTTP %d: %s", statusCode, string(body)), nil)
+		return errors.NewClientError(errors.ErrorCodeServerInternal, fmt.Sprintf("HTTP %d: %s", statusCode, string(body)))
 	}
 }

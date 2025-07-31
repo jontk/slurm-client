@@ -192,7 +192,7 @@ func (q *QoSManagerImpl) Delete(ctx context.Context, qosName string) error {
 	// Make API call
 	resp, err := q.client.apiClient.SlurmdbV0040DeleteSingleQosWithResponse(ctx, qosName)
 	if err != nil {
-		return errors.NewAPIError(errors.ErrorCodeAPIError, "failed to delete QoS", err)
+		return errors.NewClientError(errors.ErrorCodeServerInternal, "failed to delete QoS")
 	}
 
 	// Check response

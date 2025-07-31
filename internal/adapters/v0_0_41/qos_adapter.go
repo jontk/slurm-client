@@ -226,11 +226,8 @@ func (a *QoSAdapter) Update(ctx context.Context, name string, update *types.QoSU
 	if update.GraceTime != nil {
 		existingQoS.GraceTime = *update.GraceTime
 	}
-	// MaxWall field doesn't exist in common QoS type
+	// MaxWall field doesn't exist in QoSUpdate type
 	// Skip MaxWall update
-	if update.MaxWall != nil {
-		_ = update.MaxWall
-	}
 
 	// Convert to API request
 	updateReq := a.convertCommonToAPIQoS(existingQoS)
@@ -299,15 +296,17 @@ func (a *QoSAdapter) SetLimits(ctx context.Context, name string, limits *types.Q
 // convertPreemptModeToAPI converts common preempt mode to API preempt mode
 func convertPreemptModeToAPI(mode string) api.SlurmdbV0041GetQosParamsPreemptMode {
 	switch strings.ToUpper(mode) {
-	case "OFF":
-		return api.SlurmdbV0041GetQosParamsPreemptModeOFF
+	case "DISABLED":
+		return api.SlurmdbV0041GetQosParamsPreemptModeDISABLED
 	case "CANCEL":
 		return api.SlurmdbV0041GetQosParamsPreemptModeCANCEL
+	case "GANG":
+		return api.SlurmdbV0041GetQosParamsPreemptModeGANG
 	case "REQUEUE":
 		return api.SlurmdbV0041GetQosParamsPreemptModeREQUEUE
 	case "SUSPEND":
 		return api.SlurmdbV0041GetQosParamsPreemptModeSUSPEND
 	default:
-		return api.SlurmdbV0041GetQosParamsPreemptModeOFF
+		return api.SlurmdbV0041GetQosParamsPreemptModeDISABLED
 	}
 }

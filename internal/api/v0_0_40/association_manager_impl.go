@@ -351,3 +351,11 @@ func (a *AssociationManagerImpl) convertInterfaceAssociationToV0040Update(existi
 	
 	return apiAssoc
 }
+
+// BulkDelete deletes multiple associations
+func (a *AssociationManagerImpl) BulkDelete(ctx context.Context, opts *interfaces.BulkDeleteOptions) (*interfaces.BulkDeleteResponse, error) {
+	if opts == nil || len(opts.IDs) == 0 {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one association ID is required", "opts.IDs", opts, nil)
+	}
+	return nil, errors.NewNotImplementedError("bulk association deletion", "v0.0.40")
+}
