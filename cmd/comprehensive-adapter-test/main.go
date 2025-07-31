@@ -111,7 +111,13 @@ func testJobEndpoints(client interfaces.SlurmClient, version string) {
 		Limit: 10,
 	}
 	jobs, err := client.Jobs().List(ctx, listOpts)
-	recordResult(version, "Jobs", "List", err, fmt.Sprintf("Listed %d jobs", jobs.Total))
+	var jobDetails string
+	if err == nil && jobs != nil {
+		jobDetails = fmt.Sprintf("Listed %d jobs", jobs.Total)
+	} else {
+		jobDetails = "Failed to list jobs"
+	}
+	recordResult(version, "Jobs", "List", err, jobDetails)
 
 	// Test Submit Job
 	fmt.Println("Testing: Submit Job")
@@ -179,7 +185,13 @@ func testNodeEndpoints(client interfaces.SlurmClient, version string) {
 		Limit: 10,
 	}
 	nodes, err := client.Nodes().List(ctx, listOpts)
-	recordResult(version, "Nodes", "List", err, fmt.Sprintf("Listed %d nodes", nodes.Total))
+	var nodeDetails string
+	if err == nil && nodes != nil {
+		nodeDetails = fmt.Sprintf("Listed %d nodes", nodes.Total)
+	} else {
+		nodeDetails = "Failed to list nodes"
+	}
+	recordResult(version, "Nodes", "List", err, nodeDetails)
 
 	// Test Get Node
 	if nodes != nil && len(nodes.Nodes) > 0 && nodes.Nodes[0].Name != "" {
@@ -218,7 +230,13 @@ func testPartitionEndpoints(client interfaces.SlurmClient, version string) {
 	fmt.Println("Testing: List Partitions")
 	listOpts := &interfaces.ListPartitionsOptions{}
 	partitions, err := client.Partitions().List(ctx, listOpts)
-	recordResult(version, "Partitions", "List", err, fmt.Sprintf("Listed %d partitions", partitions.Total))
+	var partitionDetails string
+	if err == nil && partitions != nil {
+		partitionDetails = fmt.Sprintf("Listed %d partitions", partitions.Total)
+	} else {
+		partitionDetails = "Failed to list partitions"
+	}
+	recordResult(version, "Partitions", "List", err, partitionDetails)
 
 	// Test Get Partition
 	if partitions != nil && len(partitions.Partitions) > 0 && partitions.Partitions[0].Name != "" {
@@ -247,7 +265,13 @@ func testAccountEndpoints(client interfaces.SlurmClient, version string) {
 	fmt.Println("Testing: List Accounts")
 	listOpts := &interfaces.ListAccountsOptions{}
 	accounts, err := client.Accounts().List(ctx, listOpts)
-	recordResult(version, "Accounts", "List", err, fmt.Sprintf("Listed %d accounts", accounts.Total))
+	var accountDetails string
+	if err == nil && accounts != nil {
+		accountDetails = fmt.Sprintf("Listed %d accounts", accounts.Total)
+	} else {
+		accountDetails = "Failed to list accounts"
+	}
+	recordResult(version, "Accounts", "List", err, accountDetails)
 
 	// Test Create Account
 	fmt.Println("Testing: Create Account")
@@ -287,7 +311,13 @@ func testUserEndpoints(client interfaces.SlurmClient, version string) {
 	fmt.Println("Testing: List Users")
 	listOpts := &interfaces.ListUsersOptions{}
 	users, err := client.Users().List(ctx, listOpts)
-	recordResult(version, "Users", "List", err, fmt.Sprintf("Listed %d users", users.Total))
+	var userDetails string
+	if err == nil && users != nil {
+		userDetails = fmt.Sprintf("Listed %d users", users.Total)
+	} else {
+		userDetails = "Failed to list users"
+	}
+	recordResult(version, "Users", "List", err, userDetails)
 
 	// Test Get User
 	if users != nil && len(users.Users) > 0 && users.Users[0].Name != "" {
@@ -309,7 +339,13 @@ func testQoSEndpoints(client interfaces.SlurmClient, version string) {
 	fmt.Println("Testing: List QoS")
 	listOpts := &interfaces.ListQoSOptions{}
 	qosList, err := client.QoS().List(ctx, listOpts)
-	recordResult(version, "QoS", "List", err, fmt.Sprintf("Listed %d QoS", qosList.Total))
+	var qosDetails string
+	if err == nil && qosList != nil {
+		qosDetails = fmt.Sprintf("Listed %d QoS", qosList.Total)
+	} else {
+		qosDetails = "Failed to list QoS"
+	}
+	recordResult(version, "QoS", "List", err, qosDetails)
 
 	// Test Get QoS
 	if qosList != nil && len(qosList.QoS) > 0 && qosList.QoS[0].Name != "" {
@@ -355,7 +391,13 @@ func testReservationEndpoints(client interfaces.SlurmClient, version string) {
 	fmt.Println("Testing: List Reservations")
 	listOpts := &interfaces.ListReservationsOptions{}
 	reservations, err := client.Reservations().List(ctx, listOpts)
-	recordResult(version, "Reservations", "List", err, fmt.Sprintf("Listed %d reservations", reservations.Total))
+	var reservationDetails string
+	if err == nil && reservations != nil {
+		reservationDetails = fmt.Sprintf("Listed %d reservations", reservations.Total)
+	} else {
+		reservationDetails = "Failed to list reservations"
+	}
+	recordResult(version, "Reservations", "List", err, reservationDetails)
 
 	// Test Create Reservation
 	fmt.Println("Testing: Create Reservation")
@@ -401,7 +443,13 @@ func testAssociationEndpoints(client interfaces.SlurmClient, version string) {
 	fmt.Println("Testing: List Associations")
 	listOpts := &interfaces.ListAssociationsOptions{}
 	associations, err := client.Associations().List(ctx, listOpts)
-	recordResult(version, "Associations", "List", err, fmt.Sprintf("Listed %d associations", associations.Total))
+	var associationDetails string
+	if err == nil && associations != nil {
+		associationDetails = fmt.Sprintf("Listed %d associations", associations.Total)
+	} else {
+		associationDetails = "Failed to list associations"
+	}
+	recordResult(version, "Associations", "List", err, associationDetails)
 
 	// Test Create Association
 	fmt.Println("Testing: Create Association")
