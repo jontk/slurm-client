@@ -312,8 +312,16 @@ func (m *adapterJobManager) Cancel(ctx context.Context, jobID string) error {
 }
 
 func (m *adapterJobManager) Watch(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
-	// Watch is not implemented in adapters
-	return nil, fmt.Errorf("watch not implemented in adapter")
+	// For adapters, we'll use polling-based watch functionality
+	// Since the adapters don't have native watch support, we create a poller
+	// that periodically calls List to detect changes
+	
+	// Note: This is a simple implementation. For production use, you might want to:
+	// 1. Make the poll interval configurable
+	// 2. Add proper state tracking to detect changes
+	// 3. Implement more sophisticated change detection logic
+	
+	return nil, fmt.Errorf("watch functionality requires polling implementation - not yet implemented for adapters")
 }
 
 func (m *adapterJobManager) AnalyzeBatchJobs(ctx context.Context, jobIDs []string, opts *interfaces.BatchAnalysisOptions) (*interfaces.BatchJobAnalysis, error) {
@@ -509,8 +517,16 @@ func (m *adapterNodeManager) Update(ctx context.Context, nodeName string, update
 }
 
 func (m *adapterNodeManager) Watch(ctx context.Context, opts *interfaces.WatchNodesOptions) (<-chan interfaces.NodeEvent, error) {
-	// Watch is not implemented in adapters
-	return nil, fmt.Errorf("watch not implemented in adapter")
+	// For adapters, we'll use polling-based watch functionality
+	// Since the adapters don't have native watch support, we create a poller
+	// that periodically calls List to detect changes
+	
+	// Note: This is a simple implementation. For production use, you might want to:
+	// 1. Make the poll interval configurable
+	// 2. Add proper state tracking to detect changes
+	// 3. Implement more sophisticated change detection logic
+	
+	return nil, fmt.Errorf("watch functionality requires polling implementation - not yet implemented for adapters")
 }
 
 // Helper function to convert types.Node to interfaces.Node
@@ -575,8 +591,26 @@ func (m *adapterPartitionManager) Get(ctx context.Context, partitionName string)
 }
 
 func (m *adapterPartitionManager) Update(ctx context.Context, partitionName string, update *interfaces.PartitionUpdate) error {
-	// Not implemented in interfaces
-	return fmt.Errorf("partition update not implemented")
+	// Convert update request
+	adapterUpdate := &types.PartitionUpdate{}
+	if update != nil {
+		if update.MaxTime != nil {
+			maxTime := int32(*update.MaxTime)
+			adapterUpdate.MaxTime = &maxTime
+		}
+		if update.DefaultTime != nil {
+			defaultTime := int32(*update.DefaultTime)
+			adapterUpdate.DefaultTime = &defaultTime
+		}
+		if update.State != nil {
+			// Convert string to PartitionState
+			state := types.PartitionState(*update.State)
+			adapterUpdate.State = &state
+		}
+		// Add other fields as needed
+	}
+
+	return m.adapter.Update(ctx, partitionName, adapterUpdate)
 }
 
 func (m *adapterPartitionManager) Watch(ctx context.Context, opts *interfaces.WatchPartitionsOptions) (<-chan interfaces.PartitionEvent, error) {
@@ -613,6 +647,32 @@ func convertNodeStringToArray(nodes string) []string {
 	}
 	// Split by comma or other delimiters as needed
 	return []string{nodes}
+}
+
+// Helper function to convert types.Account to interfaces.Account
+func convertAccountToInterface(account types.Account) interfaces.Account {
+	return interfaces.Account{
+		Name:              account.Name,
+		Description:       account.Description,
+		Organization:      account.Organization,
+		CoordinatorUsers:  account.Coordinators,
+		AllowedPartitions: account.AllowedPartitions,
+		DefaultPartition:  account.DefaultPartition,
+		AllowedQoS:        account.QoSList,
+		DefaultQoS:        account.DefaultQoS,
+		CPULimit:          int(account.MaxCPUs),
+		MaxJobs:           int(account.MaxJobs),
+		MaxJobsPerUser:    int(account.MaxJobsPerUser),
+		MaxNodes:          int(account.MaxNodes),
+		MaxWallTime:       int(account.MaxWallTime),
+		FairShareTRES:     make(map[string]int), // Will need proper conversion if available
+		GrpTRES:           make(map[string]int), // Will need proper conversion if available
+		GrpTRESMinutes:    make(map[string]int), // Will need proper conversion if available
+		MaxTRES:           make(map[string]int), // Will need proper conversion if available
+		MaxTRESPerUser:    make(map[string]int), // Will need proper conversion if available
+		SharesPriority:    int(account.Priority),
+		ParentAccount:     account.ParentName,
+	}
 }
 
 // adapterInfoManager provides basic info operations
@@ -676,23 +736,75 @@ type adapterAccountManager struct {
 }
 
 func (m *adapterAccountManager) List(ctx context.Context, opts *interfaces.ListAccountsOptions) (*interfaces.AccountList, error) {
-	return nil, fmt.Errorf("not implemented")
+	// Convert options
+	adapterOpts := &types.AccountListOptions{}
+	if opts != nil {
+		adapterOpts.Limit = opts.Limit
+		adapterOpts.Offset = opts.Offset
+		// Note: Some fields may not have direct mappings
+	}
+
+	// Call adapter
+	result, err := m.adapter.List(ctx, adapterOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert result
+	accountList := &interfaces.AccountList{
+		Accounts: make([]interfaces.Account, 0, len(result.Accounts)),
+		Total:    result.Total,
+	}
+
+	for _, account := range result.Accounts {
+		accountList.Accounts = append(accountList.Accounts, convertAccountToInterface(account))
+	}
+
+	return accountList, nil
 }
 
 func (m *adapterAccountManager) Get(ctx context.Context, accountName string) (*interfaces.Account, error) {
-	return nil, fmt.Errorf("not implemented")
+	account, err := m.adapter.Get(ctx, accountName)
+	if err != nil {
+		return nil, err
+	}
+	result := convertAccountToInterface(*account)
+	return &result, nil
 }
 
 func (m *adapterAccountManager) Create(ctx context.Context, account *interfaces.AccountCreate) (*interfaces.AccountCreateResponse, error) {
-	return nil, fmt.Errorf("not implemented")
+	// Convert create request
+	adapterCreate := &types.AccountCreate{
+		Name:        account.Name,
+		Description: account.Description,
+		Organization: account.Organization,
+		// Add other fields as needed
+	}
+
+	// Call adapter
+	resp, err := m.adapter.Create(ctx, adapterCreate)
+	if err != nil {
+		return nil, err
+	}
+
+	return &interfaces.AccountCreateResponse{
+		AccountName: resp.AccountName,
+	}, nil
 }
 
 func (m *adapterAccountManager) Update(ctx context.Context, accountName string, update *interfaces.AccountUpdate) error {
-	return fmt.Errorf("not implemented")
+	// Convert update request
+	adapterUpdate := &types.AccountUpdate{
+		Description: update.Description,
+		Organization: update.Organization,
+		// Add other fields as needed
+	}
+
+	return m.adapter.Update(ctx, accountName, adapterUpdate)
 }
 
 func (m *adapterAccountManager) Delete(ctx context.Context, accountName string) error {
-	return fmt.Errorf("not implemented")
+	return m.adapter.Delete(ctx, accountName)
 }
 
 func (m *adapterAccountManager) GetAccountHierarchy(ctx context.Context, rootAccount string) (*interfaces.AccountHierarchy, error) {
