@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/jontk/slurm-client/internal/adapters/common"
 	v040adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_40"
@@ -675,6 +677,111 @@ func convertAccountToInterface(account types.Account) interfaces.Account {
 	}
 }
 
+// Helper function to convert types.User to interfaces.User
+func convertUserToInterface(user types.User) interfaces.User {
+	// Convert accounts to UserAccount format
+	accounts := make([]interfaces.UserAccount, 0, len(user.Accounts))
+	for _, accountName := range user.Accounts {
+		accounts = append(accounts, interfaces.UserAccount{
+			AccountName: accountName,
+			// Other fields would need to be populated from associations
+		})
+	}
+	
+	// Convert coordinators
+	coordinatorAccounts := make([]string, 0, len(user.Coordinators))
+	for _, coord := range user.Coordinators {
+		coordinatorAccounts = append(coordinatorAccounts, coord.AccountName)
+	}
+
+	return interfaces.User{
+		Name:                user.Name,
+		UID:                 int(user.UID),
+		DefaultAccount:      user.DefaultAccount,
+		DefaultWCKey:        user.DefaultWCKey,
+		AdminLevel:          string(user.AdminLevel),
+		CoordinatorAccounts: coordinatorAccounts,
+		Accounts:            accounts,
+		Quotas:              nil, // Would need proper conversion
+		FairShare:           nil, // Would need proper conversion
+		Associations:        nil, // Would need proper conversion
+		Created:             time.Now(), // Not available in types.User
+		Modified:            time.Now(), // Not available in types.User,
+		Metadata:            nil,
+	}
+}
+
+// Helper function to convert types.QoS to interfaces.QoS
+func convertQoSToInterface(qos types.QoS) interfaces.QoS {
+	// Extract limits from the QoS
+	maxJobs := 0
+	maxJobsPerUser := 0
+	maxJobsPerAccount := 0
+	maxSubmitJobs := 0
+	maxCPUs := 0
+	maxCPUsPerUser := 0
+	maxNodes := 0
+	maxWallTime := 0
+	minCPUs := 0
+	minNodes := 0
+
+	if qos.Limits != nil {
+		if qos.Limits.MaxJobsPerUser != nil {
+			maxJobsPerUser = *qos.Limits.MaxJobsPerUser
+		}
+		if qos.Limits.MaxJobsPerAccount != nil {
+			maxJobsPerAccount = *qos.Limits.MaxJobsPerAccount
+		}
+		if qos.Limits.MaxSubmitJobsPerUser != nil {
+			maxSubmitJobs = *qos.Limits.MaxSubmitJobsPerUser
+		}
+		if qos.Limits.MaxCPUsPerUser != nil {
+			maxCPUsPerUser = *qos.Limits.MaxCPUsPerUser
+		}
+		if qos.Limits.MaxCPUsPerJob != nil {
+			maxCPUs = *qos.Limits.MaxCPUsPerJob
+		}
+		if qos.Limits.MaxNodesPerJob != nil {
+			maxNodes = *qos.Limits.MaxNodesPerJob
+		}
+		if qos.Limits.MaxWallTimePerJob != nil {
+			maxWallTime = *qos.Limits.MaxWallTimePerJob
+		}
+		if qos.Limits.MinCPUsPerJob != nil {
+			minCPUs = *qos.Limits.MinCPUsPerJob
+		}
+		if qos.Limits.MinNodesPerJob != nil {
+			minNodes = *qos.Limits.MinNodesPerJob
+		}
+	}
+
+	return interfaces.QoS{
+		Name:              qos.Name,
+		Description:       qos.Description,
+		Priority:          qos.Priority,
+		PreemptMode:       qos.PreemptMode,
+		GraceTime:         qos.GraceTime,
+		MaxJobs:           maxJobs,
+		MaxJobsPerUser:    maxJobsPerUser,
+		MaxJobsPerAccount: maxJobsPerAccount,
+		MaxSubmitJobs:     maxSubmitJobs,
+		MaxCPUs:           maxCPUs,
+		MaxCPUsPerUser:    maxCPUsPerUser,
+		MaxNodes:          maxNodes,
+		MaxWallTime:       maxWallTime,
+		MinCPUs:           minCPUs,
+		MinNodes:          minNodes,
+		UsageFactor:       qos.UsageFactor,
+		UsageThreshold:    qos.UsageThreshold,
+		Flags:             qos.Flags,
+		AllowedAccounts:   qos.AllowedAccounts,
+		DeniedAccounts:    []string{}, // Not available in types.QoS
+		AllowedUsers:      qos.AllowedUsers,
+		DeniedUsers:       []string{}, // Not available in types.QoS,
+		Metadata:          nil,
+	}
+}
+
 // adapterInfoManager provides basic info operations
 type adapterInfoManager struct {
 	version string
@@ -711,24 +818,77 @@ type adapterQoSManager struct {
 }
 
 func (m *adapterQoSManager) List(ctx context.Context, opts *interfaces.ListQoSOptions) (*interfaces.QoSList, error) {
-	// Implementation would go here
-	return nil, fmt.Errorf("not implemented")
+	// Convert options
+	adapterOpts := &types.QoSListOptions{}
+	if opts != nil {
+		adapterOpts.Limit = opts.Limit
+		adapterOpts.Offset = opts.Offset
+	}
+
+	// Call adapter
+	result, err := m.adapter.List(ctx, adapterOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert result
+	qosList := &interfaces.QoSList{
+		QoS:   make([]interfaces.QoS, 0, len(result.QoS)),
+		Total: result.Total,
+	}
+
+	for _, qos := range result.QoS {
+		qosList.QoS = append(qosList.QoS, convertQoSToInterface(qos))
+	}
+
+	return qosList, nil
 }
 
 func (m *adapterQoSManager) Get(ctx context.Context, qosName string) (*interfaces.QoS, error) {
-	return nil, fmt.Errorf("not implemented")
+	qos, err := m.adapter.Get(ctx, qosName)
+	if err != nil {
+		return nil, err
+	}
+	result := convertQoSToInterface(*qos)
+	return &result, nil
 }
 
 func (m *adapterQoSManager) Create(ctx context.Context, qos *interfaces.QoSCreate) (*interfaces.QoSCreateResponse, error) {
-	return nil, fmt.Errorf("not implemented")
+	// Convert create request
+	adapterCreate := &types.QoSCreate{
+		Name:        qos.Name,
+		Description: qos.Description,
+		Priority:    qos.Priority,
+		// Add other fields as needed
+	}
+
+	// Call adapter
+	resp, err := m.adapter.Create(ctx, adapterCreate)
+	if err != nil {
+		return nil, err
+	}
+
+	return &interfaces.QoSCreateResponse{
+		QoSName: resp.QoSName,
+	}, nil
 }
 
 func (m *adapterQoSManager) Update(ctx context.Context, qosName string, update *interfaces.QoSUpdate) error {
-	return fmt.Errorf("not implemented")
+	// Convert update request
+	adapterUpdate := &types.QoSUpdate{}
+	if update.Description != nil {
+		adapterUpdate.Description = update.Description
+	}
+	if update.Priority != nil {
+		adapterUpdate.Priority = update.Priority
+	}
+	// Add other fields as needed
+
+	return m.adapter.Update(ctx, qosName, adapterUpdate)
 }
 
 func (m *adapterQoSManager) Delete(ctx context.Context, qosName string) error {
-	return fmt.Errorf("not implemented")
+	return m.adapter.Delete(ctx, qosName)
 }
 
 type adapterAccountManager struct {
@@ -852,11 +1012,40 @@ type adapterUserManager struct {
 }
 
 func (m *adapterUserManager) List(ctx context.Context, opts *interfaces.ListUsersOptions) (*interfaces.UserList, error) {
-	return nil, fmt.Errorf("not implemented")
+	// Convert options
+	adapterOpts := &types.UserListOptions{}
+	if opts != nil {
+		adapterOpts.Limit = opts.Limit
+		adapterOpts.Offset = opts.Offset
+		// Note: Some fields may not have direct mappings
+	}
+
+	// Call adapter
+	result, err := m.adapter.List(ctx, adapterOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert result
+	userList := &interfaces.UserList{
+		Users: make([]interfaces.User, 0, len(result.Users)),
+		Total: result.Total,
+	}
+
+	for _, user := range result.Users {
+		userList.Users = append(userList.Users, convertUserToInterface(user))
+	}
+
+	return userList, nil
 }
 
 func (m *adapterUserManager) Get(ctx context.Context, userName string) (*interfaces.User, error) {
-	return nil, fmt.Errorf("not implemented")
+	user, err := m.adapter.Get(ctx, userName)
+	if err != nil {
+		return nil, err
+	}
+	result := convertUserToInterface(*user)
+	return &result, nil
 }
 
 func (m *adapterUserManager) GetUserAccounts(ctx context.Context, userName string) ([]*interfaces.UserAccount, error) {
@@ -900,23 +1089,134 @@ type adapterReservationManager struct {
 }
 
 func (m *adapterReservationManager) List(ctx context.Context, opts *interfaces.ListReservationsOptions) (*interfaces.ReservationList, error) {
-	return nil, fmt.Errorf("not implemented")
+	// Convert options
+	adapterOpts := &types.ReservationListOptions{}
+	if opts != nil {
+		adapterOpts.Limit = opts.Limit
+		adapterOpts.Offset = opts.Offset
+	}
+
+	// Call adapter
+	result, err := m.adapter.List(ctx, adapterOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert result
+	reservationList := &interfaces.ReservationList{
+		Reservations: make([]interfaces.Reservation, 0, len(result.Reservations)),
+		Total:        result.Total,
+	}
+
+	for _, reservation := range result.Reservations {
+		reservationList.Reservations = append(reservationList.Reservations, convertReservationToInterface(reservation))
+	}
+
+	return reservationList, nil
 }
 
 func (m *adapterReservationManager) Get(ctx context.Context, reservationName string) (*interfaces.Reservation, error) {
-	return nil, fmt.Errorf("not implemented")
+	// Call adapter
+	result, err := m.adapter.Get(ctx, reservationName)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert result
+	reservation := convertReservationToInterface(*result)
+	return &reservation, nil
 }
 
 func (m *adapterReservationManager) Create(ctx context.Context, reservation *interfaces.ReservationCreate) (*interfaces.ReservationCreateResponse, error) {
-	return nil, fmt.Errorf("not implemented")
+	// Convert to adapter type
+	adapterReservation := &types.ReservationCreate{
+		Name:          reservation.Name,
+		StartTime:     reservation.StartTime,
+		EndTime:       &reservation.EndTime,
+		Duration:      int32(reservation.Duration),
+		Users:         reservation.Users,
+		Accounts:      reservation.Accounts,
+		NodeList:      strings.Join(reservation.Nodes, ","),
+		NodeCount:     int32(reservation.NodeCount),
+		CoreCount:     int32(reservation.CoreCount),
+		PartitionName: reservation.PartitionName,
+		Features:      reservation.Features,
+		BurstBuffer:   reservation.BurstBuffer,
+		Comment:       "", // Not available in interfaces.ReservationCreate
+	}
+
+	// Convert flags from []string to []ReservationFlag
+	if len(reservation.Flags) > 0 {
+		adapterReservation.Flags = make([]types.ReservationFlag, len(reservation.Flags))
+		for i, flag := range reservation.Flags {
+			adapterReservation.Flags[i] = types.ReservationFlag(flag)
+		}
+	}
+
+	// Convert licenses from map[string]int to map[string]int32
+	if len(reservation.Licenses) > 0 {
+		adapterReservation.Licenses = make(map[string]int32)
+		for k, v := range reservation.Licenses {
+			adapterReservation.Licenses[k] = int32(v)
+		}
+	}
+
+	// Call adapter
+	result, err := m.adapter.Create(ctx, adapterReservation)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert result
+	return &interfaces.ReservationCreateResponse{
+		ReservationName: result.ReservationName,
+	}, nil
 }
 
 func (m *adapterReservationManager) Update(ctx context.Context, reservationName string, update *interfaces.ReservationUpdate) error {
-	return fmt.Errorf("not implemented")
+	// Convert to adapter type
+	adapterUpdate := &types.ReservationUpdate{}
+	if update != nil {
+		if update.Users != nil {
+			adapterUpdate.Users = update.Users
+		}
+		if update.Accounts != nil {
+			adapterUpdate.Accounts = update.Accounts
+		}
+		if update.Nodes != nil && len(update.Nodes) > 0 {
+			nodeList := strings.Join(update.Nodes, ",")
+			adapterUpdate.NodeList = &nodeList
+		}
+		if update.NodeCount != nil {
+			nodeCount := int32(*update.NodeCount)
+			adapterUpdate.NodeCount = &nodeCount
+		}
+		if update.StartTime != nil {
+			adapterUpdate.StartTime = update.StartTime
+		}
+		if update.EndTime != nil {
+			adapterUpdate.EndTime = update.EndTime
+		}
+		if update.Duration != nil {
+			duration := int32(*update.Duration)
+			adapterUpdate.Duration = &duration
+		}
+		if update.Flags != nil && len(update.Flags) > 0 {
+			adapterUpdate.Flags = make([]types.ReservationFlag, len(update.Flags))
+			for i, flag := range update.Flags {
+				adapterUpdate.Flags[i] = types.ReservationFlag(flag)
+			}
+		}
+		if update.Features != nil {
+			adapterUpdate.Features = update.Features
+		}
+	}
+
+	return m.adapter.Update(ctx, reservationName, adapterUpdate)
 }
 
 func (m *adapterReservationManager) Delete(ctx context.Context, reservationName string) error {
-	return fmt.Errorf("not implemented")
+	return m.adapter.Delete(ctx, reservationName)
 }
 
 type adapterAssociationManager struct {
@@ -924,37 +1224,400 @@ type adapterAssociationManager struct {
 }
 
 func (m *adapterAssociationManager) List(ctx context.Context, opts *interfaces.ListAssociationsOptions) (*interfaces.AssociationList, error) {
-	return nil, fmt.Errorf("not implemented")
+	// Convert options
+	adapterOpts := &types.AssociationListOptions{}
+	if opts != nil {
+		adapterOpts.Limit = opts.Limit
+		adapterOpts.Offset = opts.Offset
+		// Note: Some filter fields may not map directly
+	}
+
+	// Call adapter
+	result, err := m.adapter.List(ctx, adapterOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert result
+	associationList := &interfaces.AssociationList{
+		Associations: make([]*interfaces.Association, 0, len(result.Associations)),
+		Total:        result.Total,
+	}
+
+	for _, association := range result.Associations {
+		converted := convertAssociationToInterface(association)
+		associationList.Associations = append(associationList.Associations, &converted)
+	}
+
+	return associationList, nil
 }
 
 func (m *adapterAssociationManager) Get(ctx context.Context, opts *interfaces.GetAssociationOptions) (*interfaces.Association, error) {
-	return nil, fmt.Errorf("not implemented")
+	// Build association ID from options
+	if opts == nil || (opts.User == "" && opts.Account == "") {
+		return nil, fmt.Errorf("user or account must be specified")
+	}
+
+	// Create a composite ID or use the first matching association
+	associationID := ""
+	if opts.User != "" && opts.Account != "" {
+		associationID = fmt.Sprintf("%s:%s", opts.User, opts.Account)
+	} else if opts.User != "" {
+		associationID = opts.User
+	} else {
+		associationID = opts.Account
+	}
+
+	// Call adapter
+	result, err := m.adapter.Get(ctx, associationID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert result
+	association := convertAssociationToInterface(*result)
+	return &association, nil
 }
 
 func (m *adapterAssociationManager) Create(ctx context.Context, associations []*interfaces.AssociationCreate) (*interfaces.AssociationCreateResponse, error) {
-	return nil, fmt.Errorf("not implemented")
+	// For now, handle single association creation
+	if len(associations) == 0 {
+		return nil, fmt.Errorf("no associations provided")
+	}
+
+	// Convert first association (adapter interface expects single association)
+	assoc := associations[0]
+	adapterAssoc := &types.AssociationCreate{
+		AccountName:   assoc.Account,
+		Cluster:       assoc.Cluster,
+		UserName:      assoc.User,
+		Partition:     assoc.Partition,
+		ParentAccount: assoc.ParentAccount,
+		IsDefault:     assoc.IsDefault,
+		DefaultQoS:    assoc.DefaultQoS,
+		QoSList:       assoc.QoSList,
+		Comment:       assoc.Comment,
+	}
+
+	// Convert pointer values to non-pointer values for the adapter
+	if assoc.SharesRaw != nil {
+		adapterAssoc.SharesRaw = int32(*assoc.SharesRaw)
+	}
+	if assoc.Priority != nil {
+		adapterAssoc.Priority = int32(*assoc.Priority)
+	}
+	if assoc.MaxJobs != nil {
+		adapterAssoc.MaxJobs = int32(*assoc.MaxJobs)
+	}
+	if assoc.MaxJobsAccrue != nil {
+		adapterAssoc.MaxJobsAccrue = int32(*assoc.MaxJobsAccrue)
+	}
+	if assoc.MaxSubmitJobs != nil {
+		adapterAssoc.MaxSubmitJobs = int32(*assoc.MaxSubmitJobs)
+	}
+	if assoc.MaxWallDuration != nil {
+		adapterAssoc.MaxWallTime = int32(*assoc.MaxWallDuration)
+	}
+	if assoc.GrpJobs != nil {
+		adapterAssoc.GrpJobs = int32(*assoc.GrpJobs)
+	}
+	if assoc.GrpJobsAccrue != nil {
+		adapterAssoc.GrpJobsAccrue = int32(*assoc.GrpJobsAccrue)
+	}
+	if assoc.GrpSubmitJobs != nil {
+		adapterAssoc.GrpSubmitJobs = int32(*assoc.GrpSubmitJobs)
+	}
+	if assoc.GrpWall != nil {
+		adapterAssoc.GrpWallTime = int32(*assoc.GrpWall)
+	}
+
+	// Call adapter
+	result, err := m.adapter.Create(ctx, adapterAssoc)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert result - create a basic association from the response
+	association := &interfaces.Association{
+		User:    result.UserName,
+		Account: result.AccountName,
+		Cluster: result.Cluster,
+	}
+	
+	return &interfaces.AssociationCreateResponse{
+		Associations: []*interfaces.Association{association},
+		Created:      1,
+		Updated:      0,
+		Errors:       nil,
+		Warnings:     nil,
+	}, nil
 }
 
 func (m *adapterAssociationManager) Update(ctx context.Context, associations []*interfaces.AssociationUpdate) error {
-	return fmt.Errorf("not implemented")
+	// For now, handle single association update
+	if len(associations) == 0 {
+		return fmt.Errorf("no associations provided")
+	}
+
+	// Process first association
+	assoc := associations[0]
+	associationID := ""
+	if assoc.User != "" && assoc.Account != "" {
+		associationID = fmt.Sprintf("%s:%s", assoc.User, assoc.Account)
+	} else if assoc.User != "" {
+		associationID = assoc.User
+	} else if assoc.Account != "" {
+		associationID = assoc.Account
+	} else {
+		return fmt.Errorf("user or account must be specified")
+	}
+
+	// Convert to adapter type
+	adapterUpdate := &types.AssociationUpdate{}
+	if assoc.IsDefault != nil {
+		adapterUpdate.IsDefault = assoc.IsDefault
+	}
+	if assoc.Comment != nil {
+		adapterUpdate.Comment = assoc.Comment
+	}
+	if assoc.DefaultQoS != nil {
+		adapterUpdate.DefaultQoS = assoc.DefaultQoS
+	}
+	if assoc.QoSList != nil {
+		adapterUpdate.QoSList = assoc.QoSList
+	}
+
+	// Convert int pointers to int32 pointers
+	if assoc.SharesRaw != nil {
+		sharesRaw := int32(*assoc.SharesRaw)
+		adapterUpdate.SharesRaw = &sharesRaw
+	}
+	if assoc.Priority != nil {
+		priority := int32(*assoc.Priority)
+		adapterUpdate.Priority = &priority
+	}
+	if assoc.MaxJobs != nil {
+		maxJobs := int32(*assoc.MaxJobs)
+		adapterUpdate.MaxJobs = &maxJobs
+	}
+	if assoc.MaxJobsAccrue != nil {
+		maxJobsAccrue := int32(*assoc.MaxJobsAccrue)
+		adapterUpdate.MaxJobsAccrue = &maxJobsAccrue
+	}
+	if assoc.MaxSubmitJobs != nil {
+		maxSubmitJobs := int32(*assoc.MaxSubmitJobs)
+		adapterUpdate.MaxSubmitJobs = &maxSubmitJobs
+	}
+	if assoc.MaxWallDuration != nil {
+		maxWallTime := int32(*assoc.MaxWallDuration)
+		adapterUpdate.MaxWallTime = &maxWallTime
+	}
+	if assoc.GrpJobs != nil {
+		grpJobs := int32(*assoc.GrpJobs)
+		adapterUpdate.GrpJobs = &grpJobs
+	}
+	if assoc.GrpJobsAccrue != nil {
+		grpJobsAccrue := int32(*assoc.GrpJobsAccrue)
+		adapterUpdate.GrpJobsAccrue = &grpJobsAccrue
+	}
+	if assoc.GrpSubmitJobs != nil {
+		grpSubmitJobs := int32(*assoc.GrpSubmitJobs)
+		adapterUpdate.GrpSubmitJobs = &grpSubmitJobs
+	}
+	if assoc.GrpWall != nil {
+		grpWallTime := int32(*assoc.GrpWall)
+		adapterUpdate.GrpWallTime = &grpWallTime
+	}
+
+	return m.adapter.Update(ctx, associationID, adapterUpdate)
 }
 
 func (m *adapterAssociationManager) Delete(ctx context.Context, opts *interfaces.DeleteAssociationOptions) error {
-	return fmt.Errorf("not implemented")
+	if opts == nil || (opts.User == "" && opts.Account == "") {
+		return fmt.Errorf("user or account must be specified")
+	}
+
+	// Build association ID from options
+	associationID := ""
+	if opts.User != "" && opts.Account != "" {
+		associationID = fmt.Sprintf("%s:%s", opts.User, opts.Account)
+	} else if opts.User != "" {
+		associationID = opts.User
+	} else {
+		associationID = opts.Account
+	}
+
+	return m.adapter.Delete(ctx, associationID)
 }
 
 func (m *adapterAssociationManager) BulkDelete(ctx context.Context, opts *interfaces.BulkDeleteOptions) (*interfaces.BulkDeleteResponse, error) {
-	return nil, fmt.Errorf("not implemented")
+	// Not supported in base adapter interface
+	return nil, fmt.Errorf("bulk delete not supported in adapter implementation")
 }
 
 func (m *adapterAssociationManager) GetUserAssociations(ctx context.Context, userName string) ([]*interfaces.Association, error) {
-	return nil, fmt.Errorf("not implemented")
+	// List associations and filter by user
+	opts := &types.AssociationListOptions{
+		Limit: 1000, // Get all associations for the user
+	}
+
+	result, err := m.adapter.List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter associations for the specified user
+	userAssociations := make([]*interfaces.Association, 0)
+	for _, assoc := range result.Associations {
+		if assoc.UserName == userName {
+			converted := convertAssociationToInterface(assoc)
+			userAssociations = append(userAssociations, &converted)
+		}
+	}
+
+	return userAssociations, nil
 }
 
 func (m *adapterAssociationManager) GetAccountAssociations(ctx context.Context, accountName string) ([]*interfaces.Association, error) {
-	return nil, fmt.Errorf("not implemented")
+	// List associations and filter by account
+	opts := &types.AssociationListOptions{
+		Limit: 1000, // Get all associations for the account
+	}
+
+	result, err := m.adapter.List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter associations for the specified account
+	accountAssociations := make([]*interfaces.Association, 0)
+	for _, assoc := range result.Associations {
+		if assoc.AccountName == accountName {
+			converted := convertAssociationToInterface(assoc)
+			accountAssociations = append(accountAssociations, &converted)
+		}
+	}
+
+	return accountAssociations, nil
 }
 
 func (m *adapterAssociationManager) ValidateAssociation(ctx context.Context, user, account, cluster string) (bool, error) {
-	return false, fmt.Errorf("not implemented")
+	// Try to get the specific association
+	opts := &interfaces.GetAssociationOptions{
+		User:    user,
+		Account: account,
+		Cluster: cluster,
+	}
+
+	_, err := m.Get(ctx, opts)
+	if err != nil {
+		// Association doesn't exist or error occurred
+		return false, nil
+	}
+
+	// Association exists
+	return true, nil
+}
+
+// Helper function to convert types.Reservation to interfaces.Reservation
+func convertReservationToInterface(reservation types.Reservation) interfaces.Reservation {
+	// Convert flags from []ReservationFlag to []string
+	flags := make([]string, len(reservation.Flags))
+	for i, flag := range reservation.Flags {
+		flags[i] = string(flag)
+	}
+
+	// Convert licenses from map[string]int32 to map[string]int
+	licenses := make(map[string]int)
+	for k, v := range reservation.Licenses {
+		licenses[k] = int(v)
+	}
+
+	// Convert node list to array if needed
+	nodes := []string{}
+	if reservation.NodeList != "" {
+		nodes = strings.Split(reservation.NodeList, ",")
+	}
+
+	return interfaces.Reservation{
+		Name:          reservation.Name,
+		State:         string(reservation.State),
+		StartTime:     reservation.StartTime,
+		EndTime:       reservation.EndTime,
+		Duration:      int(reservation.Duration),
+		Users:         reservation.Users,
+		Accounts:      reservation.Accounts,
+		Nodes:         nodes,
+		NodeCount:     int(reservation.NodeCount),
+		CoreCount:     int(reservation.CoreCount),
+		PartitionName: reservation.PartitionName,
+		Flags:         flags,
+		Features:      reservation.Features,
+		Licenses:      licenses,
+		BurstBuffer:   reservation.BurstBuffer,
+		Metadata:      nil,
+	}
+}
+
+// Helper function to convert types.Association to interfaces.Association
+func convertAssociationToInterface(association types.Association) interfaces.Association {
+	// Convert pointers for limits
+	var maxJobs, maxSubmitJobs *int
+	if association.MaxJobs > 0 {
+		jobs := int(association.MaxJobs)
+		maxJobs = &jobs
+	}
+	if association.MaxSubmitJobs > 0 {
+		submitJobs := int(association.MaxSubmitJobs)
+		maxSubmitJobs = &submitJobs
+	}
+
+	var maxWallDuration *int
+	if association.MaxWallTime > 0 {
+		wallTime := int(association.MaxWallTime)
+		maxWallDuration = &wallTime
+	}
+
+	var grpJobs, grpSubmitJobs, grpWall *int
+	if association.GrpJobs > 0 {
+		jobs := int(association.GrpJobs)
+		grpJobs = &jobs
+	}
+	if association.GrpSubmitJobs > 0 {
+		submitJobs := int(association.GrpSubmitJobs)
+		grpSubmitJobs = &submitJobs
+	}
+	if association.GrpWallTime > 0 {
+		wallTime := int(association.GrpWallTime)
+		grpWall = &wallTime
+	}
+
+	return interfaces.Association{
+		ID:              0, // Not available in types.Association
+		User:            association.UserName,
+		Account:         association.AccountName,
+		Cluster:         association.Cluster,
+		Partition:       association.Partition,
+		ParentAccount:   association.ParentAccount,
+		IsDefault:       false, // Not available in types.Association
+		Comment:         association.Comment,
+		SharesRaw:       int(association.SharesRaw),
+		Priority:        uint32(association.Priority),
+		MaxJobs:         maxJobs,
+		MaxJobsAccrue:   nil, // Not available in types.Association
+		MaxSubmitJobs:   maxSubmitJobs,
+		MaxWallDuration: maxWallDuration,
+		GrpJobs:         grpJobs,
+		GrpJobsAccrue:   nil, // Not available in types.Association
+		GrpSubmitJobs:   grpSubmitJobs,
+		GrpWall:         grpWall,
+		MaxTRESPerJob:   make(map[string]string), // Would need proper conversion
+		MaxTRESMins:     make(map[string]string), // Would need proper conversion
+		GrpTRES:         make(map[string]string), // Would need proper conversion
+		GrpTRESMins:     make(map[string]string), // Would need proper conversion
+		GrpTRESRunMins:  make(map[string]string), // Would need proper conversion
+		DefaultQoS:      association.DefaultQoS,
+		QoSList:         association.QoSList,
+		Flags:           []string{}, // Not available in types.Association
+	}
 }
