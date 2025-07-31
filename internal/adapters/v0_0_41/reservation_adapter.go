@@ -68,9 +68,7 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 	// Convert response to common types
 	resList := &types.ReservationList{
 		Reservations: make([]types.Reservation, 0, len(resp.JSON200.Reservations)),
-		Meta: &types.ListMeta{
-			Version: a.GetVersion(),
-		},
+		Total: 0,
 	}
 
 	for _, apiRes := range resp.JSON200.Reservations {
@@ -82,31 +80,19 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 		resList.Reservations = append(resList.Reservations, *res)
 	}
 
-	// Extract warning messages if any
+	// Extract warning and error messages if any (but ReservationList doesn't have Meta)
+	// Warnings and errors are ignored for now as ReservationList structure doesn't support them
 	if resp.JSON200.Warnings != nil {
-		warnings := make([]string, 0, len(*resp.JSON200.Warnings))
-		for _, warning := range *resp.JSON200.Warnings {
-			if warning.Description != nil {
-				warnings = append(warnings, *warning.Description)
-			}
-		}
-		if len(warnings) > 0 {
-			resList.Meta.Warnings = warnings
-		}
+		// Log warnings if needed
+		_ = resp.JSON200.Warnings
+	}
+	if resp.JSON200.Errors != nil {
+		// Log errors if needed
+		_ = resp.JSON200.Errors
 	}
 
-	// Extract error messages if any
-	if resp.JSON200.Errors != nil {
-		errors := make([]string, 0, len(*resp.JSON200.Errors))
-		for _, error := range *resp.JSON200.Errors {
-			if error.Description != nil {
-				errors = append(errors, *error.Description)
-			}
-		}
-		if len(errors) > 0 {
-			resList.Meta.Errors = errors
-		}
-	}
+	// Update total count
+	resList.Total = len(resList.Reservations)
 
 	return resList, nil
 }

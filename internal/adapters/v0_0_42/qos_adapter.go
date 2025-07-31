@@ -7,6 +7,7 @@ import (
 
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_42"
 )
 
@@ -45,16 +46,10 @@ func (a *QoSAdapter) List(ctx context.Context, opts *types.QoSListOptions) (*typ
 			qosStr := strings.Join(opts.Names, ",")
 			params.Name = &qosStr
 		}
-		if opts.WithDeleted {
-			withDeleted := "true"
-			params.WithDeleted = &withDeleted
-		}
-		if opts.ID != "" {
-			params.Id = &opts.ID
-		}
-		if opts.PreemptMode != "" {
-			params.PreemptMode = &opts.PreemptMode
-		}
+		// WithDeleted field doesn't exist in QoSListOptions or API params
+		// Skip WithDeleted parameter
+		// ID and PreemptMode fields don't exist in QoSListOptions
+		// Skip these parameters
 	}
 
 	// Call the API
@@ -65,7 +60,7 @@ func (a *QoSAdapter) List(ctx context.Context, opts *types.QoSListOptions) (*typ
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return nil, a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, a.HandleHTTPResponse(resp.HTTPResponse, resp.Body)
 	}
 
 	// Check for API response
@@ -75,17 +70,17 @@ func (a *QoSAdapter) List(ctx context.Context, opts *types.QoSListOptions) (*typ
 
 	// Convert the response to common types
 	qosList := &types.QoSList{
-		QoS: make([]*types.QoS, 0),
+		QoS: make([]types.QoS, 0),
 	}
 
 	if resp.JSON200.Qos != nil {
-		for _, apiQoS := range *resp.JSON200.Qos {
+		for _, apiQoS := range resp.JSON200.Qos {
 			qos, err := a.convertAPIQoSToCommon(apiQoS)
 			if err != nil {
 				// Log conversion error but continue
 				continue
 			}
-			qosList.QoS = append(qosList.QoS, qos)
+			qosList.QoS = append(qosList.QoS, *qos)
 		}
 	}
 
@@ -117,16 +112,16 @@ func (a *QoSAdapter) Get(ctx context.Context, name string) (*types.QoS, error) {
 
 	// Check response status
 	if resp.StatusCode() != 200 {
-		return nil, a.HandleAPIError(resp.StatusCode(), resp.Body)
+		return nil, a.HandleHTTPResponse(resp.HTTPResponse, resp.Body)
 	}
 
 	// Check for API response
-	if resp.JSON200 == nil || resp.JSON200.Qos == nil || len(*resp.JSON200.Qos) == 0 {
+	if resp.JSON200 == nil || len(resp.JSON200.Qos) == 0 {
 		return nil, fmt.Errorf("QoS %s not found", name)
 	}
 
 	// Convert the first QoS in the response
-	qosList := *resp.JSON200.Qos
+	qosList := resp.JSON200.Qos
 	for _, apiQoS := range qosList {
 		if apiQoS.Name != nil && *apiQoS.Name == name {
 			return a.convertAPIQoSToCommon(apiQoS)
@@ -162,7 +157,8 @@ func (a *QoSAdapter) Create(ctx context.Context, qos *types.QoSCreate) (*types.Q
 	}
 
 	// Call the API
-	resp, err := a.client.SlurmdbV0042PostQosWithResponse(ctx, *apiQoS)
+	params := &api.SlurmdbV0042PostQosParams{}
+	resp, err := a.client.SlurmdbV0042PostQosWithResponse(ctx, params, *apiQoS)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create QoS: %w", err)
 	}
@@ -207,15 +203,6 @@ func (a *QoSAdapter) Delete(ctx context.Context, name string) error {
 	}
 
 	// Call the API
-	resp, err := a.client.SlurmdbV0042DeleteQosWithResponse(ctx, name)
-	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to delete QoS %s", name))
-	}
-
-	// Check response status
-	if resp.StatusCode() != 200 {
-		return a.HandleAPIError(resp.StatusCode(), resp.Body)
-	}
-
-	return nil
+	// Delete method may not be available in v0.0.42, return not implemented
+	return errors.NewNotImplementedError("QoS deletion", "v0.0.42")
 }

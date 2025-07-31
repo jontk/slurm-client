@@ -46,7 +46,7 @@ func (u *UserManagerImpl) List(ctx context.Context, opts *interfaces.ListUsersOp
 			// Set admin level filter
 			adminLevel := opts.AdminLevels[0]
 			if adminLevel == "Administrator" {
-				level := SlurmdbV0040GetUsersParamsAdminLevelAdministrator
+				level := Administrator
 				params.AdminLevel = &level
 			}
 		}
@@ -72,11 +72,10 @@ func (u *UserManagerImpl) List(ctx context.Context, opts *interfaces.ListUsersOp
 		Users: make([]interfaces.User, 0),
 	}
 
-	if resp.JSON200.Users != nil {
-		for _, usr := range *resp.JSON200.Users {
-			user := u.convertV0040UserToInterface(usr)
-			userList.Users = append(userList.Users, *user)
-		}
+	// resp.JSON200.Users is V0040UserList which is []V0040User, not *[]V0040User
+	for _, usr := range resp.JSON200.Users {
+		user := u.convertV0040UserToInterface(usr)
+		userList.Users = append(userList.Users, *user)
 	}
 
 	return userList, nil
@@ -96,7 +95,7 @@ func (u *UserManagerImpl) Get(ctx context.Context, userName string) (*interfaces
 	params := &SlurmdbV0040GetUserParams{}
 	resp, err := u.client.apiClient.SlurmdbV0040GetUserWithResponse(ctx, userName, params)
 	if err != nil {
-		return nil, errors.NewAPIError(errors.ErrorCodeAPIError, "failed to get user", err)
+		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "failed to get user")
 	}
 
 	// Check response
@@ -104,13 +103,12 @@ func (u *UserManagerImpl) Get(ctx context.Context, userName string) (*interfaces
 		return nil, u.client.HandleErrorResponse(resp.StatusCode(), resp.Body)
 	}
 
-	if resp.JSON200 == nil || resp.JSON200.Users == nil || len(*resp.JSON200.Users) == 0 {
+	if resp.JSON200 == nil || len(resp.JSON200.Users) == 0 {
 		return nil, errors.NewClientError(errors.ErrorCodeResourceNotFound, "user not found")
 	}
 
 	// Convert the first user
-	users := *resp.JSON200.Users
-	return u.convertV0040UserToInterface(users[0]), nil
+	return u.convertV0040UserToInterface(resp.JSON200.Users[0]), nil
 }
 
 // GetUserAccounts retrieves all account associations for a user
@@ -195,26 +193,24 @@ func (u *UserManagerImpl) GetBulkAccountUsers(ctx context.Context, accountNames 
 func (u *UserManagerImpl) convertV0040UserToInterface(usr V0040User) *interfaces.User {
 	user := &interfaces.User{}
 	
-	if usr.Name != nil {
-		user.Name = *usr.Name
+	// usr.Name is string, not *string
+	user.Name = usr.Name
+	// Uid field doesn't exist in V0040User - skip UID setting
+	// user.UID = 0
+	// DefaultAccount is in usr.Default.Account
+	if usr.Default != nil && usr.Default.Account != nil {
+		user.DefaultAccount = *usr.Default.Account
 	}
-	if usr.Uid != nil {
-		user.UID = uint32(*usr.Uid)
-	}
-	if usr.DefaultAccount != nil {
-		user.DefaultAccount = *usr.DefaultAccount
-	}
-	if usr.DefaultWckey != nil {
-		user.DefaultWCKey = *usr.DefaultWckey
+	// DefaultWCKey is in usr.Default.Wckey
+	if usr.Default != nil && usr.Default.Wckey != nil {
+		user.DefaultWCKey = *usr.Default.Wckey
 	}
 	
-	// Convert admin level
-	if usr.Adminlevel != nil && len(*usr.Adminlevel) > 0 {
-		adminLevels := *usr.Adminlevel
-		if len(adminLevels) > 0 {
-			// Take the first admin level
-			user.AdminLevel = string(adminLevels[0])
-		}
+	// Convert admin level - AdministratorLevel is *V0040AdminLvl which is []string
+	if usr.AdministratorLevel != nil && len(*usr.AdministratorLevel) > 0 {
+		adminLevels := *usr.AdministratorLevel
+		// Take the first admin level
+		user.AdminLevel = adminLevels[0]
 	}
 	
 	return user

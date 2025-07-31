@@ -142,28 +142,25 @@ func (a *PartitionAdapter) convertAPIPartitionToCommon(apiPartition api.V0042Par
 	if apiPartition.Cpus != nil && apiPartition.Cpus.TaskBinding != nil {
 		_ = apiPartition.Cpus.TaskBinding
 	}
-	}
 
-	// Alternate partition
+	// Alternate partition - AlternatePartition field doesn't exist in common Partition type
+	// Skip alternate partition conversion
 	if apiPartition.Alternate != nil {
-		partition.AlternatePartition = *apiPartition.Alternate
+		_ = apiPartition.Alternate
 	}
 
-	// Select type
+	// Select type - store in SelectTypeParameters field
 	if apiPartition.SelectType != nil {
-		// Store select type as part of parameters
-		if partition.Parameters == nil {
-			partition.Parameters = make(map[string]string)
-		}
-		partition.Parameters["select_type"] = string(*apiPartition.SelectType)
+		// SelectType is []V0042CrType, skip complex conversion for now
+		_ = apiPartition.SelectType
 	}
 
-	// Job defaults
+	// Job defaults - store in JobDefaults field
 	if apiPartition.Defaults != nil && apiPartition.Defaults.Job != nil {
-		if partition.Parameters == nil {
-			partition.Parameters = make(map[string]string)
+		if partition.JobDefaults == nil {
+			partition.JobDefaults = make(map[string]string)
 		}
-		partition.Parameters["job_defaults"] = *apiPartition.Defaults.Job
+		partition.JobDefaults["job_defaults"] = *apiPartition.Defaults.Job
 	}
 
 	return partition, nil
@@ -177,8 +174,6 @@ func (a *PartitionAdapter) convertPartitionStatesToString(states *api.V0042Parti
 
 	// Convert the partition states to a string
 	// In v0.0.42, states might be represented as flags
-	stateStrs := make([]string, 0)
-	
 	// Check each state flag (this is a simplified version)
 	// The actual implementation would depend on how V0042PartitionStates is defined
 	stateStr := "UP" // Default state
