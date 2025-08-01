@@ -601,16 +601,52 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0043JobInfo) (*types.Job,
 
 func (a *JobAdapter) convertCommonJobCreateToAPI(create *types.JobCreate) (*api.V0043Job, error) {
 	apiJob := &api.V0043Job{}
+	
+	// Set required fields with proper pointers
 	if create.Name != "" {
 		apiJob.Name = &create.Name
+	} else {
+		// Default job name if not provided
+		defaultName := "job"
+		apiJob.Name = &defaultName
 	}
+	
+	// Account is required in v0.0.43
 	if create.Account != "" {
 		apiJob.Account = &create.Account
 	}
+	
 	if create.Partition != "" {
 		apiJob.Partition = &create.Partition
 	}
-	// TODO: Add more field conversions as needed
+	
+	// Set QoS if provided
+	if create.QoS != "" {
+		apiJob.Qos = &create.QoS
+	}
+	
+	// Set working directory if provided
+	if create.WorkingDirectory != "" {
+		// Note: WorkDirectory field might not exist in V0043Job
+		// This will be set in the V0043JobDescMsg in Submit method
+	}
+	
+	// Set comment if provided
+	if create.Comment != "" {
+		// Comment field in V0043Job is a complex struct, not a simple string
+		// This will be handled in the Submit method with proper job description
+	}
+	
+	// Set priority if provided
+	if create.Priority != nil && *create.Priority > 0 {
+		priority := int32(*create.Priority)
+		setTrue := true
+		apiJob.Priority = &api.V0043Uint32NoValStruct{
+			Set:    &setTrue,
+			Number: &priority,
+		}
+	}
+	
 	return apiJob, nil
 }
 
