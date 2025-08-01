@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
+# SPDX-License-Identifier: Apache-2.0
+
+version: 2
+updates:
+  # Enable version updates for Go modules
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "00:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "jontk"
+    labels:
+      - "dependencies"
+      - "go"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "-"
+    rebase-strategy: "auto"
+    
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "00:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "jontk"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "-"
+    rebase-strategy: "auto"
