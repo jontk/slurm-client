@@ -6,11 +6,10 @@ toolchain go1.24.4
 
 require (
 	github.com/getkin/kin-openapi v0.125.0
-	github.com/google/uuid v1.5.0
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/time v0.12.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
