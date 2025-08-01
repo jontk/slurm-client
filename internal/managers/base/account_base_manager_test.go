@@ -149,7 +149,6 @@ func TestAccountBaseManager_ApplyAccountDefaults(t *testing.T) {
 				Description:  "Custom description",
 				Organization: "Custom Org",
 				ParentName:   "parent-account",
-				Flags:        []string{"NoAccount", "NoDefaultQOS"},
 			},
 			expected: &types.AccountCreate{
 				Name:         "test-account",

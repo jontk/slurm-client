@@ -219,8 +219,8 @@ func (a *QoSAdapter) Update(ctx context.Context, name string, update *types.QoSU
 	if update.Priority != nil {
 		existingQoS.Priority = *update.Priority
 	}
-	if update.PreemptMode != nil {
-		existingQoS.PreemptMode = *update.PreemptMode
+	if update.PreemptMode != nil && len(*update.PreemptMode) > 0 {
+		existingQoS.PreemptMode = (*update.PreemptMode)[0]
 	}
 	if update.GraceTime != nil {
 		existingQoS.GraceTime = *update.GraceTime
