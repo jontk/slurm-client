@@ -1,0 +1,228 @@
+# SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
+# SPDX-License-Identifier: Apache-2.0
+
+name: Documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  generate-docs:
+    name: Generate Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: 'go.mod'
+        cache: true
+
+    - name: Install godoc
+      run: go install golang.org/x/tools/cmd/godoc@latest
+
+    - name: Install gomarkdoc
+      run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+
+    - name: Generate package documentation
+      run: |
+        mkdir -p docs/api
+        
+        # Generate markdown documentation for each package
+        for pkg in $(go list ./... | grep -v /vendor/); do
+          # Convert package path to file path
+          pkg_path=${pkg#github.com/jontk/slurm-client/}
+          if [ -z "$pkg_path" ]; then
+            pkg_path="."
+          fi
+          
+          # Create directory structure
+          mkdir -p "docs/api/$(dirname $pkg_path)"
+          
+          # Generate markdown
+          gomarkdoc --output "docs/api/${pkg_path}.md" "${pkg}" || true
+        done
+        
+        # Create index
+        cat > docs/api/README.md <<EOF
+        # API Documentation
+        
+        This directory contains automatically generated API documentation for the slurm-client packages.
+        
+        ## Packages
+        
+        EOF
+        
+        # Add links to all generated docs
+        find docs/api -name "*.md" -not -name "README.md" | sort | while read -r file; do
+          pkg_name=$(basename "$file" .md)
+          pkg_path=${file#docs/api/}
+          echo "- [${pkg_path%.md}](./${pkg_path})" >> docs/api/README.md
+        done
+
+    - name: Generate examples documentation
+      run: |
+        if [ -d "examples" ]; then
+          cat > docs/examples.md <<EOF
+        # Examples
+        
+        This page provides an overview of the available examples for slurm-client.
+        
+        EOF
+          
+          for example in examples/*/; do
+            if [ -f "${example}main.go" ]; then
+              example_name=$(basename "$example")
+              echo "## ${example_name}" >> docs/examples.md
+              echo "" >> docs/examples.md
+              
+              # Extract the first comment block as description
+              awk '/^\/\// {print substr($0, 4)} /^package/ {exit}' "${example}main.go" >> docs/examples.md
+              echo "" >> docs/examples.md
+              echo "[View source](https://github.com/jontk/slurm-client/tree/main/examples/${example_name})" >> docs/examples.md
+              echo "" >> docs/examples.md
+            fi
+          done
+        fi
+
+    - name: Check documentation changes
+      id: check_changes
+      run: |
+        if git diff --quiet docs/; then
+          echo "changed=false" >> $GITHUB_OUTPUT
+        else
+          echo "changed=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Upload documentation artifacts
+      if: steps.check_changes.outputs.changed == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: documentation
+        path: docs/
+
+  validate-links:
+    name: Validate Documentation Links
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Link Checker
+      uses: lycheeverse/lychee-action@v1
+      with:
+        args: >
+          --verbose
+          --no-progress
+          --accept 200,204,206
+          --timeout 20
+          --max-retries 3
+          --exclude-loopback
+          --exclude-private
+          --exclude-mail
+          './**/*.md'
+        fail: true
+
+  spellcheck:
+    name: Spellcheck Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Spellcheck
+      uses: streetsidesoftware/cspell-action@v5
+      with:
+        config: |
+          {
+            "version": "0.2",
+            "language": "en",
+            "words": [
+              "slurm",
+              "slurmclient",
+              "openapi",
+              "jontk",
+              "kristinsson",
+              "godoc",
+              "gomarkdoc",
+              "codecov",
+              "golangci",
+              "govulncheck",
+              "gosec",
+              "sarif",
+              "trivy",
+              "codeql",
+              "dependabot",
+              "spdx",
+              "qos",
+              "gres",
+              "tres",
+              "sacct",
+              "salloc",
+              "sbatch",
+              "scancel",
+              "scontrol",
+              "sinfo",
+              "squeue",
+              "sshare",
+              "sstat",
+              "diag",
+              "slurmdb",
+              "slurmdbd",
+              "munge",
+              "hwloc",
+              "numa",
+              "epilog",
+              "prolog",
+              "requeue",
+              "preempt",
+              "preempted",
+              "preemption",
+              "fairshare",
+              "assoc",
+              "acct",
+              "resv",
+              "resvs",
+              "alloc",
+              "allocs",
+              "cpus",
+              "gpus",
+              "nodeinfo",
+              "partitioninfo",
+              "jobinfo",
+              "stepinfo",
+              "reservationinfo"
+            ],
+            "ignorePaths": [
+              "vendor/**",
+              "*.pb.go",
+              "go.sum",
+              ".git/**",
+              "**/*.gen.go"
+            ]
+          }
+        files: '**/*.md'

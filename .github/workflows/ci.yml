@@ -1,0 +1,244 @@
+# SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
+# SPDX-License-Identifier: Apache-2.0
+
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+env:
+  GO_VERSION_STABLE: '1.22'
+  GO_VERSION_OLDSTABLE: '1.21'
+  GO_VERSION_MINIMUM: '1.20'
+
+jobs:
+  test:
+    name: Test (${{ matrix.go-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version: ['1.20', '1.21', '1.22']
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+        cache: true
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Verify dependencies
+      run: go mod verify
+
+    - name: Run tests
+      run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+    - name: Upload coverage to Codecov
+      if: matrix.os == 'ubuntu-latest' && matrix.go-version == env.GO_VERSION_STABLE
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.txt
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+        verbose: true
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION_STABLE }}
+        cache: true
+
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        args: --timeout=10m
+
+  staticcheck:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION_STABLE }}
+        cache: true
+
+    - name: Install staticcheck
+      run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+    - name: Run staticcheck
+      run: staticcheck ./...
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION_STABLE }}
+        cache: true
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Build examples
+      run: |
+        for dir in examples/*/; do
+          if [ -f "${dir}main.go" ]; then
+            echo "Building ${dir}..."
+            (cd "$dir" && go build -v .)
+          fi
+        done
+
+  license-check:
+    name: License Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check SPDX headers
+      run: |
+        # Check that all Go files have SPDX headers (except generated files)
+        missing_headers=0
+        while IFS= read -r file; do
+          if ! grep -q "SPDX-License-Identifier: Apache-2.0" "$file"; then
+            # Check if it's a generated file
+            if ! grep -q "Code generated" "$file" && ! [[ "$file" =~ /(wrapper|client|managers)\.go$ ]]; then
+              echo "Missing SPDX header: $file"
+              missing_headers=$((missing_headers + 1))
+            fi
+          fi
+        done < <(find . -name "*.go" -type f -not -path "./vendor/*")
+        
+        if [ $missing_headers -gt 0 ]; then
+          echo "Found $missing_headers files missing SPDX headers"
+          exit 1
+        fi
+        
+        echo "All files have proper SPDX headers"
+
+  module-check:
+    name: Module Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION_STABLE }}
+        cache: true
+
+    - name: Check go.mod tidiness
+      run: |
+        go mod tidy
+        git diff --exit-code go.mod go.sum
+
+    - name: Check for vulnerabilities
+      run: go list -json -m all | nancy sleuth
+
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.draft == false
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION_STABLE }}
+        cache: true
+
+    - name: Run integration tests
+      run: |
+        if [ -d "tests/integration" ]; then
+          go test -v -tags=integration ./tests/integration/...
+        else
+          echo "No integration tests found"
+        fi
+
+  benchmarks:
+    name: Benchmarks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION_STABLE }}
+        cache: true
+
+    - name: Run benchmarks
+      run: |
+        go test -bench=. -benchmem -run=^$ ./... | tee benchmark_results.txt
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results
+        path: benchmark_results.txt
+
+  all-checks-passed:
+    name: All Checks Passed
+    needs: [test, lint, staticcheck, build, license-check, module-check]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Check results
+      run: |
+        if [ "${{ contains(needs.*.result, 'failure') }}" == "true" ]; then
+          echo "One or more checks failed"
+          exit 1
+        fi
+        echo "All checks passed successfully"

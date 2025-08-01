@@ -1,0 +1,220 @@
+# SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
+# SPDX-License-Identifier: Apache-2.0
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  validate-tag:
+    name: Validate Tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      prerelease: ${{ steps.check_prerelease.outputs.prerelease }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get version from tag
+      id: get_version
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.tag }}"
+        else
+          VERSION="${GITHUB_REF#refs/tags/}"
+        fi
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "Version: ${VERSION}"
+
+    - name: Validate version format
+      run: |
+        VERSION="${{ steps.get_version.outputs.version }}"
+        if ! echo "$VERSION" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$'; then
+          echo "Invalid version format: $VERSION"
+          echo "Expected format: vX.Y.Z or vX.Y.Z-suffix"
+          exit 1
+        fi
+
+    - name: Check if prerelease
+      id: check_prerelease
+      run: |
+        VERSION="${{ steps.get_version.outputs.version }}"
+        if echo "$VERSION" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-'; then
+          echo "prerelease=true" >> $GITHUB_OUTPUT
+        else
+          echo "prerelease=false" >> $GITHUB_OUTPUT
+        fi
+
+  test-release:
+    name: Test Release Build
+    needs: validate-tag
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: 'go.mod'
+        cache: true
+
+    - name: Run tests
+      run: go test -v -race ./...
+
+    - name: Build
+      run: go build -v ./...
+
+  create-release:
+    name: Create Release
+    needs: [validate-tag, test-release]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: 'go.mod'
+        cache: true
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        VERSION="${{ needs.validate-tag.outputs.version }}"
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 "${VERSION}^" 2>/dev/null || echo "")
+        
+        if [ -z "$PREVIOUS_TAG" ]; then
+          echo "No previous tag found, including all commits"
+          RANGE=""
+        else
+          echo "Previous tag: $PREVIOUS_TAG"
+          RANGE="${PREVIOUS_TAG}..${VERSION}"
+        fi
+        
+        # Generate changelog
+        {
+          echo "## What's Changed"
+          echo ""
+          if [ -n "$RANGE" ]; then
+            git log --pretty=format:"* %s (%h) by @%an" $RANGE
+          else
+            git log --pretty=format:"* %s (%h) by @%an"
+          fi
+          echo ""
+          echo ""
+          echo "## Contributors"
+          echo ""
+          if [ -n "$RANGE" ]; then
+            git log --pretty=format:"* @%an" $RANGE | sort -u
+          else
+            git log --pretty=format:"* @%an" | sort -u
+          fi
+        } > CHANGELOG.md
+        
+        # Save changelog for release body
+        {
+          echo "changelog<<EOF"
+          cat CHANGELOG.md
+          echo "EOF"
+        } >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ needs.validate-tag.outputs.version }}
+        name: Release ${{ needs.validate-tag.outputs.version }}
+        body: |
+          ${{ steps.changelog.outputs.changelog }}
+          
+          ---
+          
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.changelog.outputs.previous_tag }}...${{ needs.validate-tag.outputs.version }}
+        draft: false
+        prerelease: ${{ needs.validate-tag.outputs.prerelease == 'true' }}
+        generate_release_notes: true
+
+  publish-pkg-go-dev:
+    name: Publish to pkg.go.dev
+    needs: create-release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: 'go.mod'
+        cache: true
+
+    - name: Trigger pkg.go.dev indexing
+      run: |
+        # pkg.go.dev will automatically index the module when we access it
+        MODULE_PATH=$(go list -m)
+        VERSION="${{ needs.validate-tag.outputs.version }}"
+        curl -s "https://pkg.go.dev/${MODULE_PATH}@${VERSION}" > /dev/null || true
+        echo "Triggered indexing for ${MODULE_PATH}@${VERSION}"
+
+  update-documentation:
+    name: Update Documentation
+    needs: [validate-tag, create-release]
+    runs-on: ubuntu-latest
+    if: needs.validate-tag.outputs.prerelease == 'false'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Update version references
+      run: |
+        VERSION="${{ needs.validate-tag.outputs.version }}"
+        VERSION_NO_V="${VERSION#v}"
+        
+        # Update version in documentation
+        find . -name "*.md" -type f -exec sed -i "s/slurm-client@v[0-9]\+\.[0-9]\+\.[0-9]\+/slurm-client@${VERSION}/g" {} \;
+        
+        # Update installation instructions
+        if [ -f "README.md" ]; then
+          sed -i "s|go get github.com/jontk/slurm-client@v[0-9]\+\.[0-9]\+\.[0-9]\+|go get github.com/jontk/slurm-client@${VERSION}|g" README.md
+        fi
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        commit-message: "docs: update version to ${{ needs.validate-tag.outputs.version }}"
+        title: "docs: update documentation for ${{ needs.validate-tag.outputs.version }}"
+        body: |
+          This PR updates the documentation to reference the latest release version.
+          
+          - Updated version references to ${{ needs.validate-tag.outputs.version }}
+          - Updated installation instructions
+          
+          This is an automated PR created by the release workflow.
+        branch: update-docs-${{ needs.validate-tag.outputs.version }}
+        delete-branch: true

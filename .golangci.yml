@@ -1,0 +1,248 @@
+# SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
+# SPDX-License-Identifier: Apache-2.0
+
+# This file configures golangci-lint for the slurm-client project
+# Run with: golangci-lint run
+
+run:
+  # Timeout for analysis
+  timeout: 10m
+  
+  # Skip generated files
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.gen\\.go$"
+    - "internal/api/.*/wrapper\\.go$"
+    - "internal/api/.*/client\\.go$"
+    - "internal/api/.*/managers\\.go$"
+  
+  # Skip directories
+  skip-dirs:
+    - vendor
+    - third_party
+    - testdata
+
+linters:
+  enable:
+    # Default linters
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    
+    # Additional linters
+    - bodyclose
+    - depguard
+    - dogsled
+    - dupl
+    - exportloopref
+    - gci
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - goprintffuncname
+    - gosec
+    - lll
+    - misspell
+    - nakedret
+    - noctx
+    - nolintlint
+    - prealloc
+    - revive
+    - stylecheck
+    - unconvert
+    - unparam
+    - whitespace
+
+  disable:
+    # Disable some linters that are too strict or not applicable
+    - exhaustive
+    - exhauststruct
+    - gochecknoglobals
+    - gochecknoinits
+    - godot
+    - godox
+    - goerr113
+    - golint # deprecated
+    - gomnd
+    - interfacer # deprecated
+    - maligned # deprecated
+    - nlreturn
+    - scopelint # deprecated
+    - testpackage
+    - wrapcheck
+    - wsl
+
+linters-settings:
+  depguard:
+    rules:
+      main:
+        deny:
+          - pkg: "github.com/pkg/errors"
+            desc: "Use standard library errors package or fmt.Errorf with %w"
+  
+  dogsled:
+    # Maximum number of blank identifiers in assignment
+    max-blank-identifiers: 2
+  
+  dupl:
+    # Minimum lines to consider as duplicate
+    threshold: 100
+  
+  errcheck:
+    # Report about not checking errors in type assertions
+    check-type-assertions: true
+    # Report about assignment of errors to blank identifier
+    check-blank: true
+  
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/jontk/slurm-client)
+  
+  gocognit:
+    # Minimal cognitive complexity to report
+    min-complexity: 30
+  
+  goconst:
+    # Minimal length of string constant
+    min-len: 3
+    # Minimal occurrences count to trigger
+    min-occurrences: 3
+  
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+  
+  gocyclo:
+    # Minimal cyclomatic complexity to report
+    min-complexity: 15
+  
+  gofmt:
+    # Simplify code
+    simplify: true
+  
+  goimports:
+    # Put local imports after 3rd party packages
+    local-prefixes: github.com/jontk/slurm-client
+  
+  gosec:
+    excludes:
+      - G104 # Duplicated errcheck
+      - G307 # Duplicated errcheck on file defer Close()
+  
+  lll:
+    # Maximum line length
+    line-length: 120
+    # Tab counts as X characters
+    tab-width: 1
+  
+  misspell:
+    # Locale to use
+    locale: US
+  
+  nakedret:
+    # Maximum length of function to check for naked returns
+    max-func-lines: 30
+  
+  prealloc:
+    # Report preallocation suggestions only on simple loops
+    simple: true
+    range-loops: true
+    for-loops: false
+  
+  revive:
+    # Confidence level
+    confidence: 0
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
+      - name: unreachable-code
+      - name: redefines-builtin-id
+  
+  stylecheck:
+    # Check all exported identifiers
+    checks: ["all", "-ST1003"]
+    # Treat initialisms as words
+    initialisms: ["ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "JWT", "QPS", "RAM", "RPC", "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "GID", "UID", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS", "SLURM", "QOS"]
+  
+  unparam:
+    # Report unused function parameters
+    check-exported: false
+
+issues:
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - goconst
+    
+    # Exclude known issues in generated files
+    - path: (wrapper|client|managers)\.go
+      linters:
+        - gocyclo
+        - gocognit
+        - lll
+        - funlen
+    
+    # Exclude lll in long function declarations
+    - source: "^//go:generate "
+      linters:
+        - lll
+    
+    # Exclude certain rules for example code
+    - path: examples/
+      linters:
+        - errcheck
+        - ineffassign
+        - staticcheck
+  
+  # Maximum issues count per one linter
+  max-issues-per-linter: 0
+  
+  # Maximum count of issues with the same text
+  max-same-issues: 0
+  
+  # Show only new issues created after git revision
+  # new-from-rev: origin/main
