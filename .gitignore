@@ -124,3 +124,24 @@ hive-mind-prompt-*.txt
 .roo
 .roomodes
 memory/
+.claude-flow/
+
+# Build artifacts from test commands
+cmd/comprehensive-adapter-test/adapter-test
+cmd/comprehensive-adapter-test/comprehensive-adapter-test
+cmd/adapter-test/adapter-test
+cmd/adapter-analysis/adapter-analysis
+cmd/benchmark/benchmark
+cmd/simple-adapter-test/simple-adapter-test
+cmd/slurm-cli/slurm-cli
+cmd/test-both-implementations/test-both-implementations
+cmd/test-error-handling/test-error-handling
+cmd/test-lazy-init/test-lazy-init
+cmd/test-wrapper/test-wrapper
+cmd/verify-integration/verify-integration
+cmd/version-test/version-test
+
+# Temporary files
+dependencies.txt
+fix_v41_adapters.sh
+update_v41_error_handling.sh
