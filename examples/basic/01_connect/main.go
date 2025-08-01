@@ -10,12 +10,12 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/pkg/auth"
-	"golang.org/x/time/rate"
 )
 
 func main() {
@@ -51,15 +51,32 @@ func basicExample(ctx context.Context) {
 	defer client.Close()
 
 	// Test the connection
-	info, err := client.Info().Ping(ctx)
+	err = client.Info().Ping(ctx)
 	if err != nil {
 		log.Printf("Failed to ping server: %v", err)
 		return
 	}
 
+	// Get cluster information
+	info, err := client.Info().Get(ctx)
+	if err != nil {
+		log.Printf("Failed to get cluster info: %v", err)
+		return
+	}
+
 	fmt.Printf("Connected to SLURM REST API\n")
-	fmt.Printf("API Version: %s\n", info.Meta.Plugin.Version)
-	fmt.Printf("SLURM Version: %s\n", info.Meta.Slurm.Version)
+	fmt.Printf("Cluster Name: %s\n", info.ClusterName)
+	fmt.Printf("SLURM Version: %s\n", info.Version)
+	fmt.Printf("SLURM Release: %s\n", info.Release)
+
+	// Get version info
+	versionInfo, err := client.Info().Version(ctx)
+	if err != nil {
+		log.Printf("Failed to get version info: %v", err)
+		return
+	}
+	fmt.Printf("API Version: %s\n", versionInfo.Version)
+	fmt.Printf("API Release: %s\n", versionInfo.Release)
 }
 
 func envExample(ctx context.Context) {
@@ -90,17 +107,17 @@ func advancedExample(ctx context.Context) {
 		
 		// Configure retry behavior
 		slurm.WithMaxRetries(5),
-		slurm.WithRetryWaitMin(1*time.Second),
-		slurm.WithRetryWaitMax(30*time.Second),
 		
-		// Set rate limiting
-		slurm.WithRateLimiter(rate.NewLimiter(10, 1)), // 10 requests/second
-		
-		// Custom TLS configuration
-		slurm.WithTLSConfig(&tls.Config{
-			MinVersion: tls.VersionTLS12,
-			// Only for development/testing
-			InsecureSkipVerify: true,
+		// Custom HTTP client with TLS configuration
+		slurm.WithHTTPClient(&http.Client{
+			Timeout: 30 * time.Second,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					MinVersion: tls.VersionTLS12,
+					// Only for development/testing
+					InsecureSkipVerify: true,
+				},
+			},
 		}),
 		
 		// Force specific API version
@@ -131,14 +148,14 @@ func authExample(ctx context.Context) {
 		fmt.Println("✓ JWT Token authentication configured")
 	}
 
-	// API Key Authentication
-	apiKeyClient, err := slurm.NewClient(ctx,
+	// User Token Authentication
+	userTokenClient, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL(baseURL),
-		slurm.WithAuth(auth.NewAPIKeyAuth("X-SLURM-Token", "your-api-key")),
+		slurm.WithUserToken("username", "user-token"),
 	)
 	if err == nil {
-		defer apiKeyClient.Close()
-		fmt.Println("✓ API Key authentication configured")
+		defer userTokenClient.Close()
+		fmt.Println("✓ User Token authentication configured")
 	}
 
 	// Basic Authentication
@@ -151,13 +168,13 @@ func authExample(ctx context.Context) {
 		fmt.Println("✓ Basic authentication configured")
 	}
 
-	// Certificate Authentication
-	certAuthClient, err := slurm.NewClient(ctx,
+	// No Authentication (for public endpoints)
+	noAuthClient, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL(baseURL),
-		slurm.WithAuth(auth.NewCertAuth("/path/to/cert.pem", "/path/to/key.pem")),
+		slurm.WithNoAuth(),
 	)
 	if err == nil {
-		defer certAuthClient.Close()
-		fmt.Println("✓ Certificate authentication configured")
+		defer noAuthClient.Close()
+		fmt.Println("✓ No authentication configured (public endpoints only)")
 	}
 }

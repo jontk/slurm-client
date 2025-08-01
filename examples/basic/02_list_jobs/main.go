@@ -12,7 +12,6 @@ import (
 
 	"github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/pkg/auth"
-	"github.com/jontk/slurm-client/pkg/types"
 )
 
 func main() {
@@ -49,113 +48,118 @@ func main() {
 	paginatedList(ctx, client)
 }
 
-func listAllJobs(ctx context.Context, client *slurm.Client) {
-	jobs, err := client.Jobs().List(ctx, nil)
+func listAllJobs(ctx context.Context, client slurm.SlurmClient) {
+	jobList, err := client.Jobs().List(ctx, nil)
 	if err != nil {
 		log.Printf("Failed to list jobs: %v", err)
 		return
 	}
 
-	fmt.Printf("Total jobs: %d\n", len(jobs))
+	fmt.Printf("Total jobs: %d\n", jobList.Total)
 	
 	// Display first 5 jobs
-	for i, job := range jobs {
+	for i, job := range jobList.Jobs {
 		if i >= 5 {
 			break
 		}
-		fmt.Printf("Job %d: %s (User: %s, State: %s)\n",
-			job.JobID, job.Name, job.UserName, job.State)
+		fmt.Printf("Job %s: %s (User: %s, State: %s)\n",
+			job.ID, job.Name, job.UserID, job.State)
 	}
 }
 
-func filterByState(ctx context.Context, client *slurm.Client) {
+func filterByState(ctx context.Context, client slurm.SlurmClient) {
 	// Filter for running and pending jobs
-	filters := &types.JobFilters{
+	opts := &slurm.ListJobsOptions{
 		States: []string{"RUNNING", "PENDING"},
 	}
 
-	jobs, err := client.Jobs().List(ctx, filters)
+	jobList, err := client.Jobs().List(ctx, opts)
 	if err != nil {
 		log.Printf("Failed to filter jobs: %v", err)
 		return
 	}
 
-	fmt.Printf("Running/Pending jobs: %d\n", len(jobs))
-	for _, job := range jobs {
-		fmt.Printf("- Job %d: %s (State: %s, Nodes: %d)\n",
-			job.JobID, job.Name, job.State, job.NodeCount)
+	fmt.Printf("Running/Pending jobs: %d\n", jobList.Total)
+	for _, job := range jobList.Jobs {
+		fmt.Printf("- Job %s: %s (State: %s, Nodes: %d)\n",
+			job.ID, job.Name, job.State, len(job.Nodes))
 	}
 }
 
-func filterByUser(ctx context.Context, client *slurm.Client) {
-	// Filter jobs for specific users
-	filters := &types.JobFilters{
-		Users: []string{"alice", "bob"},
+func filterByUser(ctx context.Context, client slurm.SlurmClient) {
+	// Filter jobs for specific user
+	// Note: API only supports filtering by one user at a time
+	opts := &slurm.ListJobsOptions{
+		UserID: "alice",
 	}
 
-	jobs, err := client.Jobs().List(ctx, filters)
+	jobList, err := client.Jobs().List(ctx, opts)
 	if err != nil {
 		log.Printf("Failed to filter by user: %v", err)
 		return
 	}
 
-	fmt.Printf("Jobs for alice and bob: %d\n", len(jobs))
-	for _, job := range jobs {
-		fmt.Printf("- Job %d: %s (User: %s)\n",
-			job.JobID, job.Name, job.UserName)
+	fmt.Printf("Jobs for alice: %d\n", jobList.Total)
+	for _, job := range jobList.Jobs {
+		fmt.Printf("- Job %s: %s (User: %s)\n",
+			job.ID, job.Name, job.UserID)
 	}
 }
 
-func advancedFiltering(ctx context.Context, client *slurm.Client) {
+func advancedFiltering(ctx context.Context, client slurm.SlurmClient) {
 	// Complex filtering with multiple criteria
-	filters := &types.JobFilters{
-		States:     []string{"RUNNING"},
-		Partitions: []string{"compute", "gpu"},
-		StartTime:  time.Now().Add(-24 * time.Hour), // Jobs started in last 24h
-		EndTime:    time.Now(),
+	// Note: Can only filter by one partition at a time
+	opts := &slurm.ListJobsOptions{
+		States:    []string{"RUNNING"},
+		Partition: "compute",
 	}
 
-	jobs, err := client.Jobs().List(ctx, filters)
+	jobList, err := client.Jobs().List(ctx, opts)
 	if err != nil {
 		log.Printf("Failed to apply advanced filters: %v", err)
 		return
 	}
 
-	fmt.Printf("Jobs matching advanced criteria: %d\n", len(jobs))
-	for _, job := range jobs {
-		runtime := time.Since(job.StartTime)
-		fmt.Printf("- Job %d: %s (Partition: %s, Runtime: %v)\n",
-			job.JobID, job.Name, job.Partition, runtime.Round(time.Minute))
+	fmt.Printf("Jobs matching advanced criteria: %d\n", jobList.Total)
+	for _, job := range jobList.Jobs {
+		if job.StartTime != nil {
+			runtime := time.Since(*job.StartTime)
+			fmt.Printf("- Job %s: %s (Partition: %s, Runtime: %v)\n",
+				job.ID, job.Name, job.Partition, runtime.Round(time.Minute))
+		} else {
+			fmt.Printf("- Job %s: %s (Partition: %s, Not started)\n",
+				job.ID, job.Name, job.Partition)
+		}
 	}
 }
 
-func paginatedList(ctx context.Context, client *slurm.Client) {
+func paginatedList(ctx context.Context, client slurm.SlurmClient) {
 	// Paginate through jobs
 	pageSize := 10
 	offset := 0
 	totalJobs := 0
 
 	for {
-		opts := &types.ListOptions{
+		opts := &slurm.ListJobsOptions{
 			Limit:  pageSize,
 			Offset: offset,
 		}
 
-		jobs, err := client.Jobs().ListWithOptions(ctx, nil, opts)
+		jobList, err := client.Jobs().List(ctx, opts)
 		if err != nil {
 			log.Printf("Failed to get page: %v", err)
 			break
 		}
 
-		if len(jobs) == 0 {
+		if len(jobList.Jobs) == 0 {
 			break
 		}
 
-		fmt.Printf("Page %d: Retrieved %d jobs\n", (offset/pageSize)+1, len(jobs))
-		totalJobs += len(jobs)
+		fmt.Printf("Page %d: Retrieved %d jobs\n", (offset/pageSize)+1, len(jobList.Jobs))
+		totalJobs += len(jobList.Jobs)
 
 		// Process jobs in this page
-		for _, job := range jobs {
+		for _, job := range jobList.Jobs {
 			// Process each job...
 			_ = job
 		}

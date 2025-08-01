@@ -7,20 +7,6 @@
 run:
   # Timeout for analysis
   timeout: 10m
-  
-  # Skip generated files
-  skip-files:
-    - ".*\\.pb\\.go$"
-    - ".*\\.gen\\.go$"
-    - "internal/api/.*/wrapper\\.go$"
-    - "internal/api/.*/client\\.go$"
-    - "internal/api/.*/managers\\.go$"
-  
-  # Skip directories
-  skip-dirs:
-    - vendor
-    - third_party
-    - testdata
 
 linters:
   enable:
@@ -63,18 +49,12 @@ linters:
   disable:
     # Disable some linters that are too strict or not applicable
     - exhaustive
-    - exhauststruct
     - gochecknoglobals
     - gochecknoinits
     - godot
     - godox
     - goerr113
-    - golint # deprecated
-    - gomnd
-    - interfacer # deprecated
-    - maligned # deprecated
     - nlreturn
-    - scopelint # deprecated
     - testpackage
     - wrapcheck
     - wsl
@@ -208,6 +188,18 @@ linters-settings:
 
 issues:
   # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.gen\\.go$"
+    - "internal/api/.*/wrapper\\.go$"
+    - "internal/api/.*/client\\.go$"
+    - "internal/api/.*/managers\\.go$"
+  
+  exclude-dirs:
+    - vendor
+    - third_party
+    - testdata
+    
   exclude-rules:
     # Exclude some linters from running on tests files
     - path: _test\.go

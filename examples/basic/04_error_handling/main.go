@@ -14,7 +14,7 @@ import (
 
 	"github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/pkg/auth"
-	"github.com/jontk/slurm-client/pkg/types"
+	slurmErrors "github.com/jontk/slurm-client/pkg/errors"
 )
 
 func main() {
@@ -81,22 +81,18 @@ func handleAuthErrors(ctx context.Context) {
 	// Try to list jobs - this should fail with auth error
 	_, err = client.Jobs().List(ctx, nil)
 	if err != nil {
-		var apiErr *types.APIError
-		if errors.As(err, &apiErr) {
-			fmt.Printf("API Error: %s (Code: %s)\n", apiErr.Message, apiErr.ErrorCode)
+		var slurmErr *slurmErrors.SlurmError
+		if errors.As(err, &slurmErr) {
+			fmt.Printf("SLURM Error: %s (Code: %s)\n", slurmErr.Message, slurmErr.Code)
 			
 			// Check specific error types
-			if apiErr.IsAuthError() {
+			switch slurmErr.Code {
+			case slurmErrors.ErrorCodeInvalidCredentials:
 				fmt.Println("This is an authentication error - check your token")
-			} else if apiErr.IsPermissionError() {
+			case slurmErrors.ErrorCodePermissionDenied:
 				fmt.Println("This is a permission error - check your access rights")
-			}
-			
-			// Get HTTP status code
-			if apiErr.StatusCode == 401 {
-				fmt.Println("HTTP 401 Unauthorized")
-			} else if apiErr.StatusCode == 403 {
-				fmt.Println("HTTP 403 Forbidden")
+			case slurmErrors.ErrorCodeUnauthorized:
+				fmt.Println("Unauthorized access")
 			}
 		} else {
 			fmt.Printf("Unexpected error: %v\n", err)
@@ -115,20 +111,20 @@ func handleAPIErrors(ctx context.Context) {
 	defer client.Close()
 
 	// Try to get a non-existent job
-	jobID := 999999
+	jobID := "999999"
 	job, err := client.Jobs().Get(ctx, jobID)
 	if err != nil {
-		var apiErr *types.APIError
-		if errors.As(err, &apiErr) {
-			switch {
-			case apiErr.IsNotFoundError():
-				fmt.Printf("Job %d not found\n", jobID)
-			case apiErr.IsRateLimitError():
-				fmt.Printf("Rate limit exceeded. Retry after: %v\n", apiErr.RetryAfter)
-			case apiErr.IsServerError():
-				fmt.Printf("Server error: %s\n", apiErr.Message)
+		var slurmErr *slurmErrors.SlurmError
+		if errors.As(err, &slurmErr) {
+			switch slurmErr.Code {
+			case slurmErrors.ErrorCodeResourceNotFound:
+				fmt.Printf("Job %s not found\n", jobID)
+			case slurmErrors.ErrorCodeRateLimited:
+				fmt.Printf("Rate limit exceeded\n")
+			case slurmErrors.ErrorCodeServerInternal:
+				fmt.Printf("Server error: %s\n", slurmErr.Message)
 			default:
-				fmt.Printf("API error: %s\n", apiErr.Message)
+				fmt.Printf("API error: %s\n", slurmErr.Message)
 			}
 		}
 		return
@@ -153,7 +149,7 @@ func handleTimeoutErrors(ctx context.Context) {
 	defer cancel()
 
 	// This might timeout
-	jobs, err := client.Jobs().List(timeoutCtx, nil)
+	jobList, err := client.Jobs().List(timeoutCtx, nil)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			fmt.Println("Operation timed out")
@@ -164,7 +160,7 @@ func handleTimeoutErrors(ctx context.Context) {
 		}
 		return
 	}
-	fmt.Printf("Retrieved %d jobs\n", len(jobs))
+	fmt.Printf("Retrieved %d jobs\n", jobList.Total)
 }
 
 func handleRetryAndRecovery(ctx context.Context) {
@@ -173,8 +169,6 @@ func handleRetryAndRecovery(ctx context.Context) {
 		slurm.WithBaseURL("https://localhost:6820"),
 		slurm.WithAuth(auth.NewTokenAuth("your-token")),
 		slurm.WithMaxRetries(3),
-		slurm.WithRetryWaitMin(1*time.Second),
-		slurm.WithRetryWaitMax(10*time.Second),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -182,26 +176,29 @@ func handleRetryAndRecovery(ctx context.Context) {
 	defer client.Close()
 
 	// Implement custom retry logic
-	var jobs []types.Job
+	var jobList *slurm.JobList
 	maxAttempts := 3
 	
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		jobs, err = client.Jobs().List(ctx, nil)
+		jobList, err = client.Jobs().List(ctx, nil)
 		if err == nil {
 			fmt.Printf("Success on attempt %d\n", attempt)
 			break
 		}
 
-		var apiErr *types.APIError
-		if errors.As(err, &apiErr) {
+		var slurmErr *slurmErrors.SlurmError
+		if errors.As(err, &slurmErr) {
 			// Don't retry on client errors
-			if apiErr.StatusCode >= 400 && apiErr.StatusCode < 500 {
+			if slurmErr.Code == slurmErrors.ErrorCodeInvalidRequest ||
+			   slurmErr.Code == slurmErrors.ErrorCodeInvalidCredentials ||
+			   slurmErr.Code == slurmErrors.ErrorCodePermissionDenied {
 				fmt.Printf("Client error (not retrying): %v\n", err)
 				break
 			}
 			
 			// Check if error is retryable
-			if apiErr.IsServerError() || apiErr.IsRateLimitError() {
+			if slurmErr.Code == slurmErrors.ErrorCodeServerInternal ||
+			   slurmErr.Code == slurmErrors.ErrorCodeRateLimited {
 				if attempt < maxAttempts {
 					backoff := time.Duration(attempt) * time.Second
 					fmt.Printf("Attempt %d failed: %v. Retrying in %v...\n", 
@@ -217,7 +214,7 @@ func handleRetryAndRecovery(ctx context.Context) {
 	}
 
 	if err == nil {
-		fmt.Printf("Successfully retrieved %d jobs\n", len(jobs))
+		fmt.Printf("Successfully retrieved %d jobs\n", jobList.Total)
 	}
 }
 
@@ -244,16 +241,16 @@ func robustOperation[T any](
 	log.Printf("%s failed: %v", operationName, err)
 
 	// Analyze error and decide on action
-	var apiErr *types.APIError
-	if errors.As(err, &apiErr) {
-		switch {
-		case apiErr.IsAuthError():
+	var slurmErr *slurmErrors.SlurmError
+	if errors.As(err, &slurmErr) {
+		switch slurmErr.Code {
+		case slurmErrors.ErrorCodeInvalidCredentials:
 			// Could trigger re-authentication here
 			return result, fmt.Errorf("authentication required: %w", err)
-		case apiErr.IsRateLimitError():
+		case slurmErrors.ErrorCodeRateLimited:
 			// Could implement backoff and retry
 			return result, fmt.Errorf("rate limited: %w", err)
-		case apiErr.IsServerError():
+		case slurmErrors.ErrorCodeServerInternal:
 			// Could retry with exponential backoff
 			return result, fmt.Errorf("server error: %w", err)
 		default:
