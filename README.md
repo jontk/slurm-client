@@ -1,8 +1,13 @@
 # Slurm REST API Go Client Library
 
+[![CI](https://github.com/jontk/slurm-client/actions/workflows/ci.yml/badge.svg)](https://github.com/jontk/slurm-client/actions/workflows/ci.yml)
+[![Security](https://github.com/jontk/slurm-client/actions/workflows/security.yml/badge.svg)](https://github.com/jontk/slurm-client/actions/workflows/security.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/jontk/slurm-client.svg)](https://pkg.go.dev/github.com/jontk/slurm-client)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jontk/slurm-client)](https://goreportcard.com/report/github.com/jontk/slurm-client)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/jontk/slurm-client/branch/main/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/jontk/slurm-client)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/jontk/slurm-client)](https://github.com/jontk/slurm-client/blob/main/go.mod)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/jontk/slurm-client/badge)](https://api.securityscorecards.dev/projects/github.com/jontk/slurm-client)
 
 **Production-ready Go client library for SLURM REST API with enterprise-grade multi-version support.**
 

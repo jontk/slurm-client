@@ -4,7 +4,16 @@ This directory contains comprehensive examples demonstrating various features an
 
 ## Quick Start Examples
 
-### Basic Usage
+### 🚀 Basic Examples
+Start here if you're new to the library:
+
+- [`basic/`](basic/) - **Essential examples for beginners**
+  - [Connection & Authentication](basic/01_connect/) - Various ways to connect to SLURM
+  - [Listing Jobs](basic/02_list_jobs/) - Query and filter job information
+  - [Submitting Jobs](basic/03_submit_job/) - Submit different types of jobs
+  - [Error Handling](basic/04_error_handling/) - Robust error handling patterns
+
+### Additional Quick Start
 - [`basic-usage/`](multi-version/basic-usage/) - Simple job submission and monitoring
 - [`job_list_example.go`](job_list_example.go) - Basic job listing example
 
