@@ -25,8 +25,16 @@ type QoS struct {
 	// Time limits
 	GraceTime int // in seconds
 
+	// Hierarchy
+	ParentQoS string
+
 	// Resource limits
 	Limits *QoSLimits
+
+	// TRES limits
+	MaxTRESPerUser    string
+	MaxTRESPerAccount string
+	MaxTRESPerJob     string
 
 	// Allowed entities
 	AllowedAccounts []string
@@ -67,30 +75,38 @@ type QoSLimits struct {
 
 // QoSCreate represents the data needed to create a new QoS
 type QoSCreate struct {
-	Name           string
-	Description    string
-	Priority       int
-	Flags          []string
-	PreemptMode    []string
-	PreemptList    []string
+	Name              string
+	Description       string
+	Priority          int
+	Flags             []string
+	PreemptMode       []string
+	PreemptList       []string
 	PreemptExemptTime *int
-	GraceTime      *int
-	UsageFactor    float64
-	UsageThreshold float64
-	Limits         *QoSLimits
+	GraceTime         int // Changed to non-pointer for validation
+	UsageFactor       float64
+	UsageThreshold    float64
+	ParentQoS         string
+	MaxTRESPerUser    string
+	MaxTRESPerAccount string
+	MaxTRESPerJob     string
+	Limits            *QoSLimits
 }
 
 // QoSUpdate represents fields that can be updated on a QoS
 type QoSUpdate struct {
 	Description       *string
 	Priority          *int
-	Flags             []string
-	PreemptMode       *string
+	Flags             *[]string
+	PreemptMode       *[]string
 	PreemptList       []string
 	PreemptExemptTime *int
 	GraceTime         *int
 	UsageFactor       *float64
 	UsageThreshold    *float64
+	ParentQoS         *string
+	MaxTRESPerUser    *string
+	MaxTRESPerAccount *string
+	MaxTRESPerJob     *string
 	Limits            *QoSLimits
 }
 
