@@ -347,3 +347,4 @@ func (a *AssociationAdapter) GetByUserAccount(ctx context.Context, user, account
 	// Return the first matching association
 	return &assocList.Associations[0], nil
 }
+*/

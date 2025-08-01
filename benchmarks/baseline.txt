@@ -1,0 +1,20 @@
+# github.com/jontk/slurm-client/benchmarks [github.com/jontk/slurm-client/benchmarks.test]
+benchmarks/auth_bench_test.go:19:6: ta.Apply undefined (type *auth.TokenAuth has no field or method Apply)
+benchmarks/auth_bench_test.go:24:14: undefined: auth.NewAPIKeyAuth
+benchmarks/auth_bench_test.go:39:6: ba.Apply undefined (type *auth.BasicAuth has no field or method Apply)
+benchmarks/auth_bench_test.go:44:16: undefined: auth.Chain
+benchmarks/auth_bench_test.go:46:8: undefined: auth.NewAPIKeyAuth
+benchmarks/errors_bench_test.go:19:4: too many arguments in call to errors.NewSlurmError
+	have ("github.com/jontk/slurm-client/pkg/errors".ErrorCode, string, map[string]interface{})
+	want ("github.com/jontk/slurm-client/pkg/errors".ErrorCode, string)
+benchmarks/errors_bench_test.go:32:37: too many arguments in call to errors.WrapError
+	have (error, unknown type)
+	want (error)
+benchmarks/errors_bench_test.go:32:44: undefined: errors.ErrorCodeTimeout
+benchmarks/errors_bench_test.go:40:3: too many arguments in call to errors.NewSlurmError
+	have ("github.com/jontk/slurm-client/pkg/errors".ErrorCode, string, nil)
+	want ("github.com/jontk/slurm-client/pkg/errors".ErrorCode, string)
+benchmarks/errors_bench_test.go:45:14: undefined: errors.IsErrorCode
+benchmarks/errors_bench_test.go:45:14: too many errors
+FAIL	github.com/jontk/slurm-client/benchmarks [build failed]
+FAIL

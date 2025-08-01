@@ -156,28 +156,28 @@ jobs:
         prerelease: ${{ needs.validate-tag.outputs.prerelease == 'true' }}
         generate_release_notes: true
 
-  publish-pkg-go-dev:
-    name: Publish to pkg.go.dev
-    needs: create-release
-    runs-on: ubuntu-latest
+  # publish-pkg-go-dev:
+  #   name: Publish to pkg.go.dev
+  #   needs: create-release
+  #   runs-on: ubuntu-latest
     
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version-file: 'go.mod'
-        cache: true
+  #   - name: Set up Go
+  #     uses: actions/setup-go@v5
+  #     with:
+  #       go-version-file: 'go.mod'
+  #       cache: true
 
-    - name: Trigger pkg.go.dev indexing
-      run: |
-        # pkg.go.dev will automatically index the module when we access it
-        MODULE_PATH=$(go list -m)
-        VERSION="${{ needs.validate-tag.outputs.version }}"
-        curl -s "https://pkg.go.dev/${MODULE_PATH}@${VERSION}" > /dev/null || true
-        echo "Triggered indexing for ${MODULE_PATH}@${VERSION}"
+  #   - name: Trigger pkg.go.dev indexing
+  #     run: |
+  #       # pkg.go.dev will automatically index the module when we access it
+  #       MODULE_PATH=$(go list -m)
+  #       VERSION="${{ needs.validate-tag.outputs.version }}"
+  #       curl -s "https://pkg.go.dev/${MODULE_PATH}@${VERSION}" > /dev/null || true
+  #       echo "Triggered indexing for ${MODULE_PATH}@${VERSION}"
 
   update-documentation:
     name: Update Documentation

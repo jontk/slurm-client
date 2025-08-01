@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
+# SPDX-License-Identifier: Apache-2.0
+
+# CODEOWNERS for slurm-client
+# This file defines who is responsible for code in this repository.
+# https://help.github.com/articles/about-codeowners/
+
+# Default owners for everything in the repo
+# These owners will be requested for review when someone opens a pull request
+* @jontk
+
+# Core library code
+/pkg/ @jontk
+/internal/ @jontk
+/interfaces/ @jontk
+
+# Authentication and security-sensitive code
+/pkg/auth/ @jontk
+/pkg/security/ @jontk
+SECURITY.md @jontk
+
+# API version implementations
+/internal/api/v0_0_40/ @jontk
+/internal/api/v0_0_41/ @jontk
+/internal/api/v0_0_42/ @jontk
+/internal/api/v0_0_43/ @jontk
+
+# Build and CI/CD
+/.github/ @jontk
+/Makefile @jontk
+/scripts/ @jontk
+go.mod @jontk
+go.sum @jontk
+
+# Documentation
+/docs/ @jontk
+*.md @jontk
+/examples/ @jontk
+
+# Code generation
+/tools/codegen/ @jontk
+/internal/openapi/ @jontk
+
+# Configuration files
+.golangci.yml @jontk
+.gitignore @jontk
