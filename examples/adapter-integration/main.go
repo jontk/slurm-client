@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
+// SPDX-License-Identifier: Apache-2.0
+
 package main
 
 import (
@@ -54,7 +57,6 @@ func demonstrateManagerUsage(adapter common.VersionAdapter) {
 	} else {
 		fmt.Printf("   - Found %d QoS entries\n", len(qosList.QoSList))
 	}
-	*/
 	
 	// Job Management
 	fmt.Println("💼 Job Management:")
@@ -72,7 +74,6 @@ func demonstrateManagerUsage(adapter common.VersionAdapter) {
 	} else {
 		fmt.Printf("   - Found %d jobs\n", len(jobList.Jobs))
 	}
-	*/
 	
 	// Partition Management
 	fmt.Println("🗂️  Partition Management:")
@@ -149,7 +150,6 @@ func coordinatedManagerExample(adapter common.VersionAdapter) {
 	}
 	
 	fmt.Printf("✅ Job submitted successfully: ID %d\n", jobResponse.JobID)
-	*/
 	
 	fmt.Println("   - This example shows how managers work together")
 	fmt.Println("   - Each manager handles its domain while sharing the same API client")

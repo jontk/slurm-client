@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
+// SPDX-License-Identifier: Apache-2.0
+
 package v0_0_41
 
 import (
@@ -311,7 +314,6 @@ func (a *AssociationAdapter) Delete(ctx context.Context, id string) error {
 // 	if limits.MaxSubmitJobs != nil {
 // 		update.MaxSubmitJobs = limits.MaxSubmitJobs
 // 	}
-// */
 // 	if limits.MaxTRES != nil {
 // 		// Convert TRES map to string format
 // 		tresStr := formatTRESMap(limits.MaxTRES)

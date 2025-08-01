@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
+// SPDX-License-Identifier: Apache-2.0
+
 package types
 
 // Request type aliases for backward compatibility and adapter usage

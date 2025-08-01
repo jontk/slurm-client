@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
+// SPDX-License-Identifier: Apache-2.0
+
 // +build integration
 
 package v0_0_43
@@ -460,7 +463,6 @@ func setupIntegrationClient(t *testing.T) *WrapperClient {
 	}
 
 	return &WrapperClient{apiClient: client}
-	*/
 
 	// For now, skip integration tests
 	return nil

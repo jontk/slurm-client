@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
+// SPDX-License-Identifier: Apache-2.0
+
 // Package slurm provides client options for configuring the SLURM REST API client
 package slurm
 
