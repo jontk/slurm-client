@@ -17,6 +17,7 @@ type Adapter struct {
 	userAdapter          *UserAdapter
 	reservationAdapter   *ReservationAdapter
 	associationAdapter   *AssociationAdapter
+	standaloneAdapter    *StandaloneAdapter
 }
 
 // NewAdapter creates a new v0.0.42 adapter
@@ -32,6 +33,7 @@ func NewAdapter(client *api.ClientWithResponses) *Adapter {
 		userAdapter:          NewUserAdapter(client),
 		reservationAdapter:   NewReservationAdapter(client),
 		associationAdapter:   NewAssociationAdapter(client),
+		standaloneAdapter:    NewStandaloneAdapter(client),
 	}
 }
 
@@ -78,4 +80,9 @@ func (a *Adapter) GetReservationManager() common.ReservationAdapter {
 // GetAssociationManager returns the Association adapter for this version
 func (a *Adapter) GetAssociationManager() common.AssociationAdapter {
 	return a.associationAdapter
+}
+
+// GetStandaloneManager returns the Standalone adapter for this version
+func (a *Adapter) GetStandaloneManager() common.StandaloneAdapter {
+	return a.standaloneAdapter
 }

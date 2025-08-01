@@ -17,6 +17,9 @@ type VersionAdapter interface {
 	GetAccountManager() AccountAdapter
 	GetUserManager() UserAdapter
 	GetAssociationManager() AssociationAdapter
+	
+	// Standalone operations (non-CRUD)
+	GetStandaloneManager() StandaloneAdapter
 }
 
 // QoSAdapter defines the interface for QoS operations across all versions
@@ -102,4 +105,37 @@ type AssociationAdapter interface {
 	Create(ctx context.Context, association *types.AssociationCreate) (*types.AssociationCreateResponse, error)
 	Update(ctx context.Context, associationID string, update *types.AssociationUpdate) error
 	Delete(ctx context.Context, associationID string) error
+}
+
+// StandaloneAdapter defines the interface for standalone operations (non-CRUD)
+type StandaloneAdapter interface {
+	// GetLicenses retrieves license information
+	GetLicenses(ctx context.Context) (*types.LicenseList, error)
+	
+	// GetShares retrieves fairshare information with optional filtering
+	GetShares(ctx context.Context, opts *types.GetSharesOptions) (*types.SharesList, error)
+	
+	// GetConfig retrieves SLURM configuration
+	GetConfig(ctx context.Context) (*types.Config, error)
+	
+	// GetDiagnostics retrieves SLURM diagnostics information
+	GetDiagnostics(ctx context.Context) (*types.Diagnostics, error)
+	
+	// GetDBDiagnostics retrieves SLURM database diagnostics information
+	GetDBDiagnostics(ctx context.Context) (*types.Diagnostics, error)
+	
+	// GetInstance retrieves a specific database instance
+	GetInstance(ctx context.Context, opts *types.GetInstanceOptions) (*types.Instance, error)
+	
+	// GetInstances retrieves multiple database instances with filtering
+	GetInstances(ctx context.Context, opts *types.GetInstancesOptions) (*types.InstanceList, error)
+	
+	// GetTRES retrieves all TRES (Trackable RESources)
+	GetTRES(ctx context.Context) (*types.TRESList, error)
+	
+	// CreateTRES creates a new TRES entry
+	CreateTRES(ctx context.Context, req *types.CreateTRESRequest) (*types.TRES, error)
+	
+	// Reconfigure triggers a SLURM reconfiguration
+	Reconfigure(ctx context.Context) (*types.ReconfigureResponse, error)
 }
