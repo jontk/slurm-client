@@ -123,6 +123,7 @@ func testJobEndpoints(client interfaces.SlurmClient, version string) {
 	fmt.Println("Testing: Submit Job")
 	submitJob := &interfaces.JobSubmission{
 		Name:      fmt.Sprintf("adapter-test-%s-%d", version, time.Now().Unix()),
+		Account:   "default", // Required for SLURM v0.0.43
 		Partition: "normal",
 		Script:    "#!/bin/bash\necho 'Adapter test job'\nhostname\ndate\nsleep 5",
 		TimeLimit: 1,

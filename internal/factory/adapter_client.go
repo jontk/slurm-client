@@ -253,6 +253,7 @@ func (m *adapterJobManager) Submit(ctx context.Context, job *interfaces.JobSubmi
 	priority := int32(job.Priority)
 	submission := &types.JobCreate{
 		Name:             job.Name,
+		Account:          job.Account,
 		Script:           job.Script,
 		Command:          job.Command,
 		Partition:        job.Partition,  

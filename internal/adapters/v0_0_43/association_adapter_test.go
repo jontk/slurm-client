@@ -11,7 +11,7 @@ import (
 
 func TestAssociationAdapter_ValidateAssociationCreate(t *testing.T) {
 	adapter := &AssociationAdapter{
-		AssociationBaseManager: base.NewAssociationBaseManager("v0.0.43"),
+		BaseManager: base.NewBaseManager("v0.0.43", "Association"),
 	}
 
 	tests := []struct {
@@ -29,7 +29,7 @@ func TestAssociationAdapter_ValidateAssociationCreate(t *testing.T) {
 		{
 			name: "empty account",
 			association: &types.AssociationCreate{
-				Account: "",
+				AccountName: "",
 				Cluster: "main",
 			},
 			wantErr: true,
@@ -38,7 +38,7 @@ func TestAssociationAdapter_ValidateAssociationCreate(t *testing.T) {
 		{
 			name: "empty cluster",
 			association: &types.AssociationCreate{
-				Account: "physics",
+				AccountName: "physics",
 				Cluster: "",
 			},
 			wantErr: true,
@@ -47,7 +47,7 @@ func TestAssociationAdapter_ValidateAssociationCreate(t *testing.T) {
 		{
 			name: "negative max jobs",
 			association: &types.AssociationCreate{
-				Account: "physics",
+				AccountName: "physics",
 				Cluster: "main",
 				MaxJobs: -10,
 			},
@@ -57,7 +57,7 @@ func TestAssociationAdapter_ValidateAssociationCreate(t *testing.T) {
 		{
 			name: "negative max CPUs",
 			association: &types.AssociationCreate{
-				Account: "physics",
+				AccountName: "physics",
 				Cluster: "main",
 				MaxCPUs: -100,
 			},
@@ -67,7 +67,7 @@ func TestAssociationAdapter_ValidateAssociationCreate(t *testing.T) {
 		{
 			name: "negative max nodes",
 			association: &types.AssociationCreate{
-				Account:  "physics",
+				AccountName:  "physics",
 				Cluster:  "main",
 				MaxNodes: -5,
 			},
@@ -75,21 +75,21 @@ func TestAssociationAdapter_ValidateAssociationCreate(t *testing.T) {
 			errMsg:  "must be non-negative",
 		},
 		{
-			name: "negative max wall duration",
+			name: "negative max wall time",
 			association: &types.AssociationCreate{
-				Account:         "physics",
-				Cluster:         "main",
-				MaxWallDuration: -3600,
+				AccountName:  "physics",
+				Cluster:      "main",
+				MaxWallTime:  -3600,
 			},
 			wantErr: true,
 			errMsg:  "must be non-negative",
 		},
 		{
-			name: "negative fair share",
+			name: "negative shares raw",
 			association: &types.AssociationCreate{
-				Account:   "physics",
-				Cluster:   "main",
-				FairShare: -100,
+				AccountName: "physics",
+				Cluster:     "main",
+				SharesRaw:   -100,
 			},
 			wantErr: true,
 			errMsg:  "must be non-negative",
@@ -97,7 +97,7 @@ func TestAssociationAdapter_ValidateAssociationCreate(t *testing.T) {
 		{
 			name: "negative priority",
 			association: &types.AssociationCreate{
-				Account:  "physics",
+				AccountName:  "physics",
 				Cluster:  "main",
 				Priority: -50,
 			},
@@ -107,7 +107,7 @@ func TestAssociationAdapter_ValidateAssociationCreate(t *testing.T) {
 		{
 			name: "valid basic association",
 			association: &types.AssociationCreate{
-				Account: "physics",
+				AccountName: "physics",
 				Cluster: "main",
 			},
 			wantErr: false,
@@ -115,7 +115,7 @@ func TestAssociationAdapter_ValidateAssociationCreate(t *testing.T) {
 		{
 			name: "valid association with user",
 			association: &types.AssociationCreate{
-				Account: "physics",
+				AccountName: "physics",
 				Cluster: "main",
 				User:    "researcher1",
 			},
@@ -124,11 +124,11 @@ func TestAssociationAdapter_ValidateAssociationCreate(t *testing.T) {
 		{
 			name: "valid complex association",
 			association: &types.AssociationCreate{
-				Account:         "physics",
+				AccountName:         "physics",
 				Cluster:         "main",
 				User:            "researcher1",
 				Partition:       "compute",
-				ParentAccount:   "science",
+				ParentAccountName:   "science",
 				DefaultQoS:      "normal",
 				QoSList:         []string{"normal", "high", "debug"},
 				MaxJobs:         100,
@@ -147,7 +147,7 @@ func TestAssociationAdapter_ValidateAssociationCreate(t *testing.T) {
 		{
 			name: "invalid QoS in list",
 			association: &types.AssociationCreate{
-				Account: "physics",
+				AccountName: "physics",
 				Cluster: "main",
 				QoSList: []string{"normal", "", "high"},
 			},
@@ -157,7 +157,7 @@ func TestAssociationAdapter_ValidateAssociationCreate(t *testing.T) {
 		{
 			name: "duplicate QoS in list",
 			association: &types.AssociationCreate{
-				Account: "physics",
+				AccountName: "physics",
 				Cluster: "main",
 				QoSList: []string{"normal", "high", "normal"},
 			},
@@ -167,7 +167,7 @@ func TestAssociationAdapter_ValidateAssociationCreate(t *testing.T) {
 		{
 			name: "default QoS not in QoS list",
 			association: &types.AssociationCreate{
-				Account:    "physics",
+				AccountName:    "physics",
 				Cluster:    "main",
 				DefaultQoS: "premium",
 				QoSList:    []string{"normal", "high"},
@@ -203,15 +203,15 @@ func TestAssociationAdapter_ApplyAssociationDefaults(t *testing.T) {
 		{
 			name: "apply defaults to minimal association",
 			input: &types.AssociationCreate{
-				Account: "physics",
+				AccountName: "physics",
 				Cluster: "main",
 			},
 			expected: &types.AssociationCreate{
-				Account:         "physics",
+				AccountName:         "physics",
 				Cluster:         "main",
 				User:            "",                       // Empty user (account-level)
 				Partition:       "",                       // No partition restriction
-				ParentAccount:   "",                       // No parent account
+				ParentAccountName:   "",                       // No parent account
 				DefaultQoS:      "",                       // No default QoS
 				QoSList:         []string{},               // Empty QoS list
 				MaxJobs:         0,                        // Unlimited
@@ -229,11 +229,11 @@ func TestAssociationAdapter_ApplyAssociationDefaults(t *testing.T) {
 		{
 			name: "preserve existing values",
 			input: &types.AssociationCreate{
-				Account:         "physics",
+				AccountName:         "physics",
 				Cluster:         "main",
 				User:            "researcher1",
 				Partition:       "compute",
-				ParentAccount:   "science",
+				ParentAccountName:   "science",
 				DefaultQoS:      "normal",
 				QoSList:         []string{"normal", "high"},
 				MaxJobs:         50,
@@ -248,11 +248,11 @@ func TestAssociationAdapter_ApplyAssociationDefaults(t *testing.T) {
 				GrpWall:         86400,
 			},
 			expected: &types.AssociationCreate{
-				Account:         "physics",
+				AccountName:         "physics",
 				Cluster:         "main",
 				User:            "researcher1",
 				Partition:       "compute",
-				ParentAccount:   "science",
+				ParentAccountName:   "science",
 				DefaultQoS:      "normal",
 				QoSList:         []string{"normal", "high"},
 				MaxJobs:         50,
@@ -284,7 +284,7 @@ func TestAssociationAdapter_FilterAssociationList(t *testing.T) {
 
 	associations := []types.Association{
 		{
-			Account:    "physics",
+			AccountName:    "physics",
 			Cluster:    "main",
 			User:       "alice",
 			Partition:  "compute",
@@ -295,7 +295,7 @@ func TestAssociationAdapter_FilterAssociationList(t *testing.T) {
 			FairShare:  1000,
 		},
 		{
-			Account:    "chemistry",
+			AccountName:    "chemistry",
 			Cluster:    "main",
 			User:       "bob",
 			Partition:  "gpu",
@@ -306,7 +306,7 @@ func TestAssociationAdapter_FilterAssociationList(t *testing.T) {
 			FairShare:  2000,
 		},
 		{
-			Account:    "physics",
+			AccountName:    "physics",
 			Cluster:    "backup",
 			User:       "charlie",
 			Partition:  "compute",
@@ -317,7 +317,7 @@ func TestAssociationAdapter_FilterAssociationList(t *testing.T) {
 			FairShare:  500,
 		},
 		{
-			Account:   "admin",
+			AccountName:   "admin",
 			Cluster:   "main",
 			User:      "",  // Account-level association
 			Partition: "",
@@ -766,10 +766,10 @@ func TestAssociationAdapter_ValidateHierarchy(t *testing.T) {
 
 	// Mock existing associations for hierarchy validation
 	existingAssociations := []types.Association{
-		{Account: "root", Cluster: "main", User: "", ParentAccount: ""},
-		{Account: "science", Cluster: "main", User: "", ParentAccount: "root"},
-		{Account: "physics", Cluster: "main", User: "", ParentAccount: "science"},
-		{Account: "chemistry", Cluster: "main", User: "", ParentAccount: "science"},
+		{AccountName: "root", Cluster: "main", User: "", ParentAccountName: ""},
+		{AccountName: "science", Cluster: "main", User: "", ParentAccountName: "root"},
+		{AccountName: "physics", Cluster: "main", User: "", ParentAccountName: "science"},
+		{AccountName: "chemistry", Cluster: "main", User: "", ParentAccountName: "science"},
 	}
 
 	tests := []struct {
@@ -782,40 +782,40 @@ func TestAssociationAdapter_ValidateHierarchy(t *testing.T) {
 		{
 			name:          "valid hierarchy",
 			account:       "biophysics",
-			parentAccount: "physics",
+			parentAccountName: "physics",
 			wantErr:       false,
 		},
 		{
 			name:          "root account (no parent)",
 			account:       "newroot",
-			parentAccount: "",
+			parentAccountName: "",
 			wantErr:       false,
 		},
 		{
 			name:          "self as parent",
 			account:       "physics",
-			parentAccount: "physics",
+			parentAccountName: "physics",
 			wantErr:       true,
 			errMsg:        "account cannot be its own parent",
 		},
 		{
 			name:          "circular reference",
 			account:       "science",
-			parentAccount: "physics", // physics is already a child of science
+			parentAccountName: "physics", // physics is already a child of science
 			wantErr:       true,
 			errMsg:        "would create circular reference",
 		},
 		{
 			name:          "parent account does not exist",
 			account:       "newaccount",
-			parentAccount: "nonexistent",
+			parentAccountName: "nonexistent",
 			wantErr:       true,
 			errMsg:        "parent account does not exist",
 		},
 		{
 			name:          "valid existing parent",
 			account:       "theoretical-physics",
-			parentAccount: "physics",
+			parentAccountName: "physics",
 			wantErr:       false,
 		},
 	}

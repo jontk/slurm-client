@@ -288,6 +288,7 @@ type JobList struct {
 // JobSubmission represents a job submission request
 type JobSubmission struct {
 	Name        string            `json:"name"`
+	Account     string            `json:"account,omitempty"`
 	Script      string            `json:"script,omitempty"`
 	Command     string            `json:"command,omitempty"`
 	Args        []string          `json:"args,omitempty"`
