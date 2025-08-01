@@ -192,7 +192,7 @@ func (a *QoSAdapter) convertCommonQoSCreateToAPI(create *types.QoSCreate) (*api.
 	}
 
 	// Convert limits if provided
-	if create.Limits != nil || create.GraceTime != nil {
+	if create.Limits != nil || create.GraceTime != 0 {
 		apiQoS.Limits = &struct {
 			Factor    *api.V0043Float64NoValStruct `json:"factor,omitempty"`
 			GraceTime *int32                       `json:"grace_time,omitempty"`
@@ -256,8 +256,8 @@ func (a *QoSAdapter) convertCommonQoSCreateToAPI(create *types.QoSCreate) (*api.
 		}{}
 
 		// Set grace time
-		if create.GraceTime != nil {
-			graceTime := int32(*create.GraceTime)
+		if create.GraceTime != 0 {
+			graceTime := int32(create.GraceTime)
 			apiQoS.Limits.GraceTime = &graceTime
 		}
 
@@ -412,8 +412,8 @@ func (a *QoSAdapter) convertCommonQoSUpdateToAPI(existing *types.QoS, update *ty
 
 	// Flags
 	flags := existing.Flags
-	if len(update.Flags) > 0 {
-		flags = update.Flags
+	if update.Flags != nil && len(*update.Flags) > 0 {
+		flags = *update.Flags
 	}
 	if len(flags) > 0 {
 		apiFlags := make([]api.V0043QosFlags, 0, len(flags))
@@ -425,8 +425,8 @@ func (a *QoSAdapter) convertCommonQoSUpdateToAPI(existing *types.QoS, update *ty
 
 	// Preempt mode
 	preemptMode := existing.PreemptMode
-	if update.PreemptMode != nil {
-		preemptMode = *update.PreemptMode
+	if update.PreemptMode != nil && len(*update.PreemptMode) > 0 {
+		preemptMode = (*update.PreemptMode)[0]
 	}
 	if preemptMode != "" {
 		modes := []api.V0043QosPreemptMode{api.V0043QosPreemptMode(preemptMode)}

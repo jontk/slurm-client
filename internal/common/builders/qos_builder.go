@@ -72,7 +72,7 @@ func (b *QoSBuilder) WithGraceTime(seconds int) *QoSBuilder {
 		b.addError(fmt.Errorf("grace time must be non-negative, got %d", seconds))
 		return b
 	}
-	b.qos.GraceTime = &seconds
+	b.qos.GraceTime = seconds
 	return b
 }
 
@@ -172,16 +172,16 @@ func (b *QoSBuilder) BuildForUpdate() (*types.QoSUpdate, error) {
 		update.Priority = &b.qos.Priority
 	}
 	if len(b.qos.Flags) > 0 {
-		update.Flags = b.qos.Flags
+		update.Flags = &b.qos.Flags
 	}
 	if len(b.qos.PreemptMode) > 0 && b.qos.PreemptMode[0] != "" {
-		update.PreemptMode = &b.qos.PreemptMode[0]
+		update.PreemptMode = &b.qos.PreemptMode
 	}
 	if b.qos.PreemptExemptTime != nil {
 		update.PreemptExemptTime = b.qos.PreemptExemptTime
 	}
-	if b.qos.GraceTime != nil {
-		update.GraceTime = b.qos.GraceTime
+	if b.qos.GraceTime != 0 {
+		update.GraceTime = &b.qos.GraceTime
 	}
 	if b.qos.UsageFactor != 1.0 {
 		update.UsageFactor = &b.qos.UsageFactor
@@ -215,10 +215,7 @@ func (b *QoSBuilder) Clone() *QoSBuilder {
 		v := *b.qos.PreemptExemptTime
 		newBuilder.qos.PreemptExemptTime = &v
 	}
-	if b.qos.GraceTime != nil {
-		v := *b.qos.GraceTime
-		newBuilder.qos.GraceTime = &v
-	}
+	newBuilder.qos.GraceTime = b.qos.GraceTime
 	if b.qos.Limits != nil {
 		// Deep copy limits
 		newBuilder.qos.Limits = b.cloneLimits(b.qos.Limits)

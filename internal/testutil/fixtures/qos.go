@@ -79,7 +79,7 @@ func (f *QoSFixtures) QoSCreateRequest(name string) *types.QoSCreate {
 		Priority:       100,
 		Flags:          []string{"DenyOnLimit"},
 		PreemptMode:    []string{"cluster"},
-		GraceTime:      intPtr(300),
+		GraceTime:      300, // Changed to non-pointer
 		UsageFactor:    1.5,
 		UsageThreshold: 0.8,
 		Limits: &types.QoSLimits{
@@ -94,8 +94,8 @@ func (f *QoSFixtures) QoSUpdateRequest() *types.QoSUpdate {
 	return &types.QoSUpdate{
 		Description:    stringPtr("Updated description"),
 		Priority:       intPtr(200),
-		Flags:          []string{"DenyOnLimit", "RequiresReservation"},
-		PreemptMode:    stringPtr("suspend"),
+		Flags:          &[]string{"DenyOnLimit", "RequiresReservation"},
+		PreemptMode:    &[]string{"suspend"},
 		UsageFactor:    float64Ptr(2.0),
 		UsageThreshold: float64Ptr(0.9),
 		Limits: &types.QoSLimits{
