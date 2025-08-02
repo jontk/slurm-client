@@ -10,7 +10,6 @@ import (
 	"github.com/jontk/slurm-client/internal/common/builders"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/testutil"
-	"github.com/jontk/slurm-client/internal/testutil/mocks"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

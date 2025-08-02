@@ -37,7 +37,7 @@ type EnhancedOptions struct {
 	PoolConfig     *pool.PoolConfig
 	
 	// Retry
-	RetryBackoff retry.BackoffStrategy
+	RetryBackoff retry.Policy
 	MaxRetries   int
 	
 	// HTTP options
@@ -120,7 +120,7 @@ func (f *ClientFactory) WithConnectionPool(config *pool.PoolConfig) error {
 }
 
 // WithRetryBackoff sets a custom retry backoff strategy
-func (f *ClientFactory) WithRetryBackoff(backoff retry.BackoffStrategy) error {
+func (f *ClientFactory) WithRetryBackoff(backoff retry.Policy) error {
 	if f.enhanced == nil {
 		f.enhanced = &EnhancedOptions{}
 	}

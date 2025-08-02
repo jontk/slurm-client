@@ -156,7 +156,7 @@ func WithConnectionPool(config *pool.PoolConfig) ClientOption {
 }
 
 // WithRetryBackoff sets a custom retry backoff strategy
-func WithRetryBackoff(backoff retry.BackoffStrategy) ClientOption {
+func WithRetryBackoff(backoff retry.Policy) ClientOption {
 	return func(f *factory.ClientFactory) error {
 		// TODO: Implement in factory
 		return nil
