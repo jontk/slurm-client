@@ -152,6 +152,21 @@ func TestGetErrorCategory(t *testing.T) {
 			code:     99999,
 			expected: "Unknown",
 		},
+		{
+			name:     "QoS category",
+			code:     5001,
+			expected: "QoS Management",
+		},
+		{
+			name:     "Reservation category", 
+			code:     6001,
+			expected: "Reservation Management",
+		},
+		{
+			name:     "Authentication category",
+			code:     7001,
+			expected: "Authentication",
+		},
 	}
 
 	for _, tt := range tests {
@@ -184,6 +199,21 @@ func TestGetErrorDescription(t *testing.T) {
 			name:     "Unknown error description",
 			code:     99999,
 			expected: "Unknown SLURM error code",
+		},
+		{
+			name:     "QoS not found description",
+			code:     5001,
+			expected: "The requested QoS does not exist",
+		},
+		{
+			name:     "Reservation not found description",
+			code:     6001,
+			expected: "The requested reservation does not exist",
+		},
+		{
+			name:     "Authentication failed description",
+			code:     7001,
+			expected: "Authentication failed - check credentials or token",
 		},
 	}
 

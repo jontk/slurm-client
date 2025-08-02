@@ -316,3 +316,318 @@ func TestPartitionPoller_Watch(t *testing.T) {
 		t.Fatal("Timeout waiting for partition event")
 	}
 }
+
+func TestJobPoller_WithMethods(t *testing.T) {
+	lister := &mockJobLister{}
+	
+	// Test WithPollInterval
+	poller1 := watch.NewJobPoller(lister.List).WithPollInterval(2 * time.Second)
+	assert.NotNil(t, poller1)
+	
+	// Test WithBufferSize
+	poller2 := watch.NewJobPoller(lister.List).WithBufferSize(200)
+	assert.NotNil(t, poller2)
+	
+	// Test chaining
+	poller3 := watch.NewJobPoller(lister.List).
+		WithPollInterval(3 * time.Second).
+		WithBufferSize(300)
+	assert.NotNil(t, poller3)
+}
+
+func TestJobPoller_WatchWithJobCompleted(t *testing.T) {
+	// Create a mock lister
+	lister := &mockJobLister{
+		jobs: []interfaces.Job{
+			{ID: "1", State: "RUNNING", UserID: "1000"},
+			{ID: "2", State: "PENDING", UserID: "1000"},
+		},
+	}
+
+	// Create poller with short interval for testing
+	poller := watch.NewJobPoller(lister.List).WithPollInterval(50 * time.Millisecond)
+
+	// Start watching
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	eventChan, err := poller.Watch(ctx, &interfaces.WatchJobsOptions{
+		ExcludeCompleted: false, // Allow completed events
+	})
+	require.NoError(t, err)
+
+	// Wait for initial events to establish baseline
+	time.Sleep(100 * time.Millisecond)
+
+	// Update mock to simulate job completion (remove job 1)
+	lister.jobs = []interfaces.Job{
+		{ID: "2", State: "PENDING", UserID: "1000"},
+	}
+
+	// Wait for completion event
+	var completedEvent interfaces.JobEvent
+	select {
+	case event := <-eventChan:
+		if event.Type == "job_completed" {
+			completedEvent = event
+		}
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("Expected job completion event")
+	}
+
+	// Verify completion event
+	assert.Equal(t, "job_completed", completedEvent.Type)
+	assert.Equal(t, "1", completedEvent.JobID)
+	assert.Equal(t, "RUNNING", completedEvent.OldState)
+	assert.Equal(t, "COMPLETED", completedEvent.NewState)
+
+	cancel()
+}
+
+func TestJobPoller_WatchWithExcludeNew(t *testing.T) {
+	// Start with empty job list
+	lister := &mockJobLister{
+		jobs: []interfaces.Job{},
+	}
+
+	// Create poller with short interval for testing
+	poller := watch.NewJobPoller(lister.List).WithPollInterval(50 * time.Millisecond)
+
+	// Start watching with ExcludeNew = true
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	eventChan, err := poller.Watch(ctx, &interfaces.WatchJobsOptions{
+		ExcludeNew: true,
+	})
+	require.NoError(t, err)
+
+	// Wait for initial polling
+	time.Sleep(100 * time.Millisecond)
+
+	// Add a new job
+	lister.jobs = []interfaces.Job{
+		{ID: "1", State: "RUNNING", UserID: "1000"},
+	}
+
+	// Wait a bit more - should NOT get new job event
+	select {
+	case event := <-eventChan:
+		if event.Type == "job_new" {
+			t.Fatal("Should not receive job_new event when ExcludeNew is true")
+		}
+	case <-time.After(150 * time.Millisecond):
+		// This is expected - no new job event should be sent
+	}
+
+	cancel()
+}
+
+func TestJobPoller_WatchWithExcludeCompleted(t *testing.T) {
+	// Start with a job
+	lister := &mockJobLister{
+		jobs: []interfaces.Job{
+			{ID: "1", State: "RUNNING", UserID: "1000"},
+		},
+	}
+
+	// Create poller with short interval for testing
+	poller := watch.NewJobPoller(lister.List).WithPollInterval(50 * time.Millisecond)
+
+	// Start watching with ExcludeCompleted = true
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	eventChan, err := poller.Watch(ctx, &interfaces.WatchJobsOptions{
+		ExcludeCompleted: true,
+	})
+	require.NoError(t, err)
+
+	// Wait for initial polling
+	time.Sleep(100 * time.Millisecond)
+
+	// Remove the job (simulate completion)
+	lister.jobs = []interfaces.Job{}
+
+	// Wait a bit more - should NOT get completion event
+	select {
+	case event := <-eventChan:
+		if event.Type == "job_completed" {
+			t.Fatal("Should not receive job_completed event when ExcludeCompleted is true")
+		}
+	case <-time.After(150 * time.Millisecond):
+		// This is expected - no completion event should be sent
+	}
+
+	cancel()
+}
+
+func TestNodePoller_WithMethods(t *testing.T) {
+	mockNodeLister := func(ctx context.Context, opts *interfaces.ListNodesOptions) (*interfaces.NodeList, error) {
+		return &interfaces.NodeList{Nodes: []interfaces.Node{}}, nil
+	}
+	
+	// Test WithPollInterval
+	poller1 := watch.NewNodePoller(mockNodeLister).WithPollInterval(2 * time.Second)
+	assert.NotNil(t, poller1)
+	
+	// Test WithBufferSize
+	poller2 := watch.NewNodePoller(mockNodeLister).WithBufferSize(200)
+	assert.NotNil(t, poller2)
+	
+	// Test chaining
+	poller3 := watch.NewNodePoller(mockNodeLister).
+		WithPollInterval(3 * time.Second).
+		WithBufferSize(300)
+	assert.NotNil(t, poller3)
+}
+
+func TestNodePoller_WatchWithFilteredNodes(t *testing.T) {
+	callCount := 0
+	mockNodeLister := func(ctx context.Context, opts *interfaces.ListNodesOptions) (*interfaces.NodeList, error) {
+		callCount++
+		nodes := []interfaces.Node{
+			{Name: "node1", State: "IDLE"},
+			{Name: "node2", State: "ALLOCATED"},
+			{Name: "node3", State: "DOWN"},
+		}
+		return &interfaces.NodeList{Nodes: nodes}, nil
+	}
+
+	// Create poller with short interval for testing
+	poller := watch.NewNodePoller(mockNodeLister).WithPollInterval(50 * time.Millisecond)
+
+	// Start watching with specific node names
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	eventChan, err := poller.Watch(ctx, &interfaces.WatchNodesOptions{
+		NodeNames: []string{"node1", "node3"}, // Only watch node1 and node3
+	})
+	require.NoError(t, err)
+	require.NotNil(t, eventChan)
+
+	// Wait for initial events - should only get events for node1 and node3
+	time.Sleep(100 * time.Millisecond)
+	
+	// Verify we got API calls
+	assert.Greater(t, callCount, 0)
+
+	cancel()
+}
+
+func TestPartitionPoller_WithMethods(t *testing.T) {
+	mockPartitionLister := func(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error) {
+		return &interfaces.PartitionList{Partitions: []interfaces.Partition{}}, nil
+	}
+	
+	// Test WithPollInterval
+	poller1 := watch.NewPartitionPoller(mockPartitionLister).WithPollInterval(2 * time.Second)
+	assert.NotNil(t, poller1)
+	
+	// Test WithBufferSize
+	poller2 := watch.NewPartitionPoller(mockPartitionLister).WithBufferSize(200)
+	assert.NotNil(t, poller2)
+	
+	// Test chaining
+	poller3 := watch.NewPartitionPoller(mockPartitionLister).
+		WithPollInterval(3 * time.Second).
+		WithBufferSize(300)
+	assert.NotNil(t, poller3)
+}
+
+func TestPartitionPoller_WatchWithFilteredPartitions(t *testing.T) {
+	callCount := 0
+	mockPartitionLister := func(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error) {
+		callCount++
+		partitions := []interfaces.Partition{
+			{Name: "debug", State: "UP"},
+			{Name: "compute", State: "UP"},
+			{Name: "gpu", State: "DOWN"},
+		}
+		return &interfaces.PartitionList{Partitions: partitions}, nil
+	}
+
+	// Create poller with short interval for testing
+	poller := watch.NewPartitionPoller(mockPartitionLister).WithPollInterval(50 * time.Millisecond)
+
+	// Start watching with specific partition names
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	eventChan, err := poller.Watch(ctx, &interfaces.WatchPartitionsOptions{
+		PartitionNames: []string{"debug", "gpu"}, // Only watch debug and gpu
+	})
+	require.NoError(t, err)
+	require.NotNil(t, eventChan)
+
+	// Wait for initial events
+	time.Sleep(100 * time.Millisecond)
+	
+	// Verify we got API calls
+	assert.Greater(t, callCount, 0)
+
+	cancel()
+}
+
+func TestJobPoller_WatchWithNilOptions(t *testing.T) {
+	lister := &mockJobLister{
+		jobs: []interfaces.Job{
+			{ID: "1", State: "RUNNING", UserID: "1000"},
+		},
+	}
+
+	poller := watch.NewJobPoller(lister.List).WithPollInterval(50 * time.Millisecond)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Pass nil options - should not crash
+	eventChan, err := poller.Watch(ctx, nil)
+	require.NoError(t, err)
+	assert.NotNil(t, eventChan)
+
+	// Wait a bit and cancel
+	time.Sleep(100 * time.Millisecond)
+	cancel()
+}
+
+func TestNodePoller_WatchWithNilOptions(t *testing.T) {
+	mockNodeLister := func(ctx context.Context, opts *interfaces.ListNodesOptions) (*interfaces.NodeList, error) {
+		return &interfaces.NodeList{Nodes: []interfaces.Node{{Name: "node1", State: "IDLE"}}}, nil
+	}
+
+	poller := watch.NewNodePoller(mockNodeLister).WithPollInterval(50 * time.Millisecond)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Pass nil options - should not crash
+	eventChan, err := poller.Watch(ctx, nil)
+	require.NoError(t, err)
+	assert.NotNil(t, eventChan)
+
+	// Wait a bit and cancel
+	time.Sleep(100 * time.Millisecond)
+	cancel()
+}
+
+func TestPartitionPoller_WatchWithNilOptions(t *testing.T) {
+	mockPartitionLister := func(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error) {
+		return &interfaces.PartitionList{Partitions: []interfaces.Partition{{Name: "debug", State: "UP"}}}, nil
+	}
+
+	poller := watch.NewPartitionPoller(mockPartitionLister).WithPollInterval(50 * time.Millisecond)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Pass nil options - should not crash
+	eventChan, err := poller.Watch(ctx, nil)
+	require.NoError(t, err)
+	assert.NotNil(t, eventChan)
+
+	// Wait a bit and cancel
+	time.Sleep(100 * time.Millisecond)
+	cancel()
+}

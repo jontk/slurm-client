@@ -45,6 +45,7 @@ func TestSlurmError_Error(t *testing.T) {
 	}
 }
 
+
 func TestSlurmError_Unwrap(t *testing.T) {
 	originalErr := errors.New("original error")
 	slurmErr := NewSlurmErrorWithCause(ErrorCodeNetworkTimeout, "timeout", originalErr)

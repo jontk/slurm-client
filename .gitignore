@@ -145,3 +145,4 @@ cmd/version-test/version-test
 dependencies.txt
 fix_v41_adapters.sh
 update_v41_error_handling.sh
+package-lock.json

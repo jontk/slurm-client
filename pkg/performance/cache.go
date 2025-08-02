@@ -98,6 +98,7 @@ type ResponseCache struct {
 	stats   CacheStats
 	cleanup *time.Ticker
 	stopCh  chan struct{}
+	closed  bool
 }
 
 // NewResponseCache creates a new response cache with the given configuration
@@ -312,10 +313,18 @@ func (c *ResponseCache) GetDetailedStats() DetailedCacheStats {
 
 // Close stops the cache and cleanup goroutine
 func (c *ResponseCache) Close() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	
+	if c.closed {
+		return
+	}
+	
 	if c.cleanup != nil {
 		c.cleanup.Stop()
 	}
 	close(c.stopCh)
+	c.closed = true
 }
 
 // evictLRU removes the least recently used item
