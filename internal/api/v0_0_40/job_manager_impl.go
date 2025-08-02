@@ -1644,8 +1644,8 @@ func convertToJobStepPointers(steps []interfaces.JobStep) []*interfaces.JobStep 
 
 // GetJobCPUAnalytics retrieves minimal CPU performance analysis for a job (v0.0.40 - very limited)
 func (m *JobManagerImpl) GetJobCPUAnalytics(ctx context.Context, jobID string) (*interfaces.CPUAnalytics, error) {
-	// Check if API client is available
-	if m.client.apiClient == nil {
+	// Check if client is available
+	if m.client == nil || m.client.apiClient == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
@@ -1739,8 +1739,8 @@ func (m *JobManagerImpl) GetJobCPUAnalytics(ctx context.Context, jobID string) (
 
 // GetJobMemoryAnalytics retrieves minimal memory performance analysis for a job (v0.0.40 - very limited)
 func (m *JobManagerImpl) GetJobMemoryAnalytics(ctx context.Context, jobID string) (*interfaces.MemoryAnalytics, error) {
-	// Check if API client is available
-	if m.client.apiClient == nil {
+	// Check if client is available
+	if m.client == nil || m.client.apiClient == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
@@ -1832,8 +1832,8 @@ func (m *JobManagerImpl) GetJobMemoryAnalytics(ctx context.Context, jobID string
 
 // GetJobIOAnalytics retrieves minimal I/O performance analysis for a job (v0.0.40 - very limited)
 func (m *JobManagerImpl) GetJobIOAnalytics(ctx context.Context, jobID string) (*interfaces.IOAnalytics, error) {
-	// Check if API client is available
-	if m.client.apiClient == nil {
+	// Check if client is available
+	if m.client == nil || m.client.apiClient == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
@@ -1942,8 +1942,8 @@ func (m *JobManagerImpl) GetJobIOAnalytics(ctx context.Context, jobID string) (*
 
 // GetJobComprehensiveAnalytics retrieves comprehensive performance analysis (v0.0.40 - very limited)
 func (m *JobManagerImpl) GetJobComprehensiveAnalytics(ctx context.Context, jobID string) (*interfaces.JobComprehensiveAnalytics, error) {
-	// Check if API client is available
-	if m.client.apiClient == nil {
+	// Check if client is available
+	if m.client == nil || m.client.apiClient == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 

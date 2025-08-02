@@ -39,7 +39,7 @@ func TestAssociationBaseManager_ValidateAssociationCreate(t *testing.T) {
 				AccountName: "",
 			},
 			wantErr: true,
-			errMsg:  "account name is required",
+			errMsg:  "Association name is required",
 		},
 		{
 			name: "valid user association",

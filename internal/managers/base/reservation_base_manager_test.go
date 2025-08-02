@@ -49,6 +49,7 @@ func TestReservationBaseManager_ValidateReservationCreate(t *testing.T) {
 				StartTime: time.Now(),
 				EndTime:   &[]time.Time{time.Now().Add(6 * time.Hour)}[0],
 				NodeCount: 10,
+				Accounts:  []string{"test-account"}, // Add required account
 			},
 			wantErr: false,
 		},
