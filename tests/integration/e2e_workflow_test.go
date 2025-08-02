@@ -170,7 +170,7 @@ func (suite *E2EWorkflowTestSuite) TestFullJobLifecycle() {
 		Nodes:     1,
 		CPUs:      1,
 		TimeLimit: 10, // 10 minutes
-		QoS:       targetQoS,
+		// QoS field removed from JobSubmission interface
 	}
 
 	response, err := suite.client.Jobs().Submit(ctx, submission)
@@ -385,7 +385,7 @@ func (suite *E2EWorkflowTestSuite) TestResourceRelationshipWorkflow() {
 			Name:      jobName,
 			Script:    "#!/bin/bash\necho 'Testing resource constraints'\nhostname\necho 'Node info:'\nuname -a\necho 'CPU info:'\nlscpu | head -10\nsleep 30",
 			Partition: partition.Name,
-			QoS:       qos.Name,
+			// QoS field removed from JobSubmission interface
 			Nodes:     1,
 			CPUs:      1,
 			TimeLimit: 5,
@@ -402,7 +402,7 @@ func (suite *E2EWorkflowTestSuite) TestResourceRelationshipWorkflow() {
 			job, err := suite.client.Jobs().Get(ctx, response.JobID)
 			suite.Require().NoError(err)
 			suite.Equal(partition.Name, job.Partition)
-			suite.T().Logf("Job created with Partition=%s, QoS=%s", job.Partition, job.QoS)
+			suite.T().Logf("Job created with Partition=%s", job.Partition)
 		}
 	}
 }
@@ -438,7 +438,7 @@ func (suite *E2EWorkflowTestSuite) TestErrorRecoveryWorkflow() {
 			Name:      fmt.Sprintf("%s-invalid-qos", suite.testPrefix),
 			Script:    "#!/bin/bash\necho 'This should fail'",
 			Partition: partitions.Partitions[0].Name,
-			QoS:       "nonexistent-qos-12345",
+			// QoS field removed from JobSubmission interface
 			Nodes:     1,
 			CPUs:      1,
 			TimeLimit: 5,
@@ -466,7 +466,7 @@ func (suite *E2EWorkflowTestSuite) TestErrorRecoveryWorkflow() {
 			suite.T().Logf("Excessive resource error (expected): %v", err)
 		} else {
 			// If it succeeds, cancel it immediately
-			response := err.(*interfaces.JobSubmissionResponse)
+			response := err.(*interfaces.JobSubmitResponse)
 			suite.createdJobs = append(suite.createdJobs, response.JobID)
 			suite.client.Jobs().Cancel(ctx, response.JobID)
 			suite.T().Log("Excessive resource job succeeded (cancelled immediately)")

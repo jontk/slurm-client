@@ -14,11 +14,10 @@ import (
 )
 
 func BenchmarkRetryableCheck(b *testing.B) {
-	client := &retry.Client{
-		RetryMax:     3,
-		RetryWaitMin: 1 * time.Second,
-		RetryWaitMax: 30 * time.Second,
-	}
+	policy := retry.NewHTTPExponentialBackoff().
+		WithMaxRetries(3).
+		WithMinWaitTime(1 * time.Second).
+		WithMaxWaitTime(30 * time.Second)
 
 	// Different response codes to test
 	codes := []int{500, 502, 503, 504, 429, 400, 401, 404}
@@ -30,38 +29,28 @@ func BenchmarkRetryableCheck(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		resp := responses[i%len(responses)]
-		_ = client.CheckRetry(context.Background(), resp, nil)
+		_ = policy.ShouldRetry(context.Background(), resp, nil, 1)
 	}
 }
 
 func BenchmarkBackoffCalculation(b *testing.B) {
-	client := &retry.Client{
-		RetryMax:     5,
-		RetryWaitMin: 1 * time.Second,
-		RetryWaitMax: 30 * time.Second,
-	}
+	policy := retry.NewHTTPExponentialBackoff().
+		WithMaxRetries(5).
+		WithMinWaitTime(1 * time.Second).
+		WithMaxWaitTime(30 * time.Second)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		attempt := i % 5
-		min := float64(client.RetryWaitMin)
-		max := float64(client.RetryWaitMax)
-		
-		// Simulate backoff calculation
-		wait := min * float64(1<<uint(attempt))
-		if wait > max {
-			wait = max
-		}
-		_ = time.Duration(wait)
+		_ = policy.WaitTime(attempt)
 	}
 }
 
 func BenchmarkRetryWithError(b *testing.B) {
-	client := &retry.Client{
-		RetryMax:     3,
-		RetryWaitMin: 1 * time.Millisecond, // Short for benchmarking
-		RetryWaitMax: 10 * time.Millisecond,
-	}
+	policy := retry.NewHTTPExponentialBackoff().
+		WithMaxRetries(3).
+		WithMinWaitTime(1 * time.Millisecond). // Short for benchmarking
+		WithMaxWaitTime(10 * time.Millisecond)
 
 	// Simulate a function that always fails
 	failingFunc := func() (*http.Response, error) {
@@ -74,9 +63,14 @@ func BenchmarkRetryWithError(b *testing.B) {
 		attempts := 0
 		
 		// Simulate retry loop without actual delays
-		for attempts < client.RetryMax {
+		for attempts < policy.MaxRetries() {
 			_, err := failingFunc()
 			if err == nil {
+				break
+			}
+			
+			// Check if we should retry
+			if !policy.ShouldRetry(ctx, nil, err, attempts) {
 				break
 			}
 			attempts++

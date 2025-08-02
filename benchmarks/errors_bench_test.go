@@ -16,10 +16,6 @@ func BenchmarkNewSlurmError(b *testing.B) {
 		_ = errors.NewSlurmError(
 			errors.ErrorCodeInvalidRequest,
 			"Invalid request format",
-			map[string]interface{}{
-				"field":  "job_name",
-				"reason": "too long",
-			},
 		)
 	}
 }
@@ -29,20 +25,19 @@ func BenchmarkWrapError(b *testing.B) {
 	
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = errors.WrapError(originalErr, errors.ErrorCodeTimeout)
+		_ = errors.WrapError(originalErr)
 	}
 }
 
-func BenchmarkIsErrorCode(b *testing.B) {
+func BenchmarkGetErrorCode(b *testing.B) {
 	err := errors.NewSlurmError(
 		errors.ErrorCodeUnauthorized,
 		"Authentication failed",
-		nil,
 	)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = errors.IsErrorCode(err, errors.ErrorCodeUnauthorized)
+		_ = errors.GetErrorCode(err)
 	}
 }
 
@@ -50,10 +45,6 @@ func BenchmarkErrorFormatting(b *testing.B) {
 	err := errors.NewSlurmError(
 		errors.ErrorCodeResourceNotFound,
 		"Job not found",
-		map[string]interface{}{
-			"job_id": 12345,
-			"user":   "testuser",
-		},
 	)
 
 	b.ResetTimer()
@@ -63,12 +54,12 @@ func BenchmarkErrorFormatting(b *testing.B) {
 }
 
 func BenchmarkNestedErrorWrapping(b *testing.B) {
-	baseErr := fmt.Errorf("database connection failed")
+	baseErr := fmt.Errorf("connection failed")
 	
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		err1 := errors.WrapError(baseErr, errors.ErrorCodeDatabaseError)
-		err2 := errors.WrapError(err1, errors.ErrorCodeInternalError)
-		_ = errors.WrapError(err2, errors.ErrorCodeServiceUnavailable)
+		err1 := errors.WrapError(baseErr)
+		err2 := errors.NewSlurmErrorWithCause(errors.ErrorCodeNetworkTimeout, "network timeout", err1)
+		_ = errors.NewSlurmErrorWithCause(errors.ErrorCodeServiceUnavailable, "service unavailable", err2)
 	}
 }

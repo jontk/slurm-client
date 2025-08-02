@@ -107,15 +107,15 @@ func (pa *PerformanceAnalyzer) calculatePerformanceMetrics(
 	metrics.OverallEfficiencyDelta = analyticsB.OverallEfficiency - analyticsA.OverallEfficiency
 	
 	if analyticsA.CPUAnalytics != nil && analyticsB.CPUAnalytics != nil {
-		metrics.CPUEfficiencyDelta = analyticsB.CPUAnalytics.EfficiencyPercent - analyticsA.CPUAnalytics.EfficiencyPercent
+		metrics.CPUEfficiencyDelta = analyticsB.CPUAnalytics.UtilizationPercent - analyticsA.CPUAnalytics.UtilizationPercent
 	}
 	
 	if analyticsA.MemoryAnalytics != nil && analyticsB.MemoryAnalytics != nil {
-		metrics.MemoryEfficiencyDelta = analyticsB.MemoryAnalytics.EfficiencyPercent - analyticsA.MemoryAnalytics.EfficiencyPercent
+		metrics.MemoryEfficiencyDelta = analyticsB.MemoryAnalytics.UtilizationPercent - analyticsA.MemoryAnalytics.UtilizationPercent
 	}
 	
 	if analyticsA.IOAnalytics != nil && analyticsB.IOAnalytics != nil {
-		metrics.IOEfficiencyDelta = analyticsB.IOAnalytics.EfficiencyPercent - analyticsA.IOAnalytics.EfficiencyPercent
+		metrics.IOEfficiencyDelta = analyticsB.IOAnalytics.UtilizationPercent - analyticsA.IOAnalytics.UtilizationPercent
 	}
 	
 	// Runtime ratio
@@ -367,7 +367,7 @@ func (pa *PerformanceAnalyzer) GetSimilarJobsPerformance(
 	}
 	
 	if len(analysis.SimilarJobs) == 0 {
-		return nil, fmt.Errorf("no similar jobs found with threshold %.2f", similarityThreshold)
+		return analysis, nil // Return empty analysis instead of error
 	}
 	
 	// Sort by efficiency (best first)
@@ -647,11 +647,11 @@ func (pa *PerformanceAnalyzer) generateRecommendations(
 				refEff, analysis.PerformanceStats.MedianEfficiency))
 			
 			// Add specific improvement suggestions
-			if referenceAnalytics.CPUAnalytics != nil && referenceAnalytics.CPUAnalytics.EfficiencyPercent < 70.0 {
+			if referenceAnalytics.CPUAnalytics != nil && referenceAnalytics.CPUAnalytics.UtilizationPercent < 70.0 {
 				recommendations = append(recommendations,
 					"Focus on improving CPU utilization through better parallelization")
 			}
-			if referenceAnalytics.MemoryAnalytics != nil && referenceAnalytics.MemoryAnalytics.EfficiencyPercent < 70.0 {
+			if referenceAnalytics.MemoryAnalytics != nil && referenceAnalytics.MemoryAnalytics.UtilizationPercent < 70.0 {
 				recommendations = append(recommendations,
 					"Optimize memory usage patterns to reduce allocation needs")
 			}

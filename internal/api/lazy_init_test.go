@@ -16,10 +16,9 @@ import (
 func TestLazyInitialization(t *testing.T) {
 	cfg := &config.Config{
 		BaseURL: "http://localhost:6820",
-		Version: "v0.0.43",
 	}
 
-	client, err := slurm.NewClient(context.Background(),
+	client, err := slurm.NewClientWithVersion(context.Background(), "v0.0.43",
 		slurm.WithConfig(cfg),
 		slurm.WithNoAuth(),
 	)
@@ -69,10 +68,9 @@ func TestLazyInitialization(t *testing.T) {
 func TestLazyInitializationThreadSafety(t *testing.T) {
 	cfg := &config.Config{
 		BaseURL: "http://localhost:6820",
-		Version: "v0.0.43",
 	}
 
-	client, err := slurm.NewClient(context.Background(),
+	client, err := slurm.NewClientWithVersion(context.Background(), "v0.0.43",
 		slurm.WithConfig(cfg),
 		slurm.WithNoAuth(),
 	)
@@ -126,10 +124,9 @@ func TestConsistentLazyInitialization(t *testing.T) {
 		t.Run(version, func(t *testing.T) {
 			cfg := &config.Config{
 				BaseURL: "http://localhost:6820",
-				Version: version,
 			}
 
-			client, err := slurm.NewClient(context.Background(),
+			client, err := slurm.NewClientWithVersion(context.Background(), version,
 				slurm.WithConfig(cfg),
 				slurm.WithNoAuth(),
 			)

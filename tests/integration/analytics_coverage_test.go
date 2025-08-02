@@ -250,10 +250,11 @@ func TestAnalyticsCoverage_JobResourceTrends(t *testing.T) {
 			
 			// Create trend options
 			trendOpts := &interfaces.ResourceTrendsOptions{
-				StartTime: time.Now().Add(-1 * time.Hour),
-				EndTime:   time.Now(),
-				Interval:  "5m",
-				Resources: []string{"cpu", "memory", "io"},
+				TimeWindow:    time.Hour,
+				DataPoints:    12,
+				IncludeCPU:    true,
+				IncludeMemory: true,
+				IncludeIO:     true,
 			}
 			
 			// Test valid job ID

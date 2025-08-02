@@ -4,6 +4,7 @@
 package benchmarks
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -13,43 +14,32 @@ import (
 func BenchmarkTokenAuth(b *testing.B) {
 	ta := auth.NewTokenAuth("test-jwt-token-with-reasonable-length")
 	req, _ := http.NewRequest("GET", "https://example.com", nil)
+	ctx := context.Background()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ta.Apply(req)
-	}
-}
-
-func BenchmarkAPIKeyAuth(b *testing.B) {
-	aka := auth.NewAPIKeyAuth("X-API-Key", "test-api-key-value")
-	req, _ := http.NewRequest("GET", "https://example.com", nil)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		aka.Apply(req)
+		ta.Authenticate(ctx, req)
 	}
 }
 
 func BenchmarkBasicAuth(b *testing.B) {
 	ba := auth.NewBasicAuth("username", "password")
 	req, _ := http.NewRequest("GET", "https://example.com", nil)
+	ctx := context.Background()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ba.Apply(req)
+		ba.Authenticate(ctx, req)
 	}
 }
 
-func BenchmarkAuthChain(b *testing.B) {
-	chain := auth.Chain(
-		auth.NewTokenAuth("token"),
-		auth.NewAPIKeyAuth("X-API-Key", "key"),
-		auth.NewBasicAuth("user", "pass"),
-	)
+func BenchmarkNoAuth(b *testing.B) {
+	na := auth.NewNoAuth()
 	req, _ := http.NewRequest("GET", "https://example.com", nil)
+	ctx := context.Background()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		chain.Apply(req)
+		na.Authenticate(ctx, req)
 	}
 }

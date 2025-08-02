@@ -631,3 +631,59 @@ func TestPartitionPoller_WatchWithNilOptions(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	cancel()
 }
+
+func TestNodePoller_ErrorHandling(t *testing.T) {
+	// Create a mock lister that returns an error
+	mockNodeLister := func(ctx context.Context, opts *interfaces.ListNodesOptions) (*interfaces.NodeList, error) {
+		return nil, errors.New("API error")
+	}
+
+	poller := watch.NewNodePoller(mockNodeLister).WithPollInterval(50 * time.Millisecond)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	eventChan, err := poller.Watch(ctx, &interfaces.WatchNodesOptions{})
+	require.NoError(t, err)
+
+	// Should receive an error event
+	timeout := time.After(500 * time.Millisecond)
+	select {
+	case event := <-eventChan:
+		assert.Equal(t, "error", event.Type)
+		assert.Error(t, event.Error)
+		assert.Contains(t, event.Error.Error(), "API error")
+	case <-timeout:
+		t.Fatal("Expected to receive error event but got timeout")
+	}
+
+	cancel()
+}
+
+func TestPartitionPoller_ErrorHandling(t *testing.T) {
+	// Create a mock lister that returns an error
+	mockPartitionLister := func(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error) {
+		return nil, errors.New("API error")
+	}
+
+	poller := watch.NewPartitionPoller(mockPartitionLister).WithPollInterval(50 * time.Millisecond)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	eventChan, err := poller.Watch(ctx, &interfaces.WatchPartitionsOptions{})
+	require.NoError(t, err)
+
+	// Should receive an error event
+	timeout := time.After(500 * time.Millisecond)
+	select {
+	case event := <-eventChan:
+		assert.Equal(t, "error", event.Type)
+		assert.Error(t, event.Error)
+		assert.Contains(t, event.Error.Error(), "API error")
+	case <-timeout:
+		t.Fatal("Expected to receive error event but got timeout")
+	}
+
+	cancel()
+}

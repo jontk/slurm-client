@@ -238,7 +238,7 @@ func (a *AssociationAdapter) Update(ctx context.Context, id string, update *type
 	// Make the API call
 	resp, err := a.client.SlurmdbV0041PostAssociationsWithResponse(ctx, *updateReq)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to update association %d", id))
+		return a.WrapError(err, fmt.Sprintf("failed to update association %s", id))
 	}
 
 	// Handle response

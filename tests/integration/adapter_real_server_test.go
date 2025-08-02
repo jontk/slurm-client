@@ -145,7 +145,7 @@ func TestAdapterWithRealServer(t *testing.T) {
 				Priority:    500,
 				Flags:       []string{"DenyOnLimit"},
 				UsageFactor: 2.0,
-				GraceTime:   intPtr(600),
+				GraceTime:   600,
 				Limits: &types.QoSLimits{
 					MaxJobsPerUser:    intPtr(20),
 					MaxJobsPerAccount: intPtr(100),
