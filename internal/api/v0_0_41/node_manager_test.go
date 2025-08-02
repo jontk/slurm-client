@@ -71,7 +71,4 @@ func TestNodeManager_Watch_Structure(t *testing.T) {
 	assert.NotNil(t, nodeManager.impl)
 }
 
-// Helper functions for pointer creation
-func stringPtr(s string) *string {
-	return &s
-}
+// Helper functions for pointer creation removed due to redeclaration

@@ -63,6 +63,53 @@ func (t *testVersionAdapter) GetUserManager() common.UserAdapter {
 	return t.userAdapter
 }
 
+func (t *testVersionAdapter) GetStandaloneManager() common.StandaloneAdapter {
+	return &mockStandaloneAdapter{}
+}
+
+// Mock standalone adapter
+type mockStandaloneAdapter struct{}
+
+func (m *mockStandaloneAdapter) GetLicenses(ctx context.Context) (*types.LicenseList, error) {
+	return &types.LicenseList{}, nil
+}
+
+func (m *mockStandaloneAdapter) GetShares(ctx context.Context, opts *types.GetSharesOptions) (*types.SharesList, error) {
+	return &types.SharesList{}, nil
+}
+
+func (m *mockStandaloneAdapter) GetConfig(ctx context.Context) (*types.Config, error) {
+	return &types.Config{}, nil
+}
+
+func (m *mockStandaloneAdapter) GetDiagnostics(ctx context.Context) (*types.Diagnostics, error) {
+	return &types.Diagnostics{}, nil
+}
+
+func (m *mockStandaloneAdapter) GetDBDiagnostics(ctx context.Context) (*types.Diagnostics, error) {
+	return &types.Diagnostics{}, nil
+}
+
+func (m *mockStandaloneAdapter) GetInstance(ctx context.Context, opts *types.GetInstanceOptions) (*types.Instance, error) {
+	return &types.Instance{}, nil
+}
+
+func (m *mockStandaloneAdapter) GetInstances(ctx context.Context, opts *types.GetInstancesOptions) (*types.InstanceList, error) {
+	return &types.InstanceList{}, nil
+}
+
+func (m *mockStandaloneAdapter) GetTRES(ctx context.Context) (*types.TRESList, error) {
+	return &types.TRESList{}, nil
+}
+
+func (m *mockStandaloneAdapter) CreateTRES(ctx context.Context, req *types.CreateTRESRequest) (*types.TRES, error) {
+	return &types.TRES{}, nil
+}
+
+func (m *mockStandaloneAdapter) Reconfigure(ctx context.Context) (*types.ReconfigureResponse, error) {
+	return &types.ReconfigureResponse{}, nil
+}
+
 // Mock reservation adapter
 type mockReservationAdapter struct {
 	listFunc   func(ctx context.Context, opts *types.ReservationListOptions) (*types.ReservationList, error)
