@@ -10,7 +10,6 @@ import (
 
 	"github.com/jontk/slurm-client/internal/adapters/common"
 	"github.com/jontk/slurm-client/internal/common/types"
-	"github.com/jontk/slurm-client/internal/testutil/mocks"
 	"github.com/stretchr/testify/require"
 )
 
@@ -38,12 +37,6 @@ func AssertNoError(t *testing.T, err error, msgAndArgs ...interface{}) {
 	}
 }
 
-// SetupMockAdapter creates a mock adapter with test data
-func SetupMockAdapter(t *testing.T, version string) *mocks.MockVersionAdapter {
-	adapter := mocks.NewMockVersionAdapter(version)
-	require.NotNil(t, adapter)
-	return adapter
-}
 
 // CompareQoSFields compares two QoS objects field by field for testing
 type QoSComparison struct {

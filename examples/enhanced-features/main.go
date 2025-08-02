@@ -80,16 +80,13 @@ func main() {
 	fmt.Printf("   - Max connections per host: %d\n", poolConfig.MaxConnsPerHost)
 	
 	// 5. Setup retry with exponential backoff
-	retryBackoff := &retry.ExponentialBackoffStrategy{
-		InitialDelay: 100 * time.Millisecond,
-		MaxDelay:     10 * time.Second,
-		Multiplier:   2.0,
-		Jitter:       0.1,
-		MaxAttempts:  5,
-	}
+	retryBackoff := retry.NewHTTPExponentialBackoff().
+		WithMaxRetries(5).
+		WithMinWaitTime(100 * time.Millisecond).
+		WithMaxWaitTime(10 * time.Second)
 	fmt.Println("\n5️⃣ Retry with Exponential Backoff Configured")
 	fmt.Printf("   - Max attempts: %d, Initial delay: %v\n", 
-		retryBackoff.MaxAttempts, retryBackoff.InitialDelay)
+		retryBackoff.MaxRetries(), retryBackoff.WaitTime(0))
 	
 	// 6. Create custom middleware for request tracking
 	requestTracker := middleware.WithHeaders(map[string]string{

@@ -10,7 +10,6 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/time v0.12.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
