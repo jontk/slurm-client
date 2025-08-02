@@ -102,7 +102,7 @@ func main() {
 		fmt.Println("\n=== Testing Get Job ===")
 		job, err := client.Jobs().Get(ctx, submitResp.JobID)
 		if err != nil {
-			log.Printf("Failed to get job %d: %v", submitResp.JobID, err)
+			log.Printf("Failed to get job %s: %v", submitResp.JobID, err)
 		} else {
 			fmt.Printf("Retrieved job %s:\n", job.ID)
 			fmt.Printf("  Name: %s\n", job.Name)
@@ -115,9 +115,9 @@ func main() {
 		fmt.Println("\n=== Testing Cancel Job ===")
 		err = client.Jobs().Cancel(ctx, submitResp.JobID)
 		if err != nil {
-			log.Printf("Failed to cancel job %d: %v", submitResp.JobID, err)
+			log.Printf("Failed to cancel job %s: %v", submitResp.JobID, err)
 		} else {
-			fmt.Printf("Successfully cancelled job %d\n", submitResp.JobID)
+			fmt.Printf("Successfully cancelled job %s\n", submitResp.JobID)
 		}
 	}
 

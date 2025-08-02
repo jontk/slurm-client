@@ -100,7 +100,7 @@ func TestQoSBuilder_Presets(t *testing.T) {
 		assert.Equal(t, 10, qos.Priority)
 		assert.Equal(t, 0.5, qos.UsageFactor)
 		assert.Contains(t, qos.Flags, "NoReserve")
-		assert.Equal(t, 3600, *qos.GraceTime)
+		assert.Equal(t, 3600, qos.GraceTime)
 	})
 
 	t.Run("interactive preset", func(t *testing.T) {
@@ -299,7 +299,7 @@ func TestQoSBuilder_ComplexScenario(t *testing.T) {
 	assert.Len(t, qos.Flags, 2)
 	assert.Len(t, qos.PreemptMode, 2)
 	assert.Equal(t, 15, *qos.PreemptExemptTime)
-	assert.Equal(t, 600, *qos.GraceTime)
+	assert.Equal(t, 600, qos.GraceTime)
 	assert.Equal(t, 1.75, qos.UsageFactor)
 	assert.Equal(t, 0.85, qos.UsageThreshold)
 
