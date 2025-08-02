@@ -14,7 +14,7 @@ import (
 
 // Removed most tests as the referenced methods and types
 // are not implemented in the current v0_0_41 adapter interface.
-// The v0_0_41 API uses inline struct definitions rather than 
+// The v0_0_41 API uses inline struct definitions rather than
 // separate V0041Account types, and many expected methods don't exist.
 
 func TestAccountAdapter_ValidateContext(t *testing.T) {

@@ -13,7 +13,7 @@ import (
 )
 
 // Removed most tests as they referenced field names (User, ParentAccountName, MaxWallDuration)
-// that don't match the current AssociationCreate interface which uses 
+// that don't match the current AssociationCreate interface which uses
 // UserName, ParentAccount, MaxWallTime instead.
 
 func TestAssociationAdapter_ValidateContext(t *testing.T) {
