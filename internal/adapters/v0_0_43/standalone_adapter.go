@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client/internal/common/types"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 )
 
@@ -389,6 +390,13 @@ func (a *StandaloneAdapter) GetInstances(ctx context.Context, opts *types.GetIns
 
 // GetTRES retrieves all TRES (Trackable RESources)
 func (a *StandaloneAdapter) GetTRES(ctx context.Context) (*types.TRESList, error) {
+	if ctx == nil {
+		return nil, errors.NewValidationError(
+			errors.ErrorCodeValidationFailed,
+			"context is required",
+			"ctx", nil, nil,
+		)
+	}
 	if a.client == nil {
 		return nil, fmt.Errorf("API client not initialized")
 	}
