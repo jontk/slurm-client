@@ -175,10 +175,14 @@ func (a *AssociationAdapter) Create(ctx context.Context, assoc *types.Associatio
 
 	// Return success response - for v0.0.42, we can't get specific association details from create response
 	return &types.AssociationCreateResponse{
-		AssociationID: fmt.Sprintf("%s_%s", assoc.AccountName, assoc.UserName),
-		AccountName:   assoc.AccountName,
-		UserName:      assoc.UserName,
-		Cluster:       assoc.Cluster,
+		Status:  "success",
+		Message: "Association created successfully",
+		Meta: map[string]interface{}{
+			"association_id": fmt.Sprintf("%s_%s", assoc.AccountName, assoc.UserName),
+			"account_name":   assoc.AccountName,
+			"user_name":      assoc.UserName,
+			"cluster":        assoc.Cluster,
+		},
 	}, nil
 }
 

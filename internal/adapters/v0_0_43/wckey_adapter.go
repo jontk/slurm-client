@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
@@ -151,11 +150,14 @@ func (a *WCKeyAdapter) Create(ctx context.Context, wckey *types.WCKeyCreate) (*t
 
 	// Create the request body
 	apiReq := api.V0043OpenapiWckeyResp{
-		Wckeys: &[]api.V0043Wckey{apiWCKey},
+		Wckeys: api.V0043WckeyList{apiWCKey},
 	}
 
+	// Create params (can be nil for this endpoint)
+	params := &api.SlurmdbV0043PostWckeysParams{}
+
 	// Call the API
-	resp, err := a.client.SlurmdbV0043PostWckeysWithResponse(ctx, apiReq)
+	resp, err := a.client.SlurmdbV0043PostWckeysWithResponse(ctx, params, apiReq)
 	if err != nil {
 		return nil, a.WrapError(err, "failed to create WCKey")
 	}
@@ -174,14 +176,8 @@ func (a *WCKeyAdapter) Create(ctx context.Context, wckey *types.WCKeyCreate) (*t
 
 	if resp.JSON200 != nil {
 		result.Meta = a.extractMeta(resp.JSON200.Meta)
-
-		// Extract the created WCKey ID if available
-		if resp.JSON200.Wckeys != nil && len(*resp.JSON200.Wckeys) > 0 {
-			firstWCKey := (*resp.JSON200.Wckeys)[0]
-			if firstWCKey.Id != nil {
-				result.ID = fmt.Sprintf("%d", *firstWCKey.Id)
-			}
-		}
+		// Note: V0043OpenapiResp doesn't contain the created WCKey details
+		// The ID would need to be retrieved through a separate query if needed
 	}
 
 	return result, nil
@@ -239,15 +235,10 @@ func (a *WCKeyAdapter) convertAPIWCKeyToCommon(apiWCKey api.V0043Wckey) types.WC
 	if apiWCKey.Id != nil {
 		wckey.ID = fmt.Sprintf("%d", *apiWCKey.Id)
 	}
-	if apiWCKey.Name != nil {
-		wckey.Name = *apiWCKey.Name
-	}
-	if apiWCKey.User != nil {
-		wckey.User = *apiWCKey.User
-	}
-	if apiWCKey.Cluster != nil {
-		wckey.Cluster = *apiWCKey.Cluster
-	}
+	// Name, User, and Cluster are required string fields, not pointers
+	wckey.Name = apiWCKey.Name
+	wckey.User = apiWCKey.User
+	wckey.Cluster = apiWCKey.Cluster
 
 	// Set active status (WCKeys are typically active by default)
 	wckey.Active = true
@@ -257,16 +248,11 @@ func (a *WCKeyAdapter) convertAPIWCKeyToCommon(apiWCKey api.V0043Wckey) types.WC
 
 // convertCommonWCKeyCreateToAPI converts common WCKey create to API format
 func (a *WCKeyAdapter) convertCommonWCKeyCreateToAPI(wckey *types.WCKeyCreate) api.V0043Wckey {
-	apiWCKey := api.V0043Wckey{}
-
-	if wckey.Name != "" {
-		apiWCKey.Name = &wckey.Name
-	}
-	if wckey.User != "" {
-		apiWCKey.User = &wckey.User
-	}
-	if wckey.Cluster != "" {
-		apiWCKey.Cluster = &wckey.Cluster
+	// Name, User, and Cluster are required string fields in V0043Wckey
+	apiWCKey := api.V0043Wckey{
+		Name:    wckey.Name,
+		User:    wckey.User,
+		Cluster: wckey.Cluster,
 	}
 
 	return apiWCKey

@@ -410,3 +410,8 @@ func convertUserAdminLevelToAPI(level string) api.V0041OpenapiUsersAddCondRespUs
 		return api.V0041OpenapiUsersAddCondRespUserAdminlevelNone
 	}
 }
+
+// CreateAssociation creates associations for users (not supported in v0.0.41)
+func (a *UserAdapter) CreateAssociation(ctx context.Context, req *types.UserAssociationRequest) (*types.AssociationCreateResponse, error) {
+	return nil, a.HandleNotImplemented("CreateAssociation", "v0.0.41")
+}

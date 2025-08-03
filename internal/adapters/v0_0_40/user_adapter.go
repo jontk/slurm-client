@@ -9,6 +9,7 @@ import (
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
@@ -367,4 +368,9 @@ func (a *UserAdapter) validateUserUpdate(update *types.UserUpdate) error {
 		return common.NewValidationError("at least one field must be provided for update", "update", update)
 	}
 	return nil
+}
+
+// CreateAssociation creates associations for users (not supported in v0.0.40)
+func (a *UserAdapter) CreateAssociation(ctx context.Context, req *types.UserAssociationRequest) (*types.AssociationCreateResponse, error) {
+	return nil, errors.NewNotImplementedError("CreateAssociation", a.GetVersion())
 }

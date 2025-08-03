@@ -347,3 +347,8 @@ func (a *AccountAdapter) validateAccountUpdate(update *types.AccountUpdate) erro
 	}
 	return nil
 }
+
+// CreateAssociation creates associations for accounts (not supported in v0.0.40)
+func (a *AccountAdapter) CreateAssociation(ctx context.Context, req *types.AccountAssociationRequest) (*types.AssociationCreateResponse, error) {
+	return nil, errors.NewNotImplementedError("CreateAssociation", a.GetVersion())
+}

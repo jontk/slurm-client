@@ -4,6 +4,9 @@
 # This file configures golangci-lint for the slurm-client project
 # Run with: golangci-lint run
 
+# Configuration format version
+version: 1
+
 run:
   # Timeout for analysis
   timeout: 10m

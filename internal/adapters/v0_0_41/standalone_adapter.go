@@ -541,3 +541,8 @@ func extractMeta(meta interface{}) map[string]interface{} {
 	
 	return result
 }
+
+// PingDatabase pings the SLURM database for health checks (not supported in v0.0.41)
+func (a *StandaloneAdapter) PingDatabase(ctx context.Context) (*types.PingResponse, error) {
+	return nil, fmt.Errorf("PingDatabase not supported in API v0.0.41")
+}

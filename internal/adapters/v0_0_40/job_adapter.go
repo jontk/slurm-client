@@ -11,6 +11,7 @@ import (
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
@@ -552,4 +553,9 @@ func (a *JobAdapter) validateJobNotifyRequest(req *types.JobNotifyRequest) error
 // Watch provides real-time job status updates (not supported in v0.0.40)
 func (a *JobAdapter) Watch(ctx context.Context, opts *types.JobWatchOptions) (<-chan types.JobWatchEvent, error) {
 	return nil, fmt.Errorf("watch functionality not supported in API v0.0.40")
+}
+
+// Allocate allocates resources for a job (not supported in v0.0.40)
+func (a *JobAdapter) Allocate(ctx context.Context, req *types.JobAllocateRequest) (*types.JobAllocateResponse, error) {
+	return nil, errors.NewNotImplementedError("Allocate", a.GetVersion())
 }

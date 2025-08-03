@@ -189,10 +189,14 @@ func (a *AssociationAdapter) Create(ctx context.Context, req *types.AssociationC
 	}
 
 	return &types.AssociationCreateResponse{
-		AssociationID: association.ID,
-		AccountName:   association.AccountName,
-		UserName:      association.UserName,
-		Cluster:       association.Cluster,
+		Status:  "success",
+		Message: "Association created successfully",
+		Meta: map[string]interface{}{
+			"association_id": association.ID,
+			"account_name":   association.AccountName,
+			"user_name":      association.UserName,
+			"cluster":        association.Cluster,
+		},
 	}, nil
 }
 

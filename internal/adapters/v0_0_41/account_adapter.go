@@ -314,3 +314,8 @@ func (a *AccountAdapter) SetCoordinators(ctx context.Context, name string, coord
 	// v0.0.41 doesn't support setting coordinators through the API
 	return fmt.Errorf("setting coordinators is not supported in API v0.0.41")
 }
+
+// CreateAssociation creates associations for accounts (not supported in v0.0.41)
+func (a *AccountAdapter) CreateAssociation(ctx context.Context, req *types.AccountAssociationRequest) (*types.AssociationCreateResponse, error) {
+	return nil, a.HandleNotImplemented("CreateAssociation", "v0.0.41")
+}
