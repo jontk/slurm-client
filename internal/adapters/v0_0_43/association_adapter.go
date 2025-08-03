@@ -202,17 +202,17 @@ func (a *AssociationAdapter) Create(ctx context.Context, association *types.Asso
 	if association == nil {
 		return nil, a.HandleValidationError("association is required")
 	}
-	
+
 	// Apply default cluster if not provided
 	if association.Cluster == "" {
 		association.Cluster = a.getDefaultClusterName()
 	}
-	
+
 	// Validate the association (after applying defaults)
 	if err := a.validateAssociationCreate(association); err != nil {
 		return nil, err
 	}
-	
+
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
@@ -246,10 +246,8 @@ func (a *AssociationAdapter) Create(ctx context.Context, association *types.Asso
 	}
 
 	return &types.AssociationCreateResponse{
-		AssociationID: association.AccountName + ":" + association.UserName + ":" + association.Cluster,
-		AccountName:   association.AccountName,
-		UserName:      association.UserName,
-		Cluster:       association.Cluster,
+		Status:  "success",
+		Message: fmt.Sprintf("Association created for account %s, user %s, cluster %s", association.AccountName, association.UserName, association.Cluster),
 	}, nil
 }
 
@@ -423,7 +421,7 @@ func (a *AssociationAdapter) convertCommonAssociationUpdateToAPI(existing *types
 // This is a fallback when cluster is not specified in association creation
 func (a *AssociationAdapter) getDefaultClusterName() string {
 	// Common default cluster names used in SLURM configurations
-	// Priority order: 
+	// Priority order:
 	// 1. "linux" - most common default
 	// 2. "cluster" - generic default
 	// 3. "main" - typical fallback

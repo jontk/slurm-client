@@ -355,7 +355,7 @@ func (a *AccountAdapter) validateAccountUpdate(update *types.AccountUpdate) erro
 	   update.MaxJobs == nil && update.MaxWallTime == nil {
 		return errors.NewValidationErrorf("update", update, "at least one field must be provided for update")
 	}
-	
+
 	// Validate numeric fields if provided
 	if update.FairShare != nil && *update.FairShare < 0 {
 		return errors.NewValidationErrorf("fairShare", *update.FairShare, "fair share must be non-negative")
@@ -370,4 +370,110 @@ func (a *AccountAdapter) validateAccountUpdate(update *types.AccountUpdate) erro
 		return errors.NewValidationErrorf("maxWallTime", *update.MaxWallTime, "max wall time must be non-negative")
 	}
 	return nil
+}
+
+// CreateAssociation creates associations for accounts
+func (a *AccountAdapter) CreateAssociation(ctx context.Context, req *types.AccountAssociationRequest) (*types.AssociationCreateResponse, error) {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.validateAccountAssociationRequest(req); err != nil {
+		return nil, err
+	}
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+
+	// Convert to API format
+	apiAssociations, err := a.convertCommonAccountAssociationToAPI(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create request body
+	reqBody := api.SlurmdbV0043PostAssociationsJSONRequestBody{
+		Associations: apiAssociations,
+	}
+
+	// Call the generated OpenAPI client
+	resp, err := a.client.SlurmdbV0043PostAssociationsWithResponse(ctx, reqBody)
+	if err != nil {
+		return nil, a.HandleAPIError(err)
+	}
+
+	// Use common response error handling
+	var apiErrors *api.V0043OpenapiErrors
+	if resp.JSON200 != nil {
+		apiErrors = resp.JSON200.Errors
+	}
+
+	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
+		return nil, err
+	}
+
+	return &types.AssociationCreateResponse{
+		Status:  "success",
+		Message: fmt.Sprintf("Created associations for %d accounts in cluster %s", len(req.Accounts), req.Cluster),
+	}, nil
+}
+
+// validateAccountAssociationRequest validates account association creation request
+func (a *AccountAdapter) validateAccountAssociationRequest(req *types.AccountAssociationRequest) error {
+	if req == nil {
+		return errors.NewValidationErrorf("request", nil, "account association request is required")
+	}
+	if len(req.Accounts) == 0 {
+		return errors.NewValidationErrorf("accounts", req.Accounts, "at least one account is required")
+	}
+	if req.Cluster == "" {
+		return errors.NewValidationErrorf("cluster", req.Cluster, "cluster is required")
+	}
+	// Validate numeric fields
+	if req.Fairshare < 0 {
+		return errors.NewValidationErrorf("fairshare", req.Fairshare, "fairshare must be non-negative")
+	}
+	return nil
+}
+
+// convertCommonAccountAssociationToAPI converts common account association request to API format
+func (a *AccountAdapter) convertCommonAccountAssociationToAPI(req *types.AccountAssociationRequest) ([]api.V0043Assoc, error) {
+	associations := make([]api.V0043Assoc, 0, len(req.Accounts))
+
+	for _, accountName := range req.Accounts {
+		association := api.V0043Assoc{
+			Account: &accountName,
+			Cluster: &req.Cluster,
+		}
+
+		if req.Partition != "" {
+			association.Partition = &req.Partition
+		}
+		if req.Parent != "" {
+			association.ParentAccount = &req.Parent
+		}
+		if len(req.QoS) > 0 {
+			qosList := make(api.V0043QosStringIdList, len(req.QoS))
+			copy(qosList, req.QoS)
+			association.Qos = &qosList
+		}
+		if req.DefaultQoS != "" {
+			association.Default = &struct {
+				Qos *string `json:"qos,omitempty"`
+			}{
+				Qos: &req.DefaultQoS,
+			}
+		}
+		if req.Fairshare > 0 {
+			association.SharesRaw = &req.Fairshare
+		}
+
+		// TODO: Handle TRES if provided - the v0.0.43 TRES structure is complex
+		// For now, skip TRES handling to get basic functionality working
+
+		associations = append(associations, association)
+	}
+
+	return associations, nil
 }

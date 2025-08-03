@@ -6,6 +6,7 @@ package v0_0_43
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jontk/slurm-client/internal/common/types"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
@@ -50,7 +51,7 @@ func (a *StandaloneAdapter) GetLicenses(ctx context.Context) (*types.LicenseList
 	// Licenses is not a pointer field
 	for _, apiLicense := range resp.JSON200.Licenses {
 		license := types.License{}
-		
+
 		if apiLicense.LicenseName != nil {
 			license.Name = *apiLicense.LicenseName
 		}
@@ -70,7 +71,7 @@ func (a *StandaloneAdapter) GetLicenses(ctx context.Context) (*types.LicenseList
 			// Remote is a bool - we could set a flag or use a different field
 			// For now, just note that this is a remote license
 		}
-		
+
 		licenses = append(licenses, license)
 	}
 
@@ -116,7 +117,7 @@ func (a *StandaloneAdapter) GetShares(ctx context.Context, opts *types.GetShares
 	shares := make([]types.Share, 0)
 	for _, apiShare := range *resp.JSON200.Shares.Shares {
 		share := types.Share{}
-		
+
 		if apiShare.Name != nil {
 			// This could be account or user name
 			share.Account = *apiShare.Name
@@ -124,7 +125,7 @@ func (a *StandaloneAdapter) GetShares(ctx context.Context, opts *types.GetShares
 		if apiShare.Partition != nil {
 			share.Partition = *apiShare.Partition
 		}
-		
+
 		// Convert share numbers
 		if apiShare.Shares != nil && apiShare.Shares.Number != nil {
 			share.RawShares = int(*apiShare.Shares.Number)
@@ -139,7 +140,7 @@ func (a *StandaloneAdapter) GetShares(ctx context.Context, opts *types.GetShares
 			// SharesNormalized.Number is float64, convert to int
 			share.FairshareShares = int(*apiShare.SharesNormalized.Number)
 		}
-		
+
 		shares = append(shares, share)
 	}
 
@@ -295,7 +296,7 @@ func (a *StandaloneAdapter) GetInstance(ctx context.Context, opts *types.GetInst
 	// Get the first instance (assuming single result)
 	apiInstance := resp.JSON200.Instances[0]
 	instance := &types.Instance{}
-	
+
 	if apiInstance.Cluster != nil {
 		instance.Cluster = *apiInstance.Cluster
 	}
@@ -361,7 +362,7 @@ func (a *StandaloneAdapter) GetInstances(ctx context.Context, opts *types.GetIns
 	instances := make([]types.Instance, 0)
 	for _, apiInstance := range resp.JSON200.Instances {
 		instance := types.Instance{}
-		
+
 		if apiInstance.Cluster != nil {
 			instance.Cluster = *apiInstance.Cluster
 		}
@@ -376,7 +377,7 @@ func (a *StandaloneAdapter) GetInstances(ctx context.Context, opts *types.GetIns
 			instance.InstanceType = *apiInstance.InstanceType
 		}
 		// Note: v0.0.43 doesn't have NodeCount field in the response
-		
+
 		instances = append(instances, instance)
 	}
 
@@ -410,7 +411,7 @@ func (a *StandaloneAdapter) GetTRES(ctx context.Context) (*types.TRESList, error
 	tresList := make([]types.TRES, 0)
 	for _, apiTres := range resp.JSON200.TRES {
 		tres := types.TRES{}
-		
+
 		if apiTres.Id != nil {
 			tres.ID = int(*apiTres.Id)
 		}
@@ -422,7 +423,7 @@ func (a *StandaloneAdapter) GetTRES(ctx context.Context) (*types.TRESList, error
 		if apiTres.Count != nil {
 			tres.Count = int64(*apiTres.Count)
 		}
-		
+
 		tresList = append(tresList, tres)
 	}
 
@@ -471,7 +472,7 @@ func (a *StandaloneAdapter) CreateTRES(ctx context.Context, req *types.CreateTRE
 		Type: req.Type,
 		Name: req.Name,
 	}
-	
+
 	if req.Count > 0 {
 		tres.Count = int64(req.Count)
 	}
@@ -503,11 +504,51 @@ func (a *StandaloneAdapter) Reconfigure(ctx context.Context) (*types.Reconfigure
 
 	if resp.JSON200 != nil {
 		result.Meta = extractMeta(resp.JSON200.Meta)
-		
+
 		// Extract any warnings or errors from meta
 		// Note: v0.0.43 meta structure is different - simplified handling
-		
+
 		result.Message = "SLURM reconfiguration triggered successfully"
+	}
+
+	return result, nil
+}
+
+// PingDatabase pings the SLURM database for health checks
+func (a *StandaloneAdapter) PingDatabase(ctx context.Context) (*types.PingResponse, error) {
+	if a.client == nil {
+		return nil, fmt.Errorf("API client not initialized")
+	}
+
+	startTime := time.Now()
+	resp, err := a.client.SlurmdbV0043GetPingWithResponse(ctx)
+	latency := time.Since(startTime).Microseconds()
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	// Handle API response with enhanced error handling
+	if err := a.errorAdapter.HandleAPIResponse(resp.StatusCode(), resp.Body, "PingDatabase"); err != nil {
+		return nil, err
+	}
+
+	// Build ping response
+	result := &types.PingResponse{
+		Status:    "success",
+		Timestamp: time.Now(),
+		Latency:   latency,
+		Meta:      make(map[string]interface{}),
+	}
+
+	if resp.JSON200 != nil {
+		result.Meta = extractMeta(resp.JSON200.Meta)
+		result.Message = "Database ping successful"
+
+		// Extract any ping-specific information if available in the response
+		// The API response structure may contain ping-specific data
+	} else {
+		result.Message = "Database ping completed"
 	}
 
 	return result, nil
@@ -516,11 +557,11 @@ func (a *StandaloneAdapter) Reconfigure(ctx context.Context) (*types.Reconfigure
 // extractMeta safely extracts metadata from API response
 func extractMeta(meta *api.V0043OpenapiMeta) map[string]interface{} {
 	result := make(map[string]interface{})
-	
+
 	if meta == nil {
 		return result
 	}
-	
+
 	// V0043OpenapiMeta has Client, Command, Plugin fields but not Messages/Warnings/Errors
 	// Extract basic metadata
 	if meta.Client != nil {
@@ -538,7 +579,7 @@ func extractMeta(meta *api.V0043OpenapiMeta) map[string]interface{} {
 			result["client"] = clientInfo
 		}
 	}
-	
+
 	if meta.Plugin != nil {
 		pluginInfo := make(map[string]interface{})
 		if meta.Plugin.AccountingStorage != nil {
@@ -548,6 +589,6 @@ func extractMeta(meta *api.V0043OpenapiMeta) map[string]interface{} {
 			result["plugin"] = pluginInfo
 		}
 	}
-	
+
 	return result
 }

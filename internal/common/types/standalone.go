@@ -253,6 +253,17 @@ type CreateTRESRequest struct {
 	Count       int64  `json:"count,omitempty"`
 }
 
+// === Ping Types ===
+
+// PingResponse represents the response from a database ping operation
+type PingResponse struct {
+	Status    string                 `json:"status"`
+	Message   string                 `json:"message,omitempty"`
+	Latency   int64                  `json:"latency,omitempty"` // in microseconds
+	Timestamp time.Time              `json:"timestamp"`
+	Meta      map[string]interface{} `json:"meta,omitempty"`
+}
+
 // === Reconfigure Types ===
 
 // ReconfigureResponse represents the response from a reconfigure operation

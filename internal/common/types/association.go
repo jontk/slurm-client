@@ -140,13 +140,6 @@ type AssociationUpdate struct {
 	MinTRES             map[string]int64  `json:"min_tres,omitempty"`
 }
 
-// AssociationCreateResponse represents the response from association creation
-type AssociationCreateResponse struct {
-	AssociationID string `json:"association_id"`
-	AccountName   string `json:"account_name"`
-	UserName      string `json:"user_name,omitempty"`
-	Cluster       string `json:"cluster"`
-}
 
 // AssociationListOptions represents options for listing associations
 type AssociationListOptions struct {
@@ -196,4 +189,40 @@ type AssociationHierarchy struct {
 type AssociationUser struct {
 	UserName    string       `json:"user_name"`
 	Association *Association `json:"association,omitempty"`
+}
+
+// AssociationCreateResponse represents the response from creating an association
+type AssociationCreateResponse struct {
+	Status  string                 `json:"status"`
+	Message string                 `json:"message,omitempty"`
+	Meta    map[string]interface{} `json:"meta,omitempty"`
+}
+
+// AccountAssociationRequest represents a request to create account associations
+type AccountAssociationRequest struct {
+	Accounts     []string           `json:"accounts"`
+	Cluster      string             `json:"cluster"`
+	Partition    string             `json:"partition,omitempty"`
+	Parent       string             `json:"parent,omitempty"`
+	QoS          []string           `json:"qos,omitempty"`
+	DefaultQoS   string             `json:"default_qos,omitempty"`
+	Fairshare    int32              `json:"fairshare,omitempty"`
+	GrpTRES      map[string]string  `json:"grp_tres,omitempty"`
+	MaxTRES      map[string]string  `json:"max_tres,omitempty"`
+	Description  string             `json:"description,omitempty"`
+	Organization string             `json:"organization,omitempty"`
+}
+
+// UserAssociationRequest represents a request to create user associations
+type UserAssociationRequest struct {
+	Users        []string           `json:"users"`
+	Account      string             `json:"account"`
+	Cluster      string             `json:"cluster"`
+	Partition    string             `json:"partition,omitempty"`
+	QoS          []string           `json:"qos,omitempty"`
+	DefaultQoS   string             `json:"default_qos,omitempty"`
+	Fairshare    int32              `json:"fairshare,omitempty"`
+	MaxTRES      map[string]string  `json:"max_tres,omitempty"`
+	DefaultWCKey string             `json:"default_wckey,omitempty"`
+	AdminLevel   string             `json:"admin_level,omitempty"`
 }

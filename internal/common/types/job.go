@@ -265,3 +265,59 @@ type JobNotifyRequest struct {
 	JobID   int32  `json:"job_id"`
 	Message string `json:"message"`
 }
+
+// JobAllocateRequest represents a request to allocate resources for a job
+type JobAllocateRequest struct {
+	// Job specification
+	Name        string            `json:"name,omitempty"`
+	Account     string            `json:"account,omitempty"`
+	Partition   string            `json:"partition,omitempty"`
+	QoS         string            `json:"qos,omitempty"`
+
+	// Resource requirements
+	Nodes       string            `json:"nodes,omitempty"`       // Number or range of nodes
+	CPUs        int32             `json:"cpus,omitempty"`        // Number of CPUs
+	Memory      string            `json:"memory,omitempty"`      // Memory requirement
+	GPUs        string            `json:"gpus,omitempty"`        // GPU requirement
+
+	// Time limits
+	TimeLimit   int32             `json:"time_limit,omitempty"`  // Time limit in minutes
+
+	// Environment and execution
+	Environment map[string]string `json:"environment,omitempty"`
+	WorkingDir  string            `json:"working_directory,omitempty"`
+	Command     []string          `json:"command,omitempty"`     // Command to run
+
+	// Advanced options
+	Exclusive   bool              `json:"exclusive,omitempty"`
+	Features    []string          `json:"features,omitempty"`
+	Constraints string            `json:"constraints,omitempty"`
+
+	// Output handling
+	StdOut      string            `json:"stdout,omitempty"`
+	StdErr      string            `json:"stderr,omitempty"`
+	StdIn       string            `json:"stdin,omitempty"`
+}
+
+// JobAllocateResponse represents the response from a job allocation request
+type JobAllocateResponse struct {
+	JobID       int32                  `json:"job_id"`
+	Status      string                 `json:"status"`
+	Message     string                 `json:"message,omitempty"`
+
+	// Allocated resources
+	Nodes       []string               `json:"nodes,omitempty"`
+	CPUs        int32                  `json:"cpus_allocated,omitempty"`
+	Memory      int64                  `json:"memory_allocated,omitempty"`
+	GPUs        int32                  `json:"gpus_allocated,omitempty"`
+
+	// Timing information
+	StartTime   *time.Time             `json:"start_time,omitempty"`
+	EndTime     *time.Time             `json:"end_time,omitempty"`
+	TimeLimit   int32                  `json:"time_limit,omitempty"`
+
+	// Connection information for interactive jobs
+	ConnectionInfo map[string]interface{} `json:"connection_info,omitempty"`
+
+	Meta        map[string]interface{} `json:"meta,omitempty"`
+}

@@ -20,6 +20,7 @@ type Adapter struct {
 	userAdapter          *UserAdapter
 	reservationAdapter   *ReservationAdapter
 	associationAdapter   *AssociationAdapter
+	wcKeyAdapter         *WCKeyAdapter
 	standaloneAdapter    *StandaloneAdapter
 }
 
@@ -36,6 +37,7 @@ func NewAdapter(client *api.ClientWithResponses) *Adapter {
 		userAdapter:          NewUserAdapter(client),
 		reservationAdapter:   NewReservationAdapter(client),
 		associationAdapter:   NewAssociationAdapter(client),
+		wcKeyAdapter:         NewWCKeyAdapter(client),
 		standaloneAdapter:    NewStandaloneAdapter(client),
 	}
 }
@@ -83,6 +85,11 @@ func (a *Adapter) GetReservationManager() common.ReservationAdapter {
 // GetAssociationManager returns the Association adapter for this version
 func (a *Adapter) GetAssociationManager() common.AssociationAdapter {
 	return a.associationAdapter
+}
+
+// GetWCKeyManager returns the WCKey adapter for this version
+func (a *Adapter) GetWCKeyManager() common.WCKeyAdapter {
+	return a.wcKeyAdapter
 }
 
 // GetStandaloneManager returns the Standalone adapter for this version

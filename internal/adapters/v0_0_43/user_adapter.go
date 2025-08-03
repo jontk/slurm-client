@@ -5,10 +5,13 @@ package v0_0_43
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 )
 
@@ -85,7 +88,7 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 		return nil, err
 	}
 	// Users is not a pointer, it's a slice directly
-	
+
 	// Convert the response to common types
 	userList := make([]types.User, 0, len(resp.JSON200.Users))
 	for _, apiUser := range resp.JSON200.Users {
@@ -341,7 +344,7 @@ func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0043User) (*types.User
 	user := &types.User{
 		Name: apiUser.Name, // Name is not a pointer in the API
 	}
-	
+
 	// Handle default account/wckey from nested struct
 	if apiUser.Default != nil {
 		if apiUser.Default.Account != nil {
@@ -349,7 +352,7 @@ func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0043User) (*types.User
 		}
 		// Note: DefaultQoS is not available in V0043User, only WCKey
 	}
-	
+
 	// Handle flags if present
 	if apiUser.Flags != nil {
 		for _, flag := range *apiUser.Flags {
@@ -358,7 +361,7 @@ func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0043User) (*types.User
 			}
 		}
 	}
-	
+
 	return user, nil
 }
 
@@ -366,7 +369,7 @@ func (a *UserAdapter) convertCommonUserCreateToAPI(create *types.UserCreate) (*a
 	apiUser := &api.V0043User{
 		Name: create.Name, // Name is not a pointer
 	}
-	
+
 	// Set default account if provided
 	if create.DefaultAccount != "" {
 		apiUser.Default = &struct {
@@ -376,9 +379,9 @@ func (a *UserAdapter) convertCommonUserCreateToAPI(create *types.UserCreate) (*a
 			Account: &create.DefaultAccount,
 		}
 	}
-	
+
 	// Note: DefaultQoS is not supported in V0043User API
-	
+
 	return apiUser, nil
 }
 
@@ -392,7 +395,7 @@ func (a *UserAdapter) convertCommonUserUpdateToAPI(existing *types.User, update 
 	if update.DefaultAccount != nil {
 		defaultAccount = *update.DefaultAccount
 	}
-	
+
 	// Set default struct if we have values to set
 	if defaultAccount != "" {
 		apiUser.Default = &struct {
@@ -402,9 +405,119 @@ func (a *UserAdapter) convertCommonUserUpdateToAPI(existing *types.User, update 
 			Account: &defaultAccount,
 		}
 	}
-	
+
 	// Note: DefaultQoS is not supported in V0043User API
 	// If DefaultQoS was updated, we would need to log a warning or return an error
 
 	return apiUser, nil
+}
+
+// CreateAssociation creates associations for users
+func (a *UserAdapter) CreateAssociation(ctx context.Context, req *types.UserAssociationRequest) (*types.AssociationCreateResponse, error) {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.validateUserAssociationRequest(req); err != nil {
+		return nil, err
+	}
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+
+	// Convert to API format
+	apiAssociations, err := a.convertCommonUserAssociationToAPI(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create request body
+	reqBody := api.SlurmdbV0043PostAssociationsJSONRequestBody{
+		Associations: apiAssociations,
+	}
+
+	// Call the generated OpenAPI client
+	resp, err := a.client.SlurmdbV0043PostAssociationsWithResponse(ctx, reqBody)
+	if err != nil {
+		return nil, a.HandleAPIError(err)
+	}
+
+	// Use common response error handling
+	var apiErrors *api.V0043OpenapiErrors
+	if resp.JSON200 != nil {
+		apiErrors = resp.JSON200.Errors
+	}
+
+	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
+		return nil, err
+	}
+
+	return &types.AssociationCreateResponse{
+		Status:  "success",
+		Message: fmt.Sprintf("Created associations for %d users in account %s cluster %s", len(req.Users), req.Account, req.Cluster),
+	}, nil
+}
+
+// validateUserAssociationRequest validates user association creation request
+func (a *UserAdapter) validateUserAssociationRequest(req *types.UserAssociationRequest) error {
+	if req == nil {
+		return errors.NewValidationErrorf("request", nil, "user association request is required")
+	}
+	if len(req.Users) == 0 {
+		return errors.NewValidationErrorf("users", req.Users, "at least one user is required")
+	}
+	if req.Account == "" {
+		return errors.NewValidationErrorf("account", req.Account, "account is required")
+	}
+	if req.Cluster == "" {
+		return errors.NewValidationErrorf("cluster", req.Cluster, "cluster is required")
+	}
+	// Validate numeric fields
+	if req.Fairshare < 0 {
+		return errors.NewValidationErrorf("fairshare", req.Fairshare, "fairshare must be non-negative")
+	}
+	return nil
+}
+
+// convertCommonUserAssociationToAPI converts common user association request to API format
+func (a *UserAdapter) convertCommonUserAssociationToAPI(req *types.UserAssociationRequest) ([]api.V0043Assoc, error) {
+	associations := make([]api.V0043Assoc, 0, len(req.Users))
+
+	for _, userName := range req.Users {
+		association := api.V0043Assoc{
+			User:    userName, // User field is required and not a pointer
+			Account: &req.Account,
+			Cluster: &req.Cluster,
+		}
+
+		if req.Partition != "" {
+			association.Partition = &req.Partition
+		}
+		if len(req.QoS) > 0 {
+			qosList := make(api.V0043QosStringIdList, len(req.QoS))
+			copy(qosList, req.QoS)
+			association.Qos = &qosList
+		}
+		if req.DefaultQoS != "" {
+			association.Default = &struct {
+				Qos *string `json:"qos,omitempty"`
+			}{
+				Qos: &req.DefaultQoS,
+			}
+		}
+		if req.Fairshare > 0 {
+			association.SharesRaw = &req.Fairshare
+		}
+
+		// TODO: DefaultWCKey and AdminLevel are not available in V0043Assoc
+		// These would need to be set at the User level, not Association level
+
+		// TODO: Handle TRES if provided - the v0.0.43 TRES structure is complex
+		// For now, skip TRES handling to get basic functionality working
+
+		associations = append(associations, association)
+	}
+
+	return associations, nil
 }
