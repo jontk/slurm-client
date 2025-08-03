@@ -74,3 +74,8 @@ func (a *StandaloneAdapter) CreateTRES(ctx context.Context, req *types.CreateTRE
 func (a *StandaloneAdapter) Reconfigure(ctx context.Context) (*types.ReconfigureResponse, error) {
 	return nil, errors.NewNotImplementedError("Reconfigure", a.version)
 }
+
+// PingDatabase pings the SLURM database for health checks
+func (a *StandaloneAdapter) PingDatabase(ctx context.Context) (*types.PingResponse, error) {
+	return nil, errors.NewNotImplementedError("PingDatabase", a.version)
+}

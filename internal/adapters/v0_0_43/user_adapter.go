@@ -6,7 +6,6 @@ package v0_0_43
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"

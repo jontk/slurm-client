@@ -89,3 +89,8 @@ func (a *Adapter) GetAssociationManager() common.AssociationAdapter {
 func (a *Adapter) GetStandaloneManager() common.StandaloneAdapter {
 	return a.standaloneAdapter
 }
+
+// GetWCKeyManager returns nil as WCKey management is not supported in v0.0.42
+func (a *Adapter) GetWCKeyManager() common.WCKeyAdapter {
+	return nil
+}

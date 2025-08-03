@@ -452,3 +452,8 @@ func (a *JobAdapter) Hold(ctx context.Context, req *types.JobHoldRequest) error 
 func (a *JobAdapter) Notify(ctx context.Context, req *types.JobNotifyRequest) error {
 	return a.HandleNotImplemented("Notify", "v0.0.41")
 }
+
+// Allocate allocates resources for a job (not supported in v0.0.41)
+func (a *JobAdapter) Allocate(ctx context.Context, req *types.JobAllocateRequest) (*types.JobAllocateResponse, error) {
+	return nil, a.HandleNotImplemented("Allocate", "v0.0.41")
+}

@@ -147,3 +147,4 @@ fix_v41_adapters.sh
 update_v41_error_handling.sh
 package-lock.json
 adapter-test
+docs/

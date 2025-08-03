@@ -448,3 +448,8 @@ func (a *JobAdapter) Watch(ctx context.Context, opts *types.JobWatchOptions) (<-
 	// For now, return an error indicating it's not implemented
 	return nil, fmt.Errorf("watch functionality not implemented for v0.0.42")
 }
+
+// Allocate allocates resources for a job (not supported in v0.0.42)
+func (a *JobAdapter) Allocate(ctx context.Context, req *types.JobAllocateRequest) (*types.JobAllocateResponse, error) {
+	return nil, fmt.Errorf("Allocate not supported in API v0.0.42")
+}
