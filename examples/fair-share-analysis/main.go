@@ -240,7 +240,7 @@ func analyzeHierarchy(ctx context.Context, client interfaces.SlurmClient, rootAc
 }
 
 func compareUserFairShare(ctx context.Context, client interfaces.SlurmClient) {
-	fmt.Println("=== User Fair-Share Comparison ===\n")
+	fmt.Println("=== User Fair-Share Comparison ===")
 
 	// For demonstration, compare a predefined list of users
 	// In practice, this could be read from a file or command line
@@ -318,7 +318,7 @@ func compareUserFairShare(ctx context.Context, client interfaces.SlurmClient) {
 }
 
 func compareAccountFairShare(ctx context.Context, client interfaces.SlurmClient) {
-	fmt.Println("=== Account Fair-Share Comparison ===\n")
+	fmt.Println("=== Account Fair-Share Comparison ===")
 
 	accountManager := client.Accounts()
 
@@ -445,7 +445,7 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 	}
 
 	// Run predictions for each scenario and account combination
-	fmt.Println("Priority Predictions by Job Type and Account:\n")
+	fmt.Println("Priority Predictions by Job Type and Account:")
 	
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(w, "Job Type\tAccount\tPriority\tTier\tEst. Start\tQueue Pos")

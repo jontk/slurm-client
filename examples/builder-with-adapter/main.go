@@ -343,7 +343,7 @@ func cloneAndModifyQoS(ctx context.Context, adapter common.VersionAdapter) error
 		fmt.Printf("✓ Created variant: %s\n", resp.QoSName)
 	}
 
-	fmt.Println()
+	fmt.Println("")
 	return nil
 }
 

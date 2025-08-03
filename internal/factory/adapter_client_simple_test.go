@@ -67,6 +67,10 @@ func (t *testVersionAdapter) GetStandaloneManager() common.StandaloneAdapter {
 	return &mockStandaloneAdapter{}
 }
 
+func (t *testVersionAdapter) GetWCKeyManager() common.WCKeyAdapter {
+	return nil
+}
+
 // Mock standalone adapter
 type mockStandaloneAdapter struct{}
 
@@ -108,6 +112,10 @@ func (m *mockStandaloneAdapter) CreateTRES(ctx context.Context, req *types.Creat
 
 func (m *mockStandaloneAdapter) Reconfigure(ctx context.Context) (*types.ReconfigureResponse, error) {
 	return &types.ReconfigureResponse{}, nil
+}
+
+func (m *mockStandaloneAdapter) PingDatabase(ctx context.Context) (*types.PingResponse, error) {
+	return &types.PingResponse{}, nil
 }
 
 // Mock reservation adapter
@@ -181,7 +189,7 @@ func (m *mockAssociationAdapter) Create(ctx context.Context, assoc *types.Associ
 	if m.createFunc != nil {
 		return m.createFunc(ctx, assoc)
 	}
-	return &types.AssociationCreateResponse{AssociationID: "test-123"}, nil
+	return &types.AssociationCreateResponse{Status: "success", Message: "Created association test-123"}, nil
 }
 
 func (m *mockAssociationAdapter) Update(ctx context.Context, id string, update *types.AssociationUpdate) error {
@@ -283,7 +291,8 @@ func TestAdapterClient_AssociationOperations(t *testing.T) {
 		},
 		createFunc: func(ctx context.Context, assoc *types.AssociationCreate) (*types.AssociationCreateResponse, error) {
 			return &types.AssociationCreateResponse{
-				AssociationID: "new-assoc-123",
+				Status: "success",
+				Message: "Created association new-assoc-123",
 			}, nil
 		},
 	}

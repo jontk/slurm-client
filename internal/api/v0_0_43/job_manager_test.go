@@ -438,10 +438,7 @@ func TestJobManager_convertJobUpdateToAPI(t *testing.T) {
 	}
 }
 
-// Helper functions for pointer creation
-func int32Ptr(i int32) *int32 {
-	return &i
-}
+// int32Ptr is already defined in job_manager_impl.go
 
 func stringPtr(s string) *string {
 	return &s

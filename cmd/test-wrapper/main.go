@@ -75,7 +75,7 @@ func main() {
 		fmt.Printf("Found %d jobs\n", len(jobs.Jobs))
 		for i, job := range jobs.Jobs {
 			if i < 5 { // Show first 5 jobs
-				fmt.Printf("  Job: ID=%d, Name=%s, State=%s\n", job.ID, job.Name, job.State)
+				fmt.Printf("  Job: ID=%s, Name=%s, State=%s\n", job.ID, job.Name, job.State)
 			}
 		}
 		if len(jobs.Jobs) > 5 {
