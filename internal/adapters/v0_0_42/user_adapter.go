@@ -92,7 +92,7 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 			}
 			userList.Users = append(userList.Users, *user)
 		}
-		
+
 		// Apply client-side filtering if needed
 		if opts != nil && len(opts.Names) > 0 {
 			filtered := make([]types.User, 0, len(userList.Users))
@@ -236,7 +236,176 @@ func (a *UserAdapter) Delete(ctx context.Context, name string) error {
 	return nil
 }
 
-// CreateAssociation creates associations for users (not supported in v0.0.42)
+// CreateAssociation creates associations for users
 func (a *UserAdapter) CreateAssociation(ctx context.Context, req *types.UserAssociationRequest) (*types.AssociationCreateResponse, error) {
-	return nil, fmt.Errorf("CreateAssociation not supported in API v0.0.42")
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+
+	// Check client initialization
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+
+	// Validate request
+	if req == nil {
+		return nil, fmt.Errorf("association request is required")
+	}
+	if len(req.Users) == 0 {
+		return nil, fmt.Errorf("at least one user is required")
+	}
+	if req.Account == "" {
+		return nil, fmt.Errorf("account is required")
+	}
+	if req.Cluster == "" {
+		return nil, fmt.Errorf("cluster is required")
+	}
+
+	// Convert common request to API request structure
+	apiReq, err := a.convertUserAssociationRequestToAPI(req)
+	if err != nil {
+		return nil, a.WrapError(err, "failed to convert association request")
+	}
+
+	// Prepare parameters (optional flags)
+	params := &api.SlurmdbV0042PostUsersAssociationParams{}
+
+	// Call the API
+	resp, err := a.client.SlurmdbV0042PostUsersAssociationWithResponse(ctx, params, *apiReq)
+	if err != nil {
+		return nil, a.WrapError(err, "failed to create user associations")
+	}
+
+	// Check response status
+	if resp.StatusCode() != 200 {
+		return nil, a.HandleAPIError(fmt.Errorf("API error: status %d", resp.StatusCode()))
+	}
+
+	// Check for API response
+	if resp.JSON200 == nil {
+		return nil, fmt.Errorf("empty response from API")
+	}
+
+	// Convert response
+	return a.convertUserAssociationResponseToCommon(resp.JSON200), nil
+}
+
+// convertUserAssociationRequestToAPI converts common request to API structure
+func (a *UserAdapter) convertUserAssociationRequestToAPI(req *types.UserAssociationRequest) (*api.V0042OpenapiUsersAddCondResp, error) {
+	// Create users list from string slice
+	users := make(api.V0042StringList, len(req.Users))
+	for i, user := range req.Users {
+		users[i] = user
+	}
+
+	// Create association condition
+	assocCond := api.V0042UsersAddCond{
+		Users: users,
+	}
+
+	// Add accounts
+	if req.Account != "" {
+		accounts := api.V0042StringList{req.Account}
+		assocCond.Accounts = &accounts
+	}
+
+	// Add clusters
+	if req.Cluster != "" {
+		clusters := api.V0042StringList{req.Cluster}
+		assocCond.Clusters = &clusters
+	}
+
+	// Add partitions if specified
+	if req.Partition != "" {
+		partitions := api.V0042StringList{req.Partition}
+		assocCond.Partitions = &partitions
+	}
+
+	// Create association record set if we have additional fields
+	if req.DefaultQoS != "" || req.Fairshare != 0 || len(req.QoS) > 0 || req.DefaultWCKey != "" {
+		assocRec := &api.V0042AssocRecSet{}
+
+		// Set default QoS (note: field name is "Defaultqos" in v0.0.42)
+		if req.DefaultQoS != "" {
+			assocRec.Defaultqos = &req.DefaultQoS
+		}
+
+		// Set fairshare (note: field name is "Fairshare" in v0.0.42)
+		if req.Fairshare != 0 {
+			fairshareInt32 := int32(req.Fairshare)
+			assocRec.Fairshare = &fairshareInt32
+		}
+
+		// Note: DefaultWCKey is set in UserShort, not AssocRecSet
+
+		assocCond.Association = assocRec
+	}
+
+	// Create a minimal user short structure
+	userShort := api.V0042UserShort{}
+
+	// Set default WCKey (note: field name is "Defaultwckey" in v0.0.42)
+	if req.DefaultWCKey != "" {
+		userShort.Defaultwckey = &req.DefaultWCKey
+	}
+
+	// Set admin level if specified (note: field name is "Adminlevel" in v0.0.42, and it's an array)
+	if req.AdminLevel != "" {
+		adminLevel := api.V0042AdminLvl{req.AdminLevel}
+		userShort.Adminlevel = &adminLevel
+	}
+
+	// Create the API request
+	apiReq := &api.V0042OpenapiUsersAddCondResp{
+		AssociationCondition: assocCond,
+		User:                 userShort,
+	}
+
+	return apiReq, nil
+}
+
+// convertUserAssociationResponseToCommon converts API response to common type
+func (a *UserAdapter) convertUserAssociationResponseToCommon(apiResp *api.V0042OpenapiUsersAddCondRespStr) *types.AssociationCreateResponse {
+	resp := &types.AssociationCreateResponse{
+		Status: "success",
+		Meta:   make(map[string]interface{}),
+	}
+
+	// Extract added users info
+	if apiResp.AddedUsers != "" {
+		resp.Message = fmt.Sprintf("Successfully created associations for users: %s", apiResp.AddedUsers)
+		resp.Meta["added_users"] = apiResp.AddedUsers
+	} else {
+		resp.Message = "User associations created successfully"
+	}
+
+	// Handle errors in response
+	if apiResp.Errors != nil && len(*apiResp.Errors) > 0 {
+		resp.Status = "error"
+		errors := *apiResp.Errors
+		if len(errors) > 0 && errors[0].Error != nil {
+			resp.Message = *errors[0].Error
+		} else {
+			resp.Message = "User association creation failed"
+		}
+	}
+
+	// Extract metadata if available
+	if apiResp.Meta != nil {
+		if apiResp.Meta.Client != nil {
+			clientInfo := make(map[string]interface{})
+			if apiResp.Meta.Client.Source != nil {
+				clientInfo["source"] = *apiResp.Meta.Client.Source
+			}
+			if apiResp.Meta.Client.User != nil {
+				clientInfo["user"] = *apiResp.Meta.Client.User
+			}
+			if len(clientInfo) > 0 {
+				resp.Meta["client"] = clientInfo
+			}
+		}
+	}
+
+	return resp
 }

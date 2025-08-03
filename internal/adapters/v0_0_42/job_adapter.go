@@ -10,6 +10,7 @@ import (
 
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
+	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_42"
 )
 
@@ -449,7 +450,111 @@ func (a *JobAdapter) Watch(ctx context.Context, opts *types.JobWatchOptions) (<-
 	return nil, fmt.Errorf("watch functionality not implemented for v0.0.42")
 }
 
-// Allocate allocates resources for a job (not supported in v0.0.42)
+// Allocate allocates resources for a job
 func (a *JobAdapter) Allocate(ctx context.Context, req *types.JobAllocateRequest) (*types.JobAllocateResponse, error) {
-	return nil, fmt.Errorf("Allocate not supported in API v0.0.42")
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.validateJobAllocateRequest(req); err != nil {
+		return nil, err
+	}
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+
+	// Convert common allocation request to API request
+	apiReq, err := a.convertCommonJobAllocateToAPI(req)
+	if err != nil {
+		return nil, a.WrapError(err, "failed to convert allocation request")
+	}
+
+	// Call the generated OpenAPI client
+	resp, err := a.client.SlurmV0042PostJobAllocateWithResponse(ctx, *apiReq)
+	if err != nil {
+		return nil, a.HandleAPIError(err)
+	}
+
+	// Check response status
+	if resp.StatusCode() != 200 {
+		return nil, a.HandleAPIError(fmt.Errorf("API error: status %d", resp.StatusCode()))
+	}
+
+	if resp.JSON200 == nil {
+		return nil, fmt.Errorf("empty response from allocation API")
+	}
+
+	// Convert API response to common response
+	return a.convertAPIJobAllocateResponseToCommon(resp.JSON200), nil
+}
+
+// validateJobAllocateRequest validates job allocation request
+func (a *JobAdapter) validateJobAllocateRequest(req *types.JobAllocateRequest) error {
+	if req == nil {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "job allocation request is required", "req", nil, nil)
+	}
+
+	// Account is required for SLURM v0.0.42 job allocation
+	if req.Account == "" {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account is required for job allocation in SLURM v0.0.42", "account", req.Account, nil)
+	}
+
+	// At least one resource requirement should be specified
+	if req.Nodes == "" && req.CPUs == 0 && req.Memory == "" {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one resource requirement (nodes, cpus, or memory) must be specified", "resources", req, nil)
+	}
+
+	return nil
+}
+
+// convertCommonJobAllocateToAPI converts common allocation request to API request
+func (a *JobAdapter) convertCommonJobAllocateToAPI(req *types.JobAllocateRequest) (*api.V0042JobAllocReq, error) {
+	// Create the job description message
+	jobDesc := &api.V0042JobDescMsg{}
+
+	// Set basic fields in the job description
+	if req.Name != "" {
+		jobDesc.Name = &req.Name
+	}
+	if req.Account != "" {
+		jobDesc.Account = &req.Account
+	}
+	if req.Partition != "" {
+		jobDesc.Partition = &req.Partition
+	}
+	if req.QoS != "" {
+		jobDesc.Qos = &req.QoS
+	}
+
+	// Create the allocation request with the job description
+	apiReq := &api.V0042JobAllocReq{
+		Job: jobDesc,
+	}
+
+	return apiReq, nil
+}
+
+// convertAPIJobAllocateResponseToCommon converts API allocation response to common response
+func (a *JobAdapter) convertAPIJobAllocateResponseToCommon(apiResp *api.V0042OpenapiJobAllocResp) *types.JobAllocateResponse {
+	resp := &types.JobAllocateResponse{
+		Status: "success",
+		Meta:   make(map[string]interface{}),
+	}
+
+	// Extract job ID from response
+	if apiResp != nil && apiResp.JobId != nil {
+		resp.JobID = *apiResp.JobId
+	}
+
+	// Extract user message if available
+	if apiResp != nil && apiResp.JobSubmitUserMsg != nil {
+		resp.Message = *apiResp.JobSubmitUserMsg
+	}
+
+	// Extract metadata if available
+	if apiResp != nil && apiResp.Meta != nil {
+		resp.Meta["api_version"] = "v0.0.42"
+	}
+
+	return resp
 }

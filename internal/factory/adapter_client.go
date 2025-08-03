@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client/internal/adapters/common"
-	interfacecommon "github.com/jontk/slurm-client/internal/common"
 	v040adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_40"
 	v041adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_41"
 	v042adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_42"
@@ -139,9 +138,9 @@ func (c *AdapterClient) Associations() interfaces.AssociationManager {
 	return &adapterAssociationManager{adapter: c.adapter.GetAssociationManager()}
 }
 
-// WCKeys returns the WCKeyManager (not supported by legacy adapter)
+// WCKeys returns the WCKeyManager
 func (c *AdapterClient) WCKeys() interfaces.WCKeyManager {
-	return &interfacecommon.WCKeyManagerStub{Version: c.version}
+	return &adapterWCKeyManager{adapter: c.adapter.GetWCKeyManager()}
 }
 
 // Close closes the client
@@ -509,9 +508,29 @@ func convertJobToInterface(job types.Job) interfaces.Job {
 	}
 }
 
-// Allocate allocates resources for a job (not supported by legacy adapters)
+// Allocate allocates resources for a job
 func (m *adapterJobManager) Allocate(ctx context.Context, req *interfaces.JobAllocateRequest) (*interfaces.JobAllocateResponse, error) {
-	return nil, fmt.Errorf("job allocation not supported by legacy adapters")
+	// Convert interfaces.JobAllocateRequest to types.JobAllocateRequest
+	adapterReq := &types.JobAllocateRequest{
+		Name:      req.Name,
+		Account:   req.Account,
+		Partition: req.Partition,
+		Nodes:     fmt.Sprintf("%d", req.Nodes),
+		CPUs:      int32(req.CPUs),
+		TimeLimit: int32(req.TimeLimit), // Time limit in minutes
+		QoS:       req.QoS,
+	}
+
+	// Call the adapter's Allocate method
+	result, err := m.adapter.Allocate(ctx, adapterReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert types.JobAllocateResponse to interfaces.JobAllocateResponse
+	return &interfaces.JobAllocateResponse{
+		JobID: fmt.Sprintf("%d", result.JobID),
+	}, nil
 }
 
 // adapterNodeManager wraps a common.NodeAdapter to implement interfaces.NodeManager
@@ -1720,4 +1739,84 @@ func convertAssociationToInterface(association types.Association) interfaces.Ass
 		QoSList:         association.QoSList,
 		Flags:           []string{}, // Not available in types.Association
 	}
+}
+
+// adapterWCKeyManager wraps a common.WCKeyAdapter to implement interfaces.WCKeyManager
+type adapterWCKeyManager struct {
+	adapter common.WCKeyAdapter
+}
+
+func (m *adapterWCKeyManager) List(ctx context.Context, opts *interfaces.WCKeyListOptions) (*interfaces.WCKeyList, error) {
+	// Convert options
+	adapterOpts := &types.WCKeyListOptions{}
+	if opts != nil {
+		adapterOpts.Names = opts.Names
+		adapterOpts.Users = opts.Users
+		adapterOpts.Clusters = opts.Clusters
+	}
+
+	// Call adapter
+	result, err := m.adapter.List(ctx, adapterOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert result
+	wckeys := make([]interfaces.WCKey, 0, len(result.WCKeys))
+	for _, wckey := range result.WCKeys {
+		wckeys = append(wckeys, interfaces.WCKey{
+			Name:    wckey.Name,
+			User:    wckey.User,
+			Cluster: wckey.Cluster,
+		})
+	}
+
+	return &interfaces.WCKeyList{
+		WCKeys: wckeys,
+		Total:  len(wckeys),
+	}, nil
+}
+
+func (m *adapterWCKeyManager) Get(ctx context.Context, wckeyName, user, cluster string) (*interfaces.WCKey, error) {
+	// For the adapter Get method, we pass the ID constructed from name, user, cluster
+	wcKeyID := fmt.Sprintf("%s:%s:%s", wckeyName, user, cluster)
+
+	result, err := m.adapter.Get(ctx, wcKeyID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &interfaces.WCKey{
+		Name:    result.Name,
+		User:    result.User,
+		Cluster: result.Cluster,
+	}, nil
+}
+
+func (m *adapterWCKeyManager) Create(ctx context.Context, wckey *interfaces.WCKeyCreate) (*interfaces.WCKeyCreateResponse, error) {
+	// Convert request
+	adapterReq := &types.WCKeyCreate{
+		Name:    wckey.Name,
+		User:    wckey.User,
+		Cluster: wckey.Cluster,
+	}
+
+	// Call adapter
+	_, err := m.adapter.Create(ctx, adapterReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return &interfaces.WCKeyCreateResponse{
+		WCKeyName: wckey.Name,
+	}, nil
+}
+
+func (m *adapterWCKeyManager) Update(ctx context.Context, wckeyName, user, cluster string, update *interfaces.WCKeyUpdate) error {
+	// WCKey updates are not commonly supported in SLURM - return not implemented
+	return fmt.Errorf("WCKey updates not supported in this version")
+}
+
+func (m *adapterWCKeyManager) Delete(ctx context.Context, wckeyID string) error {
+	return m.adapter.Delete(ctx, wckeyID)
 }

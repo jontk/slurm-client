@@ -6,6 +6,7 @@ package v0_0_42
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jontk/slurm-client/internal/common/types"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_42"
@@ -551,7 +552,64 @@ func extractMeta(meta *api.V0042OpenapiMeta) map[string]interface{} {
 	return result
 }
 
-// PingDatabase pings the SLURM database for health checks (not supported in v0.0.42)
+// PingDatabase pings the SLURM database for health checks
 func (a *StandaloneAdapter) PingDatabase(ctx context.Context) (*types.PingResponse, error) {
-	return nil, fmt.Errorf("PingDatabase not supported in API v0.0.42")
+	if a.client == nil {
+		return nil, fmt.Errorf("API client not initialized")
+	}
+
+	resp, err := a.client.SlurmdbV0042GetPingWithResponse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	// Handle API response with enhanced error handling
+	if err := a.errorAdapter.HandleAPIResponse(resp.StatusCode(), resp.Body, "PingDatabase"); err != nil {
+		return nil, err
+	}
+
+	// Build response - start with default values
+	pingResp := &types.PingResponse{
+		Status:    "success",
+		Message:   "Database ping successful",
+		Timestamp: time.Now(),
+		Meta:      make(map[string]interface{}),
+	}
+
+	// Extract ping information from response
+	if resp.JSON200 != nil {
+		pingResp.Meta = extractMeta(resp.JSON200.Meta)
+
+		// Extract latency from first ping result if available
+		if len(resp.JSON200.Pings) > 0 {
+			firstPing := resp.JSON200.Pings[0]
+			pingResp.Latency = firstPing.Latency
+
+			// Add ping details to meta
+			pings := make([]map[string]interface{}, 0)
+			for _, ping := range resp.JSON200.Pings {
+				pingInfo := make(map[string]interface{})
+				pingInfo["hostname"] = ping.Hostname
+				pingInfo["latency"] = ping.Latency
+				pingInfo["primary"] = ping.Primary
+				pingInfo["responding"] = ping.Responding
+				pings = append(pings, pingInfo)
+			}
+			pingResp.Meta["pings"] = pings
+		}
+
+		// Handle errors in response
+		if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
+			pingResp.Status = "error"
+			// Get first error message
+			errors := *resp.JSON200.Errors
+			if len(errors) > 0 && errors[0].Error != nil {
+				pingResp.Message = *errors[0].Error
+			} else {
+				pingResp.Message = "Database ping failed"
+			}
+		}
+	}
+
+	return pingResp, nil
 }

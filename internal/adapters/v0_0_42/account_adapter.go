@@ -208,7 +208,144 @@ func (a *AccountAdapter) Delete(ctx context.Context, name string) error {
 	return nil
 }
 
-// CreateAssociation creates associations for accounts (not supported in v0.0.42)
+// CreateAssociation creates associations for accounts
 func (a *AccountAdapter) CreateAssociation(ctx context.Context, req *types.AccountAssociationRequest) (*types.AssociationCreateResponse, error) {
-	return nil, fmt.Errorf("CreateAssociation not supported in API v0.0.42")
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+
+	// Check client initialization
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+
+	// Validate request
+	if req == nil {
+		return nil, fmt.Errorf("association request is required")
+	}
+	if len(req.Accounts) == 0 {
+		return nil, fmt.Errorf("at least one account is required")
+	}
+	if req.Cluster == "" {
+		return nil, fmt.Errorf("cluster is required")
+	}
+
+	// Convert common request to API request structure
+	apiReq, err := a.convertAccountAssociationRequestToAPI(req)
+	if err != nil {
+		return nil, a.WrapError(err, "failed to convert association request")
+	}
+
+	// Call the API
+	resp, err := a.client.SlurmdbV0042PostAccountsAssociationWithResponse(ctx, *apiReq)
+	if err != nil {
+		return nil, a.WrapError(err, "failed to create account associations")
+	}
+
+	// Check response status
+	if resp.StatusCode() != 200 {
+		return nil, a.HandleAPIError(fmt.Errorf("API error: status %d", resp.StatusCode()))
+	}
+
+	// Check for API response
+	if resp.JSON200 == nil {
+		return nil, fmt.Errorf("empty response from API")
+	}
+
+	// Convert response
+	return a.convertAccountAssociationResponseToCommon(resp.JSON200), nil
+}
+
+// convertAccountAssociationRequestToAPI converts common request to API structure
+func (a *AccountAdapter) convertAccountAssociationRequestToAPI(req *types.AccountAssociationRequest) (*api.V0042OpenapiAccountsAddCondResp, error) {
+	// Create accounts list from string slice
+	accounts := make(api.V0042StringList, len(req.Accounts))
+	for i, account := range req.Accounts {
+		accounts[i] = account
+	}
+
+	// Create association condition
+	assocCond := &api.V0042AccountsAddCond{
+		Accounts: accounts,
+	}
+
+	// Add clusters if specified
+	if req.Cluster != "" {
+		clusters := api.V0042StringList{req.Cluster}
+		assocCond.Clusters = &clusters
+	}
+
+	// Create association record set if we have additional fields
+	if req.Parent != "" || req.DefaultQoS != "" || req.Fairshare != 0 || len(req.QoS) > 0 {
+		assocRec := &api.V0042AssocRecSet{}
+
+		// Set default QoS (note: field name is "Defaultqos" in v0.0.42)
+		if req.DefaultQoS != "" {
+			assocRec.Defaultqos = &req.DefaultQoS
+		}
+
+		// Set fairshare (note: field name is "Fairshare" in v0.0.42)
+		if req.Fairshare != 0 {
+			fairshareInt32 := int32(req.Fairshare)
+			assocRec.Fairshare = &fairshareInt32
+		}
+
+		// Note: ParentAccount is not available in V0042AssocRecSet
+		// Parent account relationships are managed differently in v0.0.42
+
+		assocCond.Association = assocRec
+	}
+
+	// Create the API request
+	apiReq := &api.V0042OpenapiAccountsAddCondResp{
+		AssociationCondition: assocCond,
+	}
+
+	return apiReq, nil
+}
+
+// convertAccountAssociationResponseToCommon converts API response to common type
+func (a *AccountAdapter) convertAccountAssociationResponseToCommon(apiResp *api.V0042OpenapiAccountsAddCondRespStr) *types.AssociationCreateResponse {
+	resp := &types.AssociationCreateResponse{
+		Status: "success",
+		Meta:   make(map[string]interface{}),
+	}
+
+	// Extract added accounts info
+	if apiResp.AddedAccounts != "" {
+		resp.Message = fmt.Sprintf("Successfully created associations for accounts: %s", apiResp.AddedAccounts)
+		resp.Meta["added_accounts"] = apiResp.AddedAccounts
+	} else {
+		resp.Message = "Account associations created successfully"
+	}
+
+	// Handle errors in response
+	if apiResp.Errors != nil && len(*apiResp.Errors) > 0 {
+		resp.Status = "error"
+		errors := *apiResp.Errors
+		if len(errors) > 0 && errors[0].Error != nil {
+			resp.Message = *errors[0].Error
+		} else {
+			resp.Message = "Account association creation failed"
+		}
+	}
+
+	// Extract metadata if available
+	if apiResp.Meta != nil {
+		if apiResp.Meta.Client != nil {
+			clientInfo := make(map[string]interface{})
+			if apiResp.Meta.Client.Source != nil {
+				clientInfo["source"] = *apiResp.Meta.Client.Source
+			}
+			if apiResp.Meta.Client.User != nil {
+				clientInfo["user"] = *apiResp.Meta.Client.User
+			}
+			if len(clientInfo) > 0 {
+				resp.Meta["client"] = clientInfo
+			}
+		}
+	}
+
+	return resp
 }
