@@ -176,7 +176,7 @@ func (a *WCKeyAdapter) Create(ctx context.Context, wckey *types.WCKeyCreate) (*t
 	}
 
 	if wckey.User != "" {
-		apiWCKey.User = &wckey.User
+		apiWCKey.User = wckey.User
 	}
 
 	// Create request body
@@ -201,7 +201,7 @@ func (a *WCKeyAdapter) Create(ctx context.Context, wckey *types.WCKeyCreate) (*t
 		return nil, fmt.Errorf("empty response from API")
 	}
 
-	// Convert response
+	// Convert response - v0.0.42 POST returns V0042OpenapiResp not V0042OpenapiWckeyResp
 	return a.convertAPIWCKeyCreateResponseToCommon(resp.JSON200, wckey.Name)
 }
 
@@ -246,8 +246,8 @@ func (a *WCKeyAdapter) convertAPIWCKeyToCommon(apiWCKey api.V0042Wckey) (*types.
 	}
 
 	// Set user if available
-	if apiWCKey.User != nil {
-		wckey.User = *apiWCKey.User
+	if apiWCKey.User != "" {
+		wckey.User = apiWCKey.User
 	}
 
 	// Add flags information to meta
@@ -264,32 +264,26 @@ func (a *WCKeyAdapter) convertAPIWCKeyToCommon(apiWCKey api.V0042Wckey) (*types.
 }
 
 // convertAPIWCKeyCreateResponseToCommon converts API create response to common type
-func (a *WCKeyAdapter) convertAPIWCKeyCreateResponseToCommon(apiResp *api.V0042OpenapiWckeyResp, name string) (*types.WCKeyCreateResponse, error) {
+func (a *WCKeyAdapter) convertAPIWCKeyCreateResponseToCommon(apiResp *api.V0042OpenapiResp, name string) (*types.WCKeyCreateResponse, error) {
 	resp := &types.WCKeyCreateResponse{
 		Status: "success",
 		Meta:   make(map[string]interface{}),
 	}
 
-	// Extract ID from created WCKeys if available
-	if len(apiResp.Wckeys) > 0 {
-		for _, wckey := range apiResp.Wckeys {
-			if wckey.Name == name && wckey.Id != nil {
-				resp.ID = strconv.FormatInt(int64(*wckey.Id), 10)
-				break
-			}
-		}
-	}
+	// V0042OpenapiResp doesn't contain WCKeys - it's a general response
+	// We cannot extract ID from the response for v0.0.42
 
 	// Extract metadata if available
 	if apiResp.Meta != nil {
 		resp.Meta = a.extractMeta(apiResp.Meta)
 	}
 
-	// Handle errors in response
-	if apiResp.Errors != nil && len(apiResp.Errors.Errors) > 0 {
+	// Handle errors in response - V0042OpenapiErrors is []V0042OpenapiError
+	if apiResp.Errors != nil && len(*apiResp.Errors) > 0 {
 		resp.Status = "error"
-		if len(apiResp.Errors.Errors) > 0 && apiResp.Errors.Errors[0].Error != nil {
-			resp.Message = *apiResp.Errors.Errors[0].Error
+		errors := *apiResp.Errors
+		if len(errors) > 0 && errors[0].Error != nil {
+			resp.Message = *errors[0].Error
 		} else {
 			resp.Message = "WCKey creation failed"
 		}
