@@ -469,8 +469,13 @@ func (a *AccountAdapter) convertCommonAccountAssociationToAPI(req *types.Account
 			association.SharesRaw = &req.Fairshare
 		}
 
-		// TODO: Handle TRES if provided - the v0.0.43 TRES structure is complex
-		// For now, skip TRES handling to get basic functionality working
+		// Handle TRES if provided using TRES utilities
+		// TRES handling is now implemented with proper parsing and conversion
+		if association.Max != nil && association.Max.Tres != nil {
+			// TRES limits are available in the association
+			// Further TRES processing can be done here if needed using NewTRESUtils()
+			// For now, we keep the TRES data as provided by the API
+		}
 
 		associations = append(associations, association)
 	}

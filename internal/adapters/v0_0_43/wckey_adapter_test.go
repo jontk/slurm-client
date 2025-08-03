@@ -32,7 +32,7 @@ func TestWCKeyAdapter_Create(t *testing.T) {
 			ctx:     nil,
 			wckey:   &types.WCKeyCreate{Name: "test", User: "user1", Cluster: "cluster1"},
 			wantErr: true,
-			errMsg:  "context is required",
+			errMsg:  "[VALIDATION_FAILED] context is required",
 		},
 		{
 			name:    "nil wckey",
@@ -115,7 +115,7 @@ func TestWCKeyAdapter_List(t *testing.T) {
 			ctx:     nil,
 			opts:    nil,
 			wantErr: true,
-			errMsg:  "context is required",
+			errMsg:  "[VALIDATION_FAILED] context is required",
 		},
 		{
 			name:    "nil client",
@@ -169,14 +169,14 @@ func TestWCKeyAdapter_Delete(t *testing.T) {
 			ctx:     nil,
 			id:      "test_user1_cluster1",
 			wantErr: true,
-			errMsg:  "context is required",
+			errMsg:  "[VALIDATION_FAILED] context is required",
 		},
 		{
 			name:    "empty id",
 			ctx:     context.Background(),
 			id:      "",
 			wantErr: true,
-			errMsg:  "wckey ID is required",
+			errMsg:  "[VALIDATION_FAILED] WCKey ID cannot be empty",
 		},
 		{
 			name:    "nil client",

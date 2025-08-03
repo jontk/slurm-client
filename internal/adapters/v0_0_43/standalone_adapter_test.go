@@ -66,7 +66,7 @@ func TestStandaloneAdapter_GetTRES(t *testing.T) {
 			name:    "nil context",
 			ctx:     nil,
 			wantErr: true,
-			errMsg:  "context is required",
+			errMsg:  "[VALIDATION_FAILED] context is required",
 		},
 		{
 			name:    "nil client",
