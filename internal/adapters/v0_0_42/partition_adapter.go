@@ -189,3 +189,77 @@ func (a *PartitionAdapter) Delete(ctx context.Context, name string) error {
 	// This would typically be done through slurmctld configuration
 	return fmt.Errorf("partition deletion not supported via v0.0.42 API")
 }
+
+// convertAPIPartitionToCommon converts API partition to common type
+func (a *PartitionAdapter) convertAPIPartitionToCommon(apiPartition api.V0042PartitionInfo) (*types.Partition, error) {
+	partition := &types.Partition{}
+
+	// Set basic fields
+	if apiPartition.Name != nil {
+		partition.Name = *apiPartition.Name
+	}
+
+	// Convert state - check if State field exists and has a State field inside
+	if apiPartition.State != nil {
+		states := make([]types.PartitionState, len(*apiPartition.State))
+		for i, state := range *apiPartition.State {
+			states[i] = types.PartitionState(state)
+		}
+		partition.States = states
+	}
+
+	// Convert node information
+	if apiPartition.Nodes != nil {
+		if apiPartition.Nodes.AllowedAllocation != nil {
+			partition.AllowAllocNodes = *apiPartition.Nodes.AllowedAllocation
+		}
+		if apiPartition.Nodes.Config != nil {
+			partition.Nodes = *apiPartition.Nodes.Config
+		}
+	}
+
+	// Convert resource limits from Maximums
+	if apiPartition.Maximums != nil {
+		if apiPartition.Maximums.CpusPerNode != nil && apiPartition.Maximums.CpusPerNode.Set {
+			partition.MaxCPUsPerNode = apiPartition.Maximums.CpusPerNode.Number
+		}
+		if apiPartition.Maximums.MemoryPerCpu != nil {
+			partition.MaxMemPerCPU = *apiPartition.Maximums.MemoryPerCpu
+		}
+		if apiPartition.Maximums.Nodes != nil && apiPartition.Maximums.Nodes.Set {
+			partition.MaxNodes = apiPartition.Maximums.Nodes.Number
+		}
+	}
+
+	// Convert defaults
+	if apiPartition.Defaults != nil {
+		if apiPartition.Defaults.MemoryPerCpu != nil {
+			partition.DefaultMemPerCPU = *apiPartition.Defaults.MemoryPerCpu
+		}
+		if apiPartition.Defaults.Time != nil && apiPartition.Defaults.Time.Set {
+			partition.DefaultTime = apiPartition.Defaults.Time.Number
+		}
+	}
+
+	// Convert flags
+	if apiPartition.Flags != nil {
+		for _, flag := range *apiPartition.Flags {
+			if string(flag) == "DEFAULT" {
+				partition.Default = true
+				break
+			}
+		}
+	}
+
+	// Convert priority
+	if apiPartition.Priority != nil && apiPartition.Priority.JobFactor != nil && apiPartition.Priority.JobFactor.Set {
+		partition.Priority = apiPartition.Priority.JobFactor.Number
+	}
+
+	// Convert CPU total
+	if apiPartition.Cpus != nil && apiPartition.Cpus.Total != nil {
+		partition.TotalCPUs = *apiPartition.Cpus.Total
+	}
+
+	return partition, nil
+}

@@ -209,3 +209,76 @@ func (a *QoSAdapter) Delete(ctx context.Context, name string) error {
 	// Delete method may not be available in v0.0.42, return not implemented
 	return errors.NewNotImplementedError("QoS deletion", "v0.0.42")
 }
+
+// QoSCreateRequest represents a QoS creation request compatible with v0.0.42
+type QoSCreateRequest struct {
+	Name        string
+	Description string
+	Priority    int32
+}
+
+// convertAPIQoSToCommon converts API QoS to common type
+func (a *QoSAdapter) convertAPIQoSToCommon(apiQoS api.V0042Qos) (*types.QoS, error) {
+	qos := &types.QoS{}
+
+	// Set basic fields
+	if apiQoS.Name != nil {
+		qos.Name = *apiQoS.Name
+	}
+
+	if apiQoS.Id != nil {
+		qos.ID = *apiQoS.Id
+	}
+
+	if apiQoS.Priority != nil {
+		qos.Priority = *apiQoS.Priority
+	}
+
+	if apiQoS.Description != nil {
+		qos.Description = *apiQoS.Description
+	}
+
+	// Convert limits
+	if apiQoS.Limits != nil {
+		qos.Limits = &types.QoSLimits{}
+		
+		if apiQoS.Limits.Max != nil && apiQoS.Limits.Max.Jobs != nil {
+			qos.Limits.MaxJobs = &types.QoSJobLimits{}
+			
+			if apiQoS.Limits.Max.Jobs.Total != nil {
+				qos.Limits.MaxJobs.Total = *apiQoS.Limits.Max.Jobs.Total
+			}
+			if apiQoS.Limits.Max.Jobs.PerAccount != nil {
+				qos.Limits.MaxJobs.PerAccount = *apiQoS.Limits.Max.Jobs.PerAccount
+			}
+			if apiQoS.Limits.Max.Jobs.PerUser != nil {
+				qos.Limits.MaxJobs.PerUser = *apiQoS.Limits.Max.Jobs.PerUser
+			}
+		}
+	}
+
+	return qos, nil
+}
+
+// convertCommonQoSCreateToAPI converts common QoS create to API format
+func (a *QoSAdapter) convertCommonQoSCreateToAPI(qosCreate *QoSCreateRequest) (*api.V0042OpenapiSlurmdbdQosResp, error) {
+	if qosCreate == nil {
+		return nil, fmt.Errorf("QoS create request cannot be nil")
+	}
+
+	apiQoS := &api.V0042Qos{
+		Name: &qosCreate.Name,
+	}
+
+	if qosCreate.Description != "" {
+		apiQoS.Description = &qosCreate.Description
+	}
+
+	if qosCreate.Priority > 0 {
+		apiQoS.Priority = &qosCreate.Priority
+	}
+
+	return &api.V0042OpenapiSlurmdbdQosResp{
+		Qos: []api.V0042Qos{*apiQoS},
+	}, nil
+}
