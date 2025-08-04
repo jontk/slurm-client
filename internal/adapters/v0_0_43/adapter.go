@@ -4,11 +4,7 @@
 package v0_0_43
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/jontk/slurm-client/internal/adapters/common"
-	"github.com/jontk/slurm-client/internal/common/types"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 )
 
@@ -26,6 +22,7 @@ type Adapter struct {
 	associationAdapter   *AssociationAdapter
 	wcKeyAdapter         *WCKeyAdapter
 	standaloneAdapter    *StandaloneAdapter
+	clusterAdapter       *ClusterAdapter
 }
 
 // NewAdapter creates a new v0.0.43 adapter
@@ -43,6 +40,7 @@ func NewAdapter(client *api.ClientWithResponses) *Adapter {
 		associationAdapter:   NewAssociationAdapter(client),
 		wcKeyAdapter:         NewWCKeyAdapter(client),
 		standaloneAdapter:    NewStandaloneAdapter(client),
+		clusterAdapter:       NewClusterAdapter(client),
 	}
 }
 
@@ -103,25 +101,5 @@ func (a *Adapter) GetStandaloneManager() common.StandaloneAdapter {
 
 // GetClusterManager returns the Cluster adapter for this version
 func (a *Adapter) GetClusterManager() common.ClusterAdapter {
-	// TODO: Implement cluster management for v0.0.43
-	return &NotImplementedClusterAdapter{}
-}
-
-// NotImplementedClusterAdapter provides stub implementation for versions that don't have cluster management
-type NotImplementedClusterAdapter struct{}
-
-func (n *NotImplementedClusterAdapter) List(ctx context.Context, opts *types.ClusterListOptions) (*types.ClusterList, error) {
-	return nil, fmt.Errorf("cluster management not implemented for this API version")
-}
-
-func (n *NotImplementedClusterAdapter) Get(ctx context.Context, clusterName string) (*types.Cluster, error) {
-	return nil, fmt.Errorf("cluster management not implemented for this API version")
-}
-
-func (n *NotImplementedClusterAdapter) Create(ctx context.Context, cluster *types.ClusterCreate) (*types.ClusterCreateResponse, error) {
-	return nil, fmt.Errorf("cluster management not implemented for this API version")
-}
-
-func (n *NotImplementedClusterAdapter) Delete(ctx context.Context, clusterName string) error {
-	return fmt.Errorf("cluster management not implemented for this API version")
+	return a.clusterAdapter
 }
