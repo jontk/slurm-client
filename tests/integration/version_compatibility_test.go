@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -501,9 +502,9 @@ func (suite *VersionCompatibilityTestSuite) TestFeatureEvolution() {
 
 // generateCompatibilityReport generates a comprehensive compatibility report
 func (suite *VersionCompatibilityTestSuite) generateCompatibilityReport() {
-	suite.T().Log("\n" + "="*80)
+	suite.T().Log("\n" + strings.Repeat("=", 80))
 	suite.T().Log("COMPREHENSIVE COMPATIBILITY REPORT")
-	suite.T().Log("="*80)
+	suite.T().Log(strings.Repeat("=", 80))
 	
 	// Summary statistics
 	totalFeatures := len(suite.compatibility.Features)
@@ -622,7 +623,7 @@ func (suite *VersionCompatibilityTestSuite) generateCompatibilityReport() {
 		suite.T().Logf("  → Recommended version: %s (%.1f%% compatibility)", bestVersion, bestRate)
 	}
 	
-	suite.T().Log("="*80)
+	suite.T().Log(strings.Repeat("=", 80))
 }
 
 // TestVersionCompatibilitySuite runs the version compatibility test suite

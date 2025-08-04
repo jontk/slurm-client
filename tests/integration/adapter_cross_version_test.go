@@ -5,7 +5,6 @@ package integration
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 	"time"

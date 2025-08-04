@@ -6,10 +6,7 @@ package integration
 import (
 	"context"
 	goerrors "errors"
-	"fmt"
 	"os"
-	"os/exec"
-	"strings"
 	"testing"
 	"time"
 

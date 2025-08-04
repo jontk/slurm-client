@@ -52,7 +52,7 @@ func main() {
 	ctx := context.Background()
 
 	// Demonstrate various builder patterns
-	fmt.Println("=== QoS Builder Pattern Examples ===\n")
+	fmt.Println("=== QoS Builder Pattern Examples ===")
 
 	// Example 1: Simple QoS
 	if err := createSimpleQoS(ctx, adapter); err != nil {
