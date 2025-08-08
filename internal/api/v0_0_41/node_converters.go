@@ -111,6 +111,27 @@ func convertNodeFromAPI(apiNode interface{}) interfaces.Node {
 		node.Architecture = *nodeData.Architecture
 	}
 
+	// CPU Load - convert int32 to float64
+	if nodeData.CpuLoad != nil {
+		node.CPULoad = float64(*nodeData.CpuLoad)
+	}
+
+	// Allocated CPUs
+	if nodeData.AllocCpus != nil {
+		node.AllocCPUs = *nodeData.AllocCpus
+	}
+
+	// Allocated Memory (already in MB from API)
+	if nodeData.AllocMemory != nil {
+		node.AllocMemory = *nodeData.AllocMemory
+	}
+
+	// Free Memory (in MB from API)
+	if nodeData.FreeMem != nil && nodeData.FreeMem.Set != nil && *nodeData.FreeMem.Set &&
+		nodeData.FreeMem.Number != nil {
+		node.FreeMemory = *nodeData.FreeMem.Number
+	}
+
 	// Store additional fields in metadata
 	if nodeData.Hostname != nil {
 		node.Metadata["hostname"] = *nodeData.Hostname
@@ -120,15 +141,6 @@ func convertNodeFromAPI(apiNode interface{}) interfaces.Node {
 	}
 	if nodeData.TemporaryDisk != nil {
 		node.Metadata["tmp_disk"] = *nodeData.TemporaryDisk
-	}
-	if nodeData.AllocCpus != nil {
-		node.Metadata["alloc_cpus"] = *nodeData.AllocCpus
-	}
-	if nodeData.AllocMemory != nil {
-		node.Metadata["alloc_memory"] = *nodeData.AllocMemory
-	}
-	if nodeData.FreeMem != nil && nodeData.FreeMem.Number != nil {
-		node.Metadata["free_memory"] = *nodeData.FreeMem.Number
 	}
 	if nodeData.OperatingSystem != nil {
 		node.Metadata["os"] = *nodeData.OperatingSystem
@@ -164,9 +176,6 @@ func convertNodeFromAPI(apiNode interface{}) interfaces.Node {
 	}
 	if nodeData.Owner != nil {
 		node.Metadata["owner"] = *nodeData.Owner
-	}
-	if nodeData.CpuLoad != nil {
-		node.Metadata["cpu_load"] = *nodeData.CpuLoad
 	}
 	if nodeData.Port != nil {
 		node.Metadata["port"] = *nodeData.Port

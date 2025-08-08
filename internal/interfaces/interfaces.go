@@ -693,6 +693,10 @@ type Node struct {
 	Reason       string                 `json:"reason,omitempty"`
 	LastBusy     *time.Time             `json:"last_busy,omitempty"`
 	Architecture string                 `json:"architecture,omitempty"`
+	CPULoad      float64                `json:"cpu_load,omitempty"`
+	AllocCPUs    int32                  `json:"alloc_cpus,omitempty"`
+	AllocMemory  int64                  `json:"alloc_memory,omitempty"`
+	FreeMemory   int64                  `json:"free_memory,omitempty"`
 	Metadata     map[string]interface{} `json:"metadata"`
 }
 

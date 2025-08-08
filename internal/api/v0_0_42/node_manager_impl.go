@@ -172,6 +172,27 @@ func convertAPINodeToInterface(apiNode V0042Node) (*interfaces.Node, error) {
 		node.Architecture = *apiNode.Architecture
 	}
 
+	// CPU Load - convert int32 to float64
+	if apiNode.CpuLoad != nil {
+		node.CPULoad = float64(*apiNode.CpuLoad)
+	}
+
+	// Allocated CPUs
+	if apiNode.AllocCpus != nil {
+		node.AllocCPUs = *apiNode.AllocCpus
+	}
+
+	// Allocated Memory (already in MB from API)
+	if apiNode.AllocMemory != nil {
+		node.AllocMemory = *apiNode.AllocMemory
+	}
+
+	// Free Memory - V0042Uint64NoValStruct (in MB from API)
+	if apiNode.FreeMem != nil && apiNode.FreeMem.Set != nil && *apiNode.FreeMem.Set &&
+		apiNode.FreeMem.Number != nil {
+		node.FreeMemory = int64(*apiNode.FreeMem.Number)
+	}
+
 	// Initialize metadata
 	node.Metadata = make(map[string]interface{})
 
