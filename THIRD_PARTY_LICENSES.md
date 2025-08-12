@@ -34,6 +34,12 @@ This project uses the following third-party dependencies:
 - **Purpose**: Testing toolkit
 - **URL**: https://github.com/stretchr/testify
 
+### gopkg.in/yaml.v2
+- **Version**: v2.4.0
+- **License**: MIT
+- **Purpose**: YAML parsing and encoding
+- **URL**: https://github.com/go-yaml/yaml
+
 ## Indirect Dependencies
 
 ### github.com/apapsch/go-jsonmerge/v2
@@ -76,23 +82,36 @@ This project uses the following third-party dependencies:
 - **Version**: v1.0.0
 - **License**: BSD-3-Clause
 
-### github.com/stretchr/objx
-- **Version**: v0.5.0
-- **License**: MIT
-
-### gopkg.in/yaml.v2
-- **Version**: v2.4.0
-- **License**: MIT
-
 ### gopkg.in/yaml.v3
 - **Version**: v3.0.1
 - **License**: MIT
 
 ---
 
+## SLURM REST API OpenAPI Specifications
+
+### SchedMD SLURM OpenAPI Specifications
+- **Copyright**: Copyright (C) SchedMD LLC
+- **License**: Apache-2.0 (as specified by SchedMD in the original files)
+- **Source**: https://github.com/SchedMD/slurm
+- **Contact**: sales@schedmd.com
+- **Terms of Service**: https://github.com/SchedMD/slurm/blob/master/DISCLAIMER
+
+**Files**:
+- `openapi-specs/slurm-v0.0.40.json` - SLURM REST API v0.0.40 specification
+- `openapi-specs/slurm-v0.0.41.json` - SLURM REST API v0.0.41 specification
+- `openapi-specs/slurm-v0.0.42.json` - SLURM REST API v0.0.42 specification
+- `openapi-specs/slurm-v0.0.43.json` - SLURM REST API v0.0.43 specification
+
+**Purpose**: These OpenAPI specification files describe the public REST API interface of SLURM and are used to generate compatible client libraries. The specifications are provided by SchedMD LLC under Apache 2.0 license as indicated in the original specification files.
+
+**Note**: While the core SLURM software is GPL-licensed, these API specification files are explicitly licensed under Apache 2.0 by SchedMD, allowing for broader compatibility with client libraries.
+
+---
+
 ## License Compatibility
 
-All dependencies are compatible with the Apache License 2.0 used by this project:
+All dependencies and specifications are compatible with the Apache License 2.0 used by this project:
 
 - **MIT License**: Compatible (can be included in Apache 2.0 projects)
 - **BSD-3-Clause**: Compatible (can be included in Apache 2.0 projects)

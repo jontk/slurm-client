@@ -94,37 +94,6 @@ mocks/
 # Integration test artifacts
 integration-test-results/
 
-backup/
-
-# Claude Flow generated files
-.claude/settings.local.json
-.mcp.json
-claude-flow.config.json
-.swarm/
-.hive-mind/
-memory/claude-flow-data.json
-memory/sessions/*
-!memory/sessions/README.md
-memory/agents/*
-!memory/agents/README.md
-coordination/memory_bank/*
-coordination/subtasks/*
-coordination/orchestration/*
-*.db
-*.db-journal
-*.db-wal
-*.sqlite
-*.sqlite-journal
-*.sqlite-wal
-claude-flow
-claude-flow.bat
-claude-flow.ps1
-hive-mind-prompt-*.txt
-.claude
-.roo
-.roomodes
-memory/
-.claude-flow/
 
 # Build artifacts from test commands
 cmd/comprehensive-adapter-test/adapter-test
@@ -141,10 +110,16 @@ cmd/test-wrapper/test-wrapper
 cmd/verify-integration/verify-integration
 cmd/version-test/version-test
 
+# Example output files
+examples/**/*.json
+examples/**/*.csv
+examples/**/efficiency_report_*.json
+examples/**/job_*_analytics.json
+
 # Temporary files
 dependencies.txt
 fix_v41_adapters.sh
 update_v41_error_handling.sh
 package-lock.json
 adapter-test
-docs/
+

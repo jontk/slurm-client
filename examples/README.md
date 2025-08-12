@@ -48,6 +48,7 @@ Start here if you're new to the library:
   - Results collection and reporting
   - Cleanup operations
 
+<!--
 #### Job Allocation (v0.0.43+)
 - [`job-allocation/`](job-allocation/) - Direct resource allocation without scripts
   - Basic resource allocation
@@ -55,6 +56,7 @@ Start here if you're new to the library:
   - High-memory allocation
   - Constrained allocation with specific requirements
   - Allocation workflows with dependencies
+-->
 
 #### Job Workflows
 - [`job-workflow/`](multi-version/job-workflow/) - Complete job lifecycle management
@@ -71,6 +73,7 @@ Start here if you're new to the library:
 
 ### Workload Management
 
+<!--
 #### WCKey Management (v0.0.43+)
 - [`wckey-management/`](wckey-management/) - Workload Characterization Key management
   - Creating WCKeys for different workload types
@@ -78,6 +81,7 @@ Start here if you're new to the library:
   - Using WCKeys in job submission
   - WCKey-based job tracking and accounting
   - Managing WCKeys across users and clusters
+-->
 
 ### Real-time Monitoring
 

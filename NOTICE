@@ -8,5 +8,33 @@ Jon Thor Kristinsson (https://jontk.com/slurm-client).
 
 This project includes the following third-party software:
 
-TODO: This section will be populated with third-party dependencies and their
-respective licenses as part of the THIRD_PARTY_LICENSES.md documentation.
+================================================================================
+SLURM REST API OpenAPI Specifications
+================================================================================
+
+This project includes OpenAPI specification files from the SLURM Workload Manager project:
+
+SLURM OpenAPI Specifications (slurm-v0.0.40.json, slurm-v0.0.41.json,
+slurm-v0.0.42.json, slurm-v0.0.43.json)
+Copyright (C) SchedMD LLC
+Licensed under Apache 2.0 (as specified in the original files)
+Source: https://github.com/SchedMD/slurm
+Contact: sales@schedmd.com
+Terms of Service: https://github.com/SchedMD/slurm/blob/master/DISCLAIMER
+
+These OpenAPI specification files describe the public REST API interface of SLURM
+and are used to generate compatible client libraries. The specifications are
+provided by SchedMD LLC under Apache 2.0 license as indicated in the original
+specification files.
+
+Note: While the core SLURM software is GPL-licensed, these API specification
+files are explicitly licensed under Apache 2.0 by SchedMD, allowing for broader
+compatibility with client libraries.
+
+================================================================================
+Go Dependencies
+================================================================================
+
+This project uses various Go dependencies licensed under MIT, BSD-3-Clause,
+Apache-2.0, and ISC licenses. For a complete list of dependencies and their
+licenses, see THIRD_PARTY_LICENSES.md.

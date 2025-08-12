@@ -111,8 +111,7 @@ defer client.Close()
 ## Next Steps
 
 After mastering these basic examples, explore:
-- [Advanced Examples](../advanced/README.md) - Complex workflows and optimizations
-- [Tutorials](../tutorials/README.md) - Step-by-step guides for specific use cases
+- [Multi-Version Examples](../multi-version/README.md) - Version-specific features and compatibility
 - [Full Examples List](../README.md) - Complete catalog of all examples
 
 ## Troubleshooting

@@ -1,0 +1,7 @@
+# Ignore generated efficiency reports
+efficiency_report_*.json
+
+# Ignore other potential output files
+*.json
+*.csv
+*.log

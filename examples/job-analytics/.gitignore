@@ -1,0 +1,7 @@
+# Ignore generated job analytics reports
+job_*_analytics.json
+
+# Ignore other potential output files
+*.json
+*.csv
+*.log

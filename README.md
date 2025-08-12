@@ -4,7 +4,6 @@
 [![Security](https://github.com/jontk/slurm-client/actions/workflows/security.yml/badge.svg)](https://github.com/jontk/slurm-client/actions/workflows/security.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/jontk/slurm-client.svg)](https://pkg.go.dev/github.com/jontk/slurm-client)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jontk/slurm-client)](https://goreportcard.com/report/github.com/jontk/slurm-client)
-[![codecov](https://codecov.io/gh/jontk/slurm-client/branch/main/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/jontk/slurm-client)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/jontk/slurm-client)](https://github.com/jontk/slurm-client/blob/main/go.mod)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/jontk/slurm-client/badge)](https://api.securityscorecards.dev/projects/github.com/jontk/slurm-client)
@@ -26,11 +25,13 @@ The definitive solution addressing Go SLURM client ecosystem fragmentation throu
 
 ## 🚀 Multi-Version Architecture
 
+> **🎯 Default Choice**: Use the **Adapter Pattern** for version-agnostic, production-ready code. The wrapper pattern is only for advanced use cases.
+
 Unlike existing solutions that support single API versions, this library provides seamless compatibility across all active SLURM REST API versions:
 
-### Adapter Pattern Implementation
+### Adapter Pattern Implementation (Recommended)
 
-The library implements a sophisticated **adapter pattern** that provides version abstraction while maintaining optimal performance and type safety. This dual-implementation approach offers both high-level abstraction and direct API access.
+The library implements a sophisticated **adapter pattern** that provides version abstraction while maintaining optimal performance and type safety. Most users should use this approach for production applications.
 
 #### Architecture Overview
 
@@ -52,7 +53,7 @@ Version-Specific Implementations
 #### Adapter Pattern Benefits
 
 - **🎯 Version Abstraction**: Single interface works across all API versions
-- **🔧 Automatic Conversion**: Seamless type conversion between internal types and public interfaces  
+- **🔧 Automatic Conversion**: Seamless type conversion between internal types and public interfaces
 - **🛡️ Type Safety**: Compile-time guarantees with comprehensive error handling
 - **⚡ Performance**: Zero-copy operations where possible, intelligent caching
 - **🔄 Future-Proof**: Easy addition of new API versions without breaking changes
@@ -73,14 +74,14 @@ Version-Specific Implementations
 // Using Adapter Pattern (Recommended)
 func main() {
     // Automatically selects best compatible version
-    client, err := slurm.NewClient(ctx, 
+    client, err := slurm.NewClient(ctx,
         slurm.WithBaseURL("https://cluster:6820"),
         slurm.WithAuth(auth.NewTokenAuth("token")),
     )
     if err != nil {
         log.Fatal(err)
     }
-    
+
     // Works across all API versions - adapter handles differences
     reservations, err := client.Reservations().List(ctx, nil)
     if err != nil {
@@ -91,7 +92,7 @@ func main() {
         }
         log.Fatal(err)
     }
-    
+
     // Type-safe access to unified interface
     for _, res := range reservations.Reservations {
         fmt.Printf("Reservation: %s, Nodes: %v\n", res.Name, res.Nodes)
@@ -105,7 +106,7 @@ func advancedExample() {
     if err != nil {
         log.Fatal(err)
     }
-    
+
     // Direct API calls - requires version-specific knowledge
     reservations, err := wrapper.ReservationAPI.SlurmV0043GetReservations(ctx)
     // Handle version-specific response types manually...
@@ -149,7 +150,7 @@ if err != nil {
 **Performance Optimizations**
 ```go
 // Adapter pattern includes built-in optimizations:
-// - Zero-copy type conversion where possible  
+// - Zero-copy type conversion where possible
 // - Intelligent field mapping to avoid unnecessary allocations
 // - Response caching for expensive operations like cluster info
 // - Connection pooling managed at the adapter level
@@ -193,7 +194,7 @@ for _, res := range reservations.Reservations {
 // Automatically detects and uses the best compatible API version
 client, err := slurm.NewClient(ctx, slurm.WithBaseURL("https://your-cluster:6820"))
 
-// Or specify a version explicitly  
+// Or specify a version explicitly
 client, err := slurm.NewClientWithVersion(ctx, "v0.0.42", options...)
 
 // Or target a specific SLURM version
@@ -206,7 +207,11 @@ client, err := slurm.NewClientForSlurmVersion(ctx, "25.05", options...)
 go get github.com/jontk/slurm-client
 ```
 
-## ⚡ Quick Start
+## ⚡ Quick Start (Recommended Approach)
+
+> **💡 New to slurm-client?** Use the **Adapter Pattern** for the best experience. It provides version-agnostic APIs with automatic type conversion and error handling.
+
+### Basic Example
 
 ```go
 package main
@@ -215,7 +220,7 @@ import (
     "context"
     "fmt"
     "log"
-    
+
     "github.com/jontk/slurm-client"
     "github.com/jontk/slurm-client/pkg/auth"
     "github.com/jontk/slurm-client/pkg/errors"
@@ -223,16 +228,17 @@ import (
 )
 
 func main() {
-    // Create client with automatic version detection
+    // 🎯 Adapter Pattern: Works across all SLURM versions
     client, err := slurm.NewClient(context.Background(),
         slurm.WithBaseURL("https://your-slurm-server:6820"),
         slurm.WithAuth(auth.NewTokenAuth("your-token")),
+        // Version auto-detected - no need to specify!
     )
     if err != nil {
         log.Fatal(err)
     }
     defer client.Close()
-    
+
     // List running jobs with structured error handling
     jobs, err := client.Jobs().List(context.Background(), &interfaces.ListJobsOptions{
         States: []string{"RUNNING"},
@@ -252,9 +258,9 @@ func main() {
         }
         log.Fatal(err)
     }
-    
+
     fmt.Printf("Found %d running jobs\\n", len(jobs.Jobs))
-    
+
     // Submit a job with comprehensive error handling
     submission := &interfaces.JobSubmission{
         Name:      "test-job",
@@ -264,7 +270,7 @@ func main() {
         Memory:    4 * 1024 * 1024 * 1024, // 4GB in bytes
         TimeLimit: 60, // 60 minutes
     }
-    
+
     response, err := client.Jobs().Submit(context.Background(), submission)
     if err != nil {
         if slurmErr, ok := err.(*errors.SlurmError); ok {
@@ -279,20 +285,74 @@ func main() {
         }
         return
     }
-    
+
     fmt.Printf("Job submitted with ID: %s\\n", response.JobID)
-    
+
     // Get job details
     job, err := client.Jobs().Get(context.Background(), response.JobID)
     if err != nil {
         log.Printf("Failed to get job details: %v", err)
         return
     }
-    
-    fmt.Printf("Job Status: %s, User: %s, Partition: %s\\n", 
+
+    fmt.Printf("Job Status: %s, User: %s, Partition: %s\\n",
                job.State, job.UserID, job.Partition)
 }
 ```
+
+### 🤔 Which Pattern Should I Use?
+
+```
+Are you building a production application? ──── YES ──→ Use Adapter Pattern ✅
+                   │
+                   NO
+                   │
+                   ↓
+Do you need direct API access or debugging? ── YES ──→ Use Wrapper Pattern ⚠️
+                   │
+                   NO
+                   │
+                   ↓
+                Use Adapter Pattern ✅ (Default choice)
+```
+
+| **Use Adapter Pattern When** | **Use Wrapper Pattern When** |
+|-------------------------------|-------------------------------|
+| ✅ **Building production applications** | ⚠️ **You need direct API access** |
+| ✅ **You want version-agnostic code** | ⚠️ **Maximum performance is critical** |
+| ✅ **You're new to SLURM APIs** | ⚠️ **You're debugging API responses** |
+| ✅ **You want simple error handling** | ⚠️ **You need version-specific features** |
+| ✅ **You want automatic type conversion** | ⚠️ **You're migrating from direct API calls** |
+
+> **🎯 Recommendation**: **95% of users should use the Adapter Pattern**. You can always switch to the Wrapper Pattern later if you have specific advanced needs.
+
+### Advanced Usage: Wrapper Pattern
+
+Only use the wrapper pattern if you need direct access to version-specific APIs:
+
+```go
+// ⚠️ Advanced: Direct API access with version-specific code
+import "github.com/jontk/slurm-client/internal/api/v0_0_43"
+
+func advancedExample() {
+    // Direct access to v0.0.43 API - requires version knowledge
+    config := &interfaces.ClientConfig{
+        BaseURL: "https://slurm-server:6820",
+        Version: "v0.0.43", // Must specify exact version
+    }
+
+    wrapper, err := v0_0_43.NewWrapperClient(config)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Direct API call - you handle all type conversions
+    response, err := wrapper.GetJobs(ctx, &v0_0_43.GetJobsParams{})
+    // Manual error handling and type conversion required...
+}
+```
+
+> **📚 Need wrapper documentation?** See [Advanced Wrapper Usage](docs/wrapper-advanced.md)
 
 #### Adapter Configuration Options
 
@@ -307,15 +367,15 @@ adapterConfig := &config.AdapterConfig{
     EnableTypeCache:     true,  // Cache converted types (15-25% faster)
     EnableResponseCache: true,  // Cache expensive operations like cluster info
     CacheTimeout:        5 * time.Minute,
-    
+
     // Conversion behavior
     StrictTypeConversion: false, // Allow lossy conversions for compatibility
     PreferZeroCopy:       true,  // Optimize for memory efficiency
-    
+
     // Version handling
     AutoVersionFallback:  true,  // Fall back to compatible versions
     VersionLockTimeout:   30 * time.Second,
-    
+
     // Error handling
     ProvideVersionContext: true, // Include API version in all errors
     WrapLegacyErrors:     true,  // Convert old error formats
@@ -408,7 +468,7 @@ client, err := slurm.NewClient(
 ✅ **All 12+ methods implemented** across all managers with structured error handling:
 
 - **JobManager**: `List()`, `Get()`, `Submit()`, `Cancel()` - Complete job lifecycle
-- **NodeManager**: `List()`, `Get()` - Resource monitoring and management  
+- **NodeManager**: `List()`, `Get()` - Resource monitoring and management
 - **PartitionManager**: `List()`, `Get()` - Partition discovery and management
 - **InfoManager**: `Get()`, `Ping()`, `Stats()`, `Version()` - Cluster information
 
@@ -475,7 +535,7 @@ if err != nil {
     return
 }
 
-fmt.Printf("Node %s: %d CPUs, %d MB memory, State: %s\\n", 
+fmt.Printf("Node %s: %d CPUs, %d MB memory, State: %s\\n",
            node.Name, node.CPUs, node.Memory/(1024*1024), node.State)
 ```
 
@@ -492,7 +552,7 @@ if err != nil {
 // Get specific partition details
 partition, err := client.Partitions().Get(ctx, "compute")
 if err != nil {
-    log.Printf("Failed to get partition: %v", err)  
+    log.Printf("Failed to get partition: %v", err)
     return
 }
 
@@ -517,7 +577,7 @@ if err == nil {
 
 stats, err := client.Info().Stats(ctx)
 if err == nil {
-    fmt.Printf("Running jobs: %d, Total nodes: %d\\n", 
+    fmt.Printf("Running jobs: %d, Total nodes: %d\\n",
                stats.RunningJobs, stats.TotalNodes)
 }
 
@@ -545,7 +605,7 @@ if err != nil {
 }
 
 for _, res := range reservations.Reservations {
-    fmt.Printf("Reservation %s: %s to %s\\n", 
+    fmt.Printf("Reservation %s: %s to %s\\n",
                res.Name, res.StartTime, res.EndTime)
 }
 
@@ -601,7 +661,7 @@ if err != nil {
 }
 
 for _, qos := range qosList.QoS {
-    fmt.Printf("QoS %s: Priority=%d, MaxCPUs=%d\\n", 
+    fmt.Printf("QoS %s: Priority=%d, MaxCPUs=%d\\n",
                qos.Name, qos.Priority, qos.MaxCPUs)
 }
 
@@ -652,7 +712,7 @@ The library provides comprehensive structured error handling with specific error
 
 ### Error Types
 - **SlurmError**: Base error with classification and context
-- **NetworkError**: Connection and communication failures  
+- **NetworkError**: Connection and communication failures
 - **AuthenticationError**: Authentication and authorization issues
 - **ValidationError**: Request validation failures
 - **JobError**: Job-specific operation errors
@@ -681,12 +741,12 @@ if err != nil {
         default:
             log.Printf("SLURM error [%s]: %s", slurmErr.Code, slurmErr.Message)
         }
-        
+
         // Check if error is retryable
         if slurmErr.IsRetryable() {
             log.Println("Error is retryable, will retry with backoff")
         }
-        
+
         // Access version-specific information
         if slurmErr.APIVersion != "" {
             log.Printf("Error from API version: %s", slurmErr.APIVersion)
@@ -700,7 +760,7 @@ if errors.IsNetworkError(err) {
 }
 
 if errors.IsAuthenticationError(err) {
-    log.Println("Authentication or authorization problem") 
+    log.Println("Authentication or authorization problem")
 }
 ```
 
@@ -715,7 +775,7 @@ if slurmErr, ok := err.(*errors.SlurmError); ok {
     fmt.Printf("API Version: %s\\n", slurmErr.APIVersion)
     fmt.Printf("Timestamp: %s\\n", slurmErr.Timestamp)
     fmt.Printf("Retryable: %t\\n", slurmErr.IsRetryable())
-    
+
     // Access underlying cause if available
     if cause := slurmErr.Unwrap(); cause != nil {
         fmt.Printf("Underlying cause: %v\\n", cause)
@@ -743,7 +803,7 @@ if err != nil {
 }
 
 for _, account := range accountList.Accounts {
-    fmt.Printf("Account %s: Org=%s, Parent=%s\n", 
+    fmt.Printf("Account %s: Org=%s, Parent=%s\n",
                account.Name, account.Organization, account.ParentAccount)
 }
 
@@ -870,7 +930,7 @@ make docs
 
 All core functionality implemented with comprehensive testing:
 - ✅ **Multi-version support** for API v0.0.40-v0.0.43
-- ✅ **All manager operations** implemented with structured error handling  
+- ✅ **All manager operations** implemented with structured error handling
 - ✅ **Enterprise-grade patterns** with proper connection management
 - ✅ **Comprehensive test coverage** across critical packages
 - ✅ **Quality assurance** with linting, formatting, and build validation
@@ -947,14 +1007,14 @@ Complete compatibility across all active SLURM REST API versions with adapter pa
 The adapter implementation provides comprehensive coverage across all managers:
 
 - **✅ Full Adapter Support**: Complete type conversion, error handling, and version abstraction
-- **✅ Enhanced Features**: Adapter-specific improvements like caching and performance monitoring  
+- **✅ Enhanced Features**: Adapter-specific improvements like caching and performance monitoring
 - **✅ Automatic Conversion**: Seamless translation between internal types and public interfaces
 - **✅ Version Context**: All errors include API version information for debugging
 
 ### Breaking Change Handling
 The library automatically handles breaking changes between versions:
 - **Field Renames**: `minimum_switches` → `required_switches` (v0.0.40→v0.0.41)
-- **Removed Fields**: `exclusive`, `oversubscribe` from job outputs (v0.0.41→v0.0.42)  
+- **Removed Fields**: `exclusive`, `oversubscribe` from job outputs (v0.0.41→v0.0.42)
 - **New Features**: Reservation management in v0.0.43
 - **Deprecations**: FrontEnd mode removal in v0.0.43
 
@@ -1107,7 +1167,7 @@ We welcome contributions! This project follows enterprise development practices:
 **The definitive Go client library for SLURM REST API integration**
 
 - **Industry First**: Only multi-version Go SLURM client library
-- **Enterprise Grade**: Production patterns from AWS SDK and Kubernetes client-go  
+- **Enterprise Grade**: Production patterns from AWS SDK and Kubernetes client-go
 - **Community Impact**: Addresses ecosystem fragmentation with unified solution
 - **Open Source**: MIT licensed for maximum adoption and contribution
 
@@ -1118,7 +1178,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **SLURM Community**: For the robust REST API and OpenAPI specifications
-- **Go Community**: For excellent tooling and enterprise library patterns  
+- **Go Community**: For excellent tooling and enterprise library patterns
 - **Enterprise Patterns**: Inspired by AWS SDK, Kubernetes client-go, and other production libraries
 - **Contributors**: Thank you to all who have contributed to making this the definitive SLURM Go client
 

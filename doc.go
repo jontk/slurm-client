@@ -22,9 +22,9 @@ Install the library using Go modules:
 
 	go get github.com/jontk/slurm-client
 
-# Basic Usage
+# Basic Usage (Recommended: Adapter Pattern)
 
-Create a client and perform basic operations:
+Create a client using the adapter pattern for version-agnostic, production-ready code:
 
 	import (
 	    "context"
@@ -37,17 +37,18 @@ Create a client and perform basic operations:
 	func main() {
 	    ctx := context.Background()
 	    
-	    // Create client with token authentication
+	    // 🎯 Adapter Pattern: Auto-detects version, handles conversions
 	    client, err := slurm.NewClient(ctx,
 	        slurm.WithBaseURL("https://cluster.example.com:6820"),
 	        slurm.WithAuth(auth.NewTokenAuth("your-jwt-token")),
+	        // Version auto-detected - works across all SLURM versions!
 	    )
 	    if err != nil {
 	        log.Fatal(err)
 	    }
 	    defer client.Close()
 	    
-	    // List jobs
+	    // Version-agnostic API calls with automatic type conversion
 	    jobs, err := client.Jobs().List(ctx, nil)
 	    if err != nil {
 	        log.Fatal(err)
@@ -63,17 +64,19 @@ Create a client and perform basic operations:
 
 The library implements two complementary patterns:
 
-1. Adapter Pattern (Recommended)
-   - Version-agnostic interfaces
-   - Automatic type conversion
-   - Simplified error handling
-   - Best for most use cases
+1. 🎯 Adapter Pattern (Recommended for 95% of users)
+   - Version-agnostic interfaces that work across all SLURM versions
+   - Automatic type conversion and validation
+   - Simplified error handling with structured errors
+   - Production-ready with caching and optimizations
+   - Best for: Applications, automation, most use cases
 
-2. Wrapper Pattern
+2. ⚠️ Wrapper Pattern (Advanced users only)
    - Direct access to version-specific APIs
-   - Full control over operations
-   - Minimal overhead
-   - Best for advanced use cases
+   - Full control over API calls and responses
+   - Minimal overhead but requires version knowledge
+   - Manual type conversion and error handling
+   - Best for: Debugging, performance-critical code, migration
 
 # Version Support
 
