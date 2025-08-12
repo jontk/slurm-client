@@ -21,7 +21,7 @@ permissions:
 jobs:
   validate-tag:
     name: Validate Tag
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       version: ${{ steps.get_version.outputs.version }}
       prerelease: ${{ steps.check_prerelease.outputs.prerelease }}
@@ -65,7 +65,7 @@ jobs:
   test-release:
     name: Test Release Build
     needs: validate-tag
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     steps:
     - name: Checkout code
@@ -86,7 +86,7 @@ jobs:
   create-release:
     name: Create Release
     needs: [validate-tag, test-release]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     steps:
     - name: Checkout code
@@ -182,7 +182,7 @@ jobs:
   update-documentation:
     name: Update Documentation
     needs: [validate-tag, create-release]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: needs.validate-tag.outputs.prerelease == 'false'
     
     steps:
