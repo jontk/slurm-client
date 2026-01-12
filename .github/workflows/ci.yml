@@ -23,7 +23,7 @@ env:
 jobs:
   test:
     name: Test (${{ matrix.go-version }}, ${{ matrix.os }})
-    runs-on: self-hosted
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -65,7 +65,7 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
@@ -85,7 +85,7 @@ jobs:
 
   staticcheck:
     name: Static Analysis
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
@@ -105,7 +105,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
@@ -131,7 +131,7 @@ jobs:
 
   license-check:
     name: License Check
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
@@ -160,7 +160,7 @@ jobs:
 
   module-check:
     name: Module Check
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
@@ -182,7 +182,7 @@ jobs:
 
   integration:
     name: Integration Tests
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event.pull_request.draft == false
     
     steps:
@@ -205,7 +205,7 @@ jobs:
 
   benchmarks:
     name: Benchmarks
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     
     steps:
@@ -231,7 +231,7 @@ jobs:
   all-checks-passed:
     name: All Checks Passed
     needs: [test, lint, staticcheck, build, license-check, module-check]
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: always()
     
     steps:

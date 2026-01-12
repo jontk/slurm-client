@@ -28,7 +28,7 @@ permissions:
 jobs:
   generate-docs:
     name: Generate Documentation
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
@@ -125,7 +125,7 @@ jobs:
 
   validate-links:
     name: Validate Documentation Links
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
@@ -148,7 +148,7 @@ jobs:
 
   spellcheck:
     name: Spellcheck Documentation
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code

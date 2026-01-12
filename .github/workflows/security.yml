@@ -21,7 +21,7 @@ permissions:
 jobs:
   govulncheck:
     name: Go Vulnerability Check
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
@@ -57,7 +57,7 @@ jobs:
 
   gosec:
     name: Security Scan with Gosec
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
@@ -85,7 +85,7 @@ jobs:
 
   codeql:
     name: CodeQL Analysis
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -111,7 +111,7 @@ jobs:
 
   dependency-review:
     name: Dependency Review
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     
     steps:
@@ -127,7 +127,7 @@ jobs:
 
   trivy:
     name: Trivy Security Scan
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
@@ -160,7 +160,7 @@ jobs:
 
   nancy:
     name: Nancy Dependency Scan
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
@@ -186,7 +186,7 @@ jobs:
 
   license-scan:
     name: License Compliance Check
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
@@ -218,7 +218,7 @@ jobs:
 
   scorecard:
     name: OpenSSF Scorecard
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     
     steps:
@@ -244,7 +244,7 @@ jobs:
   all-security-checks:
     name: All Security Checks Passed
     needs: [govulncheck, gosec, codeql, trivy, nancy, license-scan]
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: always()
     
     steps:
