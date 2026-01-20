@@ -233,7 +233,7 @@ var jobsGetCmd = &cobra.Command{
 			fmt.Printf("CPUs:        %d\n", job.CPUs)
 			fmt.Printf("Memory:      %d MB\n", job.Memory)
 			fmt.Printf("Time Limit:  %d minutes\n", job.TimeLimit)
-			if job.SubmitTime != nil {
+			if !job.SubmitTime.IsZero() {
 				fmt.Printf("Submit Time: %s\n", job.SubmitTime.Format("2006-01-02 15:04:05"))
 			}
 			if job.StartTime != nil {
@@ -453,10 +453,10 @@ var infoCmd = &cobra.Command{
 			fmt.Printf("Cluster Information\n")
 			fmt.Println(strings.Repeat("-", 40))
 			fmt.Printf("Version:        %s\n", info.Version)
+			fmt.Printf("Release:        %s\n", info.Release)
 			fmt.Printf("Cluster Name:   %s\n", info.ClusterName)
-			fmt.Printf("Controllers:    %d\n", info.Controllers)
-			fmt.Printf("Total Nodes:    %d\n", info.TotalNodes)
-			fmt.Printf("Total CPUs:     %d\n", info.TotalCPUs)
+			fmt.Printf("API Version:    %s\n", info.APIVersion)
+			fmt.Printf("Uptime:         %d seconds\n", info.Uptime)
 		} else {
 			printOutput(info)
 		}
@@ -489,13 +489,13 @@ var submitCmd = &cobra.Command{
 
 		// Create job submission
 		job := &interfaces.JobSubmission{
-			Name:             name,
-			Command:          command,
-			Partition:        partition,
-			CPUs:             cpus,
-			Memory:           memory,
-			TimeLimit:        timeLimit,
-			WorkingDirectory: workDir,
+			Name:       name,
+			Command:    command,
+			Partition:  partition,
+			CPUs:       cpus,
+			Memory:     memory,
+			TimeLimit:  timeLimit,
+			WorkingDir: workDir,
 		}
 
 		// Submit job
@@ -507,9 +507,6 @@ var submitCmd = &cobra.Command{
 
 		fmt.Printf("Job submitted successfully!\n")
 		fmt.Printf("Job ID: %s\n", resp.JobID)
-		if len(resp.Warnings) > 0 {
-			fmt.Printf("Warnings: %s\n", strings.Join(resp.Warnings, ", "))
-		}
 	},
 }
 
