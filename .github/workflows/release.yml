@@ -140,11 +140,12 @@ jobs:
     needs: [validate-tag, goreleaser]
     runs-on: ubuntu-latest
     if: needs.validate-tag.outputs.prerelease == 'false'
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
+        ref: main
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Update version references
