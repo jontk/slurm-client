@@ -69,9 +69,9 @@ func v040SupportedOperations() map[string]bool {
 		"info.stats":        true,
 		"info.version":      true,
 		// Basic analytics support in v0.0.40
-		"jobs.utilization":      true,
-		"jobs.efficiency":       true,
-		"jobs.performance":      true,
+		"jobs.utilization": true,
+		"jobs.efficiency":  true,
+		"jobs.performance": true,
 	}
 }
 
@@ -118,26 +118,26 @@ func v042SupportedOperations() map[string]bool {
 		"nodes.update":      true, // Full node update support in v0.0.42
 		"partitions.list":   true,
 		"partitions.get":    true,
-		"partitions.update": true, // Full partition update support in v0.0.42
+		"partitions.update": false, // Partition updates not available in v0.0.42 REST API
 		"info.get":          true,
 		"info.ping":         true,
 		"info.stats":        true,
 		"info.version":      true,
 		// Full analytics support in v0.0.42
-		"jobs.utilization":         true,
-		"jobs.efficiency":          true,
-		"jobs.performance":         true,
-		"jobs.live_metrics":        true,
-		"jobs.resource_trends":     true,
-		"jobs.step_utilization":    true,
-		"jobs.performance_history": true,
-		"jobs.performance_trends":  true,
-		"jobs.efficiency_trends":   true,
-		"jobs.compare_performance": true,
-		"jobs.similar_performance": true,
-		"jobs.analyze_batch":       true,
+		"jobs.utilization":          true,
+		"jobs.efficiency":           true,
+		"jobs.performance":          true,
+		"jobs.live_metrics":         true,
+		"jobs.resource_trends":      true,
+		"jobs.step_utilization":     true,
+		"jobs.performance_history":  true,
+		"jobs.performance_trends":   true,
+		"jobs.efficiency_trends":    true,
+		"jobs.compare_performance":  true,
+		"jobs.similar_performance":  true,
+		"jobs.analyze_batch":        true,
 		"jobs.workflow_performance": true,
-		"jobs.efficiency_report":   true,
+		"jobs.efficiency_report":    true,
 	}
 }
 
@@ -155,26 +155,26 @@ func v043SupportedOperations() map[string]bool {
 		"nodes.update":      true,
 		"partitions.list":   true,
 		"partitions.get":    true,
-		"partitions.update": true,
+		"partitions.update": false, // Partition updates not available in v0.0.43 REST API
 		"info.get":          true,
 		"info.ping":         true,
 		"info.stats":        true,
 		"info.version":      true,
 		// Complete analytics support in v0.0.43
-		"jobs.utilization":         true,
-		"jobs.efficiency":          true,
-		"jobs.performance":         true,
-		"jobs.live_metrics":        true,
-		"jobs.resource_trends":     true,
-		"jobs.step_utilization":    true,
-		"jobs.performance_history": true,
-		"jobs.performance_trends":  true,
-		"jobs.efficiency_trends":   true,
-		"jobs.compare_performance": true,
-		"jobs.similar_performance": true,
-		"jobs.analyze_batch":       true,
+		"jobs.utilization":          true,
+		"jobs.efficiency":           true,
+		"jobs.performance":          true,
+		"jobs.live_metrics":         true,
+		"jobs.resource_trends":      true,
+		"jobs.step_utilization":     true,
+		"jobs.performance_history":  true,
+		"jobs.performance_trends":   true,
+		"jobs.efficiency_trends":    true,
+		"jobs.compare_performance":  true,
+		"jobs.similar_performance":  true,
+		"jobs.analyze_batch":        true,
 		"jobs.workflow_performance": true,
-		"jobs.efficiency_report":   true,
+		"jobs.efficiency_report":    true,
 		// Additional features in v0.0.43
 		"reservations.list": false, // Would be true if we implemented reservations
 		"qos.list":          false, // Would be true if we implemented QoS
@@ -194,6 +194,17 @@ func NewMockSlurmServerForVersion(version string) *MockSlurmServer {
 	configCopy.ErrorResponses = make(map[string]ErrorResponse)
 
 	return NewMockSlurmServer(&configCopy)
+}
+
+// StartMockServer is a compatibility shim for integration tests
+// that creates and starts a mock server for the specified API version.
+// This function provides a simplified interface for test code.
+func StartMockServer(t interface {
+	Logf(format string, args ...interface{})
+}, version string) *MockSlurmServer {
+	server := NewMockSlurmServerForVersion(version)
+	t.Logf("Started mock SLURM server for %s at %s", version, server.URL())
+	return server
 }
 
 // GetVersionDifferences returns the differences between API versions
@@ -225,7 +236,7 @@ func GetVersionDifferences() map[string]map[string]interface{} {
 				"Extended job submission options",
 			},
 			"field_changes": map[string]string{
-				"jobs.minimum_switches": "Renamed from minimum_switches",
+				"jobs.minimum_switches":  "Renamed from minimum_switches",
 				"jobs.required_switches": "New field replacing minimum_switches",
 			},
 		},
@@ -267,6 +278,12 @@ func GetVersionDifferences() map[string]map[string]interface{} {
 func CreateVersionSpecificErrorScenarios() map[string]map[string]ErrorResponse {
 	return map[string]map[string]ErrorResponse{
 		"v0.0.40": {
+			"POST /slurm/v0.0.40/job/1001": {
+				StatusCode: 501,
+				Body: map[string]string{
+					"error": "Job update not fully supported in v0.0.40",
+				},
+			},
 			"PATCH /slurm/v0.0.40/job/1001": {
 				StatusCode: 501,
 				Body: map[string]string{

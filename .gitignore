@@ -88,8 +88,9 @@ testdata/
 config.local.yaml
 config.local.json
 
-# Mock files (if generated)
-mocks/
+# Mock files (generated code only, not infrastructure)
+tests/mocks/generated/v0_0_*/
+tests/mocks/generated/*_mock.go
 
 # Integration test artifacts
 integration-test-results/
