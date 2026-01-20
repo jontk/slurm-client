@@ -32,7 +32,7 @@ const (
 	SlurmErrorJobTimeout           SlurmErrorCode = 2068
 	SlurmErrorJobMemoryLimit       SlurmErrorCode = 2069
 	SlurmErrorJobNodeFailure       SlurmErrorCode = 2070
-	
+
 	// Resource errors (3000-3099)
 	SlurmErrorNodeNotAvailable     SlurmErrorCode = 3001
 	SlurmErrorPartitionDown        SlurmErrorCode = 3002
@@ -44,7 +44,7 @@ const (
 	SlurmErrorResourceExhausted    SlurmErrorCode = 3008
 	SlurmErrorLicenseUnavailable   SlurmErrorCode = 3009
 	SlurmErrorGresUnavailable      SlurmErrorCode = 3010
-	
+
 	// Account/User errors (4000-4099)
 	SlurmErrorAccountNotFound      SlurmErrorCode = 4001
 	SlurmErrorUserNotFound         SlurmErrorCode = 4002
@@ -56,28 +56,28 @@ const (
 	SlurmErrorInvalidUser          SlurmErrorCode = 4008
 	SlurmErrorUserPermissionDenied SlurmErrorCode = 4009
 	SlurmErrorAccountLocked        SlurmErrorCode = 4010
-	
+
 	// QoS errors (5000-5099)
-	SlurmErrorQoSNotFound          SlurmErrorCode = 5001
-	SlurmErrorQoSAlreadyExists     SlurmErrorCode = 5002
-	SlurmErrorInvalidQoS           SlurmErrorCode = 5003
-	SlurmErrorQoSLimitExceeded     SlurmErrorCode = 5004
-	SlurmErrorQoSPriorityInvalid   SlurmErrorCode = 5005
-	SlurmErrorQoSResourceLimit     SlurmErrorCode = 5006
-	SlurmErrorQoSTimeLimit         SlurmErrorCode = 5007
-	SlurmErrorQoSUsageLimitHit     SlurmErrorCode = 5008
-	
+	SlurmErrorQoSNotFound        SlurmErrorCode = 5001
+	SlurmErrorQoSAlreadyExists   SlurmErrorCode = 5002
+	SlurmErrorInvalidQoS         SlurmErrorCode = 5003
+	SlurmErrorQoSLimitExceeded   SlurmErrorCode = 5004
+	SlurmErrorQoSPriorityInvalid SlurmErrorCode = 5005
+	SlurmErrorQoSResourceLimit   SlurmErrorCode = 5006
+	SlurmErrorQoSTimeLimit       SlurmErrorCode = 5007
+	SlurmErrorQoSUsageLimitHit   SlurmErrorCode = 5008
+
 	// Reservation errors (6000-6099)
-	SlurmErrorReservationNotFound  SlurmErrorCode = 6001
-	SlurmErrorReservationInvalid   SlurmErrorCode = 6002
-	SlurmErrorReservationBusy      SlurmErrorCode = 6003
-	SlurmErrorReservationExists    SlurmErrorCode = 6004
-	SlurmErrorReservationExpired   SlurmErrorCode = 6005
-	SlurmErrorReservationDenied    SlurmErrorCode = 6006
-	SlurmErrorReservationMaintenance SlurmErrorCode = 6007
-	SlurmErrorReservationNodeCount   SlurmErrorCode = 6008
+	SlurmErrorReservationNotFound     SlurmErrorCode = 6001
+	SlurmErrorReservationInvalid      SlurmErrorCode = 6002
+	SlurmErrorReservationBusy         SlurmErrorCode = 6003
+	SlurmErrorReservationExists       SlurmErrorCode = 6004
+	SlurmErrorReservationExpired      SlurmErrorCode = 6005
+	SlurmErrorReservationDenied       SlurmErrorCode = 6006
+	SlurmErrorReservationMaintenance  SlurmErrorCode = 6007
+	SlurmErrorReservationNodeCount    SlurmErrorCode = 6008
 	SlurmErrorReservationTimeConflict SlurmErrorCode = 6009
-	
+
 	// Authentication errors (7000-7099)
 	SlurmErrorAuthenticationFailed SlurmErrorCode = 7001
 	SlurmErrorPermissionDenied     SlurmErrorCode = 7002
@@ -87,35 +87,35 @@ const (
 	SlurmErrorCredentialsInvalid   SlurmErrorCode = 7006
 	SlurmErrorAccessDenied         SlurmErrorCode = 7007
 	SlurmErrorRoleInvalid          SlurmErrorCode = 7008
-	
+
 	// Configuration errors (8000-8099)
-	SlurmErrorConfigInvalid        SlurmErrorCode = 8001
-	SlurmErrorConfigMissing        SlurmErrorCode = 8002
-	SlurmErrorConfigSyntax         SlurmErrorCode = 8003
-	SlurmErrorConfigPermission     SlurmErrorCode = 8004
-	SlurmErrorConfigDuplicate      SlurmErrorCode = 8005
-	SlurmErrorPluginError          SlurmErrorCode = 8006
-	SlurmErrorLibraryMissing       SlurmErrorCode = 8007
-	
+	SlurmErrorConfigInvalid    SlurmErrorCode = 8001
+	SlurmErrorConfigMissing    SlurmErrorCode = 8002
+	SlurmErrorConfigSyntax     SlurmErrorCode = 8003
+	SlurmErrorConfigPermission SlurmErrorCode = 8004
+	SlurmErrorConfigDuplicate  SlurmErrorCode = 8005
+	SlurmErrorPluginError      SlurmErrorCode = 8006
+	SlurmErrorLibraryMissing   SlurmErrorCode = 8007
+
 	// Communication errors (8100-8199)
-	SlurmErrorConnectionRefused    SlurmErrorCode = 8101
-	SlurmErrorConnectionTimeout    SlurmErrorCode = 8102
-	SlurmErrorConnectionLost       SlurmErrorCode = 8103
-	SlurmErrorProtocolVersion      SlurmErrorCode = 8104
-	SlurmErrorMessageFormat        SlurmErrorCode = 8105
-	SlurmErrorNetworkUnavailable   SlurmErrorCode = 8106
-	
+	SlurmErrorConnectionRefused  SlurmErrorCode = 8101
+	SlurmErrorConnectionTimeout  SlurmErrorCode = 8102
+	SlurmErrorConnectionLost     SlurmErrorCode = 8103
+	SlurmErrorProtocolVersion    SlurmErrorCode = 8104
+	SlurmErrorMessageFormat      SlurmErrorCode = 8105
+	SlurmErrorNetworkUnavailable SlurmErrorCode = 8106
+
 	// General errors (9000-9099)
-	SlurmErrorUnknown              SlurmErrorCode = 9000
-	SlurmErrorInvalidRequest       SlurmErrorCode = 9001
-	SlurmErrorDatabaseError        SlurmErrorCode = 9002
-	SlurmErrorConfigError          SlurmErrorCode = 9003
-	SlurmErrorSystemError          SlurmErrorCode = 9004
-	SlurmErrorOutOfMemory          SlurmErrorCode = 9005
-	SlurmErrorFileNotFound         SlurmErrorCode = 9006
-	SlurmErrorFilePermission       SlurmErrorCode = 9007
-	SlurmErrorDiskFull             SlurmErrorCode = 9008
-	SlurmErrorInternalError        SlurmErrorCode = 9009
+	SlurmErrorUnknown        SlurmErrorCode = 9000
+	SlurmErrorInvalidRequest SlurmErrorCode = 9001
+	SlurmErrorDatabaseError  SlurmErrorCode = 9002
+	SlurmErrorConfigError    SlurmErrorCode = 9003
+	SlurmErrorSystemError    SlurmErrorCode = 9004
+	SlurmErrorOutOfMemory    SlurmErrorCode = 9005
+	SlurmErrorFileNotFound   SlurmErrorCode = 9006
+	SlurmErrorFilePermission SlurmErrorCode = 9007
+	SlurmErrorDiskFull       SlurmErrorCode = 9008
+	SlurmErrorInternalError  SlurmErrorCode = 9009
 )
 
 // SlurmErrorInfo provides detailed information about a SLURM error code
@@ -134,7 +134,7 @@ var slurmErrorMap = map[SlurmErrorCode]SlurmErrorInfo{
 		Description: "Operation completed successfully",
 		Category:    "Success",
 	},
-	
+
 	// Job submission errors
 	SlurmErrorInvalidPartition: {
 		Code:        SlurmErrorInvalidPartition,
@@ -196,7 +196,7 @@ var slurmErrorMap = map[SlurmErrorCode]SlurmErrorInfo{
 		Description: "The requested job was not found",
 		Category:    "Job Management",
 	},
-	
+
 	// Resource errors
 	SlurmErrorNodeNotAvailable: {
 		Code:        SlurmErrorNodeNotAvailable,
@@ -222,7 +222,7 @@ var slurmErrorMap = map[SlurmErrorCode]SlurmErrorInfo{
 		Description: "The requested resources have been exhausted",
 		Category:    "Resource Management",
 	},
-	
+
 	// Account/User errors
 	SlurmErrorAccountNotFound: {
 		Code:        SlurmErrorAccountNotFound,
@@ -260,7 +260,7 @@ var slurmErrorMap = map[SlurmErrorCode]SlurmErrorInfo{
 		Description: "The requested association does not exist",
 		Category:    "Association Management",
 	},
-	
+
 	// QoS errors
 	SlurmErrorQoSNotFound: {
 		Code:        SlurmErrorQoSNotFound,
@@ -286,7 +286,7 @@ var slurmErrorMap = map[SlurmErrorCode]SlurmErrorInfo{
 		Description: "The request exceeds QoS limits",
 		Category:    "QoS Management",
 	},
-	
+
 	// Reservation errors
 	SlurmErrorReservationNotFound: {
 		Code:        SlurmErrorReservationNotFound,
@@ -312,7 +312,7 @@ var slurmErrorMap = map[SlurmErrorCode]SlurmErrorInfo{
 		Description: "A reservation with this name already exists",
 		Category:    "Reservation Management",
 	},
-	
+
 	// Authentication errors
 	SlurmErrorAuthenticationFailed: {
 		Code:        SlurmErrorAuthenticationFailed,
@@ -338,7 +338,7 @@ var slurmErrorMap = map[SlurmErrorCode]SlurmErrorInfo{
 		Description: "The authentication token is invalid",
 		Category:    "Authentication",
 	},
-	
+
 	// Communication errors
 	SlurmErrorConnectionRefused: {
 		Code:        SlurmErrorConnectionRefused,
@@ -358,7 +358,7 @@ var slurmErrorMap = map[SlurmErrorCode]SlurmErrorInfo{
 		Description: "SLURM protocol version mismatch",
 		Category:    "Communication",
 	},
-	
+
 	// General errors
 	SlurmErrorInvalidRequest: {
 		Code:        SlurmErrorInvalidRequest,

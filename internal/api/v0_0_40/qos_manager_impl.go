@@ -7,7 +7,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -32,7 +32,7 @@ func (q *QoSManagerImpl) List(ctx context.Context, opts *interfaces.ListQoSOptio
 	// Prepare parameters
 	params := &SlurmdbV0040GetQosParams{}
 	if opts != nil {
-		if opts.Names != nil && len(opts.Names) > 0 {
+		if len(opts.Names) > 0 {
 			namesStr := strings.Join(opts.Names, ",")
 			params.Name = &namesStr
 		}
@@ -104,7 +104,7 @@ func (q *QoSManagerImpl) Get(ctx context.Context, qosName string) (*interfaces.Q
 // Create creates a new QoS
 func (q *QoSManagerImpl) Create(ctx context.Context, qos *interfaces.QoSCreate) (*interfaces.QoSCreateResponse, error) {
 	if qos == nil {
-		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS data is required", "qos", qos, nil)
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS creation data is required", "qos", qos, nil)
 	}
 
 	if err := q.client.CheckContext(ctx); err != nil {
@@ -113,7 +113,7 @@ func (q *QoSManagerImpl) Create(ctx context.Context, qos *interfaces.QoSCreate) 
 
 	// Convert to API format
 	apiQoS := q.convertInterfaceQoSCreateToV0040(qos)
-	
+
 	// Create request body
 	reqBody := V0040OpenapiSlurmdbdQosResp{
 		Qos: []V0040Qos{*apiQoS},
@@ -209,7 +209,7 @@ func (q *QoSManagerImpl) Delete(ctx context.Context, qosName string) error {
 // convertV0040QoSToInterface converts v0.0.40 QoS to interface format
 func (q *QoSManagerImpl) convertV0040QoSToInterface(qos V0040Qos) *interfaces.QoS {
 	result := &interfaces.QoS{}
-	
+
 	if qos.Name != nil {
 		result.Name = *qos.Name
 	}
@@ -223,7 +223,7 @@ func (q *QoSManagerImpl) convertV0040QoSToInterface(qos V0040Qos) *interfaces.Qo
 	}
 	// PreemptMode field doesn't exist in V0040Qos
 	// Skip preempt mode conversion
-	
+
 	return result
 }
 
@@ -233,7 +233,7 @@ func (q *QoSManagerImpl) convertInterfaceQoSCreateToV0040(qos *interfaces.QoSCre
 		Name:        &qos.Name,
 		Description: &qos.Description,
 	}
-	
+
 	if qos.Priority > 0 {
 		set := true
 		number := int64(qos.Priority)
@@ -242,7 +242,7 @@ func (q *QoSManagerImpl) convertInterfaceQoSCreateToV0040(qos *interfaces.QoSCre
 			Number: &number,
 		}
 	}
-	
+
 	return apiQoS
 }
 
@@ -251,14 +251,14 @@ func (q *QoSManagerImpl) convertInterfaceQoSToV0040Update(existing *interfaces.Q
 	apiQoS := &V0040Qos{
 		Name: &existing.Name,
 	}
-	
+
 	// Apply updates
 	if update.Description != nil {
 		apiQoS.Description = update.Description
 	} else {
 		apiQoS.Description = &existing.Description
 	}
-	
+
 	if update.Priority != nil {
 		set := true
 		number := int64(*update.Priority)
@@ -274,6 +274,6 @@ func (q *QoSManagerImpl) convertInterfaceQoSToV0040Update(existing *interfaces.Q
 			Number: &number,
 		}
 	}
-	
+
 	return apiQoS
 }

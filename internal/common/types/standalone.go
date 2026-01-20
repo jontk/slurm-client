@@ -9,12 +9,12 @@ import "time"
 
 // License represents a SLURM license
 type License struct {
-	Name        string `json:"name"`
-	Total       int    `json:"total"`
-	Used        int    `json:"used"`
-	Free        int    `json:"free"`
-	Reserved    int    `json:"reserved"`
-	RemoteUsed  int    `json:"remote_used,omitempty"`
+	Name       string `json:"name"`
+	Total      int    `json:"total"`
+	Used       int    `json:"used"`
+	Free       int    `json:"free"`
+	Reserved   int    `json:"reserved"`
+	RemoteUsed int    `json:"remote_used,omitempty"`
 }
 
 // LicenseList represents a list of licenses
@@ -139,66 +139,66 @@ type Config struct {
 
 // Diagnostics represents SLURM diagnostics information
 type Diagnostics struct {
-	DataCollected    time.Time              `json:"data_collected"`
-	ReqTime          int64                  `json:"req_time"`
-	ReqTimeStart     int64                  `json:"req_time_start"`
-	ServerThreadCount int                   `json:"server_thread_count"`
-	AgentQueueSize   int                    `json:"agent_queue_size"`
-	AgentCount       int                    `json:"agent_count"`
-	AgentThreadCount int                    `json:"agent_thread_count"`
-	DBDAgentCount    int                    `json:"dbd_agent_count"`
-	GittosCount      int                    `json:"gittos_count"`
-	GittosTime       int64                  `json:"gittos_time"`
-	ScheduleCycleLast int64                 `json:"schedule_cycle_last"`
-	ScheduleCycleMax  int64                 `json:"schedule_cycle_max"`
-	ScheduleCycleMean int64                 `json:"schedule_cycle_mean"`
-	ScheduleCycleSum  int64                 `json:"schedule_cycle_sum"`
-	ScheduleCycleCounter int                `json:"schedule_cycle_counter"`
-	ScheduleCycleDepth int                 `json:"schedule_cycle_depth"`
-	ScheduleQueueLen  int                   `json:"schedule_queue_len"`
-	JobsSubmitted     int                   `json:"jobs_submitted"`
-	JobsStarted       int                   `json:"jobs_started"`
-	JobsCompleted     int                   `json:"jobs_completed"`
-	JobsCanceled      int                   `json:"jobs_canceled"`
-	JobsFailed        int                   `json:"jobs_failed"`
-	JobsPending       int                   `json:"jobs_pending"`
-	JobsRunning       int                   `json:"jobs_running"`
-	JobStatesTs       time.Time             `json:"job_states_ts"`
-	BFActive          bool                  `json:"bf_active"`
-	BFBackfilledJobs  int                   `json:"bf_backfilled_jobs"`
-	BFCycle           int                   `json:"bf_cycle"`
-	BFCycleMean       int64                 `json:"bf_cycle_mean"`
-	BFCycleMax        int64                 `json:"bf_cycle_max"`
-	BFDepth           int                   `json:"bf_depth"`
-	BFDepthMean       int                   `json:"bf_depth_mean"`
-	BFDepthSum        int                   `json:"bf_depth_sum"`
-	BFQueueLen        int                   `json:"bf_queue_len"`
-	BFQueueLenMean    int                   `json:"bf_queue_len_mean"`
-	BFQueueLenSum     int                   `json:"bf_queue_len_sum"`
-	BFTableSize       int                   `json:"bf_table_size"`
-	BFTableSizeMean   int                   `json:"bf_table_size_mean"`
-	BFTableSizeSum    int                   `json:"bf_table_size_sum"`
-	BFWhenLastCycle   time.Time             `json:"bf_when_last_cycle"`
-	BFActive2         bool                  `json:"bf_active2"`
-	RPCsQueued        int                   `json:"rpcs_queued"`
-	RPCsDropped       int                   `json:"rpcs_dropped"`
-	RPCsCompleted     int                   `json:"rpcs_completed"`
-	RPCsQueued2       int                   `json:"rpcs_queued2"`
-	Meta              map[string]interface{} `json:"meta,omitempty"`
+	DataCollected        time.Time              `json:"data_collected"`
+	ReqTime              int64                  `json:"req_time"`
+	ReqTimeStart         int64                  `json:"req_time_start"`
+	ServerThreadCount    int                    `json:"server_thread_count"`
+	AgentQueueSize       int                    `json:"agent_queue_size"`
+	AgentCount           int                    `json:"agent_count"`
+	AgentThreadCount     int                    `json:"agent_thread_count"`
+	DBDAgentCount        int                    `json:"dbd_agent_count"`
+	GittosCount          int                    `json:"gittos_count"`
+	GittosTime           int64                  `json:"gittos_time"`
+	ScheduleCycleLast    int64                  `json:"schedule_cycle_last"`
+	ScheduleCycleMax     int64                  `json:"schedule_cycle_max"`
+	ScheduleCycleMean    int64                  `json:"schedule_cycle_mean"`
+	ScheduleCycleSum     int64                  `json:"schedule_cycle_sum"`
+	ScheduleCycleCounter int                    `json:"schedule_cycle_counter"`
+	ScheduleCycleDepth   int                    `json:"schedule_cycle_depth"`
+	ScheduleQueueLen     int                    `json:"schedule_queue_len"`
+	JobsSubmitted        int                    `json:"jobs_submitted"`
+	JobsStarted          int                    `json:"jobs_started"`
+	JobsCompleted        int                    `json:"jobs_completed"`
+	JobsCanceled         int                    `json:"jobs_canceled"`
+	JobsFailed           int                    `json:"jobs_failed"`
+	JobsPending          int                    `json:"jobs_pending"`
+	JobsRunning          int                    `json:"jobs_running"`
+	JobStatesTs          time.Time              `json:"job_states_ts"`
+	BFActive             bool                   `json:"bf_active"`
+	BFBackfilledJobs     int                    `json:"bf_backfilled_jobs"`
+	BFCycle              int                    `json:"bf_cycle"`
+	BFCycleMean          int64                  `json:"bf_cycle_mean"`
+	BFCycleMax           int64                  `json:"bf_cycle_max"`
+	BFDepth              int                    `json:"bf_depth"`
+	BFDepthMean          int                    `json:"bf_depth_mean"`
+	BFDepthSum           int                    `json:"bf_depth_sum"`
+	BFQueueLen           int                    `json:"bf_queue_len"`
+	BFQueueLenMean       int                    `json:"bf_queue_len_mean"`
+	BFQueueLenSum        int                    `json:"bf_queue_len_sum"`
+	BFTableSize          int                    `json:"bf_table_size"`
+	BFTableSizeMean      int                    `json:"bf_table_size_mean"`
+	BFTableSizeSum       int                    `json:"bf_table_size_sum"`
+	BFWhenLastCycle      time.Time              `json:"bf_when_last_cycle"`
+	BFActive2            bool                   `json:"bf_active2"`
+	RPCsQueued           int                    `json:"rpcs_queued"`
+	RPCsDropped          int                    `json:"rpcs_dropped"`
+	RPCsCompleted        int                    `json:"rpcs_completed"`
+	RPCsQueued2          int                    `json:"rpcs_queued2"`
+	Meta                 map[string]interface{} `json:"meta,omitempty"`
 }
 
 // === Instance Types ===
 
 // Instance represents a SLURM database instance
 type Instance struct {
-	Cluster     string    `json:"cluster"`
-	ExtraInfo   string    `json:"extra,omitempty"`
-	Instance    string    `json:"instance"`
-	InstanceID  string    `json:"instance_id"`
-	InstanceType string   `json:"instance_type"`
-	NodeCount   int       `json:"node_count,omitempty"`
-	TimeStart   time.Time `json:"time_start,omitempty"`
-	TimeEnd     time.Time `json:"time_end,omitempty"`
+	Cluster      string    `json:"cluster"`
+	ExtraInfo    string    `json:"extra,omitempty"`
+	Instance     string    `json:"instance"`
+	InstanceID   string    `json:"instance_id"`
+	InstanceType string    `json:"instance_type"`
+	NodeCount    int       `json:"node_count,omitempty"`
+	TimeStart    time.Time `json:"time_start,omitempty"`
+	TimeEnd      time.Time `json:"time_end,omitempty"`
 }
 
 // InstanceList represents a list of instances

@@ -1,6 +1,8 @@
 module github.com/jontk/slurm-client/pkg/streaming
 
-go 1.19
+go 1.22.5
+
+toolchain go1.24.5
 
 require (
 	github.com/gorilla/websocket v1.5.0

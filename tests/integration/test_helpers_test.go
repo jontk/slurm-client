@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -32,16 +32,16 @@ type IntegrationTestSuite struct {
 
 // TestConfig holds configuration for integration tests
 type TestConfig struct {
-	ServerURL             string
-	Token                 string
-	Version               string
-	Timeout               time.Duration
-	MaxRetries            int
-	Debug                 bool
-	InsecureSkipVerify    bool
-	RequireDatabase       bool
-	SkipSlowTests         bool
-	TestResourceCleanup   bool
+	ServerURL           string
+	Token               string
+	Version             string
+	Timeout             time.Duration
+	MaxRetries          int
+	Debug               bool
+	InsecureSkipVerify  bool
+	RequireDatabase     bool
+	SkipSlowTests       bool
+	TestResourceCleanup bool
 }
 
 // tokenTransport adds the SLURM JWT token to requests
@@ -65,20 +65,20 @@ func intPtr(i int) *int {
 // GetTestConfig loads test configuration from environment variables
 func GetTestConfig(version string) *TestConfig {
 	config := &TestConfig{
-		ServerURL:             getEnvWithDefault("SLURM_SERVER_URL", "http://rocky9:6820"),
-		Version:               version,
-		Timeout:               30 * time.Second,
-		MaxRetries:            3,
-		Debug:                 getEnvBool("SLURM_TEST_DEBUG", true),
-		InsecureSkipVerify:    getEnvBool("SLURM_INSECURE_SKIP_VERIFY", true),
-		RequireDatabase:       getEnvBool("SLURM_REQUIRE_DATABASE", false),
-		SkipSlowTests:         getEnvBool("SLURM_SKIP_SLOW_TESTS", false),
-		TestResourceCleanup:   getEnvBool("SLURM_TEST_CLEANUP", true),
+		ServerURL:           getEnvWithDefault("SLURM_SERVER_URL", "http://rocky9:6820"),
+		Version:             version,
+		Timeout:             30 * time.Second,
+		MaxRetries:          3,
+		Debug:               getEnvBool("SLURM_TEST_DEBUG", true),
+		InsecureSkipVerify:  getEnvBool("SLURM_INSECURE_SKIP_VERIFY", true),
+		RequireDatabase:     getEnvBool("SLURM_REQUIRE_DATABASE", false),
+		SkipSlowTests:       getEnvBool("SLURM_SKIP_SLOW_TESTS", false),
+		TestResourceCleanup: getEnvBool("SLURM_TEST_CLEANUP", true),
 	}
 
 	// Get token from environment or fetch via SSH
 	config.Token = os.Getenv("SLURM_JWT_TOKEN")
-	
+
 	return config
 }
 
@@ -109,10 +109,10 @@ func (suite *IntegrationTestSuite) SetupIntegrationSuite(version string) {
 		slurm.WithBaseURL(suite.serverURL),
 		slurm.WithAuth(auth.NewTokenAuth(suite.token)),
 		slurm.WithConfig(&config.Config{
-			Timeout:              testConfig.Timeout,
-			MaxRetries:           testConfig.MaxRetries,
-			Debug:                testConfig.Debug,
-			InsecureSkipVerify:   testConfig.InsecureSkipVerify,
+			Timeout:            testConfig.Timeout,
+			MaxRetries:         testConfig.MaxRetries,
+			Debug:              testConfig.Debug,
+			InsecureSkipVerify: testConfig.InsecureSkipVerify,
 		}),
 	)
 	require.NoError(suite.T(), err, "Failed to create SLURM client for version %s", version)
@@ -122,7 +122,7 @@ func (suite *IntegrationTestSuite) SetupIntegrationSuite(version string) {
 // TearDownIntegrationSuite cleans up after tests
 func (suite *IntegrationTestSuite) TearDownIntegrationSuite() {
 	if suite.client != nil {
-		suite.client.Close()
+		_ = suite.client.Close() // Ignore error during test cleanup
 	}
 }
 
@@ -164,7 +164,7 @@ func (suite *IntegrationTestSuite) RequireDatabaseConnection(err error) {
 // CreateTestJob creates a test job for testing purposes
 func (suite *IntegrationTestSuite) CreateTestJob(name string) (*interfaces.JobSubmitResponse, error) {
 	ctx := context.Background()
-	
+
 	submission := &interfaces.JobSubmission{
 		Name:      fmt.Sprintf("%s-test-%s", name, time.Now().Format("20060102-150405")),
 		Script:    "#!/bin/bash\necho 'Integration test job'\nhostname\ndate\nsleep 10",
@@ -173,7 +173,7 @@ func (suite *IntegrationTestSuite) CreateTestJob(name string) (*interfaces.JobSu
 		CPUs:      1,
 		TimeLimit: 5, // 5 minutes
 	}
-	
+
 	suite.T().Logf("Creating test job: %s for version %s", submission.Name, suite.version)
 	return suite.client.Jobs().Submit(ctx, submission)
 }
@@ -183,7 +183,7 @@ func (suite *IntegrationTestSuite) CleanupTestJob(jobID string) {
 	if jobID == "" {
 		return
 	}
-	
+
 	ctx := context.Background()
 	err := suite.client.Jobs().Cancel(ctx, jobID)
 	if err != nil {
@@ -197,21 +197,21 @@ func (suite *IntegrationTestSuite) CleanupTestJob(jobID string) {
 func (suite *IntegrationTestSuite) WaitForJobState(jobID string, expectedState string, timeout time.Duration) error {
 	ctx := context.Background()
 	start := time.Now()
-	
+
 	for time.Since(start) < timeout {
 		job, err := suite.client.Jobs().Get(ctx, jobID)
 		if err != nil {
 			return fmt.Errorf("failed to get job %s: %w", jobID, err)
 		}
-		
+
 		if job.State == expectedState {
 			return nil
 		}
-		
+
 		suite.T().Logf("Job %s state: %s (waiting for %s)", jobID, job.State, expectedState)
 		time.Sleep(2 * time.Second)
 	}
-	
+
 	return fmt.Errorf("job %s did not reach state %s within %v", jobID, expectedState, timeout)
 }
 
@@ -224,24 +224,24 @@ func (suite *IntegrationTestSuite) TestCRUDWorkflow(resourceName string, testFun
 
 // TestConcurrentOperations tests concurrent operations on a resource
 func (suite *IntegrationTestSuite) TestConcurrentOperations(resourceName string, operation func(id int) error, concurrency int) {
-	suite.T().Logf("Starting concurrent operations test for %s (concurrency: %d) on version %s", 
+	suite.T().Logf("Starting concurrent operations test for %s (concurrency: %d) on version %s",
 		resourceName, concurrency, suite.version)
-	
+
 	errChan := make(chan error, concurrency)
-	
+
 	for i := 0; i < concurrency; i++ {
 		go func(id int) {
 			errChan <- operation(id)
 		}(i)
 	}
-	
+
 	var errors []error
 	for i := 0; i < concurrency; i++ {
 		if err := <-errChan; err != nil {
 			errors = append(errors, err)
 		}
 	}
-	
+
 	if len(errors) > 0 {
 		suite.T().Errorf("Concurrent operations failed with %d errors: %v", len(errors), errors)
 	} else {
@@ -252,9 +252,9 @@ func (suite *IntegrationTestSuite) TestConcurrentOperations(resourceName string,
 // TestErrorHandling tests error handling scenarios
 func (suite *IntegrationTestSuite) TestErrorHandling(scenario string, testFunc func() error, expectError bool) {
 	suite.T().Logf("Testing error handling scenario: %s on version %s", scenario, suite.version)
-	
+
 	err := testFunc()
-	
+
 	if expectError && err == nil {
 		suite.T().Errorf("Expected error for scenario '%s' but got none", scenario)
 	} else if !expectError && err != nil {
@@ -268,15 +268,15 @@ func (suite *IntegrationTestSuite) TestErrorHandling(scenario string, testFunc f
 
 // TestPerformance measures the performance of an operation
 func (suite *IntegrationTestSuite) TestPerformance(operationName string, operation func() error, maxDuration time.Duration) {
-	suite.T().Logf("Testing performance for %s on version %s (max duration: %v)", 
+	suite.T().Logf("Testing performance for %s on version %s (max duration: %v)",
 		operationName, suite.version, maxDuration)
-	
+
 	start := time.Now()
 	err := operation()
 	duration := time.Since(start)
-	
+
 	suite.NoError(err, "Performance test operation should succeed")
-	
+
 	if duration > maxDuration {
 		suite.T().Errorf("Operation %s took %v, which exceeds maximum %v", operationName, duration, maxDuration)
 	} else {
@@ -306,24 +306,26 @@ func fetchJWTTokenViaSSH() (string, error) {
 	// Get SSH configuration from environment
 	sshHost := getEnvWithDefault("SLURM_SSH_HOST", "rocky9")
 	sshUser := getEnvWithDefault("SLURM_SSH_USER", "root")
-	
+
 	// Command to get JWT token
-	cmd := exec.Command("ssh", 
+	// #nosec G204 -- This is test infrastructure code; SSH host/user are from controlled test environment variables
+	sshTarget := sshUser + "@" + sshHost // #nosec G204
+	cmd := exec.Command("ssh",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
-		sshUser+"@"+sshHost,
+		sshTarget,
 		"unset SLURM_JWT; /opt/slurm/current/bin/scontrol token | grep SLURM_JWT | cut -d= -f2")
-	
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("SSH command failed: %v, output: %s", err, string(output))
 	}
-	
+
 	token := strings.TrimSpace(string(output))
 	if token == "" {
 		return "", fmt.Errorf("no token found in output: %s", string(output))
 	}
-	
+
 	// Remove any "Warning:" lines from SSH
 	lines := strings.Split(token, "\n")
 	for _, line := range lines {
@@ -332,7 +334,7 @@ func fetchJWTTokenViaSSH() (string, error) {
 			return line, nil
 		}
 	}
-	
+
 	return "", fmt.Errorf("no valid JWT token found in output: %s", string(output))
 }
 
@@ -349,20 +351,20 @@ func (suite *IntegrationTestSuite) IsDatabaseAvailable() bool {
 	if dbCheck.checked {
 		return dbCheck.available
 	}
-	
+
 	// Try a simple database operation to check availability
 	ctx := context.Background()
 	_, err := suite.client.QoS().List(ctx, &interfaces.ListQoSOptions{Limit: 1})
-	
+
 	dbCheck.available = err == nil || !suite.isDatabaseError(err)
 	dbCheck.checked = true
-	
+
 	if dbCheck.available {
 		suite.T().Logf("Database is available for version %s", suite.version)
 	} else {
 		suite.T().Logf("Database is not available for version %s: %v", suite.version, err)
 	}
-	
+
 	return dbCheck.available
 }
 
@@ -371,7 +373,7 @@ func (suite *IntegrationTestSuite) isDatabaseError(err error) bool {
 	if err == nil {
 		return false
 	}
-	
+
 	errorStr := err.Error()
 	return strings.Contains(errorStr, "Unable to connect to database") ||
 		strings.Contains(errorStr, "Failed to open slurmdbd connection") ||

@@ -6,8 +6,8 @@ package v0_0_43
 import (
 	"time"
 
-	"github.com/jontk/slurm-client/internal/common/types"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
+	"github.com/jontk/slurm-client/internal/common/types"
 )
 
 // convertAPINodeToCommon converts a v0.0.43 API Node to common Node type

@@ -244,13 +244,13 @@ func TestClusterAdapter_ExtractMeta(t *testing.T) {
 		expected map[string]interface{}
 	}{
 		{
-			name: "nil meta",
-			meta: nil,
+			name:     "nil meta",
+			meta:     nil,
 			expected: map[string]interface{}{},
 		},
 		{
-			name: "empty meta",
-			meta: &api.V0042OpenapiMeta{},
+			name:     "empty meta",
+			meta:     &api.V0042OpenapiMeta{},
 			expected: map[string]interface{}{},
 		},
 		{

@@ -88,10 +88,10 @@ type EfficiencyData struct {
 	MemoryEfficiency       int     `json:"memory_efficiency"`
 	GPUEfficiency          int     `json:"gpu_efficiency"`
 	ResourceWaste          struct {
-		CPUCoreHours    float64 `json:"cpu_core_hours"`
-		CPUPercent      int     `json:"cpu_percent"`
-		MemoryGBHours   float64 `json:"memory_gb_hours"`
-		MemoryPercent   int     `json:"memory_percent"`
+		CPUCoreHours  float64 `json:"cpu_core_hours"`
+		CPUPercent    int     `json:"cpu_percent"`
+		MemoryGBHours float64 `json:"memory_gb_hours"`
+		MemoryPercent int     `json:"memory_percent"`
 	} `json:"resource_waste"`
 	OptimizationRecommendations []OptimizationRecommendation `json:"optimization_recommendations"`
 }
@@ -113,11 +113,11 @@ type PerformanceData struct {
 		EfficiencyPercent  int   `json:"efficiency_percent"`
 	} `json:"memory_analytics"`
 	IOAnalytics struct {
-		ReadBytes            int64   `json:"read_bytes"`
-		WriteBytes           int64   `json:"write_bytes"`
-		ReadOperations       int     `json:"read_operations"`
-		WriteOperations      int     `json:"write_operations"`
-		AverageReadBandwidth float64 `json:"average_read_bandwidth"`
+		ReadBytes             int64   `json:"read_bytes"`
+		WriteBytes            int64   `json:"write_bytes"`
+		ReadOperations        int     `json:"read_operations"`
+		WriteOperations       int     `json:"write_operations"`
+		AverageReadBandwidth  float64 `json:"average_read_bandwidth"`
 		AverageWriteBandwidth float64 `json:"average_write_bandwidth"`
 	} `json:"io_analytics"`
 	OverallEfficiency float64 `json:"overall_efficiency"`
@@ -162,24 +162,24 @@ type OptimizationRecommendation struct {
 type EfficiencyReport struct {
 	Timestamp         time.Time               `json:"timestamp"`
 	TotalJobsAnalyzed int                     `json:"total_jobs_analyzed"`
-	OverallSummary    EfficiencySummary      `json:"overall_summary"`
+	OverallSummary    EfficiencySummary       `json:"overall_summary"`
 	JobAnalysis       []JobEfficiencyAnalysis `json:"job_analysis"`
 	Recommendations   []GlobalRecommendation  `json:"recommendations"`
-	TrendAnalysis     TrendAnalysis          `json:"trend_analysis"`
+	TrendAnalysis     TrendAnalysis           `json:"trend_analysis"`
 }
 
 // EfficiencySummary provides high-level efficiency statistics
 type EfficiencySummary struct {
-	AverageEfficiency        float64 `json:"average_efficiency"`
-	EfficiencyDistribution   map[string]int `json:"efficiency_distribution"`
-	ResourceWasteAnalysis    ResourceWasteAnalysis `json:"resource_waste_analysis"`
-	PotentialSavings         PotentialSavings      `json:"potential_savings"`
-	TopIssues               []string              `json:"top_issues"`
+	AverageEfficiency      float64               `json:"average_efficiency"`
+	EfficiencyDistribution map[string]int        `json:"efficiency_distribution"`
+	ResourceWasteAnalysis  ResourceWasteAnalysis `json:"resource_waste_analysis"`
+	PotentialSavings       PotentialSavings      `json:"potential_savings"`
+	TopIssues              []string              `json:"top_issues"`
 }
 
 // JobEfficiencyAnalysis contains detailed analysis for individual jobs
 type JobEfficiencyAnalysis struct {
-	JobID             string                        `json:"job_id"`
+	JobID             string                       `json:"job_id"`
 	EfficiencyScore   float64                      `json:"efficiency_score"`
 	EfficiencyGrade   string                       `json:"efficiency_grade"`
 	ResourceBreakdown map[string]float64           `json:"resource_breakdown"`
@@ -190,21 +190,21 @@ type JobEfficiencyAnalysis struct {
 
 // GlobalRecommendation represents system-wide optimization recommendations
 type GlobalRecommendation struct {
-	Category    string  `json:"category"`
-	Impact      string  `json:"impact"`
-	Description string  `json:"description"`
+	Category    string   `json:"category"`
+	Impact      string   `json:"impact"`
+	Description string   `json:"description"`
 	Actions     []string `json:"actions"`
-	Priority    string  `json:"priority"`
-	Confidence  float64 `json:"confidence"`
+	Priority    string   `json:"priority"`
+	Confidence  float64  `json:"confidence"`
 }
 
 // ResourceWasteAnalysis details resource waste across the system
 type ResourceWasteAnalysis struct {
-	TotalCPUWasteHours    float64 `json:"total_cpu_waste_hours"`
-	TotalMemoryWasteGB    float64 `json:"total_memory_waste_gb"`
-	TotalGPUWasteHours    float64 `json:"total_gpu_waste_hours"`
-	WasteByResource       map[string]float64 `json:"waste_by_resource"`
-	MostWastefulJobs      []string `json:"most_wasteful_jobs"`
+	TotalCPUWasteHours float64            `json:"total_cpu_waste_hours"`
+	TotalMemoryWasteGB float64            `json:"total_memory_waste_gb"`
+	TotalGPUWasteHours float64            `json:"total_gpu_waste_hours"`
+	WasteByResource    map[string]float64 `json:"waste_by_resource"`
+	MostWastefulJobs   []string           `json:"most_wasteful_jobs"`
 }
 
 // PotentialSavings estimates potential cost and resource savings
@@ -218,30 +218,30 @@ type PotentialSavings struct {
 
 // TrendAnalysis provides efficiency trends over time
 type TrendAnalysis struct {
-	EfficiencyTrend       string  `json:"efficiency_trend"`
-	TrendDirection        string  `json:"trend_direction"`
-	TrendMagnitude        float64 `json:"trend_magnitude"`
-	PredictedEfficiency   float64 `json:"predicted_efficiency"`
-	SeasonalPatterns      []string `json:"seasonal_patterns"`
-	RecommendedActions    []string `json:"recommended_actions"`
+	EfficiencyTrend     string   `json:"efficiency_trend"`
+	TrendDirection      string   `json:"trend_direction"`
+	TrendMagnitude      float64  `json:"trend_magnitude"`
+	PredictedEfficiency float64  `json:"predicted_efficiency"`
+	SeasonalPatterns    []string `json:"seasonal_patterns"`
+	RecommendedActions  []string `json:"recommended_actions"`
 }
 
 // OptimizationOpportunity represents specific optimization opportunities
 type OptimizationOpportunity struct {
-	Type            string  `json:"type"`
-	Description     string  `json:"description"`
-	ImpactLevel     string  `json:"impact_level"`
-	ImplementationEffort string `json:"implementation_effort"`
-	EstimatedSaving float64 `json:"estimated_saving"`
-	Priority        int     `json:"priority"`
+	Type                 string  `json:"type"`
+	Description          string  `json:"description"`
+	ImpactLevel          string  `json:"impact_level"`
+	ImplementationEffort string  `json:"implementation_effort"`
+	EstimatedSaving      float64 `json:"estimated_saving"`
+	Priority             int     `json:"priority"`
 }
 
 // EfficiencyMonitor handles efficiency monitoring and analysis
 type EfficiencyMonitor struct {
-	mockServer  *mocks.MockSlurmServer
-	baseURL     string
-	thresholds  EfficiencyThresholds
-	httpClient  *http.Client
+	mockServer *mocks.MockSlurmServer
+	baseURL    string
+	thresholds EfficiencyThresholds
+	httpClient *http.Client
 }
 
 // NewEfficiencyMonitor creates a new efficiency monitoring instance
@@ -273,11 +273,11 @@ func NewEfficiencyMonitor() *EfficiencyMonitor {
 // StartMonitoring initializes the mock server and begins monitoring
 func (em *EfficiencyMonitor) StartMonitoring() error {
 	fmt.Println("🔄 Starting SLURM Efficiency Monitoring System...")
-	
+
 	// Start mock SLURM server
 	em.mockServer = mocks.NewMockSlurmServerForVersion("v0.0.42")
 	em.baseURL = em.mockServer.URL()
-	
+
 	fmt.Printf("✅ Mock SLURM server started at: %s\n", em.baseURL)
 	return nil
 }
@@ -293,7 +293,7 @@ func (em *EfficiencyMonitor) StopMonitoring() {
 // CollectJobEfficiencyData gathers comprehensive efficiency data for a job
 func (em *EfficiencyMonitor) CollectJobEfficiencyData(jobID string) (*JobEfficiencyData, error) {
 	fmt.Printf("📊 Collecting efficiency data for job %s...\n", jobID)
-	
+
 	data := &JobEfficiencyData{
 		JobID:     jobID,
 		Timestamp: time.Now(),
@@ -391,7 +391,7 @@ func (em *EfficiencyMonitor) fetchAndParseJSON(url string, target interface{}) e
 // AnalyzeJobEfficiency performs detailed efficiency analysis
 func (em *EfficiencyMonitor) AnalyzeJobEfficiency(data *JobEfficiencyData) *JobEfficiencyAnalysis {
 	fmt.Printf("🔍 Analyzing efficiency for job %s...\n", data.JobID)
-	
+
 	analysis := &JobEfficiencyAnalysis{
 		JobID:           data.JobID,
 		EfficiencyScore: data.Efficiency.OverallEfficiencyScore,
@@ -413,9 +413,9 @@ func (em *EfficiencyMonitor) AnalyzeJobEfficiency(data *JobEfficiencyData) *JobE
 	// Generate optimization opportunities
 	analysis.Optimizations = em.generateOptimizationOpportunities(data)
 
-	fmt.Printf("✅ Efficiency analysis completed - Grade: %s (%.1f%%)\n", 
+	fmt.Printf("✅ Efficiency analysis completed - Grade: %s (%.1f%%)\n",
 		analysis.EfficiencyGrade, analysis.EfficiencyScore)
-	
+
 	return analysis
 }
 
@@ -439,37 +439,37 @@ func (em *EfficiencyMonitor) identifyEfficiencyIssues(data *JobEfficiencyData) [
 
 	// Check CPU efficiency
 	if float64(data.Efficiency.CPUEfficiency) < em.thresholds.CPU.Good {
-		issues = append(issues, fmt.Sprintf("Low CPU efficiency (%d%% < %.0f%%)", 
+		issues = append(issues, fmt.Sprintf("Low CPU efficiency (%d%% < %.0f%%)",
 			data.Efficiency.CPUEfficiency, em.thresholds.CPU.Good))
 	}
 
 	// Check memory efficiency
 	if float64(data.Efficiency.MemoryEfficiency) < em.thresholds.Memory.Good {
-		issues = append(issues, fmt.Sprintf("Low memory efficiency (%d%% < %.0f%%)", 
+		issues = append(issues, fmt.Sprintf("Low memory efficiency (%d%% < %.0f%%)",
 			data.Efficiency.MemoryEfficiency, em.thresholds.Memory.Good))
 	}
 
 	// Check GPU efficiency (if applicable)
-	if data.Utilization.GPUUtilization.DeviceCount > 0 && 
+	if data.Utilization.GPUUtilization.DeviceCount > 0 &&
 		float64(data.Efficiency.GPUEfficiency) < em.thresholds.GPU.Good {
-		issues = append(issues, fmt.Sprintf("Low GPU efficiency (%d%% < %.0f%%)", 
+		issues = append(issues, fmt.Sprintf("Low GPU efficiency (%d%% < %.0f%%)",
 			data.Efficiency.GPUEfficiency, em.thresholds.GPU.Good))
 	}
 
 	// Check I/O efficiency
 	if float64(data.Utilization.IOUtilization.UtilizationPercent) < em.thresholds.IO.Good {
-		issues = append(issues, fmt.Sprintf("Low I/O efficiency (%d%% < %.0f%%)", 
+		issues = append(issues, fmt.Sprintf("Low I/O efficiency (%d%% < %.0f%%)",
 			data.Utilization.IOUtilization.UtilizationPercent, em.thresholds.IO.Good))
 	}
 
 	// Check resource waste
 	if data.Efficiency.ResourceWaste.CPUPercent > 20 {
-		issues = append(issues, fmt.Sprintf("High CPU waste (%d%%)", 
+		issues = append(issues, fmt.Sprintf("High CPU waste (%d%%)",
 			data.Efficiency.ResourceWaste.CPUPercent))
 	}
 
 	if data.Efficiency.ResourceWaste.MemoryPercent > 25 {
-		issues = append(issues, fmt.Sprintf("High memory waste (%d%%)", 
+		issues = append(issues, fmt.Sprintf("High memory waste (%d%%)",
 			data.Efficiency.ResourceWaste.MemoryPercent))
 	}
 
@@ -487,13 +487,13 @@ func (em *EfficiencyMonitor) generateOptimizationOpportunities(data *JobEfficien
 	// CPU optimization opportunities
 	if float64(data.Efficiency.CPUEfficiency) < em.thresholds.CPU.Good {
 		opportunities = append(opportunities, OptimizationOpportunity{
-			Type:            "CPU Resource Optimization",
-			Description:     fmt.Sprintf("Reduce CPU allocation from %d cores based on %d%% utilization", 
+			Type: "CPU Resource Optimization",
+			Description: fmt.Sprintf("Reduce CPU allocation from %d cores based on %d%% utilization",
 				data.Utilization.CPUUtilization.AllocatedCores, data.Efficiency.CPUEfficiency),
-			ImpactLevel:     "High",
+			ImpactLevel:          "High",
 			ImplementationEffort: "Low",
-			EstimatedSaving: float64(data.Efficiency.ResourceWaste.CPUPercent) * 0.5,
-			Priority:        1,
+			EstimatedSaving:      float64(data.Efficiency.ResourceWaste.CPUPercent) * 0.5,
+			Priority:             1,
 		})
 	}
 
@@ -502,36 +502,36 @@ func (em *EfficiencyMonitor) generateOptimizationOpportunities(data *JobEfficien
 		memoryWasteGB := float64(data.Utilization.MemoryUtilization.AllocatedBytes-
 			data.Utilization.MemoryUtilization.UsedBytes) / (1024 * 1024 * 1024)
 		opportunities = append(opportunities, OptimizationOpportunity{
-			Type:            "Memory Resource Optimization",
-			Description:     fmt.Sprintf("Reduce memory allocation by %.1fGB based on usage patterns", memoryWasteGB),
-			ImpactLevel:     "Medium",
+			Type:                 "Memory Resource Optimization",
+			Description:          fmt.Sprintf("Reduce memory allocation by %.1fGB based on usage patterns", memoryWasteGB),
+			ImpactLevel:          "Medium",
 			ImplementationEffort: "Low",
-			EstimatedSaving: float64(data.Efficiency.ResourceWaste.MemoryPercent) * 0.3,
-			Priority:        2,
+			EstimatedSaving:      float64(data.Efficiency.ResourceWaste.MemoryPercent) * 0.3,
+			Priority:             2,
 		})
 	}
 
 	// I/O optimization opportunities
 	if float64(data.Utilization.IOUtilization.UtilizationPercent) < em.thresholds.IO.Poor {
 		opportunities = append(opportunities, OptimizationOpportunity{
-			Type:            "I/O Performance Optimization",
-			Description:     "Consider I/O optimization techniques or alternative storage solutions",
-			ImpactLevel:     "Medium",
+			Type:                 "I/O Performance Optimization",
+			Description:          "Consider I/O optimization techniques or alternative storage solutions",
+			ImpactLevel:          "Medium",
 			ImplementationEffort: "Medium",
-			EstimatedSaving: 15.0,
-			Priority:        3,
+			EstimatedSaving:      15.0,
+			Priority:             3,
 		})
 	}
 
 	// Overall efficiency opportunity
 	if data.Efficiency.OverallEfficiencyScore < em.thresholds.Overall.Good {
 		opportunities = append(opportunities, OptimizationOpportunity{
-			Type:            "Job Configuration Review",
-			Description:     "Comprehensive review of job resource requirements and algorithm efficiency",
-			ImpactLevel:     "High",
+			Type:                 "Job Configuration Review",
+			Description:          "Comprehensive review of job resource requirements and algorithm efficiency",
+			ImpactLevel:          "High",
 			ImplementationEffort: "High",
-			EstimatedSaving: (em.thresholds.Overall.Good - data.Efficiency.OverallEfficiencyScore) * 0.7,
-			Priority:        1,
+			EstimatedSaving:      (em.thresholds.Overall.Good - data.Efficiency.OverallEfficiencyScore) * 0.7,
+			Priority:             1,
 		})
 	}
 
@@ -546,7 +546,7 @@ func (em *EfficiencyMonitor) generateOptimizationOpportunities(data *JobEfficien
 // GenerateEfficiencyReport creates comprehensive efficiency report
 func (em *EfficiencyMonitor) GenerateEfficiencyReport(jobIDs []string) (*EfficiencyReport, error) {
 	fmt.Printf("📈 Generating efficiency report for %d jobs...\n", len(jobIDs))
-	
+
 	report := &EfficiencyReport{
 		Timestamp:         time.Now(),
 		TotalJobsAnalyzed: len(jobIDs),
@@ -569,7 +569,7 @@ func (em *EfficiencyMonitor) GenerateEfficiencyReport(jobIDs []string) (*Efficie
 	// Analyze each job
 	for i, jobID := range jobIDs {
 		fmt.Printf("  Processing job %d/%d: %s\n", i+1, len(jobIDs), jobID)
-		
+
 		jobData, err := em.CollectJobEfficiencyData(jobID)
 		if err != nil {
 			log.Printf("Warning: Failed to collect data for job %s: %v", jobID, err)
@@ -581,7 +581,7 @@ func (em *EfficiencyMonitor) GenerateEfficiencyReport(jobIDs []string) (*Efficie
 
 		// Update statistics
 		totalEfficiency += analysis.EfficiencyScore
-		
+
 		// Update distribution
 		switch analysis.EfficiencyGrade {
 		case "A (Excellent)":
@@ -597,8 +597,8 @@ func (em *EfficiencyMonitor) GenerateEfficiencyReport(jobIDs []string) (*Efficie
 		// Update resource waste tracking
 		resourceWaste.TotalCPUWasteHours += jobData.Efficiency.ResourceWaste.CPUCoreHours
 		resourceWaste.TotalMemoryWasteGB += jobData.Efficiency.ResourceWaste.MemoryGBHours
-		
-		if jobData.Efficiency.ResourceWaste.CPUPercent > 30 || 
+
+		if jobData.Efficiency.ResourceWaste.CPUPercent > 30 ||
 			jobData.Efficiency.ResourceWaste.MemoryPercent > 35 {
 			resourceWaste.MostWastefulJobs = append(resourceWaste.MostWastefulJobs, jobID)
 		}
@@ -609,7 +609,7 @@ func (em *EfficiencyMonitor) GenerateEfficiencyReport(jobIDs []string) (*Efficie
 		report.OverallSummary.AverageEfficiency = totalEfficiency / float64(len(report.JobAnalysis))
 	}
 	report.OverallSummary.EfficiencyDistribution = efficiencyDistribution
-	
+
 	// Calculate resource waste by type
 	resourceWaste.WasteByResource["CPU"] = resourceWaste.TotalCPUWasteHours
 	resourceWaste.WasteByResource["Memory"] = resourceWaste.TotalMemoryWasteGB
@@ -703,9 +703,9 @@ func (em *EfficiencyMonitor) generateGlobalRecommendations(report *EfficiencyRep
 	// System-wide efficiency recommendation
 	if avgEfficiency < em.thresholds.Overall.Good {
 		recommendations = append(recommendations, GlobalRecommendation{
-			Category:    "System Efficiency",
-			Impact:      "High",
-			Description: fmt.Sprintf("System average efficiency (%.1f%%) is below target (%.0f%%)", 
+			Category: "System Efficiency",
+			Impact:   "High",
+			Description: fmt.Sprintf("System average efficiency (%.1f%%) is below target (%.0f%%)",
 				avgEfficiency, em.thresholds.Overall.Good),
 			Actions: []string{
 				"Implement resource request guidelines for users",
@@ -722,9 +722,9 @@ func (em *EfficiencyMonitor) generateGlobalRecommendations(report *EfficiencyRep
 	wasteAnalysis := report.OverallSummary.ResourceWasteAnalysis
 	if wasteAnalysis.TotalCPUWasteHours > 100 || wasteAnalysis.TotalMemoryWasteGB > 200 {
 		recommendations = append(recommendations, GlobalRecommendation{
-			Category:    "Resource Waste Reduction",
-			Impact:      "High",
-			Description: fmt.Sprintf("Significant resource waste detected: %.1f CPU hours, %.1f GB memory", 
+			Category: "Resource Waste Reduction",
+			Impact:   "High",
+			Description: fmt.Sprintf("Significant resource waste detected: %.1f CPU hours, %.1f GB memory",
 				wasteAnalysis.TotalCPUWasteHours, wasteAnalysis.TotalMemoryWasteGB),
 			Actions: []string{
 				"Implement dynamic resource allocation policies",
@@ -738,13 +738,13 @@ func (em *EfficiencyMonitor) generateGlobalRecommendations(report *EfficiencyRep
 	}
 
 	// User education recommendation
-	poorJobsCount := report.OverallSummary.EfficiencyDistribution["Poor"] + 
+	poorJobsCount := report.OverallSummary.EfficiencyDistribution["Poor"] +
 		report.OverallSummary.EfficiencyDistribution["Very Poor"]
 	if float64(poorJobsCount)/float64(report.TotalJobsAnalyzed) > 0.3 {
 		recommendations = append(recommendations, GlobalRecommendation{
-			Category:    "User Education",
-			Impact:      "Medium",
-			Description: fmt.Sprintf("%d%% of jobs have poor efficiency", 
+			Category: "User Education",
+			Impact:   "Medium",
+			Description: fmt.Sprintf("%d%% of jobs have poor efficiency",
 				int(float64(poorJobsCount)/float64(report.TotalJobsAnalyzed)*100)),
 			Actions: []string{
 				"Develop efficiency best practices documentation",
@@ -778,12 +778,12 @@ func (em *EfficiencyMonitor) generateGlobalRecommendations(report *EfficiencyRep
 // generateTrendAnalysis creates efficiency trend analysis
 func (em *EfficiencyMonitor) generateTrendAnalysis(report *EfficiencyReport) TrendAnalysis {
 	avgEfficiency := report.OverallSummary.AverageEfficiency
-	
+
 	// Simulate trend analysis (in real implementation, this would use historical data)
 	trend := TrendAnalysis{
-		EfficiencyTrend: "Stable",
-		TrendDirection:  "Neutral",
-		TrendMagnitude:  0.5,
+		EfficiencyTrend:     "Stable",
+		TrendDirection:      "Neutral",
+		TrendMagnitude:      0.5,
 		PredictedEfficiency: avgEfficiency,
 	}
 
@@ -823,7 +823,7 @@ func (em *EfficiencyMonitor) PrintEfficiencyReport(report *EfficiencyReport) {
 	fmt.Printf("📅 Generated: %s\n", report.Timestamp.Format("2006-01-02 15:04:05"))
 	fmt.Printf("🎯 Jobs Analyzed: %d\n", report.TotalJobsAnalyzed)
 	fmt.Printf("📈 Average Efficiency: %.1f%%\n", report.OverallSummary.AverageEfficiency)
-	
+
 	// Efficiency Distribution
 	fmt.Println("\n📊 EFFICIENCY DISTRIBUTION:")
 	fmt.Printf("  🟢 Excellent: %d jobs\n", report.OverallSummary.EfficiencyDistribution["Excellent"])
@@ -874,7 +874,7 @@ func (em *EfficiencyMonitor) PrintEfficiencyReport(report *EfficiencyReport) {
 
 	// Individual Job Analysis (Top 5 best and worst)
 	fmt.Println("\n🎯 INDIVIDUAL JOB ANALYSIS:")
-	
+
 	// Sort jobs by efficiency
 	jobs := append([]JobEfficiencyAnalysis{}, report.JobAnalysis...)
 	sort.Slice(jobs, func(i, j int) bool {
@@ -908,7 +908,7 @@ func (em *EfficiencyMonitor) PrintEfficiencyReport(report *EfficiencyReport) {
 // ExportReportToJSON saves the efficiency report as JSON
 func (em *EfficiencyMonitor) ExportReportToJSON(report *EfficiencyReport, filename string) error {
 	fmt.Printf("💾 Exporting efficiency report to %s...\n", filename)
-	
+
 	data, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal report: %w", err)
@@ -928,7 +928,7 @@ func main() {
 
 	// Initialize efficiency monitor
 	monitor := NewEfficiencyMonitor()
-	
+
 	// Start monitoring
 	if err := monitor.StartMonitoring(); err != nil {
 		log.Fatalf("Failed to start monitoring: %v", err)
@@ -948,9 +948,9 @@ func main() {
 	monitor.PrintEfficiencyReport(report)
 
 	// Export detailed analysis
-	reportFilename := fmt.Sprintf("efficiency_report_%s.json", 
+	reportFilename := fmt.Sprintf("efficiency_report_%s.json",
 		time.Now().Format("2006-01-02_15-04-05"))
-	
+
 	if err := monitor.ExportReportToJSON(report, reportFilename); err != nil {
 		log.Printf("Warning: Failed to export report: %v", err)
 	}

@@ -137,20 +137,3 @@ func (a *AssociationAdapter) convertCommonToAPIAssociation(assoc *types.Associat
 
 	return req
 }
-
-// formatTRESMapAssoc formats a TRES map to string format for associations
-func formatTRESMapAssoc(tres map[string]int64) string {
-	// Convert TRES map to SLURM format (e.g., "cpu=100,mem=1000M")
-	result := ""
-	for k, v := range tres {
-		if result != "" {
-			result += ","
-		}
-		if k == "mem" {
-			result += fmt.Sprintf("%s=%dM", k, v)
-		} else {
-			result += fmt.Sprintf("%s=%d", k, v)
-		}
-	}
-	return result
-}

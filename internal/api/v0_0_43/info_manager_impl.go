@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -114,7 +114,6 @@ func (m *InfoManagerImpl) Get(ctx context.Context) (*interfaces.ClusterInfo, err
 	diagResp, diagErr := m.client.apiClient.SlurmV0043GetDiagWithResponse(ctx)
 	if diagErr == nil && diagResp.StatusCode() == 200 && diagResp.JSON200 != nil &&
 		(diagResp.JSON200.Errors == nil || len(*diagResp.JSON200.Errors) == 0) {
-
 		// Extract uptime from diagnostic statistics
 		if diagResp.JSON200.Statistics.ServerThreadCount != nil {
 			// Server thread count can be used as a proxy for activity/uptime
@@ -340,12 +339,12 @@ func (m *InfoManagerImpl) Stats(ctx context.Context) (*interfaces.ClusterStats, 
 		// Count nodes and CPUs by state
 		for _, node := range nodesResp.JSON200.Nodes {
 			stats.TotalNodes++
-			
+
 			// Count CPUs
 			if node.Cpus != nil {
 				stats.TotalCPUs += int(*node.Cpus)
 			}
-			
+
 			// Check node state
 			if node.State != nil && len(*node.State) > 0 {
 				state := string((*node.State)[0])
@@ -355,8 +354,8 @@ func (m *InfoManagerImpl) Stats(ctx context.Context) (*interfaces.ClusterStats, 
 					if node.Cpus != nil {
 						stats.IdleCPUs += int(*node.Cpus)
 					}
-				case strings.Contains(strings.ToLower(state), "alloc") || 
-				     strings.Contains(strings.ToLower(state), "mixed"):
+				case strings.Contains(strings.ToLower(state), "alloc") ||
+					strings.Contains(strings.ToLower(state), "mixed"):
 					stats.AllocatedNodes++
 					// For allocated/mixed nodes, we'd need more info to get exact CPU allocation
 					// This is a simplified approach
@@ -366,7 +365,7 @@ func (m *InfoManagerImpl) Stats(ctx context.Context) (*interfaces.ClusterStats, 
 				}
 			}
 		}
-		
+
 		// Calculate idle CPUs if not fully allocated
 		if stats.IdleCPUs == 0 && stats.TotalCPUs > 0 {
 			stats.IdleCPUs = stats.TotalCPUs - stats.AllocatedCPUs
@@ -378,7 +377,7 @@ func (m *InfoManagerImpl) Stats(ctx context.Context) (*interfaces.ClusterStats, 
 		// We can track failed jobs separately if needed
 		// stats.FailedJobs = int(*resp.JSON200.Statistics.JobsFailed)
 	}
-	
+
 	if resp.JSON200.Statistics.JobsCanceled != nil {
 		// We can track canceled jobs separately if needed
 		// stats.CanceledJobs = int(*resp.JSON200.Statistics.JobsCanceled)

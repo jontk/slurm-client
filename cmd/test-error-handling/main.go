@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/internal/factory"
-	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	"github.com/jontk/slurm-client/pkg/errors"
@@ -119,7 +119,7 @@ func createClient(jwtToken string) (interfaces.SlurmClient, error) {
 func testInvalidAccount(client interfaces.SlurmClient) {
 	fmt.Println("Test: Submit job with invalid account")
 	fmt.Println("Expected: Should get INVALID_ACCOUNT error with enhanced description")
-	
+
 	ctx := context.Background()
 	submitJob := &interfaces.JobSubmission{
 		Name:       "test-invalid-account",
@@ -130,7 +130,7 @@ func testInvalidAccount(client interfaces.SlurmClient) {
 		Nodes:      1,
 		WorkingDir: "/tmp",
 	}
-	
+
 	_, err := client.Jobs().Submit(ctx, submitJob)
 	analyzeError(err)
 }
@@ -138,7 +138,7 @@ func testInvalidAccount(client interfaces.SlurmClient) {
 func testInvalidPartition(client interfaces.SlurmClient) {
 	fmt.Println("Test: Submit job with invalid partition")
 	fmt.Println("Expected: Should get INVALID_PARTITION error with enhanced description")
-	
+
 	ctx := context.Background()
 	submitJob := &interfaces.JobSubmission{
 		Name:       "test-invalid-partition",
@@ -149,7 +149,7 @@ func testInvalidPartition(client interfaces.SlurmClient) {
 		Nodes:      1,
 		WorkingDir: "/tmp",
 	}
-	
+
 	_, err := client.Jobs().Submit(ctx, submitJob)
 	analyzeError(err)
 }
@@ -157,7 +157,7 @@ func testInvalidPartition(client interfaces.SlurmClient) {
 func testInvalidQoS(client interfaces.SlurmClient) {
 	fmt.Println("Test: Get non-existent QoS")
 	fmt.Println("Expected: Should get QOS_NOT_FOUND error with enhanced description")
-	
+
 	ctx := context.Background()
 	_, err := client.QoS().Get(ctx, "nonexistent-qos-12345")
 	analyzeError(err)
@@ -166,25 +166,25 @@ func testInvalidQoS(client interfaces.SlurmClient) {
 func testDuplicateAccount(client interfaces.SlurmClient) {
 	fmt.Println("Test: Create duplicate account")
 	fmt.Println("Expected: Should get ACCOUNT_ALREADY_EXISTS error with enhanced description")
-	
+
 	ctx := context.Background()
-	
+
 	// First, create an account
 	createReq := &interfaces.AccountCreate{
 		Name:        fmt.Sprintf("test-dup-%d", time.Now().Unix()),
 		Description: "Test account for error handling",
 	}
-	
+
 	_, err := client.Accounts().Create(ctx, createReq)
 	if err != nil {
 		fmt.Printf("Failed to create initial account: %v\n", err)
 		return
 	}
-	
+
 	// Try to create the same account again
 	_, err = client.Accounts().Create(ctx, createReq)
 	analyzeError(err)
-	
+
 	// Clean up
 	_ = client.Accounts().Delete(ctx, createReq.Name)
 }
@@ -192,7 +192,7 @@ func testDuplicateAccount(client interfaces.SlurmClient) {
 func testMissingReservation(client interfaces.SlurmClient) {
 	fmt.Println("Test: Get non-existent reservation")
 	fmt.Println("Expected: Should get RESERVATION_NOT_FOUND error with enhanced description")
-	
+
 	ctx := context.Background()
 	_, err := client.Reservations().Get(ctx, "nonexistent-reservation-12345")
 	analyzeError(err)
@@ -201,7 +201,7 @@ func testMissingReservation(client interfaces.SlurmClient) {
 func testBadJobTime(client interfaces.SlurmClient) {
 	fmt.Println("Test: Submit job with invalid time limit")
 	fmt.Println("Expected: Should get INVALID_TIME_LIMIT error with enhanced description")
-	
+
 	ctx := context.Background()
 	submitJob := &interfaces.JobSubmission{
 		Name:       "test-bad-time",
@@ -212,7 +212,7 @@ func testBadJobTime(client interfaces.SlurmClient) {
 		Nodes:      1,
 		WorkingDir: "/tmp",
 	}
-	
+
 	_, err := client.Jobs().Submit(ctx, submitJob)
 	analyzeError(err)
 }
@@ -220,14 +220,14 @@ func testBadJobTime(client interfaces.SlurmClient) {
 func testPermission(client interfaces.SlurmClient) {
 	fmt.Println("Test: Update system QoS (permission test)")
 	fmt.Println("Expected: Should get PERMISSION_DENIED error with enhanced description")
-	
+
 	ctx := context.Background()
-	
+
 	// Try to modify a system QoS (usually protected)
 	updateReq := &interfaces.QoSUpdate{
 		Priority: intPtr(99999),
 	}
-	
+
 	err := client.QoS().Update(ctx, "normal", updateReq)
 	analyzeError(err)
 }
@@ -237,11 +237,11 @@ func analyzeError(err error) {
 		fmt.Println("❌ No error returned (expected an error)")
 		return
 	}
-	
+
 	fmt.Printf("\n📋 Error Analysis:\n")
 	fmt.Printf("  Error Type: %T\n", err)
 	fmt.Printf("  Error String: %v\n", err)
-	
+
 	// Check if it's a SLURM error
 	if slurmErr, ok := err.(*errors.SlurmError); ok {
 		fmt.Printf("\n✅ Enhanced SLURM Error Details:\n")
@@ -273,9 +273,9 @@ func analyzeError(err error) {
 		if apiErr.StatusCode != 0 {
 			fmt.Printf("  HTTP Status: %d\n", apiErr.StatusCode)
 		}
-		
+
 		// Check for API errors
-		if apiErr.Errors != nil && len(apiErr.Errors) > 0 {
+		if len(apiErr.Errors) > 0 {
 			fmt.Printf("\n  API Error Details:\n")
 			for i, detail := range apiErr.Errors {
 				fmt.Printf("    [%d] Error Number: %d\n", i+1, detail.ErrorNumber)
@@ -290,7 +290,7 @@ func analyzeError(err error) {
 		fmt.Printf("\n❌ Not a SLURM error (no enhanced details available)\n")
 		fmt.Printf("  Raw Error Type: %T\n", err)
 	}
-	
+
 	// Try to extract error chain
 	fmt.Printf("\n🔗 Error Chain:\n")
 	printErrorChain(err, 1)
@@ -300,10 +300,10 @@ func printErrorChain(err error, depth int) {
 	if err == nil {
 		return
 	}
-	
+
 	indent := strings.Repeat("  ", depth)
 	fmt.Printf("%s- %v\n", indent, err)
-	
+
 	// Check if error implements Unwrap
 	if unwrapper, ok := err.(interface{ Unwrap() error }); ok {
 		if wrapped := unwrapper.Unwrap(); wrapped != nil {

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -113,7 +113,6 @@ func (m *InfoManagerImpl) Get(ctx context.Context) (*interfaces.ClusterInfo, err
 	diagResp, diagErr := m.client.apiClient.SlurmV0040GetDiagWithResponse(ctx)
 	if diagErr == nil && diagResp.StatusCode() == 200 && diagResp.JSON200 != nil &&
 		(diagResp.JSON200.Errors == nil || len(*diagResp.JSON200.Errors) == 0) {
-
 		// Extract uptime from diagnostic statistics
 		if diagResp.JSON200.Statistics.ServerThreadCount != nil {
 			// Server thread count can be used as a proxy for activity/uptime

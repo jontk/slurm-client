@@ -53,11 +53,11 @@ func main() {
 
 		// Demonstrate API operations
 		fmt.Println("Testing job operations...")
-		
+
 		// List jobs
 		jobs, err := client42.Jobs().List(ctx, &slurm.ListJobsOptions{
-			State: slurm.JobStateRunning,
-			Limit: 10,
+			States: []string{"RUNNING"},
+			Limit:  10,
 		})
 		if err != nil {
 			log.Printf("Failed to list jobs: %v\n", err)
@@ -80,9 +80,9 @@ func main() {
 	// Example 3: Version compatibility information
 	fmt.Println("--- Example 3: Version Compatibility ---")
 	compatibility := slurm.GetVersionCompatibility()
-	
+
 	for version, slurmVersions := range compatibility.SlurmVersions {
-		fmt.Printf("API %s is compatible with Slurm versions: %v\n", 
+		fmt.Printf("API %s is compatible with Slurm versions: %v\n",
 			version, slurmVersions)
 	}
 	fmt.Println()
@@ -96,7 +96,7 @@ func main() {
 	if err != nil {
 		log.Printf("Failed to create client for Slurm 25.05: %v\n", err)
 	} else {
-		fmt.Printf("Created client with version: %s for Slurm 25.05\n", 
+		fmt.Printf("Created client with version: %s for Slurm 25.05\n",
 			clientForSlurm.Version())
 		clientForSlurm.Close()
 	}

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/analytics/history"
 	"github.com/jontk/slurm-client/pkg/errors"
 	"github.com/jontk/slurm-client/pkg/watch"
@@ -395,13 +395,13 @@ func (m *JobManagerImpl) Submit(ctx context.Context, job *interfaces.JobSubmissi
 	requestBody := SlurmV0043PostJobSubmitJSONRequestBody{
 		Job: jobDesc,
 	}
-	
+
 	// The API documentation shows the script should be at the top level too
 	// Even though it's deprecated, some SLURM versions might require it
 	if jobDesc.Script != nil {
 		requestBody.Script = jobDesc.Script
 	}
-	
+
 	// Debug logging - commented out for production
 	// if reqBytes, err := json.Marshal(requestBody); err == nil {
 	// 	fmt.Printf("DEBUG: Sending job submission request: %s\n", string(reqBytes))
@@ -643,7 +643,7 @@ func convertJobSubmissionToAPI(job *interfaces.JobSubmission) (*V0043JobDescMsg,
 	// Environment variables
 	// Always provide at least minimal environment to avoid SLURM write errors
 	envVars := make([]string, 0)
-	
+
 	// Add default PATH if not provided
 	hasPath := false
 	for key := range job.Environment {
@@ -652,16 +652,16 @@ func convertJobSubmissionToAPI(job *interfaces.JobSubmission) (*V0043JobDescMsg,
 			break
 		}
 	}
-	
+
 	if !hasPath {
 		envVars = append(envVars, "PATH=/usr/bin:/bin")
 	}
-	
+
 	// Add user-provided environment
 	for key, value := range job.Environment {
 		envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
 	}
-	
+
 	jobDesc.Environment = &envVars
 
 	// Args
@@ -749,25 +749,25 @@ func (m *JobManagerImpl) Requeue(ctx context.Context, jobID string) error {
 	if m.client.apiClient == nil {
 		return errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
-	
+
 	// Prepare parameters for the API call
 	params := &SlurmV0043DeleteJobParams{}
-	
+
 	// Use FEDERATIONREQUEUE flag to requeue instead of cancelling
 	// This flag tells SLURM to terminate the job and resubmit it
 	requeueFlag := FEDERATIONREQUEUE
 	params.Flags = &requeueFlag
-	
+
 	// No signal needed - we're requeuing, not terminating
 	// The FEDERATIONREQUEUE flag should trigger the requeue logic
-	
+
 	// Call the generated OpenAPI client
 	resp, err := m.client.apiClient.SlurmV0043DeleteJobWithResponse(ctx, jobID, params)
 	if err != nil {
 		wrappedErr := errors.WrapError(err)
 		return errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.43")
 	}
-	
+
 	// Check HTTP status and handle API errors
 	if resp.StatusCode() != 200 {
 		var responseBody []byte
@@ -792,7 +792,7 @@ func (m *JobManagerImpl) Requeue(ctx context.Context, jobID string) error {
 					if apiErr.Description != nil {
 						description = *apiErr.Description
 					}
-					
+
 					apiErrors[i] = errors.SlurmAPIErrorDetail{
 						ErrorNumber: errorNumber,
 						ErrorCode:   errorCode,
@@ -804,17 +804,17 @@ func (m *JobManagerImpl) Requeue(ctx context.Context, jobID string) error {
 				return apiError.SlurmError
 			}
 		}
-		
+
 		// Fall back to HTTP error handling
 		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.43")
 		return httpErr
 	}
-	
+
 	// Check for unexpected response format
 	if resp.JSON200 == nil {
 		return errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected response format", "Expected JSON response but got nil")
 	}
-	
+
 	return nil
 }
 
@@ -1334,7 +1334,7 @@ func generatePerformanceTrends(job *interfaces.Job) *interfaces.PerformanceTrend
 			Start: startTime,
 			End:   startTime.Add(time.Duration(points) * time.Hour),
 		},
-		Granularity: "hourly",
+		Granularity:        "hourly",
 		ClusterUtilization: make([]interfaces.UtilizationPoint, points),
 		ClusterEfficiency:  make([]interfaces.EfficiencyPoint, points),
 	}
@@ -2307,21 +2307,31 @@ func generateEnergyTrends(job *interfaces.Job, timePoints []time.Time, aggregati
 
 // Helper function to calculate time series statistics
 func calculateTimeSeries(values []float64, unit string) *interfaces.ResourceTimeSeries {
+	// Return empty but valid struct instead of nil
 	if len(values) == 0 {
-		return nil
+		return &interfaces.ResourceTimeSeries{
+			Values:     []float64{},
+			Unit:       unit,
+			Average:    0,
+			Min:        0,
+			Max:        0,
+			StdDev:     0,
+			Trend:      "stable",
+			TrendSlope: 0,
+		}
 	}
 
 	sum := 0.0
-	min := values[0]
-	max := values[0]
+	minVal := values[0]
+	maxVal := values[0]
 
 	for _, v := range values {
 		sum += v
-		if v < min {
-			min = v
+		if v < minVal {
+			minVal = v
 		}
-		if v > max {
-			max = v
+		if v > maxVal {
+			maxVal = v
 		}
 	}
 
@@ -2341,8 +2351,8 @@ func calculateTimeSeries(values []float64, unit string) *interfaces.ResourceTime
 		Values:     values,
 		Unit:       unit,
 		Average:    avg,
-		Min:        min,
-		Max:        max,
+		Min:        minVal,
+		Max:        maxVal,
 		StdDev:     stdDev,
 		Trend:      trend,
 		TrendSlope: slope,
@@ -2431,8 +2441,8 @@ func detectAnomalies(resource string, series *interfaces.ResourceTimeSeries, tim
 }
 
 // Helper function to determine anomaly severity
-func determineSeverity(value, threshold, max float64) string {
-	ratio := (value - threshold) / (max - threshold)
+func determineSeverity(value, threshold, maxVal float64) string {
+	ratio := (value - threshold) / (maxVal - threshold)
 	if ratio > 0.7 {
 		return "high"
 	} else if ratio > 0.3 {
@@ -2890,15 +2900,25 @@ func generateStepTasks(job *interfaces.Job, stepID int) []interfaces.StepTaskInf
 	taskCount := calculateStepTaskCount(job.CPUs, stepID)
 	tasks := make([]interfaces.StepTaskInfo, taskCount)
 
+	// Default to "unknown" if no nodes specified
+	nodeName := "unknown"
+	if len(job.Nodes) > 0 {
+		nodeName = job.Nodes[0]
+	}
+
 	for i := 0; i < taskCount; i++ {
 		// Distribute tasks across nodes
-		nodeIndex := i % len(job.Nodes)
-		nodeName := job.Nodes[nodeIndex]
+		localID := i
+		if len(job.Nodes) > 0 {
+			nodeIndex := i % len(job.Nodes)
+			nodeName = job.Nodes[nodeIndex]
+			localID = i % (taskCount / len(job.Nodes)) // Local task ID on node
+		}
 
 		tasks[i] = interfaces.StepTaskInfo{
 			TaskID:    i,
 			NodeName:  nodeName,
-			LocalID:   i % (taskCount / len(job.Nodes)), // Local task ID on node
+			LocalID:   localID,
 			State:     deriveTaskState(job.State, i),
 			ExitCode:  deriveTaskExitCode(job.ExitCode, i),
 			CPUTime:   time.Duration(i+1) * time.Minute * 30, // Varying CPU time
@@ -3144,7 +3164,7 @@ func (m *JobManagerImpl) ListJobStepsWithMetrics(ctx context.Context, jobID stri
 
 	// Filter steps based on options if provided
 	filteredSteps := []*interfaces.JobStepWithMetrics{}
-	
+
 	for _, step := range stepList.Steps {
 		// Apply filtering logic
 		if opts != nil && !shouldIncludeStep(&step, opts) {
@@ -3176,11 +3196,11 @@ func (m *JobManagerImpl) ListJobStepsWithMetrics(ctx context.Context, jobID stri
 			if opts.IncludeResourceTrends {
 				stepWithMetrics.Trends = generateStepResourceTrends(stepDetails, stepUtilization)
 			}
-			
+
 			if opts.IncludePerformanceAnalysis {
 				stepWithMetrics.Comparison = generateStepComparison(stepDetails, stepUtilization, convertToJobStepPointers(stepList.Steps))
 			}
-			
+
 			if opts.IncludeBottleneckAnalysis {
 				stepWithMetrics.Optimization = generateStepOptimizationSuggestions(stepDetails, stepUtilization)
 			}
@@ -3283,16 +3303,6 @@ func shouldIncludeStep(step *interfaces.JobStep, opts *interfaces.ListJobStepsOp
 	return true
 }
 
-// Helper function to check if slice contains string
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
-}
-
 // Helper function to generate resource trends for a step
 func generateStepResourceTrends(stepDetails *interfaces.JobStepDetails, stepUtilization *interfaces.JobStepUtilization) *interfaces.StepResourceTrends {
 	// Generate realistic trend data based on step characteristics
@@ -3363,16 +3373,16 @@ func generateStepComparison(stepDetails *interfaces.JobStepDetails, stepUtilizat
 	// Calculate relative metrics compared to other steps in the job
 	totalSteps := len(allSteps)
 	stepRank := calculateStepPerformanceRank(stepDetails, allSteps)
-	
+
 	// Efficiency percentile based on CPU utilization
 	cpuEfficiency := stepUtilization.CPUUtilization.Percentage
 	efficiencyPercentile := (float64(totalSteps-stepRank) / float64(totalSteps)) * 100
 
 	return &interfaces.StepComparison{
 		StepID:                   stepDetails.StepID,
-		RelativeCPUEfficiency:    cpuEfficiency / 75.0, // Relative to 75% baseline
+		RelativeCPUEfficiency:    cpuEfficiency / 75.0,                                // Relative to 75% baseline
 		RelativeMemoryEfficiency: stepUtilization.MemoryUtilization.Percentage / 80.0, // Relative to 80% baseline
-		RelativeDuration:         1.0, // Could be calculated relative to average step duration
+		RelativeDuration:         1.0,                                                 // Could be calculated relative to average step duration
 		PerformanceRank:          stepRank,
 		EfficiencyPercentile:     efficiencyPercentile,
 		ComparisonNotes: []string{
@@ -3459,26 +3469,26 @@ func generateStepOptimizationSuggestions(stepDetails *interfaces.JobStepDetails,
 func generateCPUTrendValues(utilization *interfaces.ResourceUtilization, count int) []float64 {
 	values := make([]float64, count)
 	baseValue := utilization.Percentage
-	
+
 	for i := 0; i < count; i++ {
 		// Add some realistic variation
 		variation := (rand.Float64() - 0.5) * 20.0 // +/- 10%
 		values[i] = math.Max(0, math.Min(100, baseValue+variation))
 	}
-	
+
 	return values
 }
 
 func generateMemoryTrendValues(utilization *interfaces.ResourceUtilization, count int) []float64 {
 	values := make([]float64, count)
 	baseValue := utilization.Percentage
-	
+
 	for i := 0; i < count; i++ {
 		// Memory tends to be more stable than CPU
 		variation := (rand.Float64() - 0.5) * 10.0 // +/- 5%
 		values[i] = math.Max(0, math.Min(100, baseValue+variation))
 	}
-	
+
 	return values
 }
 
@@ -3497,26 +3507,26 @@ func findMin(values []float64) float64 {
 	if len(values) == 0 {
 		return 0
 	}
-	min := values[0]
+	minVal := values[0]
 	for _, v := range values {
-		if v < min {
-			min = v
+		if v < minVal {
+			minVal = v
 		}
 	}
-	return min
+	return minVal
 }
 
 func findMax(values []float64) float64 {
 	if len(values) == 0 {
 		return 0
 	}
-	max := values[0]
+	maxVal := values[0]
 	for _, v := range values {
-		if v > max {
-			max = v
+		if v > maxVal {
+			maxVal = v
 		}
 	}
-	return max
+	return maxVal
 }
 
 func calculateStandardDeviation(values []float64) float64 {
@@ -3536,22 +3546,22 @@ func calculateSlope(values []float64, interval time.Duration) float64 {
 	if len(values) < 2 {
 		return 0
 	}
-	
+
 	// Simple linear regression slope
 	n := float64(len(values))
 	sumX := n * (n - 1) / 2 // Sum of indices
 	sumY := calculateAverage(values) * n
 	sumXY := 0.0
 	sumX2 := 0.0
-	
+
 	for i, y := range values {
 		x := float64(i)
 		sumXY += x * y
 		sumX2 += x * x
 	}
-	
+
 	slope := (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX)
-	
+
 	// Convert to per-hour rate
 	samplesPerHour := float64(time.Hour) / float64(interval)
 	return slope * samplesPerHour
@@ -3599,12 +3609,12 @@ func paginateJobStepsWithMetrics(steps []*interfaces.JobStepWithMetrics, limit, 
 	if offset >= len(steps) {
 		return []*interfaces.JobStepWithMetrics{}
 	}
-	
+
 	end := offset + limit
 	if limit <= 0 || end > len(steps) {
 		end = len(steps)
 	}
-	
+
 	return steps[offset:end]
 }
 
@@ -3694,6 +3704,15 @@ func (m *JobManagerImpl) GetJobPerformanceHistory(
 		return nil, err
 	}
 
+	// If no samples (job missing timing info), return minimal history
+	if len(samples) == 0 {
+		return &interfaces.JobPerformanceHistory{
+			JobID:          job.ID,
+			JobName:        job.Name,
+			TimeSeriesData: []interfaces.PerformanceSnapshot{},
+		}, nil
+	}
+
 	// Use the history tracker to process the data
 	tracker := history.NewPerformanceHistoryTracker()
 	return tracker.GetJobPerformanceHistory(ctx, job, samples, opts)
@@ -3705,30 +3724,31 @@ func (m *JobManagerImpl) generateHistoricalSamples(
 	ctx context.Context,
 	job *interfaces.Job,
 ) ([]interfaces.JobComprehensiveAnalytics, error) {
+	// For running/pending jobs without timing info, return empty samples
 	if job.StartTime == nil || job.EndTime == nil {
-		return nil, fmt.Errorf("job missing timing information")
+		return []interfaces.JobComprehensiveAnalytics{}, nil
 	}
 
 	// Generate samples every 10 minutes during job execution
 	var samples []interfaces.JobComprehensiveAnalytics
 	interval := 10 * time.Minute
-	
+
 	for t := *job.StartTime; t.Before(*job.EndTime); t = t.Add(interval) {
 		// Simulate performance metrics varying over time
 		elapsed := t.Sub(*job.StartTime)
 		progress := elapsed.Seconds() / job.EndTime.Sub(*job.StartTime).Seconds()
-		
+
 		// Create realistic performance variations
 		cpuVariation := 75.0 + 15.0*math.Sin(progress*math.Pi*4) // 60-90% range
 		memVariation := 65.0 + 20.0*progress                     // Increasing memory usage
-		ioVariation := 40.0 + 30.0*(1.0-progress)               // Decreasing I/O over time
-		
+		ioVariation := 40.0 + 30.0*(1.0-progress)                // Decreasing I/O over time
+
 		// Convert job.ID (string) to uint32
 		jobIDUint, err := strconv.ParseUint(job.ID, 10, 32)
 		if err != nil {
 			jobIDUint = 0 // Fallback to 0 if parsing fails
 		}
-		
+
 		sample := interfaces.JobComprehensiveAnalytics{
 			JobID:     uint32(jobIDUint),
 			JobName:   job.Name,
@@ -3736,36 +3756,36 @@ func (m *JobManagerImpl) generateHistoricalSamples(
 			EndTime:   job.EndTime,
 			Duration:  job.EndTime.Sub(*job.StartTime),
 			Status:    job.State,
-			
+
 			CPUAnalytics: &interfaces.CPUAnalytics{
 				AllocatedCores:     job.CPUs,
-				UsedCores:         float64(job.CPUs) * cpuVariation / 100.0,
+				UsedCores:          float64(job.CPUs) * cpuVariation / 100.0,
 				UtilizationPercent: cpuVariation,
-				AverageFrequency:  2.4 + 0.6*cpuVariation/100.0,
-				MaxFrequency:      3.0,
-				CoreMetrics:       generateCoreMetrics(job.CPUs, cpuVariation),
+				AverageFrequency:   2.4 + 0.6*cpuVariation/100.0,
+				MaxFrequency:       3.0,
+				CoreMetrics:        generateCoreMetrics(job.CPUs, cpuVariation),
 			},
-			
+
 			MemoryAnalytics: &interfaces.MemoryAnalytics{
 				AllocatedBytes:     int64(job.Memory),
-				UsedBytes:         int64(float64(job.Memory) * memVariation / 100.0),
+				UsedBytes:          int64(float64(job.Memory) * memVariation / 100.0),
 				UtilizationPercent: memVariation,
 			},
-			
+
 			IOAnalytics: &interfaces.IOAnalytics{
 				AverageReadBandwidth:  ioVariation * 5.0,
 				AverageWriteBandwidth: ioVariation * 2.0,
-				ReadOperations:     int64(ioVariation * 1000),
-				WriteOperations:    int64(ioVariation * 500),
+				ReadOperations:        int64(ioVariation * 1000),
+				WriteOperations:       int64(ioVariation * 500),
 			},
-			
+
 			// OverallEfficiency is directly in JobComprehensiveAnalytics
 			OverallEfficiency: (cpuVariation + memVariation + ioVariation) / 3.0,
 		}
-		
+
 		samples = append(samples, sample)
 	}
-	
+
 	return samples, nil
 }
 
@@ -3776,7 +3796,7 @@ func generateCoreMetrics(coreCount int, avgUtilization float64) []interfaces.CPU
 		// Add some variance between cores
 		variation := (rand.Float64() - 0.5) * 20.0 // +/- 10%
 		utilization := math.Max(0, math.Min(100, avgUtilization+variation))
-		
+
 		metrics[i] = interfaces.CPUCoreMetric{
 			CoreID:      i,
 			Utilization: utilization,
@@ -3853,16 +3873,15 @@ func (m *JobManagerImpl) GetUserEfficiencyTrends(
 		},
 		AverageEfficiency:        73.5,
 		ClusterAverageEfficiency: 69.5,
-		EfficiencyRank:          15,
-		EfficiencyPercentile:    78.0,
-		ImprovementRate:         2.5,
+		EfficiencyRank:           15,
+		EfficiencyPercentile:     78.0,
+		ImprovementRate:          2.5,
 		Recommendations: []string{
 			"Consider reducing memory allocation by 20% based on usage patterns",
 			"CPU utilization could be improved by optimizing parallelization",
 		},
 	}, nil
 }
-
 
 // GetWorkflowPerformance analyzes performance of multi-job workflows
 func (m *JobManagerImpl) GetWorkflowPerformance(
@@ -3941,12 +3960,12 @@ func (m *JobManagerImpl) GenerateEfficiencyReport(
 		},
 		Recommendations: []interfaces.ReportRecommendation{
 			{
-				Category:         "resource_allocation",
-				Priority:         "high",
-				Title:           "Implement memory profiling guidelines",
-				Description:     "Establish memory profiling standards to reduce over-allocation",
-				ExpectedImpact:  "20% reduction in memory waste",
-				Implementation:  "Deploy memory profiling tools and create allocation guidelines",
+				Category:       "resource_allocation",
+				Priority:       "high",
+				Title:          "Implement memory profiling guidelines",
+				Description:    "Establish memory profiling standards to reduce over-allocation",
+				ExpectedImpact: "20% reduction in memory waste",
+				Implementation: "Deploy memory profiling tools and create allocation guidelines",
 			},
 		},
 	}, nil
@@ -3965,15 +3984,15 @@ func (m *JobManagerImpl) GetJobCPUAnalytics(ctx context.Context, jobID string) (
 	// In v0.0.43, this would query detailed CPU metrics from SLURM
 	return &interfaces.CPUAnalytics{
 		AllocatedCores:        job.CPUs,
-		UsedCores:            float64(job.CPUs) * 0.78, // 78% utilization
-		UtilizationPercent:   78.0,
-		AverageFrequency:     2.6,
-		MaxFrequency:         3.0,
+		UsedCores:             float64(job.CPUs) * 0.78, // 78% utilization
+		UtilizationPercent:    78.0,
+		AverageFrequency:      2.6,
+		MaxFrequency:          3.0,
 		ThermalThrottleEvents: 0,
-		Oversubscribed:       false,
-		CoreMetrics:          generateCoreMetrics(job.CPUs, 78.0),
-		InstructionsPerCycle: 1,
-		ContextSwitches:     1250,
+		Oversubscribed:        false,
+		CoreMetrics:           generateCoreMetrics(job.CPUs, 78.0),
+		InstructionsPerCycle:  1,
+		ContextSwitches:       1250,
 	}, nil
 }
 
@@ -3988,40 +4007,40 @@ func (m *JobManagerImpl) GetJobMemoryAnalytics(ctx context.Context, jobID string
 	// In v0.0.43, this would query detailed memory metrics from SLURM
 	return &interfaces.MemoryAnalytics{
 		AllocatedBytes:     int64(job.Memory),
-		UsedBytes:         int64(float64(job.Memory) * 0.72), // 72% utilization
+		UsedBytes:          int64(float64(job.Memory) * 0.72), // 72% utilization
 		UtilizationPercent: 72.0,
 		EfficiencyPercent:  68.0,
-		FreeBytes:         int64(float64(job.Memory) * 0.28),
-		Overcommitted:     false,
-		ResidentSetSize:   int64(float64(job.Memory) * 0.65),
-		VirtualMemorySize: int64(float64(job.Memory) * 1.2),
-		SharedMemory:      int64(float64(job.Memory) * 0.05),
-		BufferedMemory:    int64(float64(job.Memory) * 0.02),
-		CachedMemory:      int64(float64(job.Memory) * 0.10),
+		FreeBytes:          int64(float64(job.Memory) * 0.28),
+		Overcommitted:      false,
+		ResidentSetSize:    int64(float64(job.Memory) * 0.65),
+		VirtualMemorySize:  int64(float64(job.Memory) * 1.2),
+		SharedMemory:       int64(float64(job.Memory) * 0.05),
+		BufferedMemory:     int64(float64(job.Memory) * 0.02),
+		CachedMemory:       int64(float64(job.Memory) * 0.10),
 		NUMANodes: []interfaces.NUMANodeMetrics{
 			{
-				NodeID:               0,
-				CPUCores:            int(job.CPUs) / 2,
-				MemoryTotal:         int64(job.Memory) / 2,
-				MemoryUsed:          int64(float64(job.Memory) * 0.36),
-				MemoryFree:          int64(float64(job.Memory) * 0.14),
-				CPUUtilization:      78.0,
-				MemoryBandwidth:     45200,
-				LocalAccesses:       92.5,
-				RemoteAccesses:      7.5,
-				InterconnectLoad:    15.2,
+				NodeID:           0,
+				CPUCores:         int(job.CPUs) / 2,
+				MemoryTotal:      int64(job.Memory) / 2,
+				MemoryUsed:       int64(float64(job.Memory) * 0.36),
+				MemoryFree:       int64(float64(job.Memory) * 0.14),
+				CPUUtilization:   78.0,
+				MemoryBandwidth:  45200,
+				LocalAccesses:    92.5,
+				RemoteAccesses:   7.5,
+				InterconnectLoad: 15.2,
 			},
 			{
-				NodeID:               1,
-				CPUCores:            int(job.CPUs) / 2,
-				MemoryTotal:         int64(job.Memory) / 2,
-				MemoryUsed:          int64(float64(job.Memory) * 0.36),
-				MemoryFree:          int64(float64(job.Memory) * 0.14),
-				CPUUtilization:      75.0,
-				MemoryBandwidth:     42100,
-				LocalAccesses:       89.0,
-				RemoteAccesses:      11.0,
-				InterconnectLoad:    18.7,
+				NodeID:           1,
+				CPUCores:         int(job.CPUs) / 2,
+				MemoryTotal:      int64(job.Memory) / 2,
+				MemoryUsed:       int64(float64(job.Memory) * 0.36),
+				MemoryFree:       int64(float64(job.Memory) * 0.14),
+				CPUUtilization:   75.0,
+				MemoryBandwidth:  42100,
+				LocalAccesses:    89.0,
+				RemoteAccesses:   11.0,
+				InterconnectLoad: 18.7,
 			},
 		},
 	}, nil
@@ -4029,6 +4048,12 @@ func (m *JobManagerImpl) GetJobMemoryAnalytics(ctx context.Context, jobID string
 
 // GetJobIOAnalytics retrieves detailed I/O performance metrics for a job
 func (m *JobManagerImpl) GetJobIOAnalytics(ctx context.Context, jobID string) (*interfaces.IOAnalytics, error) {
+	// Get the job first to validate it exists
+	_, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
 	// In v0.0.43, this would query detailed I/O metrics from SLURM
 	return &interfaces.IOAnalytics{
 		AverageReadBandwidth:  245.5,
@@ -4078,12 +4103,29 @@ func (m *JobManagerImpl) GetJobComprehensiveAnalytics(ctx context.Context, jobID
 		jobIDUint = 0 // Fallback to 0 if parsing fails
 	}
 
+	// Calculate duration and start time - handle nil values
+	var duration time.Duration
+	var startTime time.Time
+
+	if job.StartTime != nil {
+		startTime = *job.StartTime
+		if job.EndTime != nil {
+			duration = job.EndTime.Sub(*job.StartTime)
+		} else {
+			duration = time.Since(*job.StartTime)
+		}
+	} else {
+		// If no start time, use current time as fallback
+		startTime = time.Now()
+		duration = 0
+	}
+
 	return &interfaces.JobComprehensiveAnalytics{
 		JobID:     uint32(jobIDUint),
 		JobName:   job.Name,
-		StartTime: *job.StartTime,
+		StartTime: startTime,
 		EndTime:   job.EndTime,
-		Duration:  job.EndTime.Sub(*job.StartTime),
+		Duration:  duration,
 		Status:    job.State,
 
 		CPUAnalytics:    cpuAnalytics,
@@ -4098,16 +4140,16 @@ func (m *JobManagerImpl) GetJobComprehensiveAnalytics(ctx context.Context, jobID
 			BottleneckSeverity:    "low",
 			ResourceBalance:       "cpu_bound",
 			OptimizationPotential: 25.0,
-			ScalabilityScore:     78.5,
-			ResourceWaste:        22.0,
-			LoadBalanceScore:     85.2,
+			ScalabilityScore:      78.5,
+			ResourceWaste:         22.0,
+			LoadBalanceScore:      85.2,
 		},
 
 		OptimalConfiguration: &interfaces.OptimalJobConfiguration{
-			RecommendedCPUs:    int(float64(job.CPUs) * 0.9), // Slight reduction
+			RecommendedCPUs:    int(float64(job.CPUs) * 0.9),      // Slight reduction
 			RecommendedMemory:  int64(float64(job.Memory) * 0.85), // Memory reduction
 			RecommendedNodes:   1,
-			RecommendedRuntime: int(job.EndTime.Sub(*job.StartTime).Minutes() * 0.95),
+			RecommendedRuntime: int(duration.Minutes() * 0.95),
 			ExpectedSpeedup:    1.05,
 			CostReduction:      12.5,
 			ConfigChanges: map[string]string{
@@ -4115,7 +4157,6 @@ func (m *JobManagerImpl) GetJobComprehensiveAnalytics(ctx context.Context, jobID
 				"cpu_allocation":    "reduce by 10%",
 			},
 		},
-
 	}, nil
 }
 
@@ -4175,22 +4216,28 @@ func (m *JobManagerImpl) AnalyzeBatchJobs(ctx context.Context, jobIDs []string, 
 		if err != nil {
 			// Add failed analysis entry
 			analysis.JobAnalyses = append(analysis.JobAnalyses, interfaces.JobAnalysisSummary{
-				JobID:       jobID,
-				Efficiency:  0.0,
-				Runtime:     0,
+				JobID:          jobID,
+				Status:         "failed",
+				Efficiency:     0.0,
+				Runtime:        0,
 				CPUUtilization: 0.0,
+				Issues:         []string{err.Error()},
 			})
+			analysis.FailedCount++
 			continue
 		}
 
 		efficiency, err := m.GetJobEfficiency(ctx, jobID)
 		if err != nil {
 			analysis.JobAnalyses = append(analysis.JobAnalyses, interfaces.JobAnalysisSummary{
-				JobID:       jobID,
-				Efficiency:  0.0,
-				Runtime:     0,
+				JobID:          jobID,
+				Status:         "failed",
+				Efficiency:     0.0,
+				Runtime:        0,
 				CPUUtilization: 0.0,
+				Issues:         []string{err.Error()},
 			})
+			analysis.FailedCount++
 			continue
 		}
 
@@ -4199,7 +4246,7 @@ func (m *JobManagerImpl) AnalyzeBatchJobs(ctx context.Context, jobIDs []string, 
 		if utilization.CPUUtilization != nil {
 			cpuUtil = utilization.CPUUtilization.Efficiency
 		}
-		
+
 		jobAnalysis := interfaces.JobAnalysisSummary{
 			JobID:             jobID,
 			JobName:           "batch_job_" + jobID,
@@ -4215,9 +4262,9 @@ func (m *JobManagerImpl) AnalyzeBatchJobs(ctx context.Context, jobIDs []string, 
 		completedAnalyses++
 	}
 
-	// Set correct field values for BatchJobAnalysis
+	// Set correct field value for BatchJobAnalysis
 	analysis.AnalyzedCount = completedAnalyses
-	analysis.FailedCount = len(jobIDs) - completedAnalyses
+	// FailedCount is already set in the loop
 
 	return analysis, nil
 }

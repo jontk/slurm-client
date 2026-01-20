@@ -171,9 +171,9 @@ func TestWCKeyAdapter_ConvertAPIWCKeyToCommon(t *testing.T) {
 	adapter := NewWCKeyAdapter(&api.ClientWithResponses{})
 
 	tests := []struct {
-		name      string
-		apiWCKey  api.V0042Wckey
-		expected  types.WCKey
+		name     string
+		apiWCKey api.V0042Wckey
+		expected types.WCKey
 	}{
 		{
 			name: "basic WCKey",
@@ -279,7 +279,7 @@ func TestWCKeyAdapter_ErrorHandling(t *testing.T) {
 			errorMsg := err.Error()
 			assert.True(t,
 				strings.Contains(errorMsg, "client") ||
-				strings.Contains(errorMsg, "not implemented"),
+					strings.Contains(errorMsg, "not implemented"),
 				"Expected client validation or not implemented error, got: %v", err)
 		})
 	}
@@ -290,7 +290,7 @@ func TestWCKeyAdapter_CreateValidation(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name string
+		name  string
 		wckey *types.WCKeyCreate
 	}{
 		{

@@ -142,14 +142,15 @@ jobs:
           --max-retries 3
           --exclude-loopback
           --exclude-private
-          --exclude-mail
+          --exclude '.*\.ar\.jontk\.com.*'
+          --exclude 'https://api\.securityscorecards\.dev/.*'
           './**/*.md'
         fail: true
 
   spellcheck:
     name: Spellcheck Documentation
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -157,72 +158,5 @@ jobs:
     - name: Spellcheck
       uses: streetsidesoftware/cspell-action@v5
       with:
-        config: |
-          {
-            "version": "0.2",
-            "language": "en",
-            "words": [
-              "slurm",
-              "slurmclient",
-              "openapi",
-              "jontk",
-              "kristinsson",
-              "godoc",
-              "gomarkdoc",
-              "codecov",
-              "golangci",
-              "govulncheck",
-              "gosec",
-              "sarif",
-              "trivy",
-              "codeql",
-              "dependabot",
-              "spdx",
-              "qos",
-              "gres",
-              "tres",
-              "sacct",
-              "salloc",
-              "sbatch",
-              "scancel",
-              "scontrol",
-              "sinfo",
-              "squeue",
-              "sshare",
-              "sstat",
-              "diag",
-              "slurmdb",
-              "slurmdbd",
-              "munge",
-              "hwloc",
-              "numa",
-              "epilog",
-              "prolog",
-              "requeue",
-              "preempt",
-              "preempted",
-              "preemption",
-              "fairshare",
-              "assoc",
-              "acct",
-              "resv",
-              "resvs",
-              "alloc",
-              "allocs",
-              "cpus",
-              "gpus",
-              "nodeinfo",
-              "partitioninfo",
-              "jobinfo",
-              "stepinfo",
-              "reservationinfo"
-            ],
-            "ignorePaths": [
-              "vendor/**",
-              "*.pb.go",
-              "go.sum",
-              ".git/**",
-              "**/*.gen.go"
-            ]
-          }
+        config: '.cspell.json'
         files: '**/*.md'

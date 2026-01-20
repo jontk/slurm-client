@@ -4,8 +4,8 @@ package v0_0_44
 
 import (
 	"context"
-	
-	"github.com/jontk/slurm-client/internal/interfaces"
+
+	"github.com/jontk/slurm-client/interfaces"
 )
 
 // JobManager implements the JobManager interface for API version v0.0.44

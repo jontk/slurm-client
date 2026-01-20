@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -26,7 +26,7 @@ func NewAccountManagerImpl(client *WrapperClient) *AccountManagerImpl {
 
 // List lists accounts with optional filtering
 func (a *AccountManagerImpl) List(ctx context.Context, opts *interfaces.ListAccountsOptions) (*interfaces.AccountList, error) {
-	if a.client == nil || a.client.apiClient == nil {
+	if a.client == nil || a.client.apiClient == nil || a.client.apiClient.ClientInterface == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
@@ -113,12 +113,14 @@ func (a *AccountManagerImpl) List(ctx context.Context, opts *interfaces.ListAcco
 
 // Get retrieves a specific account by name
 func (a *AccountManagerImpl) Get(ctx context.Context, accountName string) (*interfaces.Account, error) {
-	if a.client == nil || a.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap check)
 	if accountName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
+	}
+
+	// Then check client initialization
+	if a.client == nil || a.client.apiClient == nil || a.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Prepare parameters for the API call
@@ -569,12 +571,14 @@ func (a *AccountManagerImpl) GetChildAccounts(ctx context.Context, accountName s
 
 // GetAccountQuotas retrieves quota information for an account
 func (a *AccountManagerImpl) GetAccountQuotas(ctx context.Context, accountName string) (*interfaces.AccountQuota, error) {
-	if a.client == nil || a.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap check)
 	if accountName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
+	}
+
+	// Then check client initialization
+	if a.client == nil || a.client.apiClient == nil || a.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Get account with associations
@@ -598,10 +602,10 @@ func (a *AccountManagerImpl) GetAccountQuotas(ctx context.Context, accountName s
 	// Note: In SLURM, quotas are often stored in associations
 	accountQuota := &interfaces.AccountQuota{
 		// Initialize with default values
-		GrpTRES:      make(map[string]int),
-		GrpTRESUsed:  make(map[string]int),
-		MaxTRES:      make(map[string]int),
-		MaxTRESUsed:  make(map[string]int),
+		GrpTRES:     make(map[string]int),
+		GrpTRESUsed: make(map[string]int),
+		MaxTRES:     make(map[string]int),
+		MaxTRESUsed: make(map[string]int),
 	}
 
 	// Extract from associations if available
@@ -622,10 +626,7 @@ func (a *AccountManagerImpl) GetAccountQuotas(ctx context.Context, accountName s
 
 // GetAccountQuotaUsage retrieves quota usage information for an account within a timeframe
 func (a *AccountManagerImpl) GetAccountQuotaUsage(ctx context.Context, accountName string, timeframe string) (*interfaces.AccountUsage, error) {
-	if a.client == nil || a.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap checks)
 	if accountName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
 	}
@@ -645,6 +646,11 @@ func (a *AccountManagerImpl) GetAccountQuotaUsage(ctx context.Context, accountNa
 	}
 	if !isValid {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "timeframe must be one of: current, daily, weekly, monthly, yearly", "timeframe", timeframe, nil)
+	}
+
+	// Check client initialization
+	if a.client == nil || a.client.apiClient == nil || a.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Get associations to calculate usage
@@ -924,15 +930,15 @@ func (a *AccountManagerImpl) GetAccountFairShare(ctx context.Context, accountNam
 	// Note: Fair-share information is typically available through the shares API
 	// For now, we'll return a basic structure as the exact API endpoint may vary
 	fairShare := &interfaces.AccountFairShare{
-		AccountName: accountName,
-		Cluster:     "default", // Would be extracted from API
-		Shares:      1,          // Default shares
-		RawShares:   1,
+		AccountName:      accountName,
+		Cluster:          "default", // Would be extracted from API
+		Shares:           1,         // Default shares
+		RawShares:        1,
 		NormalizedShares: 1.0,
-		Usage:       0.0,
-		EffectiveUsage: 0.0,
-		FairShareFactor: 1.0,
-		Level:       1,
+		Usage:            0.0,
+		EffectiveUsage:   0.0,
+		FairShareFactor:  1.0,
+		Level:            1,
 	}
 
 	// Get account to check parent
@@ -976,9 +982,9 @@ func (a *AccountManagerImpl) GetFairShareHierarchy(ctx context.Context, rootAcco
 		Cluster:       "default", // Would be extracted from API
 		RootAccount:   rootAccount,
 		LastUpdate:    time.Now(),
-		DecayHalfLife: 7 * 24,     // Default 7 days in hours
-		UsageWindow:   30 * 24,    // Default 30 days in hours
-		Algorithm:     "classic",  // Default algorithm
+		DecayHalfLife: 7 * 24,    // Default 7 days in hours
+		UsageWindow:   30 * 24,   // Default 30 days in hours
+		Algorithm:     "classic", // Default algorithm
 	}
 
 	// Build fair-share tree from account hierarchy
@@ -1125,35 +1131,6 @@ func convertAccountCreateToAPI(create *interfaces.AccountCreate) (*V0043Account,
 	if len(create.CoordinatorUsers) > 0 {
 		coords := make(V0043CoordList, 0, len(create.CoordinatorUsers))
 		for _, coordName := range create.CoordinatorUsers {
-			coords = append(coords, V0043Coord{
-				Name:   coordName,
-				Direct: &[]bool{true}[0],
-			})
-		}
-		apiAccount.Coordinators = &coords
-	}
-
-	return apiAccount, nil
-}
-
-// convertAccountUpdateToAPI converts interfaces.AccountUpdate to API format
-func convertAccountUpdateToAPI(update *interfaces.AccountUpdate) (*V0043Account, error) {
-	apiAccount := &V0043Account{}
-
-	// Description
-	if update.Description != nil {
-		apiAccount.Description = *update.Description
-	}
-
-	// Organization
-	if update.Organization != nil {
-		apiAccount.Organization = *update.Organization
-	}
-
-	// Coordinators
-	if len(update.CoordinatorUsers) > 0 {
-		coords := make(V0043CoordList, 0, len(update.CoordinatorUsers))
-		for _, coordName := range update.CoordinatorUsers {
 			coords = append(coords, V0043Coord{
 				Name:   coordName,
 				Direct: &[]bool{true}[0],
@@ -1323,6 +1300,6 @@ func (a *AccountManagerImpl) calculateTotalShares(node *interfaces.FairShareNode
 }
 
 // CreateAssociation creates a user-account association
-func (m *AccountManagerImpl) CreateAssociation(ctx context.Context, userName, accountName string, opts *interfaces.AssociationOptions) (*interfaces.AssociationCreateResponse, error) {
+func (a *AccountManagerImpl) CreateAssociation(ctx context.Context, userName, accountName string, opts *interfaces.AssociationOptions) (*interfaces.AssociationCreateResponse, error) {
 	return nil, errors.NewNotImplementedError("CreateAssociation", "v0.0.43")
 }

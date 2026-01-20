@@ -6,10 +6,12 @@ package watch_test
 import (
 	"context"
 	"errors"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/watch"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,20 +19,112 @@ import (
 
 // Mock list function for testing
 type mockJobLister struct {
+	mu        sync.RWMutex
 	jobs      []interfaces.Job
 	err       error
 	callCount int
 }
 
 func (m *mockJobLister) List(ctx context.Context, opts *interfaces.ListJobsOptions) (*interfaces.JobList, error) {
+	m.mu.Lock()
 	m.callCount++
-	if m.err != nil {
-		return nil, m.err
+	err := m.err
+	jobs := make([]interfaces.Job, len(m.jobs))
+	copy(jobs, m.jobs)
+	m.mu.Unlock()
+
+	if err != nil {
+		return nil, err
 	}
 	return &interfaces.JobList{
-		Jobs:  m.jobs,
-		Total: len(m.jobs),
+		Jobs:  jobs,
+		Total: len(jobs),
 	}, nil
+}
+
+func (m *mockJobLister) setJobs(jobs []interfaces.Job) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.jobs = jobs
+}
+
+//lint:ignore U1000 Reserved for future test cases
+func (m *mockJobLister) setError(err error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.err = err
+}
+
+// Mock node lister for testing
+type mockNodeLister struct {
+	mu    sync.RWMutex
+	nodes []interfaces.Node
+	err   error
+}
+
+func (m *mockNodeLister) List(ctx context.Context, opts *interfaces.ListNodesOptions) (*interfaces.NodeList, error) {
+	m.mu.RLock()
+	err := m.err
+	nodes := make([]interfaces.Node, len(m.nodes))
+	copy(nodes, m.nodes)
+	m.mu.RUnlock()
+
+	if err != nil {
+		return nil, err
+	}
+	return &interfaces.NodeList{
+		Nodes: nodes,
+		Total: len(nodes),
+	}, nil
+}
+
+func (m *mockNodeLister) setNodes(nodes []interfaces.Node) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.nodes = nodes
+}
+
+//lint:ignore U1000 Reserved for future test cases
+func (m *mockNodeLister) setError(err error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.err = err
+}
+
+// Mock partition lister for testing
+type mockPartitionLister struct {
+	mu         sync.RWMutex
+	partitions []interfaces.Partition
+	err        error
+}
+
+func (m *mockPartitionLister) List(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error) {
+	m.mu.RLock()
+	err := m.err
+	partitions := make([]interfaces.Partition, len(m.partitions))
+	copy(partitions, m.partitions)
+	m.mu.RUnlock()
+
+	if err != nil {
+		return nil, err
+	}
+	return &interfaces.PartitionList{
+		Partitions: partitions,
+		Total:      len(partitions),
+	}, nil
+}
+
+func (m *mockPartitionLister) setPartitions(partitions []interfaces.Partition) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.partitions = partitions
+}
+
+//lint:ignore U1000 Reserved for future test cases
+func (m *mockPartitionLister) setError(err error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.err = err
 }
 
 func TestJobPoller_Watch(t *testing.T) {
@@ -57,11 +151,11 @@ func TestJobPoller_Watch(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Update job states
-	lister.jobs = []interfaces.Job{
+	lister.setJobs([]interfaces.Job{
 		{ID: "1", State: "COMPLETED", UserID: "1000"}, // State changed
 		{ID: "2", State: "RUNNING", UserID: "1000"},   // State changed
 		{ID: "3", State: "PENDING", UserID: "1001"},   // New job
-	}
+	})
 
 	// Collect events
 	var events []interfaces.JobEvent
@@ -132,11 +226,11 @@ func TestJobPoller_WatchWithFilter(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Update states
-	lister.jobs = []interfaces.Job{
+	lister.setJobs([]interfaces.Job{
 		{ID: "1", State: "COMPLETED", UserID: "1000"}, // State changed
-		{ID: "2", State: "RUNNING", UserID: "1000"},    // State changed
+		{ID: "2", State: "RUNNING", UserID: "1000"},   // State changed
 		{ID: "3", State: "COMPLETED", UserID: "1001"}, // State changed but filtered out
-	}
+	})
 
 	// Collect events
 	var events []interfaces.JobEvent
@@ -232,21 +326,16 @@ func TestJobPoller_ContextCancellation(t *testing.T) {
 }
 
 func TestNodePoller_Watch(t *testing.T) {
-	// Mock node list function
-	nodeStates := []interfaces.Node{
-		{Name: "node-001", State: "IDLE"},
-		{Name: "node-002", State: "ALLOCATED"},
-	}
-
-	listFunc := func(ctx context.Context, opts *interfaces.ListNodesOptions) (*interfaces.NodeList, error) {
-		return &interfaces.NodeList{
-			Nodes: nodeStates,
-			Total: len(nodeStates),
-		}, nil
+	// Create a mock lister
+	lister := &mockNodeLister{
+		nodes: []interfaces.Node{
+			{Name: "node-001", State: "IDLE"},
+			{Name: "node-002", State: "ALLOCATED"},
+		},
 	}
 
 	// Create poller
-	poller := watch.NewNodePoller(listFunc).WithPollInterval(100 * time.Millisecond)
+	poller := watch.NewNodePoller(lister.List).WithPollInterval(100 * time.Millisecond)
 
 	// Start watching
 	ctx, cancel := context.WithCancel(context.Background())
@@ -259,7 +348,10 @@ func TestNodePoller_Watch(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Update node states
-	nodeStates[0].State = "DRAINING"
+	lister.setNodes([]interfaces.Node{
+		{Name: "node-001", State: "DRAINING"},
+		{Name: "node-002", State: "ALLOCATED"},
+	})
 
 	// Wait for event
 	timeout := time.After(200 * time.Millisecond)
@@ -275,21 +367,16 @@ func TestNodePoller_Watch(t *testing.T) {
 }
 
 func TestPartitionPoller_Watch(t *testing.T) {
-	// Mock partition list function
-	partitionStates := []interfaces.Partition{
-		{Name: "gpu", State: "UP"},
-		{Name: "cpu", State: "UP"},
-	}
-
-	listFunc := func(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error) {
-		return &interfaces.PartitionList{
-			Partitions: partitionStates,
-			Total:      len(partitionStates),
-		}, nil
+	// Create a mock lister
+	lister := &mockPartitionLister{
+		partitions: []interfaces.Partition{
+			{Name: "gpu", State: "UP"},
+			{Name: "cpu", State: "UP"},
+		},
 	}
 
 	// Create poller
-	poller := watch.NewPartitionPoller(listFunc).WithPollInterval(100 * time.Millisecond)
+	poller := watch.NewPartitionPoller(lister.List).WithPollInterval(100 * time.Millisecond)
 
 	// Start watching
 	ctx, cancel := context.WithCancel(context.Background())
@@ -302,7 +389,10 @@ func TestPartitionPoller_Watch(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Update partition state
-	partitionStates[0].State = "DOWN"
+	lister.setPartitions([]interfaces.Partition{
+		{Name: "gpu", State: "DOWN"},
+		{Name: "cpu", State: "UP"},
+	})
 
 	// Wait for event
 	timeout := time.After(200 * time.Millisecond)
@@ -319,15 +409,15 @@ func TestPartitionPoller_Watch(t *testing.T) {
 
 func TestJobPoller_WithMethods(t *testing.T) {
 	lister := &mockJobLister{}
-	
+
 	// Test WithPollInterval
 	poller1 := watch.NewJobPoller(lister.List).WithPollInterval(2 * time.Second)
 	assert.NotNil(t, poller1)
-	
+
 	// Test WithBufferSize
 	poller2 := watch.NewJobPoller(lister.List).WithBufferSize(200)
 	assert.NotNil(t, poller2)
-	
+
 	// Test chaining
 	poller3 := watch.NewJobPoller(lister.List).
 		WithPollInterval(3 * time.Second).
@@ -360,9 +450,9 @@ func TestJobPoller_WatchWithJobCompleted(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Update mock to simulate job completion (remove job 1)
-	lister.jobs = []interfaces.Job{
+	lister.setJobs([]interfaces.Job{
 		{ID: "2", State: "PENDING", UserID: "1000"},
-	}
+	})
 
 	// Wait for completion event
 	var completedEvent interfaces.JobEvent
@@ -406,9 +496,9 @@ func TestJobPoller_WatchWithExcludeNew(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Add a new job
-	lister.jobs = []interfaces.Job{
+	lister.setJobs([]interfaces.Job{
 		{ID: "1", State: "RUNNING", UserID: "1000"},
-	}
+	})
 
 	// Wait a bit more - should NOT get new job event
 	select {
@@ -447,7 +537,7 @@ func TestJobPoller_WatchWithExcludeCompleted(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Remove the job (simulate completion)
-	lister.jobs = []interfaces.Job{}
+	lister.setJobs([]interfaces.Job{})
 
 	// Wait a bit more - should NOT get completion event
 	select {
@@ -466,15 +556,15 @@ func TestNodePoller_WithMethods(t *testing.T) {
 	mockNodeLister := func(ctx context.Context, opts *interfaces.ListNodesOptions) (*interfaces.NodeList, error) {
 		return &interfaces.NodeList{Nodes: []interfaces.Node{}}, nil
 	}
-	
+
 	// Test WithPollInterval
 	poller1 := watch.NewNodePoller(mockNodeLister).WithPollInterval(2 * time.Second)
 	assert.NotNil(t, poller1)
-	
+
 	// Test WithBufferSize
 	poller2 := watch.NewNodePoller(mockNodeLister).WithBufferSize(200)
 	assert.NotNil(t, poller2)
-	
+
 	// Test chaining
 	poller3 := watch.NewNodePoller(mockNodeLister).
 		WithPollInterval(3 * time.Second).
@@ -483,9 +573,9 @@ func TestNodePoller_WithMethods(t *testing.T) {
 }
 
 func TestNodePoller_WatchWithFilteredNodes(t *testing.T) {
-	callCount := 0
+	var callCount int32
 	mockNodeLister := func(ctx context.Context, opts *interfaces.ListNodesOptions) (*interfaces.NodeList, error) {
-		callCount++
+		atomic.AddInt32(&callCount, 1)
 		nodes := []interfaces.Node{
 			{Name: "node1", State: "IDLE"},
 			{Name: "node2", State: "ALLOCATED"},
@@ -509,9 +599,9 @@ func TestNodePoller_WatchWithFilteredNodes(t *testing.T) {
 
 	// Wait for initial events - should only get events for node1 and node3
 	time.Sleep(100 * time.Millisecond)
-	
+
 	// Verify we got API calls
-	assert.Greater(t, callCount, 0)
+	assert.Greater(t, atomic.LoadInt32(&callCount), int32(0))
 
 	cancel()
 }
@@ -520,15 +610,15 @@ func TestPartitionPoller_WithMethods(t *testing.T) {
 	mockPartitionLister := func(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error) {
 		return &interfaces.PartitionList{Partitions: []interfaces.Partition{}}, nil
 	}
-	
+
 	// Test WithPollInterval
 	poller1 := watch.NewPartitionPoller(mockPartitionLister).WithPollInterval(2 * time.Second)
 	assert.NotNil(t, poller1)
-	
+
 	// Test WithBufferSize
 	poller2 := watch.NewPartitionPoller(mockPartitionLister).WithBufferSize(200)
 	assert.NotNil(t, poller2)
-	
+
 	// Test chaining
 	poller3 := watch.NewPartitionPoller(mockPartitionLister).
 		WithPollInterval(3 * time.Second).
@@ -537,9 +627,9 @@ func TestPartitionPoller_WithMethods(t *testing.T) {
 }
 
 func TestPartitionPoller_WatchWithFilteredPartitions(t *testing.T) {
-	callCount := 0
+	var callCount int32
 	mockPartitionLister := func(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error) {
-		callCount++
+		atomic.AddInt32(&callCount, 1)
 		partitions := []interfaces.Partition{
 			{Name: "debug", State: "UP"},
 			{Name: "compute", State: "UP"},
@@ -563,9 +653,9 @@ func TestPartitionPoller_WatchWithFilteredPartitions(t *testing.T) {
 
 	// Wait for initial events
 	time.Sleep(100 * time.Millisecond)
-	
+
 	// Verify we got API calls
-	assert.Greater(t, callCount, 0)
+	assert.Greater(t, atomic.LoadInt32(&callCount), int32(0))
 
 	cancel()
 }

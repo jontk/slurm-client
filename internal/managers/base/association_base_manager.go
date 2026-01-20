@@ -33,17 +33,17 @@ func (m *AssociationBaseManager) ValidateAssociationCreate(association *types.As
 		)
 	}
 
-	if err := m.ValidateResourceName(association.AccountName, "association.AccountName"); err != nil {
+	if err := m.ValidateResourceName(association.AccountName, "Association name"); err != nil {
 		return err
 	}
 
-	if err := m.ValidateResourceName(association.Cluster, "association.Cluster"); err != nil {
+	if err := m.ValidateResourceName(association.Cluster, "cluster name"); err != nil {
 		return err
 	}
 
 	// User name is optional for account associations
 	if association.UserName != "" {
-		if err := m.ValidateResourceName(association.UserName, "association.UserName"); err != nil {
+		if err := m.ValidateResourceName(association.UserName, "user name"); err != nil {
 			return err
 		}
 	}

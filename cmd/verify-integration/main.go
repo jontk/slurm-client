@@ -15,27 +15,27 @@ import (
 // verifyIntegration checks that the adapter implements all required interfaces
 func verifyIntegration() {
 	fmt.Println("🔍 Verifying Adapter Integration...")
-	
+
 	// Create a test client
 	client := &api.ClientWithResponses{}
-	
+
 	// Create the adapter
 	adapter := v0_0_43.NewAdapter(client)
-	
+
 	// Verify it implements VersionAdapter interface
 	var versionAdapter common.VersionAdapter = adapter
 	_ = versionAdapter
-	
+
 	// Get the type of the adapter to inspect its methods
 	adapterType := reflect.TypeOf(adapter)
-	
+
 	fmt.Printf("✅ Adapter Type: %s\n", adapterType.String())
 	fmt.Printf("✅ Version: %s\n", adapter.GetVersion())
-	
+
 	// Check that all required methods exist
 	requiredMethods := []string{
 		"GetVersion",
-		"GetQoSManager", 
+		"GetQoSManager",
 		"GetJobManager",
 		"GetPartitionManager",
 		"GetNodeManager",
@@ -44,7 +44,7 @@ func verifyIntegration() {
 		"GetReservationManager",
 		"GetAssociationManager",
 	}
-	
+
 	fmt.Println("\n📋 Checking Required Methods:")
 	for _, methodName := range requiredMethods {
 		if method, exists := adapterType.MethodByName(methodName); exists {
@@ -53,10 +53,10 @@ func verifyIntegration() {
 			fmt.Printf("  ❌ %s: MISSING\n", methodName)
 		}
 	}
-	
+
 	// Check that all managers can be retrieved
 	fmt.Println("\n🏭 Checking Manager Retrieval:")
-	
+
 	managers := map[string]interface{}{
 		"QoS":         adapter.GetQoSManager(),
 		"Job":         adapter.GetJobManager(),
@@ -67,7 +67,7 @@ func verifyIntegration() {
 		"Reservation": adapter.GetReservationManager(),
 		"Association": adapter.GetAssociationManager(),
 	}
-	
+
 	for name, manager := range managers {
 		if manager != nil {
 			fmt.Printf("  ✅ %s Manager: %s\n", name, reflect.TypeOf(manager).String())
@@ -75,7 +75,7 @@ func verifyIntegration() {
 			fmt.Printf("  ❌ %s Manager: NIL\n", name)
 		}
 	}
-	
+
 	fmt.Println("\n🎉 Integration verification complete!")
 }
 

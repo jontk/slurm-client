@@ -4,9 +4,9 @@ package v0_0_40
 
 import (
 	"net/http"
-	
+
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/internal/common"
-	"github.com/jontk/slurm-client/internal/interfaces"
 )
 
 // WrapperClient implements the SlurmClient interface for API version v0.0.40
@@ -22,13 +22,13 @@ func NewWrapperClient(config *interfaces.ClientConfig) (*WrapperClient, error) {
 	if httpClient == nil {
 		httpClient = &http.Client{}
 	}
-	
+
 	// Create oapi-codegen client
 	apiClient, err := NewClientWithResponses(config.BaseURL, WithHTTPClient(httpClient))
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &WrapperClient{
 		apiClient: apiClient,
 		config:    config,
@@ -45,7 +45,7 @@ func (c *WrapperClient) Jobs() interfaces.JobManager {
 	return &JobManager{client: c}
 }
 
-// Nodes returns the NodeManager  
+// Nodes returns the NodeManager
 func (c *WrapperClient) Nodes() interfaces.NodeManager {
 	return &NodeManager{client: c}
 }
@@ -85,13 +85,12 @@ func (c *WrapperClient) Clusters() interfaces.ClusterManager {
 	return &common.ClusterManagerStub{Version: "v0.0.40"}
 }
 
-
-// Associations returns the AssociationManager
+// Associations returns the AssociationManager (stub - not supported in v0.0.40)
 func (c *WrapperClient) Associations() interfaces.AssociationManager {
-	return &AssociationManager{client: c}
+	return &common.AssociationManagerStub{Version: "v0.0.40"}
 }
 
-// WCKeys returns the WCKeyManager (not available in v0.0.40)
+// WCKeys returns the WCKeyManager (stub - not supported in v0.0.40)
 func (c *WrapperClient) WCKeys() interfaces.WCKeyManager {
 	return &common.WCKeyManagerStub{Version: "v0.0.40"}
 }

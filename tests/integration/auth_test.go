@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/tests/helpers"
 	"github.com/jontk/slurm-client/tests/mocks"
@@ -289,7 +289,7 @@ func TestAuthenticationHeaders(t *testing.T) {
 			} else if tc.name == "BasicAuth" {
 				authHeader = req.Header.Get("Authorization")
 			}
-			
+
 			if tc.expectedAuth == "" {
 				assert.Empty(t, authHeader, "No auth header should be set for %s", tc.name)
 			} else {
@@ -319,7 +319,7 @@ func TestConcurrentAuthenticatedRequests(t *testing.T) {
 	// Run multiple operations concurrently
 	const numConcurrent = 5
 	errors := make(chan error, numConcurrent)
-	
+
 	for i := 0; i < numConcurrent; i++ {
 		go func(index int) {
 			// Each goroutine performs multiple operations
@@ -348,4 +348,3 @@ func TestConcurrentAuthenticatedRequests(t *testing.T) {
 
 	t.Log("All concurrent authenticated requests completed successfully")
 }
-

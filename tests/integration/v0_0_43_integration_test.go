@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	slurmErrors "github.com/jontk/slurm-client/pkg/errors"
@@ -654,12 +654,12 @@ func (suite *V0043IntegrationTestSuite) TestPhase5_VersionSpecificFeatures() {
 		// Test with advanced job options
 		jobName := fmt.Sprintf("v0043-advanced-%d", time.Now().Unix())
 		submission := &interfaces.JobSubmission{
-			Name:             jobName,
-			Script:           "#!/bin/bash\necho 'Testing v0.0.43 features'\ndate",
-			Partition:        partitions.Partitions[0].Name,
-			Nodes:            1,
-			CPUs:             1,
-			TimeLimit:        5,
+			Name:      jobName,
+			Script:    "#!/bin/bash\necho 'Testing v0.0.43 features'\ndate",
+			Partition: partitions.Partitions[0].Name,
+			Nodes:     1,
+			CPUs:      1,
+			TimeLimit: 5,
 			// Note: WorkingDirectory and Comment may not be supported in all versions
 		}
 

@@ -6,9 +6,9 @@ package builders
 import (
 	"testing"
 
+	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/jontk/slurm-client/internal/common/types"
 )
 
 func TestPartitionBuilder_Basic(t *testing.T) {
@@ -92,10 +92,10 @@ func TestPartitionBuilder_Memory(t *testing.T) {
 func TestPartitionBuilder_Time(t *testing.T) {
 	t.Run("time limits", func(t *testing.T) {
 		partition, err := NewPartitionBuilder("timed").
-			WithDefaultTime(60).    // 1 hour
-			WithMaxTime(1440).      // 24 hours
-			WithGraceTime(300).     // 5 minutes
-			WithOverTimeLimit(60).  // 1 hour overtime
+			WithDefaultTime(60).   // 1 hour
+			WithMaxTime(1440).     // 24 hours
+			WithGraceTime(300).    // 5 minutes
+			WithOverTimeLimit(60). // 1 hour overtime
 			Build()
 
 		require.NoError(t, err)
@@ -184,11 +184,11 @@ func TestPartitionBuilder_Presets(t *testing.T) {
 			Build()
 
 		require.NoError(t, err)
-		assert.Equal(t, int32(1000), partition.Priority)       // High priority
-		assert.Equal(t, int32(30), partition.MaxTime)          // 30 minutes max
-		assert.Equal(t, int32(10), partition.DefaultTime)      // 10 minutes default
-		assert.Equal(t, int32(2), partition.MaxNodes)          // Limited nodes
-		assert.Contains(t, partition.PreemptMode, "cancel")    // Cancel jobs
+		assert.Equal(t, int32(1000), partition.Priority)    // High priority
+		assert.Equal(t, int32(30), partition.MaxTime)       // 30 minutes max
+		assert.Equal(t, int32(10), partition.DefaultTime)   // 10 minutes default
+		assert.Equal(t, int32(2), partition.MaxNodes)       // Limited nodes
+		assert.Contains(t, partition.PreemptMode, "cancel") // Cancel jobs
 		assert.Equal(t, "debug", partition.QoS)
 	})
 
@@ -198,11 +198,11 @@ func TestPartitionBuilder_Presets(t *testing.T) {
 			Build()
 
 		require.NoError(t, err)
-		assert.Equal(t, int32(50), partition.Priority)         // Medium priority
-		assert.Equal(t, int32(2880), partition.MaxTime)        // 48 hours max
-		assert.Equal(t, int32(60), partition.DefaultTime)      // 1 hour default
-		assert.Equal(t, int32(300), partition.GraceTime)       // 5 minutes grace
-		assert.Contains(t, partition.PreemptMode, "suspend")   // Suspend jobs
+		assert.Equal(t, int32(50), partition.Priority)       // Medium priority
+		assert.Equal(t, int32(2880), partition.MaxTime)      // 48 hours max
+		assert.Equal(t, int32(60), partition.DefaultTime)    // 1 hour default
+		assert.Equal(t, int32(300), partition.GraceTime)     // 5 minutes grace
+		assert.Contains(t, partition.PreemptMode, "suspend") // Suspend jobs
 		assert.Equal(t, "normal", partition.QoS)
 	})
 
@@ -212,11 +212,11 @@ func TestPartitionBuilder_Presets(t *testing.T) {
 			Build()
 
 		require.NoError(t, err)
-		assert.Equal(t, int32(500), partition.Priority)        // High priority
-		assert.Equal(t, int32(240), partition.MaxTime)         // 4 hours max
-		assert.Equal(t, int32(30), partition.DefaultTime)      // 30 minutes default
-		assert.Equal(t, int32(4), partition.MaxNodes)          // Limited nodes
-		assert.Contains(t, partition.PreemptMode, "cancel")    // Quick cancellation
+		assert.Equal(t, int32(500), partition.Priority)     // High priority
+		assert.Equal(t, int32(240), partition.MaxTime)      // 4 hours max
+		assert.Equal(t, int32(30), partition.DefaultTime)   // 30 minutes default
+		assert.Equal(t, int32(4), partition.MaxNodes)       // Limited nodes
+		assert.Contains(t, partition.PreemptMode, "cancel") // Quick cancellation
 		assert.Equal(t, "interactive", partition.QoS)
 	})
 
@@ -226,10 +226,10 @@ func TestPartitionBuilder_Presets(t *testing.T) {
 			Build()
 
 		require.NoError(t, err)
-		assert.Equal(t, int32(100), partition.Priority)        // Medium-high priority
-		assert.Equal(t, int32(1440), partition.MaxTime)        // 24 hours max
-		assert.Equal(t, int32(120), partition.DefaultTime)     // 2 hours default
-		assert.Equal(t, "gpu:1", partition.TresStr)            // GPU resources
+		assert.Equal(t, int32(100), partition.Priority)         // Medium-high priority
+		assert.Equal(t, int32(1440), partition.MaxTime)         // 24 hours max
+		assert.Equal(t, int32(120), partition.DefaultTime)      // 2 hours default
+		assert.Equal(t, "gpu:1", partition.TresStr)             // GPU resources
 		assert.Equal(t, "gpu:1", partition.JobDefaults["gres"]) // Default GPU
 		assert.Equal(t, "gpu", partition.QoS)
 	})
@@ -240,12 +240,12 @@ func TestPartitionBuilder_Presets(t *testing.T) {
 			Build()
 
 		require.NoError(t, err)
-		assert.Equal(t, int32(75), partition.Priority)         // Medium priority
-		assert.Equal(t, int32(2880), partition.MaxTime)        // 48 hours max
-		assert.Equal(t, int32(240), partition.DefaultTime)     // 4 hours default
+		assert.Equal(t, int32(75), partition.Priority)             // Medium priority
+		assert.Equal(t, int32(2880), partition.MaxTime)            // 48 hours max
+		assert.Equal(t, int32(240), partition.DefaultTime)         // 4 hours default
 		assert.Equal(t, int64(512*GB), partition.MaxMemPerNode)    // 512GB max memory
 		assert.Equal(t, int64(64*GB), partition.DefaultMemPerNode) // 64GB default memory
-		assert.Equal(t, "64G", partition.JobDefaults["mem"])   // Default memory
+		assert.Equal(t, "64G", partition.JobDefaults["mem"])       // Default memory
 		assert.Equal(t, "highmem", partition.QoS)
 	})
 
@@ -460,13 +460,13 @@ func TestPartitionBuilder_ComplexScenario(t *testing.T) {
 		WithAllowQoS("normal", "high", "urgent").
 		WithDenyAccounts("guest").
 		WithDenyQoS("debug").
-		WithDefaultMemPerCPU(4 * GB).
-		WithDefaultMemPerNode(128 * GB).
+		WithDefaultMemPerCPU(4*GB).
+		WithDefaultMemPerNode(128*GB).
 		WithDefaultTime(120).
 		WithGraceTime(600).
 		WithMaxCPUsPerNode(48).
-		WithMaxMemPerNode(512 * GB).
-		WithMaxMemPerCPU(16 * GB).
+		WithMaxMemPerNode(512*GB).
+		WithMaxMemPerCPU(16*GB).
 		WithMaxNodes(50).
 		WithMaxTime(2880).
 		WithMinNodes(1).

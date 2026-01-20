@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 	"github.com/jontk/slurm-client/pkg/watch"
 )
@@ -523,7 +523,7 @@ func convertJobSubmissionToAPI(job *interfaces.JobSubmission) (*V0040JobDescMsg,
 	// Environment variables
 	// Always provide at least minimal environment to avoid SLURM write errors
 	envVars := make([]string, 0)
-	
+
 	// Add default PATH if not provided
 	hasPath := false
 	for key := range job.Environment {
@@ -532,16 +532,16 @@ func convertJobSubmissionToAPI(job *interfaces.JobSubmission) (*V0040JobDescMsg,
 			break
 		}
 	}
-	
+
 	if !hasPath {
 		envVars = append(envVars, "PATH=/usr/bin:/bin")
 	}
-	
+
 	// Add user-provided environment
 	for key, value := range job.Environment {
 		envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
 	}
-	
+
 	jobDesc.Environment = &envVars
 
 	// Args
@@ -575,43 +575,40 @@ func (m *JobManagerImpl) Cancel(ctx context.Context, jobID string) error {
 
 	// Check HTTP status and handle API errors
 	if resp.StatusCode() != 200 {
-		var responseBody []byte
-		if resp.JSON200 != nil {
-			// Try to extract error details from response
-			if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
-				apiErrors := make([]errors.SlurmAPIErrorDetail, len(*resp.JSON200.Errors))
-				for i, apiErr := range *resp.JSON200.Errors {
-					var errorNumber int
-					if apiErr.ErrorNumber != nil {
-						errorNumber = int(*apiErr.ErrorNumber)
-					}
-					var errorCode string
-					if apiErr.Error != nil {
-						errorCode = *apiErr.Error
-					}
-					var source string
-					if apiErr.Source != nil {
-						source = *apiErr.Source
-					}
-					var description string
-					if apiErr.Description != nil {
-						description = *apiErr.Description
-					}
-
-					apiErrors[i] = errors.SlurmAPIErrorDetail{
-						ErrorNumber: errorNumber,
-						ErrorCode:   errorCode,
-						Source:      source,
-						Description: description,
-					}
+		// Try JSONDefault first (for non-200 responses)
+		if resp.JSONDefault != nil && resp.JSONDefault.Errors != nil && len(*resp.JSONDefault.Errors) > 0 {
+			apiErrors := make([]errors.SlurmAPIErrorDetail, len(*resp.JSONDefault.Errors))
+			for i, apiErr := range *resp.JSONDefault.Errors {
+				var errorNumber int
+				if apiErr.ErrorNumber != nil {
+					errorNumber = int(*apiErr.ErrorNumber)
 				}
-				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.40", apiErrors)
-				return apiError.SlurmError
+				var errorCode string
+				if apiErr.Error != nil {
+					errorCode = *apiErr.Error
+				}
+				var source string
+				if apiErr.Source != nil {
+					source = *apiErr.Source
+				}
+				var description string
+				if apiErr.Description != nil {
+					description = *apiErr.Description
+				}
+
+				apiErrors[i] = errors.SlurmAPIErrorDetail{
+					ErrorNumber: errorNumber,
+					ErrorCode:   errorCode,
+					Source:      source,
+					Description: description,
+				}
 			}
+			apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.40", apiErrors)
+			return apiError.SlurmError
 		}
 
-		// Fall back to HTTP error handling
-		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.40")
+		// Fall back to HTTP error handling with response body
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), resp.Body, "v0.0.40")
 		return httpErr
 	}
 
@@ -653,43 +650,40 @@ func (m *JobManagerImpl) Update(ctx context.Context, jobID string, update *inter
 
 	// Check HTTP status and handle API errors
 	if resp.StatusCode() != 200 {
-		var responseBody []byte
-		if resp.JSON200 != nil {
-			// Try to extract error details from response
-			if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
-				apiErrors := make([]errors.SlurmAPIErrorDetail, len(*resp.JSON200.Errors))
-				for i, apiErr := range *resp.JSON200.Errors {
-					var errorNumber int
-					if apiErr.ErrorNumber != nil {
-						errorNumber = int(*apiErr.ErrorNumber)
-					}
-					var errorCode string
-					if apiErr.Error != nil {
-						errorCode = *apiErr.Error
-					}
-					var source string
-					if apiErr.Source != nil {
-						source = *apiErr.Source
-					}
-					var description string
-					if apiErr.Description != nil {
-						description = *apiErr.Description
-					}
-
-					apiErrors[i] = errors.SlurmAPIErrorDetail{
-						ErrorNumber: errorNumber,
-						ErrorCode:   errorCode,
-						Source:      source,
-						Description: description,
-					}
+		// Try JSONDefault first (for non-200 responses)
+		if resp.JSONDefault != nil && resp.JSONDefault.Errors != nil && len(*resp.JSONDefault.Errors) > 0 {
+			apiErrors := make([]errors.SlurmAPIErrorDetail, len(*resp.JSONDefault.Errors))
+			for i, apiErr := range *resp.JSONDefault.Errors {
+				var errorNumber int
+				if apiErr.ErrorNumber != nil {
+					errorNumber = int(*apiErr.ErrorNumber)
 				}
-				apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.40", apiErrors)
-				return apiError.SlurmError
+				var errorCode string
+				if apiErr.Error != nil {
+					errorCode = *apiErr.Error
+				}
+				var source string
+				if apiErr.Source != nil {
+					source = *apiErr.Source
+				}
+				var description string
+				if apiErr.Description != nil {
+					description = *apiErr.Description
+				}
+
+				apiErrors[i] = errors.SlurmAPIErrorDetail{
+					ErrorNumber: errorNumber,
+					ErrorCode:   errorCode,
+					Source:      source,
+					Description: description,
+				}
 			}
+			apiError := errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.40", apiErrors)
+			return apiError.SlurmError
 		}
 
-		// Fall back to HTTP error handling
-		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.40")
+		// Fall back to HTTP error handling with response body
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), resp.Body, "v0.0.40")
 		return httpErr
 	}
 
@@ -1487,10 +1481,18 @@ func generateMinimalStepTasks(job *interfaces.Job) []interfaces.StepTaskInfo {
 	taskCount := job.CPUs // Simple 1:1 mapping
 	tasks := make([]interfaces.StepTaskInfo, taskCount)
 
+	// Default to "unknown" if no nodes specified
+	nodeName := "unknown"
+	if len(job.Nodes) > 0 {
+		nodeName = job.Nodes[0]
+	}
+
 	for i := 0; i < taskCount; i++ {
 		// Minimal task distribution in v0.0.40
-		nodeIndex := i % len(job.Nodes)
-		nodeName := job.Nodes[nodeIndex]
+		if len(job.Nodes) > 0 {
+			nodeIndex := i % len(job.Nodes)
+			nodeName = job.Nodes[nodeIndex]
+		}
 
 		tasks[i] = interfaces.StepTaskInfo{
 			TaskID:    i,
@@ -1554,7 +1556,7 @@ func (m *JobManagerImpl) ListJobStepsWithMetrics(ctx context.Context, jobID stri
 
 	// Process steps with minimal metrics for v0.0.40
 	filteredSteps := []*interfaces.JobStepWithMetrics{}
-	
+
 	for _, step := range stepList.Steps {
 		// Very basic processing for v0.0.40 - no filtering to keep it simple
 		stepDetails, err := m.GetJobStepDetails(ctx, jobID, step.ID)
@@ -1677,25 +1679,25 @@ func (m *JobManagerImpl) GetJobCPUAnalytics(ctx context.Context, jobID string) (
 		FrequencyScalingEvents: 0,    // No frequency monitoring
 
 		// Fixed threading metrics
-		ContextSwitches:      10000, // Fixed value
-		Interrupts:           5000,  // Fixed value
-		SoftInterrupts:       3000,  // Fixed value
-		LoadAverage1Min:      1.5,   // Fixed load
-		LoadAverage5Min:      1.2,   // Fixed load
-		LoadAverage15Min:     1.0,   // Fixed load
+		ContextSwitches:  10000, // Fixed value
+		Interrupts:       5000,  // Fixed value
+		SoftInterrupts:   3000,  // Fixed value
+		LoadAverage1Min:  1.5,   // Fixed load
+		LoadAverage5Min:  1.2,   // Fixed load
+		LoadAverage15Min: 1.0,   // Fixed load
 
 		// Fixed cache metrics
-		L1CacheHitRate:  95.0, // Fixed cache hit rate
-		L2CacheHitRate:  90.0, // Fixed cache hit rate
-		L3CacheHitRate:  85.0, // Fixed cache hit rate
-		L1CacheMisses:   5000, // Fixed cache misses
-		L2CacheMisses:   3000, // Fixed cache misses
-		L3CacheMisses:   1000, // Fixed cache misses
+		L1CacheHitRate: 95.0, // Fixed cache hit rate
+		L2CacheHitRate: 90.0, // Fixed cache hit rate
+		L3CacheHitRate: 85.0, // Fixed cache hit rate
+		L1CacheMisses:  5000, // Fixed cache misses
+		L2CacheMisses:  3000, // Fixed cache misses
+		L3CacheMisses:  1000, // Fixed cache misses
 
 		// Fixed instruction metrics
-		InstructionsPerCycle: int64(1),     // Fixed IPC
-		BranchMispredictions: 2000,    // Fixed mispredictions
-		TotalInstructions:    1000000, // Fixed instruction count
+		InstructionsPerCycle: int64(1), // Fixed IPC
+		BranchMispredictions: 2000,     // Fixed mispredictions
+		TotalInstructions:    1000000,  // Fixed instruction count
 
 		// Very basic recommendations for v0.0.40
 		Recommendations: []interfaces.OptimizationRecommendation{
@@ -1725,12 +1727,12 @@ func (m *JobManagerImpl) GetJobCPUAnalytics(ctx context.Context, jobID string) (
 
 	// Add metadata (v0.0.40 specific)
 	cpuAnalytics.Metadata = map[string]interface{}{
-		"version":           "v0.0.40",
-		"data_source":       "simulated",
-		"job_nodes":         job.Nodes,
-		"job_partition":     job.Partition,
-		"analysis_limited":  true,
-		"fixed_values":      true,
+		"version":          "v0.0.40",
+		"data_source":      "simulated",
+		"job_nodes":        job.Nodes,
+		"job_partition":    job.Partition,
+		"analysis_limited": true,
+		"fixed_values":     true,
 		"upgrade_required": true,
 	}
 
@@ -1761,18 +1763,18 @@ func (m *JobManagerImpl) GetJobMemoryAnalytics(ctx context.Context, jobID string
 		Overcommitted:      false,                      // Fixed for v0.0.40
 
 		// Fixed memory breakdown
-		ResidentSetSize:    int64(job.Memory) * 5 / 10, // Fixed RSS
-		VirtualMemorySize:  int64(job.Memory) * 8 / 10, // Fixed VMS
-		SharedMemory:       int64(job.Memory) * 1 / 10, // Fixed shared
-		BufferedMemory:     int64(job.Memory) * 1 / 20, // Fixed buffered
-		CachedMemory:       int64(job.Memory) * 1 / 20, // Fixed cached
+		ResidentSetSize:   int64(job.Memory) * 5 / 10, // Fixed RSS
+		VirtualMemorySize: int64(job.Memory) * 8 / 10, // Fixed VMS
+		SharedMemory:      int64(job.Memory) * 1 / 10, // Fixed shared
+		BufferedMemory:    int64(job.Memory) * 1 / 20, // Fixed buffered
+		CachedMemory:      int64(job.Memory) * 1 / 20, // Fixed cached
 
 		// Fixed NUMA metrics (v0.0.40 doesn't have real NUMA data)
 		NUMANodes: generateMinimalNUMAMetrics(job.CPUs, int64(job.Memory)),
 
 		// Fixed memory bandwidth
-		BandwidthUtilization: 15.0, // Fixed 15% bandwidth usage
-		MemoryBandwidthMBPS:  8000, // Fixed 8GB/s bandwidth
+		BandwidthUtilization: 15.0,  // Fixed 15% bandwidth usage
+		MemoryBandwidthMBPS:  8000,  // Fixed 8GB/s bandwidth
 		PeakBandwidthMBPS:    12000, // Fixed peak bandwidth
 
 		// Fixed page metrics
@@ -1817,13 +1819,13 @@ func (m *JobManagerImpl) GetJobMemoryAnalytics(ctx context.Context, jobID string
 
 	// Add metadata (v0.0.40 specific)
 	memoryAnalytics.Metadata = map[string]interface{}{
-		"version":           "v0.0.40",
-		"data_source":       "simulated",
-		"job_nodes":         job.Nodes,
-		"job_partition":     job.Partition,
-		"analysis_limited":  true,
-		"fixed_values":      true,
-		"numa_unsupported":  true,
+		"version":          "v0.0.40",
+		"data_source":      "simulated",
+		"job_nodes":        job.Nodes,
+		"job_partition":    job.Partition,
+		"analysis_limited": true,
+		"fixed_values":     true,
+		"numa_unsupported": true,
 		"upgrade_required": true,
 	}
 
@@ -1851,12 +1853,12 @@ func (m *JobManagerImpl) GetJobIOAnalytics(ctx context.Context, jobID string) (*
 
 	// Create minimal I/O analytics for v0.0.40 (mostly fixed values)
 	ioAnalytics := &interfaces.IOAnalytics{
-		ReadBytes:         baseIO * 3, // Fixed read amount
-		WriteBytes:        baseIO,     // Fixed write amount
-		ReadOperations:    10000,      // Fixed read ops
-		WriteOperations:   3000,       // Fixed write ops
-		UtilizationPercent: 20.0,      // Fixed utilization
-		EfficiencyPercent: 18.0,       // Fixed efficiency
+		ReadBytes:          baseIO * 3, // Fixed read amount
+		WriteBytes:         baseIO,     // Fixed write amount
+		ReadOperations:     10000,      // Fixed read ops
+		WriteOperations:    3000,       // Fixed write ops
+		UtilizationPercent: 20.0,       // Fixed utilization
+		EfficiencyPercent:  18.0,       // Fixed efficiency
 
 		// Fixed bandwidth metrics
 		AverageReadBandwidth:  calculateMinimalIOBandwidth(baseIO*3, runtime),
@@ -1871,31 +1873,31 @@ func (m *JobManagerImpl) GetJobIOAnalytics(ctx context.Context, jobID string) (*
 		MaxWriteLatency:     80.0, // Fixed max latency
 
 		// Fixed queue metrics
-		QueueDepth:        4.0, // Fixed queue depth
-		MaxQueueDepth:     8.0, // Fixed max queue depth
-		QueueTime:         5.0, // Fixed queue time ms
+		QueueDepth:    4.0, // Fixed queue depth
+		MaxQueueDepth: 8.0, // Fixed max queue depth
+		QueueTime:     5.0, // Fixed queue time ms
 
 		// Fixed random/sequential access patterns
 		RandomAccessPercent:     25.0, // Fixed random access
 		SequentialAccessPercent: 75.0, // Fixed sequential access
 
 		// Fixed I/O sizes
-		AverageIOSize:  64 * 1024,   // Fixed 64KB
+		AverageIOSize: 64 * 1024,   // Fixed 64KB
 		MaxIOSize:     1024 * 1024, // Fixed 1MB
 		MinIOSize:     4 * 1024,    // Fixed 4KB
 
 		// Minimal storage device info (fixed for v0.0.40)
 		StorageDevices: []interfaces.StorageDevice{
 			{
-				DeviceName:      "unknown",   // v0.0.40 doesn't track devices
-				DeviceType:      "disk",      // Assumed disk
-				MountPoint:      "/",         // Assumed root
-				TotalCapacity:   1000 * 1024 * 1024 * 1024, // Fixed 1TB
-				UsedCapacity:    500 * 1024 * 1024 * 1024,  // Fixed 500GB
-				AvailCapacity:   500 * 1024 * 1024 * 1024,  // Fixed 500GB
-				Utilization:     20.0,                      // Fixed utilization
-				IOPS:            1000,                      // Fixed IOPS
-				ThroughputMBPS:  100,                       // Fixed throughput
+				DeviceName:     "unknown",                 // v0.0.40 doesn't track devices
+				DeviceType:     "disk",                    // Assumed disk
+				MountPoint:     "/",                       // Assumed root
+				TotalCapacity:  1000 * 1024 * 1024 * 1024, // Fixed 1TB
+				UsedCapacity:   500 * 1024 * 1024 * 1024,  // Fixed 500GB
+				AvailCapacity:  500 * 1024 * 1024 * 1024,  // Fixed 500GB
+				Utilization:    20.0,                      // Fixed utilization
+				IOPS:           1000,                      // Fixed IOPS
+				ThroughputMBPS: 100,                       // Fixed throughput
 			},
 		},
 
@@ -1927,13 +1929,13 @@ func (m *JobManagerImpl) GetJobIOAnalytics(ctx context.Context, jobID string) (*
 
 	// Add metadata (v0.0.40 specific)
 	ioAnalytics.Metadata = map[string]interface{}{
-		"version":           "v0.0.40",
-		"data_source":       "simulated",
-		"job_nodes":         job.Nodes,
-		"job_partition":     job.Partition,
-		"analysis_limited":  true,
-		"fixed_values":      true,
-		"device_tracking":   false,
+		"version":          "v0.0.40",
+		"data_source":      "simulated",
+		"job_nodes":        job.Nodes,
+		"job_partition":    job.Partition,
+		"analysis_limited": true,
+		"fixed_values":     true,
+		"device_tracking":  false,
 		"upgrade_required": true,
 	}
 
@@ -1994,24 +1996,24 @@ func (m *JobManagerImpl) GetJobComprehensiveAnalytics(ctx context.Context, jobID
 
 		// Fixed cross-resource analysis
 		CrossResourceAnalysis: &interfaces.CrossResourceAnalysis{
-			PrimaryBottleneck:    "cpu",           // Fixed bottleneck
-			SecondaryBottleneck:  "memory",        // Fixed secondary
-			BottleneckSeverity:   "medium",        // Fixed severity
-			ResourceBalance:      "cpu_bound",     // Fixed balance
-			OptimizationPotential: 35.0,          // Fixed potential
-			ScalabilityScore:     60.0,           // Fixed scalability
-			ResourceWaste:        25.0,           // Fixed waste percentage
-			LoadBalanceScore:     70.0,           // Fixed load balance
+			PrimaryBottleneck:     "cpu",       // Fixed bottleneck
+			SecondaryBottleneck:   "memory",    // Fixed secondary
+			BottleneckSeverity:    "medium",    // Fixed severity
+			ResourceBalance:       "cpu_bound", // Fixed balance
+			OptimizationPotential: 35.0,        // Fixed potential
+			ScalabilityScore:      60.0,        // Fixed scalability
+			ResourceWaste:         25.0,        // Fixed waste percentage
+			LoadBalanceScore:      70.0,        // Fixed load balance
 		},
 
 		// Fixed optimization config for v0.0.40
 		OptimalConfiguration: &interfaces.OptimalJobConfiguration{
-			RecommendedCPUs:    int(float64(job.CPUs) * 0.8), // 20% fewer CPUs
+			RecommendedCPUs:    int(float64(job.CPUs) * 0.8),     // 20% fewer CPUs
 			RecommendedMemory:  int64(float64(job.Memory) * 0.9), // 10% less memory
-			RecommendedNodes:   len(job.Nodes),    // Same nodes
-			RecommendedRuntime: job.TimeLimit + 60, // Add 1 hour buffer
-			ExpectedSpeedup:    1.1,               // Fixed 10% speedup
-			CostReduction:      15.0,              // Fixed 15% cost reduction
+			RecommendedNodes:   len(job.Nodes),                   // Same nodes
+			RecommendedRuntime: job.TimeLimit + 60,               // Add 1 hour buffer
+			ExpectedSpeedup:    1.1,                              // Fixed 10% speedup
+			CostReduction:      15.0,                             // Fixed 15% cost reduction
 			ConfigChanges: map[string]string{
 				"cpu_reduction":    "20_percent",
 				"memory_reduction": "10_percent",
@@ -2055,13 +2057,13 @@ func generateMinimalCoreMetrics(cpuCount int) []interfaces.CPUCoreMetric {
 	coreMetrics := make([]interfaces.CPUCoreMetric, cpuCount)
 	for i := 0; i < cpuCount; i++ {
 		coreMetrics[i] = interfaces.CPUCoreMetric{
-			CoreID:           i,
-			Utilization:      50.0 + float64(i%10)*2, // Slight variation
-			Frequency:        2.4,                     // Fixed frequency
-			Temperature:      65.0,                    // Fixed temperature
-			LoadAverage:      1.0,                     // Fixed load
-			ContextSwitches:  1000,                    // Fixed switches
-			Interrupts:       500,                     // Fixed interrupts
+			CoreID:          i,
+			Utilization:     50.0 + float64(i%10)*2, // Slight variation
+			Frequency:       2.4,                    // Fixed frequency
+			Temperature:     65.0,                   // Fixed temperature
+			LoadAverage:     1.0,                    // Fixed load
+			ContextSwitches: 1000,                   // Fixed switches
+			Interrupts:      500,                    // Fixed interrupts
 		}
 	}
 	return coreMetrics
@@ -2072,15 +2074,15 @@ func generateMinimalNUMAMetrics(cpus int, memory int64) []interfaces.NUMANodeMet
 	return []interfaces.NUMANodeMetrics{
 		{
 			NodeID:           0,
-			CPUCores:         cpus,              // All CPUs on node 0
-			MemoryTotal:      memory,            // All memory on node 0
-			MemoryUsed:       memory * 6 / 10,   // Fixed 60% usage
-			MemoryFree:       memory * 4 / 10,   // Fixed 40% free
-			CPUUtilization:   50.0,              // Fixed CPU util
-			MemoryBandwidth:  8000,              // Fixed bandwidth MB/s
-			LocalAccesses:    70.0,              // Fixed 70% local
-			RemoteAccesses:   30.0,              // Fixed 30% remote
-			InterconnectLoad: 15.0,              // Fixed interconnect
+			CPUCores:         cpus,            // All CPUs on node 0
+			MemoryTotal:      memory,          // All memory on node 0
+			MemoryUsed:       memory * 6 / 10, // Fixed 60% usage
+			MemoryFree:       memory * 4 / 10, // Fixed 40% free
+			CPUUtilization:   50.0,            // Fixed CPU util
+			MemoryBandwidth:  8000,            // Fixed bandwidth MB/s
+			LocalAccesses:    70.0,            // Fixed 70% local
+			RemoteAccesses:   30.0,            // Fixed 30% remote
+			InterconnectLoad: 15.0,            // Fixed interconnect
 		},
 	}
 }
@@ -2097,12 +2099,12 @@ func calculateJobRuntime(job *interfaces.Job) time.Duration {
 
 func combineRecommendationsV40(cpu *interfaces.CPUAnalytics, memory *interfaces.MemoryAnalytics, io *interfaces.IOAnalytics) []interfaces.OptimizationRecommendation {
 	recommendations := []interfaces.OptimizationRecommendation{}
-	
+
 	// Add all recommendations from components
 	recommendations = append(recommendations, cpu.Recommendations...)
 	recommendations = append(recommendations, memory.Recommendations...)
 	recommendations = append(recommendations, io.Recommendations...)
-	
+
 	// Add a comprehensive upgrade recommendation
 	recommendations = append(recommendations, interfaces.OptimizationRecommendation{
 		Type:                "upgrade",
@@ -2111,24 +2113,24 @@ func combineRecommendationsV40(cpu *interfaces.CPUAnalytics, memory *interfaces.
 		Description:         "v0.0.40 provides only basic simulated metrics. Upgrade to v0.0.42+ for real comprehensive job analytics with actual measurements and optimization.",
 		ExpectedImprovement: 0.0, // No improvement possible with v0.0.40
 		ConfigChanges: map[string]string{
-			"current_version":        "v0.0.40",
-			"minimum_recommended":    "v0.0.41",
-			"optimal_version":        "v0.0.42",
-			"comprehensive_version":  "v0.0.43",
+			"current_version":       "v0.0.40",
+			"minimum_recommended":   "v0.0.41",
+			"optimal_version":       "v0.0.42",
+			"comprehensive_version": "v0.0.43",
 		},
 	})
-	
+
 	return recommendations
 }
 
 func combineBottlenecksV40(cpu *interfaces.CPUAnalytics, memory *interfaces.MemoryAnalytics, io *interfaces.IOAnalytics) []interfaces.PerformanceBottleneck {
 	bottlenecks := []interfaces.PerformanceBottleneck{}
-	
+
 	// Add all bottlenecks from components
 	bottlenecks = append(bottlenecks, cpu.Bottlenecks...)
 	bottlenecks = append(bottlenecks, memory.Bottlenecks...)
 	bottlenecks = append(bottlenecks, io.Bottlenecks...)
-	
+
 	// Add a comprehensive limitation bottleneck
 	bottlenecks = append(bottlenecks, interfaces.PerformanceBottleneck{
 		Type:        "api_limitation",
@@ -2137,7 +2139,7 @@ func combineBottlenecksV40(cpu *interfaces.CPUAnalytics, memory *interfaces.Memo
 		Description: "v0.0.40 API severely limits comprehensive performance analysis",
 		Impact:      "No real bottleneck detection, optimization, or performance monitoring available",
 	})
-	
+
 	return bottlenecks
 }
 
@@ -2154,7 +2156,7 @@ func (m *JobManagerImpl) GetJobStepAPIData(ctx context.Context, jobID string, st
 }
 
 // ListJobStepsFromSacct queries job steps using SLURM's sacct command integration
-func (j *JobManagerImpl) ListJobStepsFromSacct(ctx context.Context, jobID string, opts *interfaces.SacctQueryOptions) (*interfaces.SacctJobStepData, error) {
+func (m *JobManagerImpl) ListJobStepsFromSacct(ctx context.Context, jobID string, opts *interfaces.SacctQueryOptions) (*interfaces.SacctJobStepData, error) {
 	// v0.0.40 has no sacct integration support
 	return &interfaces.SacctJobStepData{
 		JobID: jobID,
@@ -2224,7 +2226,7 @@ func (m *JobManagerImpl) AnalyzeBatchJobs(ctx context.Context, jobIDs []string, 
 	if completedAnalyses > 0 {
 		analysis.AggregateStats = interfaces.BatchStatistics{
 			AverageEfficiency: totalEfficiency / float64(completedAnalyses),
-			SuccessRate:      float64(completedAnalyses) / float64(len(jobIDs)),
+			SuccessRate:       float64(completedAnalyses) / float64(len(jobIDs)),
 		}
 		analysis.TimeRange.End = time.Now()
 	}
@@ -2233,7 +2235,7 @@ func (m *JobManagerImpl) AnalyzeBatchJobs(ctx context.Context, jobIDs []string, 
 }
 
 // GetJobStepsFromAccounting retrieves job step data from SLURM's accounting database (v0.0.40 placeholder)
-func (j *JobManagerImpl) GetJobStepsFromAccounting(ctx context.Context, jobID string, opts *interfaces.AccountingQueryOptions) (*interfaces.AccountingJobSteps, error) {
+func (m *JobManagerImpl) GetJobStepsFromAccounting(ctx context.Context, jobID string, opts *interfaces.AccountingQueryOptions) (*interfaces.AccountingJobSteps, error) {
 	return &interfaces.AccountingJobSteps{
 		JobID: jobID,
 		Steps: []interfaces.StepAccountingRecord{},
@@ -2241,15 +2243,21 @@ func (j *JobManagerImpl) GetJobStepsFromAccounting(ctx context.Context, jobID st
 }
 
 // GetJobPerformanceHistory retrieves historical performance data for a job (v0.0.40 placeholder)
-func (j *JobManagerImpl) GetJobPerformanceHistory(ctx context.Context, jobID string, opts *interfaces.PerformanceHistoryOptions) (*interfaces.JobPerformanceHistory, error) {
+func (m *JobManagerImpl) GetJobPerformanceHistory(ctx context.Context, jobID string, opts *interfaces.PerformanceHistoryOptions) (*interfaces.JobPerformanceHistory, error) {
+	// Validate job exists
+	_, err := m.Get(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &interfaces.JobPerformanceHistory{
-		JobID: jobID,
+		JobID:          jobID,
 		TimeSeriesData: []interfaces.PerformanceSnapshot{},
 	}, nil
 }
 
 // GetPerformanceTrends analyzes cluster-wide performance trends (v0.0.40 placeholder)
-func (j *JobManagerImpl) GetPerformanceTrends(ctx context.Context, opts *interfaces.TrendAnalysisOptions) (*interfaces.PerformanceTrends, error) {
+func (m *JobManagerImpl) GetPerformanceTrends(ctx context.Context, opts *interfaces.TrendAnalysisOptions) (*interfaces.PerformanceTrends, error) {
 	return &interfaces.PerformanceTrends{
 		ClusterUtilization: []interfaces.UtilizationPoint{},
 		ClusterEfficiency:  []interfaces.EfficiencyPoint{},
@@ -2257,26 +2265,26 @@ func (j *JobManagerImpl) GetPerformanceTrends(ctx context.Context, opts *interfa
 }
 
 // GetUserEfficiencyTrends tracks efficiency trends for a specific user (v0.0.40 placeholder)
-func (j *JobManagerImpl) GetUserEfficiencyTrends(ctx context.Context, userID string, opts *interfaces.EfficiencyTrendOptions) (*interfaces.UserEfficiencyTrends, error) {
+func (m *JobManagerImpl) GetUserEfficiencyTrends(ctx context.Context, userID string, opts *interfaces.EfficiencyTrendOptions) (*interfaces.UserEfficiencyTrends, error) {
 	return &interfaces.UserEfficiencyTrends{
-		UserID: userID,
+		UserID:            userID,
 		EfficiencyHistory: []interfaces.EfficiencyDataPoint{},
 	}, nil
 }
 
 // GetWorkflowPerformance analyzes performance of multi-job workflows (v0.0.40 placeholder)
-func (j *JobManagerImpl) GetWorkflowPerformance(ctx context.Context, workflowID string, opts *interfaces.WorkflowAnalysisOptions) (*interfaces.WorkflowPerformance, error) {
+func (m *JobManagerImpl) GetWorkflowPerformance(ctx context.Context, workflowID string, opts *interfaces.WorkflowAnalysisOptions) (*interfaces.WorkflowPerformance, error) {
 	return &interfaces.WorkflowPerformance{
 		WorkflowID: workflowID,
-		Stages: []interfaces.WorkflowStage{},
+		Stages:     []interfaces.WorkflowStage{},
 	}, nil
 }
 
 // GenerateEfficiencyReport creates comprehensive efficiency reports (v0.0.40 placeholder)
-func (j *JobManagerImpl) GenerateEfficiencyReport(ctx context.Context, opts *interfaces.ReportOptions) (*interfaces.EfficiencyReport, error) {
+func (m *JobManagerImpl) GenerateEfficiencyReport(ctx context.Context, opts *interfaces.ReportOptions) (*interfaces.EfficiencyReport, error) {
 	return &interfaces.EfficiencyReport{
 		ReportID: "efficiency-report",
-		Summary: interfaces.ExecutiveSummary{},
+		Summary:  interfaces.ExecutiveSummary{},
 	}, nil
 }
 

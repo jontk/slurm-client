@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	"github.com/jontk/slurm-client/pkg/errors"
@@ -69,10 +69,10 @@ func (suite *RealServerIntegrationTestSuite) SetupSuite() {
 		slurm.WithBaseURL(suite.serverURL),
 		slurm.WithAuth(auth.NewTokenAuth(suite.token)),
 		slurm.WithConfig(&config.Config{
-			Timeout:              60 * time.Second, // Longer timeout for integration tests
-			MaxRetries:           5,                // More retries for reliability
-			Debug:                true,
-			InsecureSkipVerify:   true,
+			Timeout:            60 * time.Second, // Longer timeout for integration tests
+			MaxRetries:         5,                // More retries for reliability
+			Debug:              true,
+			InsecureSkipVerify: true,
 		}),
 	)
 	require.NoError(suite.T(), err)
@@ -301,7 +301,7 @@ func (suite *RealServerIntegrationTestSuite) TestAdvancedJobOperations() {
 		CPUs:      1,
 		TimeLimit: 5,
 		Environment: map[string]string{
-			"TEST_VAR": "integration_test_value",
+			"TEST_VAR":   "integration_test_value",
 			"CUSTOM_VAR": "custom_value",
 		},
 	}
@@ -315,12 +315,12 @@ func (suite *RealServerIntegrationTestSuite) TestAdvancedJobOperations() {
 	suite.T().Log("=== Test 2: Job with working directory ===")
 	wdJobName := fmt.Sprintf("integration-wd-%d", time.Now().Unix())
 	wdSubmission := &interfaces.JobSubmission{
-		Name:        wdJobName,
-		Script:      "#!/bin/bash\necho 'Working directory test:'\npwd\nls -la\necho 'Creating test file...'\ntouch integration_test_file.txt\nls -la integration_test_file.txt\nsleep 30",
-		Partition:   targetPartition,
-		Nodes:       1,
-		CPUs:        1,
-		TimeLimit:   5,
+		Name:      wdJobName,
+		Script:    "#!/bin/bash\necho 'Working directory test:'\npwd\nls -la\necho 'Creating test file...'\ntouch integration_test_file.txt\nls -la integration_test_file.txt\nsleep 30",
+		Partition: targetPartition,
+		Nodes:     1,
+		CPUs:      1,
+		TimeLimit: 5,
 	}
 
 	wdResponse, err := suite.client.Jobs().Submit(ctx, wdSubmission)
@@ -336,7 +336,7 @@ func (suite *RealServerIntegrationTestSuite) TestAdvancedJobOperations() {
 		Script:    "#!/bin/bash\necho 'Resource test:'\necho 'CPUs allocated: '$SLURM_CPUS_PER_TASK\necho 'Memory info:'\nfree -h\necho 'CPU info:'\nlscpu | grep -E '^CPU\\(s\\)|^Model name'\nsleep 30",
 		Partition: targetPartition,
 		Nodes:     1,
-		CPUs:      2, // Request 2 CPUs
+		CPUs:      2,    // Request 2 CPUs
 		Memory:    1024, // Request 1GB memory
 		TimeLimit: 5,
 	}

@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"strings"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
 	"github.com/jontk/slurm-client/pkg/errors"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 )
 
 // AssociationAdapter implements the AssociationAdapter interface for v0.0.44
@@ -144,7 +144,7 @@ func (a *AssociationAdapter) Get(ctx context.Context, associationID string) (*ty
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(associationID, "associationID"); err != nil {
+	if err := a.ValidateResourceName(associationID, "Association name"); err != nil {
 		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -257,7 +257,7 @@ func (a *AssociationAdapter) Update(ctx context.Context, associationID string, u
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(associationID, "associationID"); err != nil {
+	if err := a.ValidateResourceName(associationID, "Association name"); err != nil {
 		return err
 	}
 	if update == nil {
@@ -311,7 +311,7 @@ func (a *AssociationAdapter) Delete(ctx context.Context, associationID string) e
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(associationID, "associationID"); err != nil {
+	if err := a.ValidateResourceName(associationID, "Association name"); err != nil {
 		return err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -365,7 +365,7 @@ func (a *AssociationAdapter) validateAssociationUpdate(update *types.Association
 	}
 	// At least one field should be provided for update
 	if update.DefaultQoS == nil && len(update.QoSList) == 0 &&
-	   update.MaxJobs == nil && update.MaxWallTime == nil {
+		update.MaxJobs == nil && update.MaxWallTime == nil {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one field must be provided for update", "update", update, nil)
 	}
 	return nil

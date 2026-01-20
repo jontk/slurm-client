@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -229,7 +229,7 @@ func TestV42WithRealServer(t *testing.T) {
 
 	t.Run("ListJobs", func(t *testing.T) {
 		jobs, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
-			Limit: 10,
+			Limit:  10,
 			States: []string{"RUNNING", "PENDING"},
 		})
 		if err != nil {

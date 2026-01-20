@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"strings"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 )
 
 // QoSAdapter implements the QoSAdapter interface for v0.0.41
@@ -79,7 +79,7 @@ func (a *QoSAdapter) List(ctx context.Context, opts *types.QoSListOptions) (*typ
 
 	// Convert response to common types
 	qosList := &types.QoSList{
-		QoS: make([]types.QoS, 0, len(resp.JSON200.Qos)),
+		QoS:   make([]types.QoS, 0, len(resp.JSON200.Qos)),
 		Total: 0,
 	}
 
@@ -290,25 +290,4 @@ func (a *QoSAdapter) SetLimits(ctx context.Context, name string, limits *types.Q
 
 	// All limits are set via the Limits field above
 	return a.Update(ctx, name, update)
-}
-
-// Remove the formatTRESMap function as it's no longer needed
-// formatTRESMap converts a TRES map to string format (removed)
-
-// convertPreemptModeToAPI converts common preempt mode to API preempt mode
-func convertPreemptModeToAPI(mode string) api.SlurmdbV0041GetQosParamsPreemptMode {
-	switch strings.ToUpper(mode) {
-	case "DISABLED":
-		return api.SlurmdbV0041GetQosParamsPreemptModeDISABLED
-	case "CANCEL":
-		return api.SlurmdbV0041GetQosParamsPreemptModeCANCEL
-	case "GANG":
-		return api.SlurmdbV0041GetQosParamsPreemptModeGANG
-	case "REQUEUE":
-		return api.SlurmdbV0041GetQosParamsPreemptModeREQUEUE
-	case "SUSPEND":
-		return api.SlurmdbV0041GetQosParamsPreemptModeSUSPEND
-	default:
-		return api.SlurmdbV0041GetQosParamsPreemptModeDISABLED
-	}
 }

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -49,7 +49,7 @@ func (m *JobManagerImpl) List(ctx context.Context, opts *interfaces.ListJobsOpti
 
 	// Handle response
 	if resp.HTTPResponse.StatusCode != 200 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
@@ -86,17 +86,17 @@ func (m *JobManagerImpl) Get(ctx context.Context, jobID string) (*interfaces.Job
 	}
 
 	if resp.HTTPResponse.StatusCode == 404 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Job %s not found", jobID))
 	}
 
 	if resp.HTTPResponse.StatusCode != 200 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
 	if resp.JSON200 == nil || len(resp.JSON200.Jobs) == 0 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Job %s not found", jobID))
 	}
 
@@ -150,7 +150,7 @@ func (m *JobManagerImpl) Submit(ctx context.Context, job *interfaces.JobSubmissi
 	}
 
 	// Set environment variables
-	if job.Environment != nil && len(job.Environment) > 0 {
+	if len(job.Environment) > 0 {
 		envVars := make([]string, 0, len(job.Environment))
 		for k, v := range job.Environment {
 			envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
@@ -175,7 +175,7 @@ func (m *JobManagerImpl) Submit(ctx context.Context, job *interfaces.JobSubmissi
 			errorMsg := fmt.Sprintf("Job submission failed: %v", (*resp.JSONDefault.Errors)[0])
 			return nil, errors.NewSlurmError(errors.ErrorCodeValidationFailed, errorMsg)
 		}
-		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
@@ -208,12 +208,12 @@ func (m *JobManagerImpl) Cancel(ctx context.Context, jobID string) error {
 	}
 
 	if resp.HTTPResponse.StatusCode == 404 {
-		return errors.NewSlurmError(errors.ErrorCodeResourceNotFound, 
+		return errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Job %s not found", jobID))
 	}
 
 	if resp.HTTPResponse.StatusCode != 200 {
-		return errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
@@ -251,7 +251,7 @@ func (m *JobManagerImpl) Update(ctx context.Context, jobID string, update *inter
 	}
 
 	if resp.HTTPResponse.StatusCode != 200 {
-		return errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
@@ -273,12 +273,12 @@ func (m *JobManagerImpl) GetResourceLayout(ctx context.Context, jobID string) (i
 	}
 
 	if resp.HTTPResponse.StatusCode == 404 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Job %s not found", jobID))
 	}
 
 	if resp.HTTPResponse.StatusCode != 200 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
@@ -303,14 +303,14 @@ func (m *JobManagerImpl) Steps(ctx context.Context, jobID string) (*interfaces.J
 func (m *JobManagerImpl) Watch(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
 	// Create a channel for job events
 	eventChan := make(chan interfaces.JobEvent)
-	
+
 	// For now, return a basic watcher that polls for changes
 	go func() {
 		defer close(eventChan)
-		
+
 		ticker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
-		
+
 		for {
 			select {
 			case <-ctx.Done():
@@ -321,7 +321,7 @@ func (m *JobManagerImpl) Watch(ctx context.Context, opts *interfaces.WatchJobsOp
 			}
 		}
 	}()
-	
+
 	return eventChan, nil
 }
 
@@ -523,7 +523,7 @@ func (m *JobManagerImpl) Release(ctx context.Context, jobID string) error {
 		return errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
-	// For now, return not implemented - release might use different endpoints or parameters  
+	// For now, return not implemented - release might use different endpoints or parameters
 	return errors.NewSlurmError(errors.ErrorCodeUnsupportedOperation, "Job release not yet implemented for v0.0.44")
 }
 

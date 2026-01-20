@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -45,7 +45,7 @@ func TestUserManagerCoverage(t *testing.T) {
 					WithAssociations: true,
 					ActiveOnly:       true,
 					Limit:            50,
-					Offset:          10,
+					Offset:           10,
 				},
 			},
 			{
@@ -476,11 +476,11 @@ func TestDataStructureValidation(t *testing.T) {
 			Account: &interfaces.Account{
 				Name: "root",
 			},
-			Level:           0,
-			Path:            []string{"root"},
-			TotalUsers:      500,
+			Level:            0,
+			Path:             []string{"root"},
+			TotalUsers:       500,
 			TotalSubAccounts: 50,
-			ChildAccounts:   []*interfaces.AccountHierarchy{},
+			ChildAccounts:    []*interfaces.AccountHierarchy{},
 		}
 		assert.NotNil(t, hierarchy.Account)
 		assert.Equal(t, "root", hierarchy.Account.Name)
@@ -519,15 +519,15 @@ func TestDataStructureValidation(t *testing.T) {
 		// Test JobPriorityInfo structure
 		estStart := time.Now().Add(30 * time.Minute)
 		priority := interfaces.JobPriorityInfo{
-			JobID:          12345,
-			UserName:       "alice",
-			Account:        "research",
-			Partition:      "compute",
-			QoS:            "normal",
-			Priority:       10000,
-			PriorityTier:   "high",
-			EstimatedStart: estStart,
-			EligibleTime:   time.Now(),
+			JobID:           12345,
+			UserName:        "alice",
+			Account:         "research",
+			Partition:       "compute",
+			QoS:             "normal",
+			Priority:        10000,
+			PriorityTier:    "high",
+			EstimatedStart:  estStart,
+			EligibleTime:    time.Now(),
 			PositionInQueue: 5,
 			Factors: &interfaces.JobPriorityFactors{
 				FairShare: 5000,
@@ -615,7 +615,7 @@ func TestConcurrentAccess(t *testing.T) {
 	// Test concurrent access to same manager
 	t.Run("Concurrent_Get", func(t *testing.T) {
 		done := make(chan bool, 10)
-		
+
 		for i := 0; i < 10; i++ {
 			go func(id int) {
 				userName := "user" + string(rune('0'+id%10))
@@ -636,10 +636,10 @@ func TestConcurrentAccess(t *testing.T) {
 func TestNilHandling(t *testing.T) {
 	manager := &UserManagerImpl{}
 
-	t.Run("Nil_Context", func(t *testing.T) {
-		// Should handle nil context gracefully
+	t.Run("Uninitialized_Client", func(t *testing.T) {
+		// Should handle uninitialized client gracefully
 		assert.NotPanics(t, func() {
-			_, _ = manager.Get(nil, "testuser")
+			_, _ = manager.Get(context.TODO(), "testuser")
 		})
 	})
 

@@ -1,0 +1,22 @@
+{
+  "_comment": "NOTE: gosec -conf does not properly honor the 'exclude' field. Use command-line exclusions instead: gosec -exclude=G101,G115,G401,G402,G501 ./...",
+  "_exclusions": {
+    "G101": "Hardcoded credentials - false positives on error code constants",
+    "G115": "Integer overflow conversion - SLURM resource counts unlikely to overflow",
+    "G401": "MD5 used only for non-cryptographic cache key hashing",
+    "G402": "InsecureSkipVerify is user-configurable and defaults to false",
+    "G501": "MD5 import for cache keys, not cryptography"
+  },
+  "global": {
+    "nosec": true,
+    "audit": false
+  },
+  "exclude-generated": true,
+  "severity": "medium",
+  "confidence": "medium",
+  "exclude-dirs": [
+    "vendor",
+    "third_party",
+    "testdata"
+  ]
+}

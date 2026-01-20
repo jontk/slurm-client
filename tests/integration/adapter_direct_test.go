@@ -38,7 +38,7 @@ func TestAdapterDirectUsage(t *testing.T) {
 		// Test nil validation
 		err := adapter.ValidateQoSCreate(nil)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "QoS data is required")
+		assert.Contains(t, err.Error(), "QoS creation data is required")
 
 		// Test empty name validation
 		err = adapter.ValidateQoSCreate(&types.QoSCreate{})
@@ -66,7 +66,7 @@ func TestAdapterDirectUsage(t *testing.T) {
 		qos := &types.QoSCreate{
 			Name: "test",
 		}
-		
+
 		result := adapter.ApplyQoSDefaults(qos)
 		assert.Equal(t, "test", result.Name)
 		assert.Equal(t, 0, result.Priority)

@@ -8,7 +8,7 @@ package types
 // AccountCreateRequest is an alias for AccountCreate
 type AccountCreateRequest = AccountCreate
 
-// AccountUpdateRequest is an alias for AccountUpdate  
+// AccountUpdateRequest is an alias for AccountUpdate
 type AccountUpdateRequest = AccountUpdate
 
 // AssociationCreateRequest is an alias for AssociationCreate
@@ -38,7 +38,7 @@ type UserUpdateRequest = UserUpdate
 // Additional request types
 type QoSCreateRequest = QoSCreate
 type QoSUpdateRequest = QoSUpdate
-type NodeCreateRequest = NodeUpdate  // Nodes are usually not created programmatically
+type NodeCreateRequest = NodeUpdate // Nodes are usually not created programmatically
 type ReservationCreateRequest = ReservationCreate
 type ReservationUpdateRequest = ReservationUpdate
 type PartitionUpdateRequest = PartitionUpdate

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/common/types"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
+	"github.com/jontk/slurm-client/internal/common/types"
 )
 
 // convertAPINodeToCommon converts a v0.0.41 API Node to common Node type

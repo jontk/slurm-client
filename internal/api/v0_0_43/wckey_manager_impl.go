@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -102,7 +102,7 @@ func (m *WCKeyManagerImpl) List(ctx context.Context, opts *interfaces.WCKeyListO
 
 	// Convert the response to our interface types
 	wckeys := make([]interfaces.WCKey, 0, len(resp.JSON200.Wckeys))
-	
+
 	for _, apiWCKey := range resp.JSON200.Wckeys {
 		wckey := interfaces.WCKey{
 			Name:    apiWCKey.Name,
@@ -303,7 +303,7 @@ func joinStringSlice(slice []string, sep string) string {
 	if len(slice) == 0 {
 		return ""
 	}
-	
+
 	result := slice[0]
 	for i := 1; i < len(slice); i++ {
 		result += sep + slice[i]

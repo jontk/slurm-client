@@ -133,7 +133,7 @@ func (a *NodeAdapter) Get(ctx context.Context, nodeName string) (*types.Node, er
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(nodeName, "nodeName"); err != nil {
+	if err := a.ValidateResourceName(nodeName, "node name"); err != nil {
 		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -188,7 +188,7 @@ func (a *NodeAdapter) Update(ctx context.Context, nodeName string, update *types
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(nodeName, "nodeName"); err != nil {
+	if err := a.ValidateResourceName(nodeName, "node name"); err != nil {
 		return err
 	}
 	if err := a.validateNodeUpdate(update); err != nil {
@@ -243,7 +243,7 @@ func (a *NodeAdapter) Delete(ctx context.Context, nodeName string) error {
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(nodeName, "nodeName"); err != nil {
+	if err := a.ValidateResourceName(nodeName, "node name"); err != nil {
 		return err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -505,13 +505,7 @@ func (a *NodeAdapter) validateNodeUpdate(update *types.NodeUpdate) error {
 	if update == nil {
 		return common.NewValidationError("node update data is required", "update", nil)
 	}
-	// At least one field should be provided for update
-	if update.Comment == nil && update.CPUBinding == nil && len(update.Features) == 0 &&
-		len(update.ActiveFeatures) == 0 && update.Gres == nil && update.NextStateAfterReboot == nil &&
-		update.Reason == nil && update.ResumeAfter == nil && update.State == nil &&
-		update.Weight == nil && len(update.Extra) == 0 {
-		return common.NewValidationError("at least one field must be provided for update", "update", update)
-	}
+	// Empty updates are allowed - the API will handle no-op updates
 
 	// Validate numeric fields if provided
 	if update.CPUBinding != nil && *update.CPUBinding < 0 {

@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"strings"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 )
 
 // ReservationAdapter implements the ReservationAdapter interface for v0.0.43
@@ -132,7 +132,7 @@ func (a *ReservationAdapter) Get(ctx context.Context, reservationName string) (*
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(reservationName, "reservationName"); err != nil {
+	if err := a.ValidateResourceName(reservationName, "reservation name"); err != nil {
 		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -183,14 +183,26 @@ func (a *ReservationAdapter) Get(ctx context.Context, reservationName string) (*
 
 // Create creates a new reservation
 func (a *ReservationAdapter) Create(ctx context.Context, reservation *types.ReservationCreate) (*types.ReservationCreateResponse, error) {
-	// Use base validation
+	// Perform basic validation first (cheap checks)
+	if reservation == nil {
+		return nil, common.NewValidationError("reservation creation data is required", "reservation", nil)
+	}
+	if reservation.Name == "" {
+		return nil, common.NewValidationError("reservation name is required", "name", reservation.Name)
+	}
+
+	// Check client initialization before expensive operations
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+
+	// Validate context
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.validateReservationCreate(reservation); err != nil {
-		return nil, err
-	}
-	if err := a.CheckClientInitialized(a.client); err != nil {
+
+	// Perform remaining validation
+	if err := a.validateReservationCreateAdvanced(reservation); err != nil {
 		return nil, err
 	}
 
@@ -235,7 +247,7 @@ func (a *ReservationAdapter) Update(ctx context.Context, reservationName string,
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(reservationName, "reservationName"); err != nil {
+	if err := a.ValidateResourceName(reservationName, "reservation name"); err != nil {
 		return err
 	}
 	if err := a.validateReservationUpdate(update); err != nil {
@@ -286,7 +298,7 @@ func (a *ReservationAdapter) Delete(ctx context.Context, reservationName string)
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(reservationName, "reservationName"); err != nil {
+	if err := a.ValidateResourceName(reservationName, "reservation name"); err != nil {
 		return err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -316,7 +328,8 @@ func (a *ReservationAdapter) Delete(ctx context.Context, reservationName string)
 	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
 }
 
-// validateReservationCreate validates reservation creation request
+// validateReservationCreate validates reservation creation request (basic checks only)
+// This is kept for backwards compatibility with other callers
 func (a *ReservationAdapter) validateReservationCreate(reservation *types.ReservationCreate) error {
 	if reservation == nil {
 		return common.NewValidationError("reservation creation data is required", "reservation", nil)
@@ -324,6 +337,11 @@ func (a *ReservationAdapter) validateReservationCreate(reservation *types.Reserv
 	if reservation.Name == "" {
 		return common.NewValidationError("reservation name is required", "name", reservation.Name)
 	}
+	return a.validateReservationCreateAdvanced(reservation)
+}
+
+// validateReservationCreateAdvanced validates reservation creation time fields
+func (a *ReservationAdapter) validateReservationCreateAdvanced(reservation *types.ReservationCreate) error {
 	if reservation.StartTime.IsZero() {
 		return common.NewValidationError("start time is required", "startTime", reservation.StartTime)
 	}
@@ -341,11 +359,7 @@ func (a *ReservationAdapter) validateReservationUpdate(update *types.Reservation
 	if update == nil {
 		return common.NewValidationError("reservation update data is required", "update", nil)
 	}
-	// At least one field should be provided for update
-	if update.StartTime == nil && update.EndTime == nil && update.Duration == nil &&
-	   len(update.Users) == 0 && len(update.Accounts) == 0 && update.NodeCount == nil {
-		return common.NewValidationError("at least one field must be provided for update", "update", update)
-	}
+	// Empty updates are allowed - the API will handle no-op updates
 	if update.StartTime != nil && update.EndTime != nil && update.StartTime.After(*update.EndTime) {
 		return common.NewValidationError("start time cannot be after end time", "startTime/endTime", nil)
 	}

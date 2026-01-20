@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"strings"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
 	"github.com/jontk/slurm-client/pkg/errors"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
 // AccountAdapter implements the AccountAdapter interface for v0.0.40
@@ -145,7 +145,7 @@ func (a *AccountAdapter) Get(ctx context.Context, accountName string) (*types.Ac
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(accountName, "accountName"); err != nil {
+	if err := a.ValidateResourceName(accountName, "account name"); err != nil {
 		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -246,7 +246,7 @@ func (a *AccountAdapter) Update(ctx context.Context, accountName string, update 
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(accountName, "accountName"); err != nil {
+	if err := a.ValidateResourceName(accountName, "account name"); err != nil {
 		return err
 	}
 	if err := a.validateAccountUpdate(update); err != nil {
@@ -295,7 +295,7 @@ func (a *AccountAdapter) Delete(ctx context.Context, accountName string) error {
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(accountName, "accountName"); err != nil {
+	if err := a.ValidateResourceName(accountName, "account name"); err != nil {
 		return err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {

@@ -6,7 +6,7 @@ package v0_0_41
 import (
 	"context"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -40,7 +40,7 @@ func (q *QoSManagerImpl) Get(ctx context.Context, qosName string) (*interfaces.Q
 // Create creates a new QoS
 func (q *QoSManagerImpl) Create(ctx context.Context, qos *interfaces.QoSCreate) (*interfaces.QoSCreateResponse, error) {
 	if qos == nil {
-		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS data is required", "qos", qos, nil)
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS creation data is required", "qos", qos, nil)
 	}
 	return nil, errors.NewNotImplementedError("QoS creation", "v0.0.41")
 }

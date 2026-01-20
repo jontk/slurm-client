@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -23,12 +23,12 @@ import (
 // E2EWorkflowTestSuite tests complete end-to-end user workflows
 type E2EWorkflowTestSuite struct {
 	suite.Suite
-	client       slurm.SlurmClient
-	serverURL    string
-	token        string
-	version      string
-	testPrefix   string
-	createdJobs  []string
+	client      slurm.SlurmClient
+	serverURL   string
+	token       string
+	version     string
+	testPrefix  string
+	createdJobs []string
 }
 
 // SetupSuite initializes the test suite
@@ -128,7 +128,7 @@ func (suite *E2EWorkflowTestSuite) TestFullJobLifecycle() {
 	var targetPartition string
 	for _, partition := range partitions.Partitions {
 		if strings.Contains(strings.ToLower(partition.Name), "debug") ||
-		   strings.Contains(strings.ToLower(partition.Name), "normal") {
+			strings.Contains(strings.ToLower(partition.Name), "normal") {
 			targetPartition = partition.Name
 			break
 		}
@@ -211,7 +211,7 @@ func (suite *E2EWorkflowTestSuite) TestFullJobLifecycle() {
 
 		// Break if job is in a final state
 		if currentJob.State == "COMPLETED" || currentJob.State == "FAILED" ||
-		   currentJob.State == "CANCELLED" || currentJob.State == "TIMEOUT" {
+			currentJob.State == "CANCELLED" || currentJob.State == "TIMEOUT" {
 			break
 		}
 
@@ -223,7 +223,7 @@ func (suite *E2EWorkflowTestSuite) TestFullJobLifecycle() {
 
 	// Step 9: Test job cancellation (if still running)
 	if finalJob.State != "COMPLETED" && finalJob.State != "FAILED" &&
-	   finalJob.State != "CANCELLED" && finalJob.State != "TIMEOUT" {
+		finalJob.State != "CANCELLED" && finalJob.State != "TIMEOUT" {
 		suite.T().Log("Step 9: Testing job cancellation...")
 		err = suite.client.Jobs().Cancel(ctx, response.JobID)
 		suite.Require().NoError(err, "Job cancellation should succeed")
@@ -307,7 +307,7 @@ func (suite *E2EWorkflowTestSuite) TestMultiJobWorkflow() {
 			suite.T().Logf("Job %d (%s): State=%s", i+1, jobID, job.State)
 
 			if job.State != "COMPLETED" && job.State != "FAILED" &&
-			   job.State != "CANCELLED" && job.State != "TIMEOUT" {
+				job.State != "CANCELLED" && job.State != "TIMEOUT" {
 				allCompleted = false
 			}
 		}

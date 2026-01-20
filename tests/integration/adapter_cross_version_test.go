@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -21,8 +21,8 @@ import (
 // AdapterCrossVersionTestSuite tests operations across different API versions
 type AdapterCrossVersionTestSuite struct {
 	suite.Suite
-	clients map[string]slurm.SlurmClient
-	versions []string
+	clients   map[string]slurm.SlurmClient
+	versions  []string
 	serverURL string
 	token     string
 }
@@ -64,12 +64,12 @@ func (suite *AdapterCrossVersionTestSuite) SetupSuite() {
 				InsecureSkipVerify: true,
 			}),
 		)
-		
+
 		if err != nil {
 			suite.T().Logf("Failed to create client for version %s: %v", version, err)
 			continue
 		}
-		
+
 		suite.clients[version] = client
 		suite.T().Logf("Successfully created client for version %s", version)
 	}
@@ -90,20 +90,20 @@ func (suite *AdapterCrossVersionTestSuite) TearDownSuite() {
 // TestPingAcrossVersions tests ping functionality across all versions
 func (suite *AdapterCrossVersionTestSuite) TestPingAcrossVersions() {
 	ctx := context.Background()
-	
+
 	results := make(map[string]error)
-	
+
 	for version, client := range suite.clients {
 		err := client.Info().Ping(ctx)
 		results[version] = err
-		
+
 		if err == nil {
 			suite.T().Logf("✓ Ping successful for version %s", version)
 		} else {
 			suite.T().Logf("✗ Ping failed for version %s: %v", version, err)
 		}
 	}
-	
+
 	// At least one version should work
 	successCount := 0
 	for _, err := range results {
@@ -111,55 +111,55 @@ func (suite *AdapterCrossVersionTestSuite) TestPingAcrossVersions() {
 			successCount++
 		}
 	}
-	
+
 	suite.Require().Greater(successCount, 0, "At least one version should support ping")
 }
 
 // TestVersionConsistency tests version information consistency
 func (suite *AdapterCrossVersionTestSuite) TestVersionConsistency() {
 	ctx := context.Background()
-	
+
 	versionInfos := make(map[string]*interfaces.APIVersion)
-	
+
 	for version, client := range suite.clients {
 		versionInfo, err := client.Info().Version(ctx)
 		if err != nil {
 			suite.T().Logf("Version info failed for %s: %v", version, err)
 			continue
 		}
-		
+
 		versionInfos[version] = versionInfo
 		suite.T().Logf("Version %s reports API version: %s", version, versionInfo.Version)
-		
+
 		// Basic validation
 		suite.NotEmpty(versionInfo.Version, "Version should not be empty for %s", version)
 	}
-	
+
 	suite.Require().NotEmpty(versionInfos, "At least one version should provide version info")
 }
 
 // TestQoSListingConsistency tests QoS listing across versions
 func (suite *AdapterCrossVersionTestSuite) TestQoSListingConsistency() {
 	ctx := context.Background()
-	
+
 	qosResults := make(map[string]*interfaces.QoSList)
-	
+
 	for version, client := range suite.clients {
 		qosList, err := client.QoS().List(ctx, &interfaces.ListQoSOptions{
 			Limit: 5,
 		})
-		
+
 		if err != nil {
 			suite.T().Logf("QoS listing failed for %s: %v", version, err)
 			continue
 		}
-		
+
 		qosResults[version] = qosList
 		suite.T().Logf("Version %s found %d QoS entries", version, len(qosList.QoS))
-		
+
 		// Validate basic structure
 		suite.NotNil(qosList.QoS, "QoS list should not be nil for %s", version)
-		
+
 		for i, qos := range qosList.QoS {
 			if i >= 3 { // Log first 3 for comparison
 				break
@@ -167,15 +167,15 @@ func (suite *AdapterCrossVersionTestSuite) TestQoSListingConsistency() {
 			suite.T().Logf("  %s QoS %d: Name=%s, Priority=%d", version, i+1, qos.Name, qos.Priority)
 		}
 	}
-	
+
 	// Compare common QoS entries if multiple versions work
 	if len(qosResults) >= 2 {
 		suite.T().Log("Comparing QoS consistency across versions...")
-		
+
 		// Find common QoS names
 		var firstVersion string
 		var firstQoS []string
-		
+
 		for version, qosList := range qosResults {
 			firstVersion = version
 			for _, qos := range qosList.QoS {
@@ -183,13 +183,13 @@ func (suite *AdapterCrossVersionTestSuite) TestQoSListingConsistency() {
 			}
 			break
 		}
-		
+
 		// Check if other versions have similar QoS entries
 		for version, qosList := range qosResults {
 			if version == firstVersion {
 				continue
 			}
-			
+
 			commonCount := 0
 			for _, qos := range qosList.QoS {
 				for _, name := range firstQoS {
@@ -199,7 +199,7 @@ func (suite *AdapterCrossVersionTestSuite) TestQoSListingConsistency() {
 					}
 				}
 			}
-			
+
 			suite.T().Logf("Common QoS entries between %s and %s: %d", firstVersion, version, commonCount)
 		}
 	}
@@ -208,25 +208,25 @@ func (suite *AdapterCrossVersionTestSuite) TestQoSListingConsistency() {
 // TestJobListingConsistency tests job listing across versions
 func (suite *AdapterCrossVersionTestSuite) TestJobListingConsistency() {
 	ctx := context.Background()
-	
+
 	jobResults := make(map[string]*interfaces.JobList)
-	
+
 	for version, client := range suite.clients {
 		jobList, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
 			Limit: 10,
 		})
-		
+
 		if err != nil {
 			suite.T().Logf("Job listing failed for %s: %v", version, err)
 			continue
 		}
-		
+
 		jobResults[version] = jobList
 		suite.T().Logf("Version %s found %d jobs", version, len(jobList.Jobs))
-		
+
 		// Validate basic structure
 		suite.NotNil(jobList.Jobs, "Job list should not be nil for %s", version)
-		
+
 		for i, job := range jobList.Jobs {
 			if i >= 3 { // Log first 3 for comparison
 				break
@@ -234,14 +234,14 @@ func (suite *AdapterCrossVersionTestSuite) TestJobListingConsistency() {
 			suite.T().Logf("  %s Job %d: ID=%s, Name=%s, State=%s", version, i+1, job.ID, job.Name, job.State)
 		}
 	}
-	
+
 	// Validate that job counts are reasonable across versions
 	if len(jobResults) >= 2 {
 		jobCounts := make(map[string]int)
 		for version, jobList := range jobResults {
 			jobCounts[version] = len(jobList.Jobs)
 		}
-		
+
 		suite.T().Log("Job count comparison across versions:")
 		for version, count := range jobCounts {
 			suite.T().Logf("  %s: %d jobs", version, count)
@@ -252,44 +252,44 @@ func (suite *AdapterCrossVersionTestSuite) TestJobListingConsistency() {
 // TestNodeListingConsistency tests node listing across versions
 func (suite *AdapterCrossVersionTestSuite) TestNodeListingConsistency() {
 	ctx := context.Background()
-	
+
 	nodeResults := make(map[string]*interfaces.NodeList)
-	
+
 	for version, client := range suite.clients {
 		nodeList, err := client.Nodes().List(ctx, &interfaces.ListNodesOptions{
 			Limit: 10,
 		})
-		
+
 		if err != nil {
 			suite.T().Logf("Node listing failed for %s: %v", version, err)
 			continue
 		}
-		
+
 		nodeResults[version] = nodeList
 		suite.T().Logf("Version %s found %d nodes", version, len(nodeList.Nodes))
-		
+
 		// Validate basic structure
 		suite.NotNil(nodeList.Nodes, "Node list should not be nil for %s", version)
-		
+
 		for i, node := range nodeList.Nodes {
 			if i >= 3 { // Log first 3 for comparison
 				break
 			}
-			suite.T().Logf("  %s Node %d: Name=%s, State=%s, CPUs=%d", 
+			suite.T().Logf("  %s Node %d: Name=%s, State=%s, CPUs=%d",
 				version, i+1, node.Name, node.State, node.CPUs)
 		}
 	}
-	
+
 	// Validate node consistency across versions
 	if len(nodeResults) >= 2 {
 		suite.T().Log("Analyzing node consistency across versions...")
-		
+
 		// Node counts should be similar across versions
 		nodeCounts := make(map[string]int)
 		for version, nodeList := range nodeResults {
 			nodeCounts[version] = len(nodeList.Nodes)
 		}
-		
+
 		suite.T().Log("Node count comparison:")
 		for version, count := range nodeCounts {
 			suite.T().Logf("  %s: %d nodes", version, count)
@@ -300,38 +300,38 @@ func (suite *AdapterCrossVersionTestSuite) TestNodeListingConsistency() {
 // TestPartitionListingConsistency tests partition listing across versions
 func (suite *AdapterCrossVersionTestSuite) TestPartitionListingConsistency() {
 	ctx := context.Background()
-	
+
 	partitionResults := make(map[string]*interfaces.PartitionList)
-	
+
 	for version, client := range suite.clients {
 		partitionList, err := client.Partitions().List(ctx, &interfaces.ListPartitionsOptions{
 			Limit: 10,
 		})
-		
+
 		if err != nil {
 			suite.T().Logf("Partition listing failed for %s: %v", version, err)
 			continue
 		}
-		
+
 		partitionResults[version] = partitionList
 		suite.T().Logf("Version %s found %d partitions", version, len(partitionList.Partitions))
-		
+
 		// Validate basic structure
 		suite.NotNil(partitionList.Partitions, "Partition list should not be nil for %s", version)
-		
+
 		for i, partition := range partitionList.Partitions {
 			if i >= 3 { // Log first 3 for comparison
 				break
 			}
-			suite.T().Logf("  %s Partition %d: Name=%s, State=%s, Nodes=%d", 
+			suite.T().Logf("  %s Partition %d: Name=%s, State=%s, Nodes=%d",
 				version, i+1, partition.Name, partition.State, partition.TotalNodes)
 		}
 	}
-	
+
 	// Validate partition consistency
 	if len(partitionResults) >= 2 {
 		suite.T().Log("Analyzing partition consistency across versions...")
-		
+
 		// Find common partition names
 		partitionNames := make(map[string][]string)
 		for version, partitionList := range partitionResults {
@@ -341,7 +341,7 @@ func (suite *AdapterCrossVersionTestSuite) TestPartitionListingConsistency() {
 			}
 			partitionNames[version] = names
 		}
-		
+
 		suite.T().Log("Partition names by version:")
 		for version, names := range partitionNames {
 			suite.T().Logf("  %s: %v", version, names)
@@ -352,7 +352,7 @@ func (suite *AdapterCrossVersionTestSuite) TestPartitionListingConsistency() {
 // TestVersionSpecificFeatures tests features specific to certain versions
 func (suite *AdapterCrossVersionTestSuite) TestVersionSpecificFeatures() {
 	ctx := context.Background()
-	
+
 	// Test cluster stats (may not be available in all versions)
 	for version, client := range suite.clients {
 		stats, err := client.Info().Stats(ctx)
@@ -360,10 +360,10 @@ func (suite *AdapterCrossVersionTestSuite) TestVersionSpecificFeatures() {
 			suite.T().Logf("Stats not available for %s: %v", version, err)
 			continue
 		}
-		
-		suite.T().Logf("Version %s stats: Nodes=%d, CPUs=%d, Jobs=%d", 
+
+		suite.T().Logf("Version %s stats: Nodes=%d, CPUs=%d, Jobs=%d",
 			version, stats.TotalNodes, stats.TotalCPUs, stats.TotalJobs)
-		
+
 		// Basic validation
 		suite.GreaterOrEqual(stats.TotalNodes, int32(0), "Total nodes should be non-negative")
 		suite.GreaterOrEqual(stats.TotalCPUs, int32(0), "Total CPUs should be non-negative")
@@ -374,22 +374,22 @@ func (suite *AdapterCrossVersionTestSuite) TestVersionSpecificFeatures() {
 // TestErrorHandlingConsistency tests error handling across versions
 func (suite *AdapterCrossVersionTestSuite) TestErrorHandlingConsistency() {
 	ctx := context.Background()
-	
+
 	// Test invalid resource access
 	for version, client := range suite.clients {
 		// Try to get a non-existent QoS
 		_, err := client.QoS().Get(ctx, "nonexistent-qos-12345")
-		
+
 		if err != nil {
 			suite.T().Logf("Version %s error for invalid QoS: %v", version, err)
 			suite.Error(err, "Should return error for non-existent QoS in %s", version)
 		} else {
 			suite.T().Logf("Version %s unexpectedly succeeded for invalid QoS", version)
 		}
-		
+
 		// Try to get a non-existent job
 		_, err = client.Jobs().Get(ctx, "99999999")
-		
+
 		if err != nil {
 			suite.T().Logf("Version %s error for invalid job: %v", version, err)
 			suite.Error(err, "Should return error for non-existent job in %s", version)
@@ -402,22 +402,22 @@ func (suite *AdapterCrossVersionTestSuite) TestErrorHandlingConsistency() {
 // TestConcurrentOperations tests concurrent operations across versions
 func (suite *AdapterCrossVersionTestSuite) TestConcurrentOperations() {
 	ctx := context.Background()
-	
+
 	// Run concurrent ping operations
 	type result struct {
 		Version string
 		Error   error
 	}
-	
+
 	results := make(chan result, len(suite.clients))
-	
+
 	for version, client := range suite.clients {
 		go func(v string, c slurm.SlurmClient) {
 			err := c.Info().Ping(ctx)
 			results <- result{Version: v, Error: err}
 		}(version, client)
 	}
-	
+
 	// Collect results
 	successCount := 0
 	for i := 0; i < len(suite.clients); i++ {
@@ -429,7 +429,7 @@ func (suite *AdapterCrossVersionTestSuite) TestConcurrentOperations() {
 			suite.T().Logf("✗ Concurrent ping failed for %s: %v", res.Version, res.Error)
 		}
 	}
-	
+
 	suite.Greater(successCount, 0, "At least one concurrent ping should succeed")
 }
 

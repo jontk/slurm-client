@@ -211,7 +211,7 @@ func (a *JobAdapter) Get(ctx context.Context, jobID int32) (*types.Job, error) {
 	params.Flags = &flags
 
 	// Call the API
-	resp, err := a.client.SlurmV0042GetJobWithResponse(ctx, strconv.FormatUint(uint64(jobID), 10), params)
+	resp, err := a.client.SlurmV0042GetJobWithResponse(ctx, strconv.FormatInt(int64(jobID), 10), params)
 	if err != nil {
 		return nil, a.WrapError(err, fmt.Sprintf("failed to get job %d", jobID))
 	}
@@ -256,7 +256,7 @@ func (a *JobAdapter) Cancel(ctx context.Context, jobID int32, opts *types.JobCan
 	// TODO: Add flag support if JobCancelRequest gains a Flags field
 
 	// Call the API
-	resp, err := a.client.SlurmV0042DeleteJobWithResponse(ctx, strconv.FormatUint(uint64(jobID), 10), params)
+	resp, err := a.client.SlurmV0042DeleteJobWithResponse(ctx, strconv.FormatInt(int64(jobID), 10), params)
 	if err != nil {
 		return a.WrapError(err, fmt.Sprintf("failed to cancel job %d", jobID))
 	}

@@ -22,6 +22,7 @@ func TestPartitionAdapter_ValidateContext(t *testing.T) {
 	adapter := NewPartitionAdapter(&api.ClientWithResponses{})
 
 	// Test nil context
+	//lint:ignore SA1012 intentionally testing nil context validation
 	err := adapter.ValidateContext(nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context is required")
@@ -34,13 +35,8 @@ func TestPartitionAdapter_ValidateContext(t *testing.T) {
 func TestPartitionAdapter_List(t *testing.T) {
 	adapter := NewPartitionAdapter(nil) // Use nil client for testing validation logic
 
-	// Test nil context validation
-	_, err := adapter.List(nil, &types.PartitionListOptions{})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
-
-	// Test client initialization check
-	_, err = adapter.List(context.Background(), &types.PartitionListOptions{})
+	// Test client initialization check (nil context validation is covered in TestPartitionAdapter_ValidateContext)
+	_, err := adapter.List(context.TODO(), &types.PartitionListOptions{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "client not initialized")
 }
@@ -49,17 +45,12 @@ func TestPartitionAdapter_Get(t *testing.T) {
 	adapter := NewPartitionAdapter(nil)
 
 	// Test empty partition name
-	_, err := adapter.Get(context.Background(), "")
+	_, err := adapter.Get(context.TODO(), "")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "partition name is required")
 
-	// Test nil context
-	_, err = adapter.Get(nil, "test-partition")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
-
-	// Test client initialization check
-	_, err = adapter.Get(context.Background(), "test-partition")
+	// Test client initialization check (nil context validation is covered in TestPartitionAdapter_ValidateContext)
+	_, err = adapter.Get(context.TODO(), "test-partition")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "client not initialized")
 }
@@ -68,10 +59,10 @@ func TestPartitionAdapter_ConvertAPIPartitionToCommon(t *testing.T) {
 	adapter := NewPartitionAdapter(&api.ClientWithResponses{})
 
 	tests := []struct {
-		name         string
-		apiPartition api.V0043PartitionInfo
-		expectedName string
-		expectedState string
+		name          string
+		apiPartition  api.V0043PartitionInfo
+		expectedName  string
+		expectedState types.PartitionState
 	}{
 		{
 			name: "full partition",

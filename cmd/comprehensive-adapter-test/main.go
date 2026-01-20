@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/internal/factory"
-	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -41,7 +41,7 @@ func main() {
 		log.Fatal("SLURM_JWT environment variable is required")
 	}
 
-	versions := []string{}
+	var versions []string
 	if os.Args[1] == "all" {
 		versions = []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43"}
 	} else {
@@ -53,13 +53,13 @@ func main() {
 		fmt.Printf("\n========================================\n")
 		fmt.Printf("Testing API Version: %s\n", version)
 		fmt.Printf("========================================\n")
-		
+
 		client, err := createClient(version, jwtToken)
 		if err != nil {
 			log.Printf("Failed to create client for %s: %v", version, err)
 			continue
 		}
-		
+
 		// Test all endpoints
 		testJobEndpoints(client, version)
 		testNodeEndpoints(client, version)
@@ -125,12 +125,12 @@ func testJobEndpoints(client interfaces.SlurmClient, version string) {
 	// Test Submit Job
 	fmt.Println("Testing: Submit Job")
 	submitJob := &interfaces.JobSubmission{
-		Name:      fmt.Sprintf("adapter-test-%s-%d", version, time.Now().Unix()),
-		Account:   "root", // Required for SLURM v0.0.43
-		Partition: "normal",
-		Script:    "#!/bin/bash\necho 'Adapter test job'\nhostname\ndate\nsleep 5",
-		TimeLimit: 1,
-		Nodes:     1,
+		Name:       fmt.Sprintf("adapter-test-%s-%d", version, time.Now().Unix()),
+		Account:    "root", // Required for SLURM v0.0.43
+		Partition:  "normal",
+		Script:     "#!/bin/bash\necho 'Adapter test job'\nhostname\ndate\nsleep 5",
+		TimeLimit:  1,
+		Nodes:      1,
 		WorkingDir: "/tmp",
 		Environment: map[string]string{
 			"PATH": "/usr/bin:/bin",
@@ -507,14 +507,14 @@ func recordResult(version, endpoint, method string, err error, details string) {
 		Success:  err == nil,
 		Details:  details,
 	}
-	
+
 	if err != nil {
 		result.Error = err.Error()
 		fmt.Printf("  ❌ FAILED: %s\n", err.Error())
 	} else {
 		fmt.Printf("  ✅ SUCCESS: %s\n", details)
 	}
-	
+
 	results = append(results, result)
 }
 
@@ -522,24 +522,24 @@ func printSummary() {
 	fmt.Println("\n\n========================================")
 	fmt.Println("TEST SUMMARY")
 	fmt.Println("========================================")
-	
+
 	// Group by version
 	versionResults := make(map[string][]TestResult)
 	for _, r := range results {
 		versionResults[r.Version] = append(versionResults[r.Version], r)
 	}
-	
+
 	// Print summary for each version
 	for version, vResults := range versionResults {
 		fmt.Printf("\n%s Results:\n", version)
 		fmt.Println(strings.Repeat("-", 50))
-		
+
 		// Group by endpoint
 		endpointResults := make(map[string][]TestResult)
 		for _, r := range vResults {
 			endpointResults[r.Endpoint] = append(endpointResults[r.Endpoint], r)
 		}
-		
+
 		// Print results by endpoint
 		for endpoint, eResults := range endpointResults {
 			successCount := 0
@@ -548,9 +548,9 @@ func printSummary() {
 					successCount++
 				}
 			}
-			
+
 			fmt.Printf("  %s: %d/%d passed\n", endpoint, successCount, len(eResults))
-			
+
 			// Show failures
 			for _, r := range eResults {
 				if !r.Success {
@@ -559,7 +559,7 @@ func printSummary() {
 			}
 		}
 	}
-	
+
 	// Overall summary
 	fmt.Println("\n" + strings.Repeat("=", 50))
 	totalTests := len(results)
@@ -569,10 +569,10 @@ func printSummary() {
 			successTests++
 		}
 	}
-	
-	fmt.Printf("TOTAL: %d/%d tests passed (%.1f%%)\n", 
+
+	fmt.Printf("TOTAL: %d/%d tests passed (%.1f%%)\n",
 		successTests, totalTests, float64(successTests)/float64(totalTests)*100)
-	
+
 	// List all unique errors
 	fmt.Println("\nUnique Errors Found:")
 	errorMap := make(map[string]int)
@@ -581,7 +581,7 @@ func printSummary() {
 			errorMap[r.Error]++
 		}
 	}
-	
+
 	for err, count := range errorMap {
 		fmt.Printf("  - %s (occurred %d times)\n", err, count)
 	}

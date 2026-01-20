@@ -7,8 +7,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/internal/common"
-	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -56,7 +56,7 @@ func (q *QoSManagerImpl) List(ctx context.Context, opts *interfaces.ListQoSOptio
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
-	
+
 	responseAdapter := NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
 		return nil, err
@@ -93,16 +93,17 @@ func (q *QoSManagerImpl) List(ctx context.Context, opts *interfaces.ListQoSOptio
 
 // Get retrieves a specific QoS by name
 func (q *QoSManagerImpl) Get(ctx context.Context, qosName string) (*interfaces.QoS, error) {
-	// Use common client initialization check
+	// Validate input first (cheap check)
+	if qosName == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS name is required", "qosName", qosName, nil)
+	}
+
+	// Then check client initialization
 	if err := common.CheckClientInitialized(q.client); err != nil {
 		return nil, err
 	}
 	if err := common.CheckClientInitialized(q.client.apiClient); err != nil {
 		return nil, err
-	}
-
-	if qosName == "" {
-		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS name is required", "qosName", qosName, nil)
 	}
 
 	// Prepare parameters for the API call
@@ -119,7 +120,7 @@ func (q *QoSManagerImpl) Get(ctx context.Context, qosName string) (*interfaces.Q
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
-	
+
 	responseAdapter := NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
 		return nil, err
@@ -158,7 +159,7 @@ func (q *QoSManagerImpl) Create(ctx context.Context, qos *interfaces.QoSCreate) 
 	}
 
 	if qos == nil {
-		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS data is required", "qos", qos, nil)
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS creation data is required", "qos", qos, nil)
 	}
 
 	if qos.Name == "" {
@@ -195,7 +196,7 @@ func (q *QoSManagerImpl) Create(ctx context.Context, qos *interfaces.QoSCreate) 
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
-	
+
 	responseAdapter := NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
 		return nil, err
@@ -260,7 +261,7 @@ func (q *QoSManagerImpl) Update(ctx context.Context, qosName string, update *int
 	if resp.JSON200 != nil {
 		errors = resp.JSON200.Errors
 	}
-	
+
 	responseAdapter := NewResponseAdapter(resp.StatusCode(), errors)
 	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
 }
@@ -290,15 +291,15 @@ func (q *QoSManagerImpl) Delete(ctx context.Context, qosName string) error {
 	if resp.JSON200 != nil {
 		errors = resp.JSON200.Errors
 	}
-	
+
 	// Create adapter with special handling for 204 (No Content) status
 	responseAdapter := NewResponseAdapter(resp.StatusCode(), errors)
-	
+
 	// For DELETE operations, 204 is also a success
 	if resp.StatusCode() == 204 {
 		return nil
 	}
-	
+
 	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
 }
 
@@ -310,7 +311,7 @@ func (q *QoSManagerImpl) Delete(ctx context.Context, qosName string) error {
 // convertAPIQoSToInterface converts a V0043Qos to interfaces.QoS
 func convertAPIQoSToInterface(apiQoS V0043Qos) (*interfaces.QoS, error) {
 	qos := &interfaces.QoS{}
-	
+
 	// Basic fields
 	if apiQoS.Name != nil {
 		qos.Name = *apiQoS.Name
@@ -353,9 +354,22 @@ func convertAPIQoSToInterface(apiQoS V0043Qos) (*interfaces.QoS, error) {
 		qos.UsageThreshold = *apiQoS.UsageThreshold.Number
 	}
 
+	// Max jobs per user (from Limits)
+	if apiQoS.Limits != nil && apiQoS.Limits.Max != nil && apiQoS.Limits.Max.Jobs != nil && apiQoS.Limits.Max.Jobs.Per != nil && apiQoS.Limits.Max.Jobs.Per.User != nil {
+		if apiQoS.Limits.Max.Jobs.Per.User.Set != nil && *apiQoS.Limits.Max.Jobs.Per.User.Set && apiQoS.Limits.Max.Jobs.Per.User.Number != nil {
+			qos.MaxJobsPerUser = int(*apiQoS.Limits.Max.Jobs.Per.User.Number)
+		}
+	}
+
+	// Max jobs per account (from Limits)
+	if apiQoS.Limits != nil && apiQoS.Limits.Max != nil && apiQoS.Limits.Max.Jobs != nil && apiQoS.Limits.Max.Jobs.Per != nil && apiQoS.Limits.Max.Jobs.Per.Account != nil {
+		if apiQoS.Limits.Max.Jobs.Per.Account.Set != nil && *apiQoS.Limits.Max.Jobs.Per.Account.Set && apiQoS.Limits.Max.Jobs.Per.Account.Number != nil {
+			qos.MaxJobsPerAccount = int(*apiQoS.Limits.Max.Jobs.Per.Account.Number)
+		}
+	}
+
 	return qos, nil
 }
-
 
 // filterQoS applies client-side filtering to the QoS list
 func filterQoS(qosList []interfaces.QoS, opts *interfaces.ListQoSOptions) []interfaces.QoS {
@@ -442,10 +456,10 @@ func filterQoS(qosList []interfaces.QoS, opts *interfaces.ListQoSOptions) []inte
 // convertQoSCreateToAPI converts interfaces.QoSCreate to API format
 func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
 	apiQoS := &V0043Qos{}
-	
+
 	// Required fields
 	apiQoS.Name = &create.Name
-	
+
 	// Optional fields
 	if create.Description != "" {
 		apiQoS.Description = &create.Description

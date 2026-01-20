@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	"github.com/jontk/slurm-client/pkg/errors"
@@ -63,10 +63,10 @@ func (suite *RealServerTestSuite) SetupSuite() {
 		slurm.WithBaseURL(suite.serverURL),
 		slurm.WithAuth(auth.NewTokenAuth(suite.token)),
 		slurm.WithConfig(&config.Config{
-			Timeout:              30 * time.Second,
-			MaxRetries:           3,
-			Debug:                true,
-			InsecureSkipVerify:   true, // For test servers with self-signed certs
+			Timeout:            30 * time.Second,
+			MaxRetries:         3,
+			Debug:              true,
+			InsecureSkipVerify: true, // For test servers with self-signed certs
 		}),
 	)
 	require.NoError(suite.T(), err)
@@ -307,7 +307,6 @@ func (suite *RealServerTestSuite) TestGetStats() {
 	suite.T().Logf("    Pending Jobs: %d", stats.PendingJobs)
 	suite.T().Logf("    Completed Jobs: %d", stats.CompletedJobs)
 }
-
 
 // TestRealServer runs the test suite
 func TestRealServer(t *testing.T) {

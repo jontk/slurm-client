@@ -1,18 +1,17 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build integration
 // +build integration
 
 package v0_0_43
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 	"testing"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -176,7 +175,7 @@ func TestClusterManagerImpl_Integration_ListPagination(t *testing.T) {
 		}
 
 		t.Logf("Retrieved %d clusters with page size 1", len(result.Clusters))
-		
+
 		// If there are clusters, verify pagination metadata
 		if len(result.Clusters) > 0 {
 			if result.Meta != nil {
@@ -266,7 +265,7 @@ func TestClusterManagerImpl_Integration_ErrorHandling(t *testing.T) {
 
 	t.Run("get nonexistent cluster", func(t *testing.T) {
 		nonexistentName := "definitely-does-not-exist-cluster-12345"
-		
+
 		_, err := clusterManager.Get(ctx, nonexistentName)
 		if err == nil {
 			t.Errorf("Expected error for nonexistent cluster, got none")
@@ -380,7 +379,7 @@ func TestClusterManagerImpl_Integration_ConcurrentAccess(t *testing.T) {
 					Page:     1,
 					PageSize: 10,
 				}
-				
+
 				_, err := clusterManager.List(ctx, opts)
 				done <- err
 			}(i)
@@ -440,29 +439,30 @@ func TestClusterManagerImpl_Integration_ConcurrentAccess(t *testing.T) {
 func setupIntegrationClient(t *testing.T) *WrapperClient {
 	// This would be configured based on your integration test environment
 	// For now, return nil to skip tests when integration environment is not available
-	
+
 	// Example setup (uncomment and modify for your environment):
 	/*
-	baseURL := os.Getenv("SLURM_REST_URL")
-	if baseURL == "" {
-		baseURL = "http://localhost:6820" // Default SLURM REST API port
-	}
+		baseURL := os.Getenv("SLURM_REST_URL")
+		if baseURL == "" {
+			baseURL = "http://localhost:6820" // Default SLURM REST API port
+		}
 
-	token := os.Getenv("SLURM_REST_TOKEN")
-	if token == "" {
-		t.Skip("SLURM_REST_TOKEN not set, skipping integration tests")
-	}
+		token := os.Getenv("SLURM_REST_TOKEN")
+		if token == "" {
+			t.Skip("SLURM_REST_TOKEN not set, skipping integration tests")
+		}
 
-	client, err := NewClientWithResponses(baseURL, WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
-		req.Header.Set("X-SLURM-USER-NAME", "test-user")
-		req.Header.Set("X-SLURM-USER-TOKEN", token)
-		return nil
-	}))
-	if err != nil {
-		t.Fatalf("Failed to create test client: %v", err)
-	}
+		client, err := NewClientWithResponses(baseURL, WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
+			req.Header.Set("X-SLURM-USER-NAME", "test-user")
+			req.Header.Set("X-SLURM-USER-TOKEN", token)
+			return nil
+		}))
+		if err != nil {
+			t.Fatalf("Failed to create test client: %v", err)
+		}
 
-	return &WrapperClient{apiClient: client}
+		return &WrapperClient{apiClient: client}
+	*/
 
 	// For now, skip integration tests
 	return nil

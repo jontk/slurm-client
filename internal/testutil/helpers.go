@@ -37,7 +37,6 @@ func AssertNoError(t *testing.T, err error, msgAndArgs ...interface{}) {
 	}
 }
 
-
 // CompareQoSFields compares two QoS objects field by field for testing
 type QoSComparison struct {
 	IgnoreTimestamps bool
@@ -63,7 +62,7 @@ func PtrSlice[T any](values []T) []*T {
 func TestAdapterBehavior(t *testing.T, adapter common.VersionAdapter) {
 	ctx := TestContext(t)
 	qosManager := adapter.GetQoSManager()
-	
+
 	t.Run("List empty", func(t *testing.T) {
 		// This assumes the adapter starts empty or we can clear it
 		// In real tests, you might want to set up a clean state
@@ -71,18 +70,18 @@ func TestAdapterBehavior(t *testing.T, adapter common.VersionAdapter) {
 		AssertNoError(t, err)
 		require.NotNil(t, list)
 	})
-	
+
 	t.Run("Create and Get", func(t *testing.T) {
 		createReq := &types.QoSCreate{
 			Name:        "test-qos-" + time.Now().Format("20060102150405"),
 			Description: "Test QoS",
 			Priority:    100,
 		}
-		
+
 		resp, err := qosManager.Create(ctx, createReq)
 		AssertNoError(t, err)
 		require.Equal(t, createReq.Name, resp.QoSName)
-		
+
 		// Get the created QoS
 		qos, err := qosManager.Get(ctx, createReq.Name)
 		AssertNoError(t, err)
@@ -90,7 +89,7 @@ func TestAdapterBehavior(t *testing.T, adapter common.VersionAdapter) {
 		require.Equal(t, createReq.Description, qos.Description)
 		require.Equal(t, createReq.Priority, qos.Priority)
 	})
-	
+
 	t.Run("Update", func(t *testing.T) {
 		// Create a QoS first
 		name := "update-test-" + time.Now().Format("20060102150405")
@@ -99,40 +98,40 @@ func TestAdapterBehavior(t *testing.T, adapter common.VersionAdapter) {
 			Description: "Original description",
 			Priority:    50,
 		}
-		
+
 		_, err := qosManager.Create(ctx, createReq)
 		AssertNoError(t, err)
-		
+
 		// Update it
 		updateReq := &types.QoSUpdate{
 			Description: Ptr("Updated description"),
 			Priority:    Ptr(100),
 		}
-		
+
 		err = qosManager.Update(ctx, name, updateReq)
 		AssertNoError(t, err)
-		
+
 		// Verify the update
 		updated, err := qosManager.Get(ctx, name)
 		AssertNoError(t, err)
 		require.Equal(t, "Updated description", updated.Description)
 		require.Equal(t, 100, updated.Priority)
 	})
-	
+
 	t.Run("Delete", func(t *testing.T) {
 		// Create a QoS first
 		name := "delete-test-" + time.Now().Format("20060102150405")
 		createReq := &types.QoSCreate{
 			Name: name,
 		}
-		
+
 		_, err := qosManager.Create(ctx, createReq)
 		AssertNoError(t, err)
-		
+
 		// Delete it
 		err = qosManager.Delete(ctx, name)
 		AssertNoError(t, err)
-		
+
 		// Verify it's gone
 		_, err = qosManager.Get(ctx, name)
 		require.Error(t, err)

@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -103,7 +103,7 @@ func TestUserManagerImpl_v0_0_42_Coverage(t *testing.T) {
 		assert.Error(t, err)
 		assert.True(t, errors.IsValidationError(err) || errors.IsClientError(err))
 
-		// Empty account name  
+		// Empty account name
 		_, err = manager.ValidateUserAccountAccess(ctx, "user", "")
 		assert.Error(t, err)
 		assert.True(t, errors.IsValidationError(err) || errors.IsClientError(err))

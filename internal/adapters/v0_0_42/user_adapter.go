@@ -295,9 +295,7 @@ func (a *UserAdapter) CreateAssociation(ctx context.Context, req *types.UserAsso
 func (a *UserAdapter) convertUserAssociationRequestToAPI(req *types.UserAssociationRequest) (*api.V0042OpenapiUsersAddCondResp, error) {
 	// Create users list from string slice
 	users := make(api.V0042StringList, len(req.Users))
-	for i, user := range req.Users {
-		users[i] = user
-	}
+	copy(users, req.Users)
 
 	// Create association condition
 	assocCond := api.V0042UsersAddCond{

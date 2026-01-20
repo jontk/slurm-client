@@ -216,7 +216,7 @@ echo "Job completed successfully"`,
 				continue
 			}
 
-			fmt.Printf("Job %d status: %s (runtime: %s)\n", 
+			fmt.Printf("Job %d status: %s (runtime: %s)\n",
 				jobID, job.State, formatDuration(job.RunTime))
 
 			if isJobFinished(job.State) {

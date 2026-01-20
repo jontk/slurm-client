@@ -6,12 +6,11 @@ package v0_0_41
 import (
 	"context"
 	"fmt"
-	"strings"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
 	"github.com/jontk/slurm-client/pkg/errors"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 )
 
 // UserAdapter implements the UserAdapter interface for v0.0.41
@@ -200,10 +199,10 @@ func (a *UserAdapter) Create(ctx context.Context, req *types.UserCreate) (*types
 
 	// Convert request to user for API call
 	user := &types.User{
-		Name: req.Name,
+		Name:           req.Name,
 		DefaultAccount: req.DefaultAccount,
-		DefaultWCKey: req.DefaultWCKey,
-		AdminLevel: req.AdminLevel,
+		DefaultWCKey:   req.DefaultWCKey,
+		AdminLevel:     req.AdminLevel,
 	}
 
 	// Convert user to API request
@@ -381,34 +380,6 @@ func (a *UserAdapter) SetCoordinatorStatus(ctx context.Context, name string, acc
 // Helper function to create string pointer
 func ptr(s string) *string {
 	return &s
-}
-
-// convertAdminLevelToAPI converts common admin level to API admin level
-func convertAdminLevelToAPI(level string) api.SlurmdbV0041GetUsersParamsAdminLevel {
-	switch strings.ToLower(level) {
-	case "administrator":
-		return api.SlurmdbV0041GetUsersParamsAdminLevelAdministrator
-	case "operator":
-		return api.SlurmdbV0041GetUsersParamsAdminLevelOperator
-	case "none":
-		return api.SlurmdbV0041GetUsersParamsAdminLevelNone
-	default:
-		return api.SlurmdbV0041GetUsersParamsAdminLevelNone
-	}
-}
-
-// convertUserAdminLevelToAPI converts common admin level to association API admin level
-func convertUserAdminLevelToAPI(level string) api.V0041OpenapiUsersAddCondRespUserAdminlevel {
-	switch strings.ToLower(level) {
-	case "administrator":
-		return api.V0041OpenapiUsersAddCondRespUserAdminlevelAdministrator
-	case "operator":
-		return api.V0041OpenapiUsersAddCondRespUserAdminlevelOperator
-	case "none":
-		return api.V0041OpenapiUsersAddCondRespUserAdminlevelNone
-	default:
-		return api.V0041OpenapiUsersAddCondRespUserAdminlevelNone
-	}
 }
 
 // CreateAssociation creates associations for users (not supported in v0.0.41)

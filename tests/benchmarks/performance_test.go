@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/performance"
 	"github.com/jontk/slurm-client/tests/mocks"
@@ -59,9 +59,9 @@ func benchmarkJobOperationsWithProfile(b *testing.B, profile performance.Perform
 	// Pre-populate some jobs for listing/getting
 	for i := 0; i < 100; i++ {
 		job := &mocks.MockJob{
-			JobID:     fmt.Sprintf("bench-%d", i),
+			JobID:     int32(2000 + i), // Start from 2000 to avoid conflicts with default jobs
 			Name:      fmt.Sprintf("benchmark-job-%d", i),
-			UserID:    "benchuser",
+			UserID:    1001, // benchuser UID
 			State:     "RUNNING",
 			Partition: "compute",
 			CPUs:      2,
@@ -184,7 +184,7 @@ func benchmarkCaching(b *testing.B, profile performance.PerformanceProfile) {
 				testParams[k] = v
 			}
 			testParams["offset"] = i // Make each entry unique
-			
+
 			cache.Set(operation, testParams, value)
 		}
 	})
@@ -208,7 +208,7 @@ func benchmarkCaching(b *testing.B, profile performance.PerformanceProfile) {
 				testParams[k] = v
 			}
 			testParams["offset"] = i % 1000
-			
+
 			_, found := cache.Get(operation, testParams)
 			if !found && i%1000 < 500 {
 				// Should find about half the items
@@ -258,7 +258,7 @@ func benchmarkConcurrentAccess(b *testing.B, concurrency int) {
 		go func(clientIndex int) {
 			defer wg.Done()
 			client := clients[clientIndex]
-			
+
 			operationsPerWorker := operations / concurrency
 			if clientIndex == concurrency-1 {
 				operationsPerWorker += operations % concurrency
@@ -306,7 +306,7 @@ func benchmarkMemoryUsage(b *testing.B, profile performance.PerformanceProfile) 
 	// Create connection pool and cache with the given profile
 	poolManager := performance.NewHTTPClientPoolManager()
 	cacheManager := performance.NewCacheManager(performance.GetCacheConfigForProfile(profile))
-	
+
 	defer poolManager.Close()
 	defer cacheManager.Close()
 
@@ -330,14 +330,14 @@ func benchmarkMemoryUsage(b *testing.B, profile performance.PerformanceProfile) 
 	for i := 0; i < b.N; i++ {
 		client := clients[i%10]
 		ctx := context.Background()
-		
+
 		_, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
 			Limit: 100,
 		})
 		if err != nil {
 			// Expected to fail with current implementation
 		}
-		
+
 		// Add some cache operations
 		cache := cacheManager.GetCache("v0.0.42")
 		params := map[string]interface{}{"iteration": i}
@@ -352,7 +352,7 @@ func benchmarkMemoryUsage(b *testing.B, profile performance.PerformanceProfile) 
 	// Report memory statistics
 	allocatedMB := float64(m2.Alloc-m1.Alloc) / (1024 * 1024)
 	b.ReportMetric(allocatedMB, "MB_allocated")
-	
+
 	totalAllocMB := float64(m2.TotalAlloc-m1.TotalAlloc) / (1024 * 1024)
 	b.ReportMetric(totalAllocMB, "MB_total_alloc")
 }
@@ -397,8 +397,8 @@ func BenchmarkCacheHitRatio(b *testing.B) {
 // BenchmarkResponseTime measures response times for different scenarios
 func BenchmarkResponseTime(b *testing.B) {
 	scenarios := []struct {
-		name      string
-		delay     time.Duration
+		name         string
+		delay        time.Duration
 		cacheEnabled bool
 	}{
 		{"NoDelay_NoCache", 0, false},
@@ -441,7 +441,7 @@ func benchmarkResponseTime(b *testing.B, delay time.Duration, cacheEnabled bool)
 	var totalDuration time.Duration
 	for i := 0; i < b.N; i++ {
 		start := time.Now()
-		
+
 		// Simulate cache check if enabled
 		if cacheEnabled && cache != nil {
 			params := map[string]interface{}{"iteration": i % 10} // Some cache hits
@@ -457,17 +457,17 @@ func benchmarkResponseTime(b *testing.B, delay time.Duration, cacheEnabled bool)
 		_, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
 			Limit: 10,
 		})
-		
+
 		duration := time.Since(start)
 		totalDuration += duration
-		
+
 		// Add to cache if enabled
 		if cacheEnabled && cache != nil && err == nil {
 			params := map[string]interface{}{"iteration": i % 10}
 			value := []byte(`{"jobs": []}`)
 			cache.Set("jobs.list", params, value)
 		}
-		
+
 		if err != nil {
 			// Expected to fail with current implementation
 		}
@@ -598,7 +598,7 @@ func benchmarkUserAccountQuery(b *testing.B, operation string, useCache bool) {
 
 		case "bulk_user_accounts":
 			// Benchmark GetBulkUserAccounts
-			userCount := 10 + (i%20)
+			userCount := 10 + (i % 20)
 			userNames := make([]string, userCount)
 			for j := 0; j < userCount; j++ {
 				userNames[j] = fmt.Sprintf("user%d", j)
@@ -622,8 +622,8 @@ func benchmarkUserAccountQuery(b *testing.B, operation string, useCache bool) {
 // BenchmarkFairShareCalculations tests performance of fair-share related operations
 func BenchmarkFairShareCalculations(b *testing.B) {
 	scenarios := []struct {
-		name        string
-		operation   string
+		name           string
+		operation      string
 		hierarchyDepth int
 	}{
 		{"GetUserFairShare", "user_fair_share", 0},
@@ -682,19 +682,19 @@ func benchmarkFairShareOperation(b *testing.B, operation string, hierarchyDepth 
 		case "job_priority":
 			// Create job submission with varying complexity
 			jobSubmission := &interfaces.JobSubmission{
-				Script:    "#!/bin/bash\necho 'benchmark job'",
+				Script: "#!/bin/bash\necho 'benchmark job'",
 				// Account field doesn't exist in JobSubmission
 				Partition: "compute",
 				CPUs:      1 + (i % 16),
 				Memory:    1024 * (1 + (i % 8)),
 			}
-			
+
 			if hierarchyDepth > 1 {
 				// Add more complex resource requirements
 				jobSubmission.TimeLimit = 60 * (1 + (i % 24)) // in minutes
 				jobSubmission.Nodes = 1 + (i % 4)
 			}
-			
+
 			userName := fmt.Sprintf("user%d", i%100)
 			_, _ = userManager.CalculateJobPriority(ctx, userName, jobSubmission)
 		}
@@ -704,7 +704,7 @@ func benchmarkFairShareOperation(b *testing.B, operation string, hierarchyDepth 
 // BenchmarkHierarchyTraversal tests performance of account hierarchy navigation
 func BenchmarkHierarchyTraversal(b *testing.B) {
 	depths := []int{1, 3, 5, 10}
-	
+
 	for _, depth := range depths {
 		b.Run(fmt.Sprintf("Depth_%d", depth), func(b *testing.B) {
 			benchmarkHierarchyTraversal(b, depth)
@@ -750,7 +750,7 @@ func benchmarkHierarchyTraversal(b *testing.B, maxDepth int) {
 // BenchmarkConcurrentUserAccountOperations tests concurrent access patterns
 func BenchmarkConcurrentUserAccountOperations(b *testing.B) {
 	concurrencyLevels := []int{1, 5, 10, 20}
-	
+
 	for _, concurrency := range concurrencyLevels {
 		b.Run(fmt.Sprintf("Concurrency_%d", concurrency), func(b *testing.B) {
 			benchmarkConcurrentUserAccountOps(b, concurrency)
@@ -763,7 +763,7 @@ func benchmarkConcurrentUserAccountOps(b *testing.B, concurrency int) {
 	defer mockServer.Close()
 
 	ctx := context.Background()
-	
+
 	// Create pool of clients
 	clients := make([]interfaces.SlurmClient, concurrency)
 	for i := 0; i < concurrency; i++ {
@@ -783,17 +783,17 @@ func benchmarkConcurrentUserAccountOps(b *testing.B, concurrency int) {
 	// Run concurrent operations
 	var wg sync.WaitGroup
 	opsPerWorker := b.N / concurrency
-	
+
 	start := time.Now()
-	
+
 	for i := 0; i < concurrency; i++ {
 		wg.Add(1)
 		go func(workerID int, client interfaces.SlurmClient) {
 			defer wg.Done()
-			
+
 			userManager := client.Users()
 			accountManager := client.Accounts()
-			
+
 			for j := 0; j < opsPerWorker; j++ {
 				opType := j % 5
 				switch opType {
@@ -822,13 +822,13 @@ func benchmarkConcurrentUserAccountOps(b *testing.B, concurrency int) {
 			}
 		}(i, clients[i])
 	}
-	
+
 	wg.Wait()
-	
+
 	duration := time.Since(start)
 	totalOps := concurrency * opsPerWorker
 	opsPerSecond := float64(totalOps) / duration.Seconds()
-	
+
 	b.ReportMetric(opsPerSecond, "ops/sec")
 	b.ReportMetric(float64(duration.Nanoseconds())/float64(totalOps)/1e6, "ms/op")
 }

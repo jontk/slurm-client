@@ -133,8 +133,8 @@ func TestAccountBaseManager_FilterAccountList(t *testing.T) {
 		expected []string
 	}{
 		{
-			name: "no filters",
-			opts: nil,
+			name:     "no filters",
+			opts:     nil,
 			expected: []string{"account1", "account2", "account3"},
 		},
 		{
@@ -164,4 +164,3 @@ func TestAccountBaseManager_FilterAccountList(t *testing.T) {
 		})
 	}
 }
-

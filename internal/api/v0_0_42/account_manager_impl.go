@@ -6,7 +6,7 @@ package v0_0_42
 import (
 	"context"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -257,6 +257,6 @@ func (a *AccountManagerImpl) GetFairShareHierarchy(ctx context.Context, rootAcco
 }
 
 // CreateAssociation creates a user-account association
-func (m *AccountManagerImpl) CreateAssociation(ctx context.Context, userName, accountName string, opts *interfaces.AssociationOptions) (*interfaces.AssociationCreateResponse, error) {
+func (a *AccountManagerImpl) CreateAssociation(ctx context.Context, userName, accountName string, opts *interfaces.AssociationOptions) (*interfaces.AssociationCreateResponse, error) {
 	return nil, errors.NewNotImplementedError("CreateAssociation", "v0.0.42")
 }

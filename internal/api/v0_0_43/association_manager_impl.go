@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -27,7 +27,7 @@ func NewAssociationManagerImpl(client *WrapperClient) *AssociationManagerImpl {
 
 // List retrieves a list of associations with optional filtering
 func (a *AssociationManagerImpl) List(ctx context.Context, opts *interfaces.ListAssociationsOptions) (*interfaces.AssociationList, error) {
-	if a.client == nil || a.client.apiClient == nil {
+	if a.client == nil || a.client.apiClient == nil || a.client.apiClient.ClientInterface == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
@@ -102,7 +102,7 @@ func (a *AssociationManagerImpl) List(ctx context.Context, opts *interfaces.List
 		if err != nil {
 			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert association data")
 			conversionErr.Cause = err
-			conversionErr.Details = fmt.Sprintf("Error converting association data")
+			conversionErr.Details = "Error converting association data"
 			return nil, conversionErr
 		}
 		associations = append(associations, assoc)
@@ -117,12 +117,14 @@ func (a *AssociationManagerImpl) List(ctx context.Context, opts *interfaces.List
 
 // Get retrieves a specific association
 func (a *AssociationManagerImpl) Get(ctx context.Context, opts *interfaces.GetAssociationOptions) (*interfaces.Association, error) {
-	if a.client == nil || a.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	// Validate input first (cheap check)
+	if opts == nil || opts.User == "" || opts.Account == "" {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "User and Account are required", "opts", opts, nil)
 	}
 
-	if opts == nil || opts.User == "" || opts.Account == "" {
-		return nil, errors.NewClientError(errors.ErrorCodeValidationFailed, "User and Account are required")
+	// Then check client initialization
+	if a.client == nil || a.client.apiClient == nil || a.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Prepare parameters for the API call
@@ -172,12 +174,14 @@ func (a *AssociationManagerImpl) Get(ctx context.Context, opts *interfaces.GetAs
 
 // Create creates new associations
 func (a *AssociationManagerImpl) Create(ctx context.Context, associations []*interfaces.AssociationCreate) (*interfaces.AssociationCreateResponse, error) {
-	if a.client == nil || a.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	// Validate input first (cheap check)
+	if len(associations) == 0 {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "At least one association is required", "associations", associations, nil)
 	}
 
-	if len(associations) == 0 {
-		return nil, errors.NewClientError(errors.ErrorCodeValidationFailed, "At least one association is required")
+	// Then check client initialization
+	if a.client == nil || a.client.apiClient == nil || a.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Convert interface types to API types
@@ -277,12 +281,14 @@ func (a *AssociationManagerImpl) Create(ctx context.Context, associations []*int
 
 // Update updates existing associations
 func (a *AssociationManagerImpl) Update(ctx context.Context, associations []*interfaces.AssociationUpdate) error {
-	if a.client == nil || a.client.apiClient == nil {
-		return errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	// Validate input first (cheap check)
+	if len(associations) == 0 {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "At least one association update is required", "associations", associations, nil)
 	}
 
-	if len(associations) == 0 {
-		return errors.NewClientError(errors.ErrorCodeValidationFailed, "At least one association update is required")
+	// Then check client initialization
+	if a.client == nil || a.client.apiClient == nil || a.client.apiClient.ClientInterface == nil {
+		return errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Convert interface types to API types
@@ -350,12 +356,14 @@ func (a *AssociationManagerImpl) Update(ctx context.Context, associations []*int
 
 // Delete deletes a single association
 func (a *AssociationManagerImpl) Delete(ctx context.Context, opts *interfaces.DeleteAssociationOptions) error {
-	if a.client == nil || a.client.apiClient == nil {
-		return errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	// Validate input first (cheap check)
+	if opts == nil || opts.User == "" || opts.Account == "" {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "User and Account are required", "opts", opts, nil)
 	}
 
-	if opts == nil || opts.User == "" || opts.Account == "" {
-		return errors.NewClientError(errors.ErrorCodeValidationFailed, "User and Account are required")
+	// Then check client initialization
+	if a.client == nil || a.client.apiClient == nil || a.client.apiClient.ClientInterface == nil {
+		return errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Prepare parameters for the API call
@@ -388,12 +396,14 @@ func (a *AssociationManagerImpl) Delete(ctx context.Context, opts *interfaces.De
 
 // BulkDelete deletes multiple associations
 func (a *AssociationManagerImpl) BulkDelete(ctx context.Context, opts *interfaces.BulkDeleteOptions) (*interfaces.BulkDeleteResponse, error) {
-	if a.client == nil || a.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	// Validate input first (cheap check)
+	if opts == nil {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "BulkDeleteOptions is required", "opts", opts, nil)
 	}
 
-	if opts == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeValidationFailed, "BulkDeleteOptions is required")
+	// Then check client initialization
+	if a.client == nil || a.client.apiClient == nil || a.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Prepare parameters for the API call

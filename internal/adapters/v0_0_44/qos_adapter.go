@@ -7,10 +7,10 @@ import (
 	"context"
 	"strings"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 )
 
 // QoSAdapter implements the QoSAdapter interface for v0.0.44
@@ -93,10 +93,7 @@ func (a *QoSAdapter) List(ctx context.Context, opts *types.QoSListOptions) (*typ
 	}
 
 	// Apply pagination using base manager
-	listOpts := base.ListOptions{
-		Limit:  opts.Limit,
-		Offset: opts.Offset,
-	}
+	listOpts := base.ListOptions{}
 	if opts != nil {
 		listOpts.Limit = opts.Limit
 		listOpts.Offset = opts.Offset
@@ -134,7 +131,7 @@ func (a *QoSAdapter) Get(ctx context.Context, qosName string) (*types.QoS, error
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(qosName, "qosName"); err != nil {
+	if err := a.ValidateResourceName(qosName, "QoS name"); err != nil {
 		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -304,7 +301,7 @@ func (a *QoSAdapter) Update(ctx context.Context, qosName string, update *types.Q
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(qosName, "qosName"); err != nil {
+	if err := a.ValidateResourceName(qosName, "QoS name"); err != nil {
 		return err
 	}
 	if err := a.ValidateQoSUpdate(update); err != nil {
@@ -419,7 +416,7 @@ func (a *QoSAdapter) Delete(ctx context.Context, qosName string) error {
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(qosName, "qosName"); err != nil {
+	if err := a.ValidateResourceName(qosName, "QoS name"); err != nil {
 		return err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {

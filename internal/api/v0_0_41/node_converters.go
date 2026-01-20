@@ -7,59 +7,59 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 )
 
 // convertNodeFromAPI converts v0.0.41 API node struct to interfaces.Node
 func convertNodeFromAPI(apiNode interface{}) interfaces.Node {
 	// Type assertion to handle the actual API response structure
 	nodeData, ok := apiNode.(struct {
-		ActiveFeatures      *[]string `json:"active_features,omitempty"`
-		Address             *string   `json:"address,omitempty"`
-		AllocCpus           *int32    `json:"alloc_cpus,omitempty"`
-		AllocIdleCpus       *int32    `json:"alloc_idle_cpus,omitempty"`
-		AllocMemory         *int64    `json:"alloc_memory,omitempty"`
-		Architecture        *string   `json:"architecture,omitempty"`
-		Boards              *int32    `json:"boards,omitempty"`
-		BootTime            *struct {
+		ActiveFeatures *[]string `json:"active_features,omitempty"`
+		Address        *string   `json:"address,omitempty"`
+		AllocCpus      *int32    `json:"alloc_cpus,omitempty"`
+		AllocIdleCpus  *int32    `json:"alloc_idle_cpus,omitempty"`
+		AllocMemory    *int64    `json:"alloc_memory,omitempty"`
+		Architecture   *string   `json:"architecture,omitempty"`
+		Boards         *int32    `json:"boards,omitempty"`
+		BootTime       *struct {
 			Infinite *bool  `json:"infinite,omitempty"`
 			Number   *int64 `json:"number,omitempty"`
 			Set      *bool  `json:"set,omitempty"`
 		} `json:"boot_time,omitempty"`
-		BurstbufferNetworkAddress *string `json:"burstbuffer_network_address,omitempty"`
-		ClusterName          *string `json:"cluster_name,omitempty"`
-		Comment              *string `json:"comment,omitempty"`
-		Cores                *int32  `json:"cores,omitempty"`
-		CpuBinding           *int32  `json:"cpu_binding,omitempty"`
-		CpuLoad              *int32  `json:"cpu_load,omitempty"`
-		Cpus                 *int32  `json:"cpus,omitempty"`
-		EffectiveCpus        *int32  `json:"effective_cpus,omitempty"`
-		Features             *[]string `json:"features,omitempty"`
-		FreeMem              *struct {
+		BurstbufferNetworkAddress *string   `json:"burstbuffer_network_address,omitempty"`
+		ClusterName               *string   `json:"cluster_name,omitempty"`
+		Comment                   *string   `json:"comment,omitempty"`
+		Cores                     *int32    `json:"cores,omitempty"`
+		CpuBinding                *int32    `json:"cpu_binding,omitempty"`
+		CpuLoad                   *int32    `json:"cpu_load,omitempty"`
+		Cpus                      *int32    `json:"cpus,omitempty"`
+		EffectiveCpus             *int32    `json:"effective_cpus,omitempty"`
+		Features                  *[]string `json:"features,omitempty"`
+		FreeMem                   *struct {
 			Infinite *bool  `json:"infinite,omitempty"`
 			Number   *int64 `json:"number,omitempty"`
 			Set      *bool  `json:"set,omitempty"`
 		} `json:"free_mem,omitempty"`
-		Hostname            *string   `json:"hostname,omitempty"`
-		Name                *string   `json:"name,omitempty"`
+		Hostname             *string                                           `json:"hostname,omitempty"`
+		Name                 *string                                           `json:"name,omitempty"`
 		NextStateAfterReboot *[]V0041OpenapiNodesRespNodesNextStateAfterReboot `json:"next_state_after_reboot,omitempty"`
-		OperatingSystem     *string   `json:"operating_system,omitempty"`
-		Owner               *string   `json:"owner,omitempty"`
-		Partitions          *[]string `json:"partitions,omitempty"`
-		Port                *int32    `json:"port,omitempty"`
-		RealMemory          *int64    `json:"real_memory,omitempty"`
-		Reason              *string   `json:"reason,omitempty"`
-		ReasonChangedAt     *struct {
+		OperatingSystem      *string                                           `json:"operating_system,omitempty"`
+		Owner                *string                                           `json:"owner,omitempty"`
+		Partitions           *[]string                                         `json:"partitions,omitempty"`
+		Port                 *int32                                            `json:"port,omitempty"`
+		RealMemory           *int64                                            `json:"real_memory,omitempty"`
+		Reason               *string                                           `json:"reason,omitempty"`
+		ReasonChangedAt      *struct {
 			Infinite *bool  `json:"infinite,omitempty"`
 			Number   *int64 `json:"number,omitempty"`
 			Set      *bool  `json:"set,omitempty"`
 		} `json:"reason_changed_at,omitempty"`
-		ReasonSetByUser     *string   `json:"reason_set_by_user,omitempty"`
-		Sockets             *int32    `json:"sockets,omitempty"`
-		State               *[]V0041OpenapiNodesRespNodesState `json:"state,omitempty"`
-		TemporaryDisk       *int32    `json:"temporary_disk,omitempty"`
-		Threads             *int32    `json:"threads,omitempty"`
-		Weight              *int32    `json:"weight,omitempty"`
+		ReasonSetByUser *string                            `json:"reason_set_by_user,omitempty"`
+		Sockets         *int32                             `json:"sockets,omitempty"`
+		State           *[]V0041OpenapiNodesRespNodesState `json:"state,omitempty"`
+		TemporaryDisk   *int32                             `json:"temporary_disk,omitempty"`
+		Threads         *int32                             `json:"threads,omitempty"`
+		Weight          *int32                             `json:"weight,omitempty"`
 	})
 	if !ok {
 		// If type assertion fails, return empty node

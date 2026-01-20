@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -21,7 +21,7 @@ import (
 func main() {
 	// Create configuration
 	cfg := config.NewDefault()
-	
+
 	// Override with environment variables if needed
 	if url := os.Getenv("SLURM_REST_URL"); url != "" {
 		cfg.BaseURL = url
@@ -55,10 +55,10 @@ func main() {
 	watchOpts := &interfaces.WatchNodesOptions{
 		// Watch specific node states (optional)
 		// States: []string{"DOWN", "DRAINING"},
-		
+
 		// Watch specific nodes (optional)
 		// NodeNames: []string{"node-001", "node-002"},
-		
+
 		// Watch nodes in specific partition (optional)
 		// Partition: "gpu",
 	}
@@ -66,7 +66,7 @@ func main() {
 	// Start watching for node events
 	fmt.Println("Starting to watch for node events...")
 	fmt.Println("Press Ctrl+C to stop")
-	
+
 	watchCtx, cancelWatch := context.WithCancel(ctx)
 	defer cancelWatch()
 
@@ -96,7 +96,7 @@ func main() {
 					event.NodeName,
 					event.NewState)
 				if event.Node != nil {
-					fmt.Printf("  CPUs: %d, Memory: %d MB, Partitions: %v\n", 
+					fmt.Printf("  CPUs: %d, Memory: %d MB, Partitions: %v\n",
 						event.Node.CPUs, event.Node.Memory, event.Node.Partitions)
 				}
 
@@ -106,13 +106,13 @@ func main() {
 					event.NodeName,
 					event.OldState,
 					event.NewState)
-				
+
 				// Show additional details for state changes
 				if event.Node != nil {
 					if event.NewState == "DOWN" || event.NewState == "DRAINING" {
 						fmt.Printf("  Reason: %s\n", event.Node.Reason)
 					}
-					fmt.Printf("  CPUs: %d, Memory: %d MB\n", 
+					fmt.Printf("  CPUs: %d, Memory: %d MB\n",
 						event.Node.CPUs, event.Node.Memory)
 				}
 

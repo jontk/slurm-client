@@ -80,21 +80,21 @@ func TestWCKeyBuilder_Clone(t *testing.T) {
 		WithCluster("cluster1")
 
 	clone := original.Clone()
-	
+
 	// Modify clone
 	clone.WithUser("user2")
 
 	// Build both
 	originalWCKey, err := original.Build()
 	require.NoError(t, err)
-	
+
 	cloneWCKey, err := clone.Build()
 	require.NoError(t, err)
 
 	// Verify they're different
 	assert.Equal(t, "user1", originalWCKey.User)
 	assert.Equal(t, "user2", cloneWCKey.User)
-	
+
 	// But share same name and cluster
 	assert.Equal(t, originalWCKey.Name, cloneWCKey.Name)
 	assert.Equal(t, originalWCKey.Cluster, cloneWCKey.Cluster)
@@ -141,8 +141,8 @@ func TestWCKeyBuilder_String(t *testing.T) {
 
 func TestWCKeyBuilder_MultipleErrors(t *testing.T) {
 	builder := NewWCKeyBuilder("test").
-		WithUser("").    // This will add an error
-		WithCluster("")   // This will add another error
+		WithUser("").   // This will add an error
+		WithCluster("") // This will add another error
 
 	_, err := builder.Build()
 	require.Error(t, err)
@@ -153,11 +153,11 @@ func TestWCKeyBuilder_MultipleErrors(t *testing.T) {
 func TestWCKeyBuilder_Chaining(t *testing.T) {
 	// Test that all methods return the builder for chaining
 	builder := NewWCKeyBuilder("test")
-	
+
 	assert.Equal(t, builder, builder.WithUser("user1"))
 	assert.Equal(t, builder, builder.WithCluster("cluster1"))
 	assert.Equal(t, builder, builder.Reset())
-	
+
 	// Even with errors, chaining should work
 	assert.Equal(t, builder, builder.WithUser(""))
 	assert.Equal(t, builder, builder.WithCluster(""))

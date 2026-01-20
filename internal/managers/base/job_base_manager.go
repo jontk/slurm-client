@@ -192,14 +192,14 @@ func (m *JobBaseManager) ValidateArrayString(arrayStr string) error {
 // ValidateJobDependencies validates job dependency specifications
 func (m *JobBaseManager) ValidateJobDependencies(deps []types.JobDependency) error {
 	validTypes := map[string]bool{
-		"after":        true,
-		"afterany":     true,
-		"aftercorr":    true,
-		"afternotok":   true,
-		"afterok":      true,
-		"expand":       true,
-		"singleton":    true,
-		"burstbuffer":  true,
+		"after":       true,
+		"afterany":    true,
+		"aftercorr":   true,
+		"afternotok":  true,
+		"afterok":     true,
+		"expand":      true,
+		"singleton":   true,
+		"burstbuffer": true,
 	}
 
 	for _, dep := range deps {
@@ -229,18 +229,18 @@ func (m *JobBaseManager) ValidateJobDependencies(deps []types.JobDependency) err
 // ValidateMailTypes validates mail notification types
 func (m *JobBaseManager) ValidateMailTypes(mailTypes []string) error {
 	validTypes := map[string]bool{
-		"NONE":       true,
-		"BEGIN":      true,
-		"END":        true,
-		"FAIL":       true,
-		"REQUEUE":    true,
-		"ALL":        true,
-		"STAGE_OUT":  true,
-		"TIME_LIMIT": true,
+		"NONE":          true,
+		"BEGIN":         true,
+		"END":           true,
+		"FAIL":          true,
+		"REQUEUE":       true,
+		"ALL":           true,
+		"STAGE_OUT":     true,
+		"TIME_LIMIT":    true,
 		"TIME_LIMIT_90": true,
 		"TIME_LIMIT_80": true,
 		"TIME_LIMIT_50": true,
-		"ARRAY_TASKS": true,
+		"ARRAY_TASKS":   true,
 	}
 
 	for _, mailType := range mailTypes {

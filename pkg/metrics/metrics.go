@@ -14,22 +14,22 @@ import (
 type Collector interface {
 	// RecordRequest records an API request
 	RecordRequest(method, path string)
-	
+
 	// RecordResponse records an API response
 	RecordResponse(method, path string, statusCode int, duration time.Duration)
-	
+
 	// RecordError records an API error
 	RecordError(method, path string, err error)
-	
+
 	// RecordCacheHit records a cache hit
 	RecordCacheHit(key string)
-	
+
 	// RecordCacheMiss records a cache miss
 	RecordCacheMiss(key string)
-	
+
 	// GetStats returns current metrics statistics
 	GetStats() *Stats
-	
+
 	// Reset resets all metrics
 	Reset()
 }
@@ -37,26 +37,26 @@ type Collector interface {
 // Stats contains aggregated metrics statistics
 type Stats struct {
 	// Request metrics
-	TotalRequests   int64
-	ActiveRequests  int64
-	RequestsByPath  map[string]int64
-	
+	TotalRequests  int64
+	ActiveRequests int64
+	RequestsByPath map[string]int64
+
 	// Response metrics
-	TotalResponses      int64
-	ResponsesByStatus   map[int]int64
-	ResponseTimeStats   DurationStats
-	ResponseTimeByPath  map[string]DurationStats
-	
+	TotalResponses     int64
+	ResponsesByStatus  map[int]int64
+	ResponseTimeStats  DurationStats
+	ResponseTimeByPath map[string]DurationStats
+
 	// Error metrics
-	TotalErrors    int64
-	ErrorsByType   map[string]int64
-	ErrorsByPath   map[string]int64
-	
+	TotalErrors  int64
+	ErrorsByType map[string]int64
+	ErrorsByPath map[string]int64
+
 	// Cache metrics
 	CacheHits   int64
 	CacheMisses int64
 	CacheRatio  float64
-	
+
 	// Timing
 	StartTime time.Time
 	Duration  time.Duration
@@ -74,27 +74,27 @@ type DurationStats struct {
 // InMemoryCollector is an in-memory implementation of Collector
 type InMemoryCollector struct {
 	mu sync.RWMutex
-	
+
 	// Request counters
 	totalRequests  int64
 	activeRequests int64
 	requestsByPath map[string]*int64
-	
+
 	// Response counters
-	totalResponses    int64
-	responsesByStatus map[int]*int64
-	responseTimes     *durationAggregator
+	totalResponses     int64
+	responsesByStatus  map[int]*int64
+	responseTimes      *durationAggregator
 	responseTimeByPath map[string]*durationAggregator
-	
+
 	// Error counters
 	totalErrors  int64
 	errorsByType map[string]*int64
 	errorsByPath map[string]*int64
-	
+
 	// Cache counters
 	cacheHits   int64
 	cacheMisses int64
-	
+
 	// Timing
 	startTime time.Time
 }
@@ -116,7 +116,7 @@ func NewInMemoryCollector() *InMemoryCollector {
 func (c *InMemoryCollector) RecordRequest(method, path string) {
 	atomic.AddInt64(&c.totalRequests, 1)
 	atomic.AddInt64(&c.activeRequests, 1)
-	
+
 	key := method + " " + path
 	incrementMapCounter(&c.mu, c.requestsByPath, key)
 }
@@ -125,13 +125,13 @@ func (c *InMemoryCollector) RecordRequest(method, path string) {
 func (c *InMemoryCollector) RecordResponse(method, path string, statusCode int, duration time.Duration) {
 	atomic.AddInt64(&c.totalResponses, 1)
 	atomic.AddInt64(&c.activeRequests, -1)
-	
+
 	// Record status code
 	incrementMapCounterInt(&c.mu, c.responsesByStatus, statusCode)
-	
+
 	// Record duration
 	c.responseTimes.add(duration)
-	
+
 	// Record duration by path
 	key := method + " " + path
 	c.mu.Lock()
@@ -152,9 +152,9 @@ func (c *InMemoryCollector) RecordError(method, path string, err error) {
 	}
 	atomic.AddInt64(&c.totalErrors, 1)
 	atomic.AddInt64(&c.activeRequests, -1)
-	
+
 	incrementMapCounter(&c.mu, c.errorsByType, errorType)
-	
+
 	key := method + " " + path
 	incrementMapCounter(&c.mu, c.errorsByPath, key)
 }
@@ -187,13 +187,13 @@ func (c *InMemoryCollector) GetStats() *Stats {
 		StartTime:          c.startTime,
 		Duration:           time.Since(c.startTime),
 	}
-	
+
 	// Calculate cache ratio
 	totalCache := stats.CacheHits + stats.CacheMisses
 	if totalCache > 0 {
 		stats.CacheRatio = float64(stats.CacheHits) / float64(totalCache)
 	}
-	
+
 	return stats
 }
 
@@ -201,7 +201,7 @@ func (c *InMemoryCollector) GetStats() *Stats {
 func (c *InMemoryCollector) Reset() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	// Reset atomic counters
 	atomic.StoreInt64(&c.totalRequests, 0)
 	atomic.StoreInt64(&c.activeRequests, 0)
@@ -209,7 +209,7 @@ func (c *InMemoryCollector) Reset() {
 	atomic.StoreInt64(&c.totalErrors, 0)
 	atomic.StoreInt64(&c.cacheHits, 0)
 	atomic.StoreInt64(&c.cacheMisses, 0)
-	
+
 	// Reset maps
 	c.requestsByPath = make(map[string]*int64)
 	c.responsesByStatus = make(map[int]*int64)
@@ -217,7 +217,7 @@ func (c *InMemoryCollector) Reset() {
 	c.responseTimeByPath = make(map[string]*durationAggregator)
 	c.errorsByType = make(map[string]*int64)
 	c.errorsByPath = make(map[string]*int64)
-	
+
 	c.startTime = time.Now()
 }
 
@@ -231,7 +231,7 @@ func incrementMapCounter(mu *sync.RWMutex, m map[string]*int64, key string) {
 		m[key] = counter
 	}
 	mu.Unlock()
-	
+
 	atomic.AddInt64(counter, 1)
 }
 
@@ -245,7 +245,7 @@ func incrementMapCounterInt(mu *sync.RWMutex, m map[int]*int64, key int) {
 		m[key] = counter
 	}
 	mu.Unlock()
-	
+
 	atomic.AddInt64(counter, 1)
 }
 
@@ -253,7 +253,7 @@ func incrementMapCounterInt(mu *sync.RWMutex, m map[int]*int64, key int) {
 func (c *InMemoryCollector) copyMapCounters(m map[string]*int64) map[string]int64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	result := make(map[string]int64, len(m))
 	for k, v := range m {
 		result[k] = atomic.LoadInt64(v)
@@ -265,7 +265,7 @@ func (c *InMemoryCollector) copyMapCounters(m map[string]*int64) map[string]int6
 func (c *InMemoryCollector) copyIntMapCounters(m map[int]*int64) map[int]int64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	result := make(map[int]int64, len(m))
 	for k, v := range m {
 		result[k] = atomic.LoadInt64(v)
@@ -277,7 +277,7 @@ func (c *InMemoryCollector) copyIntMapCounters(m map[int]*int64) map[int]int64 {
 func (c *InMemoryCollector) copyDurationStats(m map[string]*durationAggregator) map[string]DurationStats {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	result := make(map[string]DurationStats, len(m))
 	for k, v := range m {
 		result[k] = v.stats()
@@ -287,11 +287,11 @@ func (c *InMemoryCollector) copyDurationStats(m map[string]*durationAggregator) 
 
 // durationAggregator aggregates duration statistics
 type durationAggregator struct {
-	mu      sync.Mutex
-	count   int64
-	total   time.Duration
-	min     time.Duration
-	max     time.Duration
+	mu    sync.Mutex
+	count int64
+	total time.Duration
+	min   time.Duration
+	max   time.Duration
 }
 
 func newDurationAggregator() *durationAggregator {
@@ -303,10 +303,10 @@ func newDurationAggregator() *durationAggregator {
 func (d *durationAggregator) add(duration time.Duration) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	
+
 	d.count++
 	d.total += duration
-	
+
 	if duration < d.min {
 		d.min = duration
 	}
@@ -318,36 +318,36 @@ func (d *durationAggregator) add(duration time.Duration) {
 func (d *durationAggregator) stats() DurationStats {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	
+
 	stats := DurationStats{
 		Count: d.count,
 		Total: d.total,
 		Min:   d.min,
 		Max:   d.max,
 	}
-	
+
 	if d.count > 0 {
 		stats.Average = time.Duration(int64(d.total) / d.count)
 	}
-	
+
 	// Reset min if no data
 	if d.count == 0 {
 		stats.Min = 0
 	}
-	
+
 	return stats
 }
 
 // NoOpCollector is a no-op implementation of Collector
 type NoOpCollector struct{}
 
-func (NoOpCollector) RecordRequest(method, path string) {}
+func (NoOpCollector) RecordRequest(method, path string)                                          {}
 func (NoOpCollector) RecordResponse(method, path string, statusCode int, duration time.Duration) {}
-func (NoOpCollector) RecordError(method, path string, err error) {}
-func (NoOpCollector) RecordCacheHit(key string) {}
-func (NoOpCollector) RecordCacheMiss(key string) {}
-func (NoOpCollector) GetStats() *Stats { return &Stats{} }
-func (NoOpCollector) Reset() {}
+func (NoOpCollector) RecordError(method, path string, err error)                                 {}
+func (NoOpCollector) RecordCacheHit(key string)                                                  {}
+func (NoOpCollector) RecordCacheMiss(key string)                                                 {}
+func (NoOpCollector) GetStats() *Stats                                                           { return &Stats{} }
+func (NoOpCollector) Reset()                                                                     {}
 
 // Global default collector
 var defaultCollector Collector = &NoOpCollector{}

@@ -377,7 +377,7 @@ func TestTRESUtils_MergeTRESLists(t *testing.T) {
 	}
 
 	list2 := []types.TRES{
-		{Type: "cpu", Count: 8}, // Override
+		{Type: "cpu", Count: 8},  // Override
 		{Type: "node", Count: 1}, // New
 	}
 

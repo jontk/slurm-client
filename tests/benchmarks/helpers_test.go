@@ -30,7 +30,7 @@ func readResponseBody(resp *http.Response) ([]byte, error) {
 // parseJSONResponse parses JSON response body into a map
 func parseJSONResponse(resp *http.Response) (map[string]interface{}, error) {
 	defer resp.Body.Close()
-	
+
 	var result map[string]interface{}
 	err := json.NewDecoder(resp.Body).Decode(&result)
 	return result, err
@@ -54,7 +54,7 @@ func processEfficiencyData(data map[string]interface{}) {
 }
 
 // calculateLatencyStats calculates statistical measures for latency data
-func calculateLatencyStats(latencies []time.Duration) (min, max, avg, p95, p99 time.Duration) {
+func calculateLatencyStats(latencies []time.Duration) (minLatency, maxLatency, avg, p95, p99 time.Duration) {
 	if len(latencies) == 0 {
 		return 0, 0, 0, 0, 0
 	}
@@ -67,8 +67,8 @@ func calculateLatencyStats(latencies []time.Duration) (min, max, avg, p95, p99 t
 	})
 
 	// Min and max
-	min = sorted[0]
-	max = sorted[len(sorted)-1]
+	minLatency = sorted[0]
+	maxLatency = sorted[len(sorted)-1]
 
 	// Average
 	var total time.Duration
@@ -91,19 +91,19 @@ func calculateLatencyStats(latencies []time.Duration) (min, max, avg, p95, p99 t
 	}
 	p99 = sorted[p99Index]
 
-	return min, max, avg, p95, p99
+	return minLatency, maxLatency, avg, p95, p99
 }
 
 // measureOperationTime measures the average time for a repeated operation
 func measureOperationTime(t *testing.T, operation func() error, iterations int) time.Duration {
 	start := time.Now()
-	
+
 	for i := 0; i < iterations; i++ {
 		if err := operation(); err != nil {
 			t.Fatalf("Operation failed on iteration %d: %v", i, err)
 		}
 	}
-	
+
 	totalTime := time.Since(start)
 	return totalTime / time.Duration(iterations)
 }
@@ -204,37 +204,37 @@ func RunLoadTest(endpoint string, concurrency int, duration time.Duration) (*Loa
 
 	start := time.Now()
 	deadline := start.Add(duration)
-	
+
 	requestChan := make(chan bool, concurrency*10) // Buffer for requests
 	resultChan := make(chan bool, concurrency*10)  // Buffer for results
-	
+
 	// Start workers
 	for i := 0; i < concurrency; i++ {
 		go func() {
 			for range requestChan {
 				success := true
 				reqStart := time.Now()
-				
+
 				resp, err := makeHTTPRequest(endpoint)
 				if err != nil {
 					success = false
 				} else {
-					resp.Body.Close()
+					_ = resp.Body.Close() // Ignore error during cleanup
 					if resp.StatusCode != http.StatusOK {
 						success = false
 					}
 				}
-				
+
 				// Track latency for successful requests
 				if success {
 					result.AverageLatency += time.Since(reqStart)
 				}
-				
+
 				resultChan <- success
 			}
 		}()
 	}
-	
+
 	// Send requests until deadline
 	go func() {
 		defer close(requestChan)
@@ -243,7 +243,7 @@ func RunLoadTest(endpoint string, concurrency int, duration time.Duration) (*Loa
 			result.TotalRequests++
 		}
 	}()
-	
+
 	// Collect results
 	for i := 0; i < result.TotalRequests; i++ {
 		success := <-resultChan
@@ -253,55 +253,55 @@ func RunLoadTest(endpoint string, concurrency int, duration time.Duration) (*Loa
 			result.FailedRequests++
 		}
 	}
-	
+
 	result.TotalTime = time.Since(start)
-	
+
 	if result.SuccessfulRequests > 0 {
 		result.AverageLatency = result.AverageLatency / time.Duration(result.SuccessfulRequests)
 	}
-	
+
 	result.RequestsPerSecond = float64(result.TotalRequests) / result.TotalTime.Seconds()
 	result.ErrorRate = (float64(result.FailedRequests) / float64(result.TotalRequests)) * 100
-	
+
 	return result, nil
 }
 
 // ValidatePerformanceThresholds validates that performance metrics meet specified thresholds
 func ValidatePerformanceThresholds(metrics *PerformanceMetrics, thresholds map[string]interface{}) []string {
 	var violations []string
-	
+
 	if maxAvgTime, ok := thresholds["max_average_time"].(time.Duration); ok {
 		if metrics.AverageTime > maxAvgTime {
-			violations = append(violations, fmt.Sprintf("Average time %v exceeds threshold %v", 
+			violations = append(violations, fmt.Sprintf("Average time %v exceeds threshold %v",
 				metrics.AverageTime, maxAvgTime))
 		}
 	}
-	
+
 	if minRPS, ok := thresholds["min_requests_per_second"].(float64); ok {
 		if metrics.RequestsPerSecond < minRPS {
-			violations = append(violations, fmt.Sprintf("Requests per second %.2f below threshold %.2f", 
+			violations = append(violations, fmt.Sprintf("Requests per second %.2f below threshold %.2f",
 				metrics.RequestsPerSecond, minRPS))
 		}
 	}
-	
+
 	if maxMemory, ok := thresholds["max_memory_bytes"].(int64); ok {
 		if metrics.MemoryBytes > maxMemory {
-			violations = append(violations, fmt.Sprintf("Memory usage %d bytes exceeds threshold %d bytes", 
+			violations = append(violations, fmt.Sprintf("Memory usage %d bytes exceeds threshold %d bytes",
 				metrics.MemoryBytes, maxMemory))
 		}
 	}
-	
+
 	return violations
 }
 
 // BenchmarkConfig holds configuration for benchmark execution
 type BenchmarkConfig struct {
-	Iterations    int
-	Concurrency   int
-	Duration      time.Duration
-	WarmupRounds  int
-	Endpoints     []string
-	Thresholds    map[string]interface{}
+	Iterations   int
+	Concurrency  int
+	Duration     time.Duration
+	WarmupRounds int
+	Endpoints    []string
+	Thresholds   map[string]interface{}
 }
 
 // DefaultBenchmarkConfig returns a default benchmark configuration

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -27,7 +27,7 @@ func NewUserManagerImpl(client *WrapperClient) *UserManagerImpl {
 
 // List retrieves a list of users with optional filtering
 func (u *UserManagerImpl) List(ctx context.Context, opts *interfaces.ListUsersOptions) (*interfaces.UserList, error) {
-	if u.client == nil || u.client.apiClient == nil {
+	if u.client == nil || u.client.apiClient == nil || u.client.apiClient.ClientInterface == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
@@ -95,7 +95,7 @@ func (u *UserManagerImpl) List(ctx context.Context, opts *interfaces.ListUsersOp
 		if err != nil {
 			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert user data")
 			conversionErr.Cause = err
-			conversionErr.Details = fmt.Sprintf("Error converting user data")
+			conversionErr.Details = "Error converting user data"
 			return nil, conversionErr
 		}
 		users = append(users, *user)
@@ -114,12 +114,14 @@ func (u *UserManagerImpl) List(ctx context.Context, opts *interfaces.ListUsersOp
 
 // Get retrieves a specific user by name
 func (u *UserManagerImpl) Get(ctx context.Context, userName string) (*interfaces.User, error) {
-	if u.client == nil || u.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap check)
 	if userName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
+	}
+
+	// Then check client initialization
+	if u.client == nil || u.client.apiClient == nil || u.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Prepare parameters for the API call
@@ -193,12 +195,14 @@ func (u *UserManagerImpl) Get(ctx context.Context, userName string) (*interfaces
 
 // GetUserAccounts retrieves all account associations for a user
 func (u *UserManagerImpl) GetUserAccounts(ctx context.Context, userName string) ([]*interfaces.UserAccount, error) {
-	if u.client == nil || u.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap check)
 	if userName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
+	}
+
+	// Then check client initialization
+	if u.client == nil || u.client.apiClient == nil || u.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Get user details including associations
@@ -219,8 +223,8 @@ func (u *UserManagerImpl) GetUserAccounts(ctx context.Context, userName string) 
 			MaxJobs:       assoc.MaxJobs,
 			MaxSubmitJobs: assoc.MaxSubmitJobs,
 			MaxWallTime:   assoc.MaxWallDuration,
-			Priority:      0, // Not available in association
-			GraceTime:     0, // Not available in association
+			Priority:      0,          // Not available in association
+			GraceTime:     0,          // Not available in association
 			Created:       time.Now(), // Not available, using current time
 			Modified:      time.Now(), // Not available, using current time
 		}
@@ -245,12 +249,14 @@ func (u *UserManagerImpl) GetUserAccounts(ctx context.Context, userName string) 
 
 // GetUserQuotas retrieves quota information for a user
 func (u *UserManagerImpl) GetUserQuotas(ctx context.Context, userName string) (*interfaces.UserQuota, error) {
-	if u.client == nil || u.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap check)
 	if userName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
+	}
+
+	// Then check client initialization
+	if u.client == nil || u.client.apiClient == nil || u.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Get user details including associations
@@ -261,11 +267,11 @@ func (u *UserManagerImpl) GetUserQuotas(ctx context.Context, userName string) (*
 
 	// Aggregate quotas from all associations
 	userQuota := &interfaces.UserQuota{
-		UserName:        userName,
-		DefaultAccount:  user.DefaultAccount,
-		AccountQuotas:   make(map[string]*interfaces.UserAccountQuota),
-		IsActive:        true,
-		Enforcement:     "soft",
+		UserName:       userName,
+		DefaultAccount: user.DefaultAccount,
+		AccountQuotas:  make(map[string]*interfaces.UserAccountQuota),
+		IsActive:       true,
+		Enforcement:    "soft",
 	}
 
 	// Track effective quotas (most restrictive across all accounts)
@@ -285,12 +291,12 @@ func (u *UserManagerImpl) GetUserQuotas(ctx context.Context, userName string) (*
 			Priority:      assoc.Shares, // Using shares as priority
 			DefaultQoS:    assoc.DefaultQoS,
 		}
-		
+
 		// Handle QoS array
 		if len(assoc.QoS) > 0 {
 			accountQuota.QoS = assoc.QoS
 		}
-		
+
 		// Convert TRES limits
 		if assoc.MaxTRES != nil {
 			accountQuota.TRESLimits = make(map[string]int)
@@ -361,12 +367,14 @@ func (u *UserManagerImpl) GetUserQuotas(ctx context.Context, userName string) (*
 
 // GetUserDefaultAccount retrieves the default account for a user
 func (u *UserManagerImpl) GetUserDefaultAccount(ctx context.Context, userName string) (*interfaces.Account, error) {
-	if u.client == nil || u.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap check)
 	if userName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
+	}
+
+	// Then check client initialization
+	if u.client == nil || u.client.apiClient == nil || u.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Get user accounts
@@ -403,12 +411,14 @@ func (u *UserManagerImpl) GetUserDefaultAccount(ctx context.Context, userName st
 
 // GetUserFairShare retrieves fair-share information for a user
 func (u *UserManagerImpl) GetUserFairShare(ctx context.Context, userName string) (*interfaces.UserFairShare, error) {
-	if u.client == nil || u.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap check)
 	if userName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
+	}
+
+	// Then check client initialization
+	if u.client == nil || u.client.apiClient == nil || u.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Use the shares API to get fair share information
@@ -459,7 +469,7 @@ func (u *UserManagerImpl) GetUserFairShare(ctx context.Context, userName string)
 	// Extract fair share data
 	// Account info is not directly available in share object, use userName instead
 	fairShare.Account = userName // Default to userName as account is not in share data
-	
+
 	if userShare.Cluster != nil {
 		fairShare.Cluster = *userShare.Cluster
 	}
@@ -485,15 +495,15 @@ func (u *UserManagerImpl) GetUserFairShare(ctx context.Context, userName string)
 
 	// Build priority factors with available data
 	fairShare.PriorityFactors = &interfaces.JobPriorityFactors{
-		Age:       0, // Not available in shares API
+		Age:       0,                                     // Not available in shares API
 		FairShare: int(fairShare.FairShareFactor * 1000), // Convert to int
-		JobSize:   0, // Not available in shares API
-		Partition: 0, // Not available in shares API
-		QoS:       0, // Not available in shares API
-		TRES:      0, // Not available in shares API
-		Site:      0, // Not available in shares API
-		Nice:      0, // Not available in shares API
-		Assoc:     0, // Not available in shares API
+		JobSize:   0,                                     // Not available in shares API
+		Partition: 0,                                     // Not available in shares API
+		QoS:       0,                                     // Not available in shares API
+		TRES:      0,                                     // Not available in shares API
+		Site:      0,                                     // Not available in shares API
+		Nice:      0,                                     // Not available in shares API
+		Assoc:     0,                                     // Not available in shares API
 		Total:     int(fairShare.FairShareFactor * 1000), // Set total to fair share
 	}
 
@@ -502,10 +512,7 @@ func (u *UserManagerImpl) GetUserFairShare(ctx context.Context, userName string)
 
 // CalculateJobPriority calculates job priority for a user and job submission
 func (u *UserManagerImpl) CalculateJobPriority(ctx context.Context, userName string, jobSubmission *interfaces.JobSubmission) (*interfaces.JobPriorityInfo, error) {
-	if u.client == nil || u.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap check)
 	if userName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
 	}
@@ -517,6 +524,11 @@ func (u *UserManagerImpl) CalculateJobPriority(ctx context.Context, userName str
 	// Validate job submission data
 	if jobSubmission.Script == "" && jobSubmission.Command == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "job script or command is required", "jobSubmission.Script/Command", fmt.Sprintf("Script: %s, Command: %s", jobSubmission.Script, jobSubmission.Command), nil)
+	}
+
+	// Then check client initialization
+	if u.client == nil || u.client.apiClient == nil || u.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Get user's fair share information first
@@ -534,7 +546,7 @@ func (u *UserManagerImpl) CalculateJobPriority(ctx context.Context, userName str
 		UserName:       userName,
 		Account:        fairShare.Account,
 		Partition:      jobSubmission.Partition,
-		QoS:            "", // QoS not available in JobSubmission
+		QoS:            "",   // QoS not available in JobSubmission
 		Priority:       1000, // Base priority
 		EligibleTime:   time.Now(),
 		EstimatedStart: time.Now().Add(5 * time.Minute), // Estimate
@@ -542,30 +554,30 @@ func (u *UserManagerImpl) CalculateJobPriority(ctx context.Context, userName str
 
 	// Calculate priority factors
 	factors := &interfaces.JobPriorityFactors{
-		Age:       100,                                    // Base age factor
-		FairShare: int(fairShare.FairShareFactor * 1000), // Convert to int
+		Age:       100,                                              // Base age factor
+		FairShare: int(fairShare.FairShareFactor * 1000),            // Convert to int
 		JobSize:   int(calculateJobSizeFactor(jobSubmission) * 100), // Convert to int
-		Partition: 100, // Base partition factor
-		QoS:       100, // Base QoS factor
-		TRES:      100, // Base TRES factor
-		Site:      0,   // No site adjustment
-		Nice:      0,   // No nice adjustment
-		Assoc:     100, // Base association factor
+		Partition: 100,                                              // Base partition factor
+		QoS:       100,                                              // Base QoS factor
+		TRES:      100,                                              // Base TRES factor
+		Site:      0,                                                // No site adjustment
+		Nice:      0,                                                // No nice adjustment
+		Assoc:     100,                                              // Base association factor
 	}
 
 	// Calculate total priority from factors
-	factors.Total = factors.Age + factors.FairShare + factors.JobSize + 
+	factors.Total = factors.Age + factors.FairShare + factors.JobSize +
 		factors.Partition + factors.QoS + factors.TRES + factors.Assoc
 
 	priorityInfo.Factors = factors
 
 	// Calculate total priority (simplified calculation)
-	totalPriority := int(factors.Age) + 
-		int(factors.FairShare) + 
-		int(factors.JobSize) + 
-		int(factors.Partition) + 
-		int(factors.QoS) + 
-		int(factors.TRES) - 
+	totalPriority := int(factors.Age) +
+		int(factors.FairShare) +
+		int(factors.JobSize) +
+		int(factors.Partition) +
+		int(factors.QoS) +
+		int(factors.TRES) -
 		int(factors.Nice)
 
 	priorityInfo.Priority = totalPriority
@@ -577,16 +589,18 @@ func (u *UserManagerImpl) CalculateJobPriority(ctx context.Context, userName str
 
 // ValidateUserAccountAccess validates user access to a specific account
 func (u *UserManagerImpl) ValidateUserAccountAccess(ctx context.Context, userName, accountName string) (*interfaces.UserAccessValidation, error) {
-	if u.client == nil || u.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap check)
 	if userName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
 	}
 
 	if accountName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "accountName", accountName, nil)
+	}
+
+	// Then check client initialization
+	if u.client == nil || u.client.apiClient == nil || u.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Use the associations API to check user-account access
@@ -635,15 +649,14 @@ func (u *UserManagerImpl) ValidateUserAccountAccess(ctx context.Context, userNam
 		// Check if this association matches our user and account
 		if assoc.User == userName &&
 			assoc.Account != nil && *assoc.Account == accountName {
-			
 			validation.HasAccess = true
 			validation.AccessLevel = "user" // Default access level
-			
+
 			// Check if user is a coordinator
 			if assoc.IsDefault != nil && *assoc.IsDefault {
 				validation.Permissions = append(validation.Permissions, "default")
 			}
-			
+
 			// Set access level based on flags
 			if assoc.Flags != nil && len(*assoc.Flags) > 0 {
 				for _, flag := range *assoc.Flags {
@@ -656,7 +669,7 @@ func (u *UserManagerImpl) ValidateUserAccountAccess(ctx context.Context, userNam
 					}
 				}
 			}
-			
+
 			// Basic user permissions (since admin level is not available in association)
 			validation.Permissions = append(validation.Permissions, "view", "submit")
 
@@ -703,12 +716,14 @@ func (u *UserManagerImpl) ValidateUserAccountAccess(ctx context.Context, userNam
 
 // GetUserAccountAssociations retrieves detailed user account associations
 func (u *UserManagerImpl) GetUserAccountAssociations(ctx context.Context, userName string, opts *interfaces.ListUserAccountAssociationsOptions) ([]*interfaces.UserAccountAssociation, error) {
-	if u.client == nil || u.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap check)
 	if userName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
+	}
+
+	// Then check client initialization
+	if u.client == nil || u.client.apiClient == nil || u.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Build parameters for associations query
@@ -717,7 +732,7 @@ func (u *UserManagerImpl) GetUserAccountAssociations(ctx context.Context, userNa
 		User: &userNameCSV,
 	}
 
-	// Apply filters if provided  
+	// Apply filters if provided
 	if opts != nil {
 		if len(opts.Accounts) > 0 {
 			accountsCSV := strings.Join(opts.Accounts, ",")
@@ -753,7 +768,7 @@ func (u *UserManagerImpl) GetUserAccountAssociations(ctx context.Context, userNa
 
 	// Convert associations to interface types
 	associations := make([]*interfaces.UserAccountAssociation, 0)
-	
+
 	for _, apiAssoc := range resp.JSON200.Associations {
 		// Skip if not for the requested user
 		if apiAssoc.User != userName {
@@ -791,7 +806,7 @@ func (u *UserManagerImpl) GetUserAccountAssociations(ctx context.Context, userNa
 				}
 			}
 		}
-		
+
 		// Basic user permissions (admin level is not available in V0043Assoc)
 		assoc.Role = "user"
 		assoc.Permissions = []string{"view", "submit"}
@@ -809,7 +824,7 @@ func (u *UserManagerImpl) GetUserAccountAssociations(ctx context.Context, userNa
 			// TRES limits (CPU, Memory, Nodes) are in apiAssoc.Max.Tres
 			if apiAssoc.Max.Tres != nil && apiAssoc.Max.Tres.Per != nil && apiAssoc.Max.Tres.Per.Job != nil {
 				// Note: TRES limits conversion not implemented yet
-			assoc.TRESLimits = make(map[string]int)
+				assoc.TRESLimits = make(map[string]int)
 			}
 		}
 
@@ -876,10 +891,7 @@ func (u *UserManagerImpl) GetUserAccountAssociations(ctx context.Context, userNa
 
 // GetBulkUserAccounts retrieves accounts for multiple users in a single call
 func (u *UserManagerImpl) GetBulkUserAccounts(ctx context.Context, userNames []string) (map[string][]*interfaces.UserAccount, error) {
-	if u.client == nil || u.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap check)
 	if len(userNames) == 0 {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one user name is required", "userNames", userNames, nil)
 	}
@@ -887,7 +899,7 @@ func (u *UserManagerImpl) GetBulkUserAccounts(ctx context.Context, userNames []s
 	// Validate all user names
 	for i, userName := range userNames {
 		if userName == "" {
-			return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, fmt.Sprintf("user name at index %d is empty", i), "userNames[" + fmt.Sprintf("%d", i) + "]", userName, nil)
+			return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, fmt.Sprintf("user name at index %d is empty", i), "userNames["+fmt.Sprintf("%d", i)+"]", userName, nil)
 		}
 		if err := validateUserName(userName); err != nil {
 			return nil, err
@@ -897,6 +909,11 @@ func (u *UserManagerImpl) GetBulkUserAccounts(ctx context.Context, userNames []s
 	// Limit bulk operations to prevent excessive load
 	if len(userNames) > 100 {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "bulk operations limited to 100 users maximum", "userNames", len(userNames), nil)
+	}
+
+	// Then check client initialization
+	if u.client == nil || u.client.apiClient == nil || u.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Use associations API to get accounts for all users
@@ -940,7 +957,7 @@ func (u *UserManagerImpl) GetBulkUserAccounts(ctx context.Context, userNames []s
 		}
 
 		userName := assoc.User
-		
+
 		// Skip if user not in requested list
 		found := false
 		for _, requestedUser := range userNames {
@@ -989,10 +1006,7 @@ func (u *UserManagerImpl) GetBulkUserAccounts(ctx context.Context, userNames []s
 
 // GetBulkAccountUsers retrieves users for multiple accounts in a single call
 func (u *UserManagerImpl) GetBulkAccountUsers(ctx context.Context, accountNames []string) (map[string][]*interfaces.UserAccountAssociation, error) {
-	if u.client == nil || u.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap check)
 	if len(accountNames) == 0 {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one account name is required", "accountNames", accountNames, nil)
 	}
@@ -1000,7 +1014,7 @@ func (u *UserManagerImpl) GetBulkAccountUsers(ctx context.Context, accountNames 
 	// Validate all account names
 	for i, accountName := range accountNames {
 		if accountName == "" {
-			return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, fmt.Sprintf("account name at index %d is empty", i), "accountNames[" + fmt.Sprintf("%d", i) + "]", accountName, nil)
+			return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, fmt.Sprintf("account name at index %d is empty", i), "accountNames["+fmt.Sprintf("%d", i)+"]", accountName, nil)
 		}
 		if err := validateAccountContext(accountName); err != nil {
 			return nil, err
@@ -1010,6 +1024,11 @@ func (u *UserManagerImpl) GetBulkAccountUsers(ctx context.Context, accountNames 
 	// Limit bulk operations to prevent excessive load
 	if len(accountNames) > 100 {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "bulk operations limited to 100 accounts maximum", "accountNames", len(accountNames), nil)
+	}
+
+	// Then check client initialization
+	if u.client == nil || u.client.apiClient == nil || u.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Use associations API to get users for all accounts
@@ -1053,7 +1072,7 @@ func (u *UserManagerImpl) GetBulkAccountUsers(ctx context.Context, accountNames 
 		}
 
 		accountName := *apiAssoc.Account
-		
+
 		// Skip if account not in requested list
 		found := false
 		for _, requestedAccount := range accountNames {
@@ -1094,7 +1113,7 @@ func (u *UserManagerImpl) GetBulkAccountUsers(ctx context.Context, accountNames 
 				}
 			}
 		}
-		
+
 		// Basic user permissions (admin level is not available in V0043Assoc)
 		assoc.Role = "user"
 		assoc.Permissions = []string{"view", "submit"}
@@ -1112,7 +1131,7 @@ func (u *UserManagerImpl) GetBulkAccountUsers(ctx context.Context, accountNames 
 			// TRES limits (CPU, Memory, Nodes) are in apiAssoc.Max.Tres
 			if apiAssoc.Max.Tres != nil && apiAssoc.Max.Tres.Per != nil && apiAssoc.Max.Tres.Per.Job != nil {
 				// Note: TRES limits conversion not implemented yet
-			assoc.TRESLimits = make(map[string]int)
+				assoc.TRESLimits = make(map[string]int)
 			}
 		}
 
@@ -1133,17 +1152,17 @@ func validateUserName(userName string) error {
 	if userName == "" {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name cannot be empty", "userName", userName, nil)
 	}
-	
+
 	// Basic validation - user names should be alphanumeric with underscores and hyphens
 	for _, char := range userName {
-		if !((char >= 'a' && char <= 'z') || 
-			 (char >= 'A' && char <= 'Z') || 
-			 (char >= '0' && char <= '9') || 
-			 char == '_' || char == '-') {
+		if !((char >= 'a' && char <= 'z') ||
+			(char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9') ||
+			char == '_' || char == '-') {
 			return errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name contains invalid characters", "userName", userName, nil)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -1152,17 +1171,17 @@ func validateAccountContext(accountName string) error {
 	if accountName == "" {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name cannot be empty", "accountName", accountName, nil)
 	}
-	
+
 	// Account names should follow similar validation as user names
 	for _, char := range accountName {
-		if !((char >= 'a' && char <= 'z') || 
-			 (char >= 'A' && char <= 'Z') || 
-			 (char >= '0' && char <= '9') || 
-			 char == '_' || char == '-') {
+		if !((char >= 'a' && char <= 'z') ||
+			(char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9') ||
+			char == '_' || char == '-') {
 			return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name contains invalid characters", "accountName", accountName, nil)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -1200,22 +1219,22 @@ func convertAPIErrors(apiErrors []V0043OpenapiError) []errors.SlurmAPIErrorDetai
 // calculateJobSizeFactor calculates a job size factor based on resources
 func calculateJobSizeFactor(jobSubmission *interfaces.JobSubmission) float64 {
 	factor := 100.0 // Base factor
-	
+
 	// Adjust based on CPUs
 	if jobSubmission.CPUs > 0 {
 		factor += float64(jobSubmission.CPUs) * 10
 	}
-	
+
 	// Adjust based on memory (in MB)
 	if jobSubmission.Memory > 0 {
 		factor += float64(jobSubmission.Memory) / 1024 // Convert to GB and add
 	}
-	
+
 	// Adjust based on time limit (in minutes)
 	if jobSubmission.TimeLimit > 0 {
 		factor += float64(jobSubmission.TimeLimit) / 60 // Convert to hours and add
 	}
-	
+
 	return factor
 }
 
@@ -1227,7 +1246,7 @@ func convertAPIUserToInterface(apiUser *V0043User) (*interfaces.User, error) {
 	if apiUser.Name != "" {
 		user.Name = apiUser.Name
 	}
-	
+
 	// Admin level
 	if apiUser.AdministratorLevel != nil && len(*apiUser.AdministratorLevel) > 0 {
 		user.AdminLevel = string((*apiUser.AdministratorLevel)[0])
@@ -1248,14 +1267,14 @@ func convertAPIUserToInterface(apiUser *V0043User) (*interfaces.User, error) {
 		associations := make([]interfaces.UserAssociation, 0, len(*apiUser.Associations))
 		for _, assoc := range *apiUser.Associations {
 			userAssoc := interfaces.UserAssociation{
-				Account:               getStringValue(assoc.Account),
-				Cluster:               getStringValue(assoc.Cluster),
-				Partition:             getStringValue(assoc.Partition),
-				QoS:                   []string{}, // QoS not available in V0043AssocShort
-				DefaultQoS:            "", // Default not available in V0043AssocShort
-				IsDefault:             false, // IsDefault not available in V0043AssocShort
-				MaxJobs:               0, // Max not available in V0043AssocShort
-				MaxSubmitJobs:         0, // Max not available in V0043AssocShort
+				Account:       getStringValue(assoc.Account),
+				Cluster:       getStringValue(assoc.Cluster),
+				Partition:     getStringValue(assoc.Partition),
+				QoS:           []string{}, // QoS not available in V0043AssocShort
+				DefaultQoS:    "",         // Default not available in V0043AssocShort
+				IsDefault:     false,      // IsDefault not available in V0043AssocShort
+				MaxJobs:       0,          // Max not available in V0043AssocShort
+				MaxSubmitJobs: 0,          // Max not available in V0043AssocShort
 			}
 			// TRES limits not available in V0043AssocShort structure
 			associations = append(associations, userAssoc)
@@ -1264,17 +1283,11 @@ func convertAPIUserToInterface(apiUser *V0043User) (*interfaces.User, error) {
 	}
 
 	// User flags
-	if apiUser.Flags != nil && len(*apiUser.Flags) > 0 {
-		flags := make([]string, 0, len(*apiUser.Flags))
-		for _, flag := range *apiUser.Flags {
-			flags = append(flags, string(flag))
-		}
-		// Note: Flags field not available in interfaces.User
-	}
+	// Note: Flags field not available in interfaces.User
+	// Flag conversion code removed as the result is not used
 
 	return user, nil
 }
-
 
 // Helper functions for safe value extraction
 func getStringValue(ptr *string) string {
@@ -1282,26 +1295,6 @@ func getStringValue(ptr *string) string {
 		return *ptr
 	}
 	return ""
-}
-
-func getIntValue(ptr *int) int {
-	if ptr != nil {
-		return *ptr
-	}
-	return 0
-}
-
-func convertTRESArrayToMap(tresArray []V0043Tres) map[string]int {
-	if tresArray == nil {
-		return nil
-	}
-	tresMap := make(map[string]int)
-	for _, tres := range tresArray {
-		if tres.Type != "" && tres.Count != nil {
-			tresMap[tres.Type] = int(*tres.Count)
-		}
-	}
-	return tresMap
 }
 
 // filterUsers applies client-side filtering to the user list
@@ -1338,7 +1331,6 @@ func filterUsers(users []interfaces.User, opts *interfaces.ListUsersOptions) []i
 	return filtered
 }
 
-
 // stringToInt converts string to int
 func stringToInt(s string) (int, error) {
 	// Try to parse the string as an integer
@@ -1351,21 +1343,21 @@ func stringToInt(s string) (int, error) {
 }
 
 // Create creates a new user
-func (m *UserManagerImpl) Create(ctx context.Context, user *interfaces.UserCreate) (*interfaces.UserCreateResponse, error) {
+func (u *UserManagerImpl) Create(ctx context.Context, user *interfaces.UserCreate) (*interfaces.UserCreateResponse, error) {
 	return nil, errors.NewNotImplementedError("Create", "v0.0.43")
 }
 
 // Update updates a user
-func (m *UserManagerImpl) Update(ctx context.Context, userName string, update *interfaces.UserUpdate) error {
+func (u *UserManagerImpl) Update(ctx context.Context, userName string, update *interfaces.UserUpdate) error {
 	return errors.NewNotImplementedError("Update", "v0.0.43")
 }
 
 // Delete deletes a user
-func (m *UserManagerImpl) Delete(ctx context.Context, userName string) error {
+func (u *UserManagerImpl) Delete(ctx context.Context, userName string) error {
 	return errors.NewNotImplementedError("Delete", "v0.0.43")
 }
 
 // CreateAssociation creates a user-account association
-func (m *UserManagerImpl) CreateAssociation(ctx context.Context, accountName string, opts *interfaces.AssociationOptions) (*interfaces.AssociationCreateResponse, error) {
+func (u *UserManagerImpl) CreateAssociation(ctx context.Context, accountName string, opts *interfaces.AssociationOptions) (*interfaces.AssociationCreateResponse, error) {
 	return nil, errors.NewNotImplementedError("CreateAssociation", "v0.0.43")
 }

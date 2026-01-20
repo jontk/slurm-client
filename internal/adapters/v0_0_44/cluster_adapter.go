@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"strconv"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 )
 
 // ClusterAdapter implements the ClusterAdapter interface for v0.0.44
@@ -92,7 +92,7 @@ func (a *ClusterAdapter) Get(ctx context.Context, clusterName string) (*types.Cl
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(clusterName, "clusterName"); err != nil {
+	if err := a.ValidateResourceName(clusterName, "Cluster name"); err != nil {
 		return nil, err
 	}
 
@@ -134,7 +134,7 @@ func (a *ClusterAdapter) Create(ctx context.Context, cluster *types.ClusterCreat
 	if cluster == nil {
 		return nil, a.HandleValidationError("cluster creation data is required")
 	}
-	if err := a.ValidateResourceName(cluster.Name, "cluster.Name"); err != nil {
+	if err := a.ValidateResourceName(cluster.Name, "Cluster name"); err != nil {
 		return nil, err
 	}
 
@@ -169,7 +169,7 @@ func (a *ClusterAdapter) Create(ctx context.Context, cluster *types.ClusterCreat
 	}
 
 	if cluster.SelectPlugin != "" {
-		apiCluster.SelectPlugin = &cluster.SelectPlugin
+		apiCluster.SelectPlugin = &cluster.SelectPlugin //lint:ignore SA1019 SelectPlugin is deprecated in API but still needed for compatibility
 	}
 
 	if len(cluster.Flags) > 0 {
@@ -213,7 +213,7 @@ func (a *ClusterAdapter) Delete(ctx context.Context, clusterName string) error {
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(clusterName, "clusterName"); err != nil {
+	if err := a.ValidateResourceName(clusterName, "Cluster name"); err != nil {
 		return err
 	}
 
@@ -267,8 +267,9 @@ func (a *ClusterAdapter) convertAPIClusterToCommon(apiCluster api.V0044ClusterRe
 		cluster.RpcVersion = *apiCluster.RpcVersion
 	}
 
+	//lint:ignore SA1019 SelectPlugin is deprecated in API but still needed for compatibility
 	if apiCluster.SelectPlugin != nil {
-		cluster.SelectPlugin = *apiCluster.SelectPlugin
+		cluster.SelectPlugin = *apiCluster.SelectPlugin //lint:ignore SA1019 SelectPlugin is deprecated in API but still needed for compatibility
 	}
 
 	if apiCluster.Flags != nil {

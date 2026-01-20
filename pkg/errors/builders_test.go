@@ -526,13 +526,13 @@ func TestNewNodeError(t *testing.T) {
 			} else {
 				assert.Contains(t, result.Message, tt.operation)
 			}
-			
+
 			for _, node := range tt.nodeNames {
 				if len(tt.nodeNames) > 0 {
 					assert.Contains(t, result.Details, node)
 				}
 			}
-			
+
 			assert.Contains(t, result.Details, tt.operation)
 			assert.Equal(t, tt.cause, result.Cause)
 		})
@@ -582,7 +582,7 @@ func TestNewPartitionError(t *testing.T) {
 			result := NewPartitionError(tt.partitionName, tt.operation, tt.cause)
 
 			assert.Equal(t, tt.expected, result.Code)
-			
+
 			// Check appropriate message based on error type
 			if strings.Contains(tt.cause.Error(), "unavailable") {
 				assert.Contains(t, result.Message, "unavailable")
@@ -592,7 +592,7 @@ func TestNewPartitionError(t *testing.T) {
 				// For default case, message contains operation
 				assert.Contains(t, result.Message, tt.operation)
 			}
-			
+
 			assert.Contains(t, result.Details, tt.partitionName)
 			assert.Contains(t, result.Details, tt.operation)
 			assert.Equal(t, tt.cause, result.Cause)
@@ -1011,9 +1011,9 @@ func TestExtractRequestID(t *testing.T) {
 			expected: "meta-req-12345",
 		},
 		{
-			name:    "invalid JSON body",
-			headers: map[string][]string{},
-			body:    []byte(`invalid json`),
+			name:     "invalid JSON body",
+			headers:  map[string][]string{},
+			body:     []byte(`invalid json`),
 			expected: "",
 		},
 	}
@@ -1134,10 +1134,10 @@ func TestErrorContainsPattern(t *testing.T) {
 
 func TestExtractJobIDFromError(t *testing.T) {
 	tests := []struct {
-		name        string
-		err         error
-		expectedID  uint32
-		expectedOK  bool
+		name       string
+		err        error
+		expectedID uint32
+		expectedOK bool
 	}{
 		{
 			name:       "nil error",
@@ -1146,46 +1146,46 @@ func TestExtractJobIDFromError(t *testing.T) {
 			expectedOK: false,
 		},
 		{
-			name:        "job with space",
-			err:         fmt.Errorf("Invalid job 12345 not found"),
-			expectedID:  12345,
-			expectedOK:  true,
+			name:       "job with space",
+			err:        fmt.Errorf("Invalid job 12345 not found"),
+			expectedID: 12345,
+			expectedOK: true,
 		},
 		{
-			name:        "job_id with colon",
-			err:         fmt.Errorf("Error with job_id:67890"),
-			expectedID:  67890,
-			expectedOK:  true,
+			name:       "job_id with colon",
+			err:        fmt.Errorf("Error with job_id:67890"),
+			expectedID: 67890,
+			expectedOK: true,
 		},
 		{
-			name:        "job id with colon and space",
-			err:         fmt.Errorf("Job id:11111 failed"),
-			expectedID:  11111,
-			expectedOK:  true,
+			name:       "job id with colon and space",
+			err:        fmt.Errorf("Job id:11111 failed"),
+			expectedID: 11111,
+			expectedOK: true,
 		},
 		{
-			name:        "jobid with colon",
-			err:         fmt.Errorf("jobid:22222 not valid"),
-			expectedID:  22222,
-			expectedOK:  true,
+			name:       "jobid with colon",
+			err:        fmt.Errorf("jobid:22222 not valid"),
+			expectedID: 22222,
+			expectedOK: true,
 		},
 		{
-			name:        "job-id with hyphen",
-			err:         fmt.Errorf("job-id:33333 error"),
-			expectedID:  33333,
-			expectedOK:  true,
+			name:       "job-id with hyphen",
+			err:        fmt.Errorf("job-id:33333 error"),
+			expectedID: 33333,
+			expectedOK: true,
 		},
 		{
-			name:        "no job ID",
-			err:         fmt.Errorf("Generic error message"),
-			expectedID:  0,
-			expectedOK:  false,
+			name:       "no job ID",
+			err:        fmt.Errorf("Generic error message"),
+			expectedID: 0,
+			expectedOK: false,
 		},
 		{
-			name:        "job without number",
-			err:         fmt.Errorf("job abc not found"),
-			expectedID:  0,
-			expectedOK:  false,
+			name:       "job without number",
+			err:        fmt.Errorf("job abc not found"),
+			expectedID: 0,
+			expectedOK: false,
 		},
 	}
 
@@ -1193,7 +1193,7 @@ func TestExtractJobIDFromError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			id, ok := ExtractJobIDFromError(tt.err)
 			if id != tt.expectedID || ok != tt.expectedOK {
-				t.Errorf("ExtractJobIDFromError() = (%v, %v), want (%v, %v)", 
+				t.Errorf("ExtractJobIDFromError() = (%v, %v), want (%v, %v)",
 					id, ok, tt.expectedID, tt.expectedOK)
 			}
 		})
@@ -1255,13 +1255,13 @@ func TestExtractNodeNamesFromError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			nodes, ok := ExtractNodeNamesFromError(tt.err)
 			if len(nodes) != len(tt.expectedNodes) || ok != tt.expectedOK {
-				t.Errorf("ExtractNodeNamesFromError() = (%v, %v), want (%v, %v)", 
+				t.Errorf("ExtractNodeNamesFromError() = (%v, %v), want (%v, %v)",
 					nodes, ok, tt.expectedNodes, tt.expectedOK)
 				return
 			}
 			for i, node := range nodes {
 				if i >= len(tt.expectedNodes) || node != tt.expectedNodes[i] {
-					t.Errorf("ExtractNodeNamesFromError() nodes = %v, want %v", 
+					t.Errorf("ExtractNodeNamesFromError() nodes = %v, want %v",
 						nodes, tt.expectedNodes)
 					break
 				}
@@ -1307,7 +1307,7 @@ func TestExtractPartitionFromError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			partition, ok := ExtractPartitionFromError(tt.err)
 			if partition != tt.expectedPartition || ok != tt.expectedOK {
-				t.Errorf("ExtractPartitionFromError() = (%v, %v), want (%v, %v)", 
+				t.Errorf("ExtractPartitionFromError() = (%v, %v), want (%v, %v)",
 					partition, ok, tt.expectedPartition, tt.expectedOK)
 			}
 		})
@@ -1415,7 +1415,7 @@ func TestNewNotImplementedError(t *testing.T) {
 	operation := "advanced scheduling"
 	version := "v0.0.42"
 	err := NewNotImplementedError(operation, version)
-	
+
 	assert.NotNil(t, err)
 	assert.Equal(t, ErrorCodeUnsupportedOperation, err.Code)
 	assert.Contains(t, err.Message, operation)
@@ -1539,10 +1539,10 @@ func TestIsValidationError(t *testing.T) {
 
 func TestClassifyNetworkErrorComprehensive(t *testing.T) {
 	tests := []struct {
-		name        string
-		err         error
-		expectCode  ErrorCode
-		expectNil   bool
+		name       string
+		err        error
+		expectCode ErrorCode
+		expectNil  bool
 	}{
 		{
 			name:      "nil error",
@@ -1629,7 +1629,7 @@ func TestClassifyNetworkErrorComprehensive(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := classifyNetworkError(tt.err)
-			
+
 			if tt.expectNil {
 				assert.Nil(t, result, "Expected nil result for error: %v", tt.err)
 			} else {
@@ -1725,11 +1725,11 @@ func TestIsNetworkErrorComprehensive(t *testing.T) {
 
 func TestNewSlurmAPIErrorComprehensive(t *testing.T) {
 	tests := []struct {
-		name         string
-		httpStatus   int
-		apiVersion   string
-		details      []SlurmAPIErrorDetail
-		expectCode   ErrorCode
+		name       string
+		httpStatus int
+		apiVersion string
+		details    []SlurmAPIErrorDetail
+		expectCode ErrorCode
 	}{
 		{
 			name:       "authentication error with details",
@@ -1762,7 +1762,7 @@ func TestNewSlurmAPIErrorComprehensive(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := NewSlurmAPIError(tt.httpStatus, tt.apiVersion, tt.details)
-			
+
 			assert.NotNil(t, result)
 			assert.Equal(t, tt.expectCode, result.Code)
 			assert.Equal(t, tt.httpStatus, result.StatusCode)

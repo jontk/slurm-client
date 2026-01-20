@@ -6,7 +6,7 @@ package common
 import (
 	"fmt"
 	"reflect"
-	
+
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -60,10 +60,10 @@ func HandleAPIResponse(resp ResponseWithErrors, version string) error {
 // extractErrorDetail converts a generic error detail to SlurmAPIErrorDetail
 func extractErrorDetail(err ErrorDetail) errors.SlurmAPIErrorDetail {
 	detail := errors.SlurmAPIErrorDetail{}
-	
+
 	if num := err.GetErrorNumber(); num != nil {
 		detail.ErrorNumber = *num
-		
+
 		// Enhance error description with SLURM-specific information
 		if desc := err.GetDescription(); desc != nil {
 			enhancedDesc := EnhanceErrorMessage(int32(*num), *desc)
@@ -72,7 +72,7 @@ func extractErrorDetail(err ErrorDetail) errors.SlurmAPIErrorDetail {
 			// If no description provided, use SLURM error description
 			detail.Description = GetErrorDescription(int32(*num))
 		}
-		
+
 		// Add error category
 		if info := GetErrorInfo(int32(*num)); info != nil {
 			detail.ErrorCode = info.Name
@@ -82,16 +82,16 @@ func extractErrorDetail(err ErrorDetail) errors.SlurmAPIErrorDetail {
 		if desc := err.GetDescription(); desc != nil {
 			detail.Description = *desc
 		}
-		
+
 		if code := err.GetError(); code != nil {
 			detail.ErrorCode = *code
 		}
 	}
-	
+
 	if src := err.GetSource(); src != nil {
 		detail.Source = *src
 	}
-	
+
 	return detail
 }
 
@@ -99,21 +99,21 @@ func extractErrorDetail(err ErrorDetail) errors.SlurmAPIErrorDetail {
 func CheckNilResponse(response interface{}, operation string) error {
 	if response == nil {
 		return errors.NewClientError(
-			errors.ErrorCodeServerInternal, 
-			"Unexpected response format", 
+			errors.ErrorCodeServerInternal,
+			"Unexpected response format",
 			"Expected JSON response but got nil for "+operation,
 		)
 	}
-	
+
 	// Use reflection to check for typed nil pointers
 	if isNilPointer(response) {
 		return errors.NewClientError(
-			errors.ErrorCodeServerInternal, 
-			"Unexpected response format", 
+			errors.ErrorCodeServerInternal,
+			"Unexpected response format",
 			"Expected JSON response but got nil for "+operation,
 		)
 	}
-	
+
 	return nil
 }
 
@@ -122,7 +122,7 @@ func isNilPointer(i interface{}) bool {
 	if i == nil {
 		return true
 	}
-	
+
 	// Use reflection to check if it's a nil pointer
 	v := reflect.ValueOf(i)
 	return v.Kind() == reflect.Ptr && v.IsNil()
@@ -140,12 +140,12 @@ func WrapAndEnhanceError(err error, version string) error {
 // HandleConversionError creates a standardized conversion error
 func HandleConversionError(err error, resourceType string, resourceID interface{}) error {
 	conversionErr := errors.NewClientError(
-		errors.ErrorCodeServerInternal, 
+		errors.ErrorCodeServerInternal,
 		"Failed to convert "+resourceType+" data",
 	)
 	conversionErr.Cause = err
 	if resourceID != nil {
-		conversionErr.Details = "Error converting "+resourceType+" ID "+formatResourceID(resourceID)
+		conversionErr.Details = "Error converting " + resourceType + " ID " + formatResourceID(resourceID)
 	}
 	return conversionErr
 }
@@ -155,7 +155,7 @@ func formatResourceID(id interface{}) string {
 	if id == nil {
 		return "<nil>"
 	}
-	
+
 	switch v := id.(type) {
 	case *int32:
 		if v != nil {
@@ -172,7 +172,7 @@ func formatResourceID(id interface{}) string {
 	case int:
 		return fmt.Sprintf("%d", v)
 	}
-	
+
 	return fmt.Sprintf("%v", id)
 }
 
@@ -180,7 +180,7 @@ func formatResourceID(id interface{}) string {
 func CheckClientInitialized(client interface{}) error {
 	if client == nil || isNilPointer(client) {
 		return errors.NewClientError(
-			errors.ErrorCodeClientNotInitialized, 
+			errors.ErrorCodeClientNotInitialized,
 			"API client not initialized",
 		)
 	}

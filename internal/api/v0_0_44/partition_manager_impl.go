@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -47,7 +47,7 @@ func (m *PartitionManagerImpl) List(ctx context.Context, opts *interfaces.ListPa
 
 	// Handle response
 	if resp.HTTPResponse.StatusCode != 200 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
@@ -84,17 +84,17 @@ func (m *PartitionManagerImpl) Get(ctx context.Context, partitionName string) (*
 	}
 
 	if resp.HTTPResponse.StatusCode == 404 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Partition %s not found", partitionName))
 	}
 
 	if resp.HTTPResponse.StatusCode != 200 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
 	if resp.JSON200 == nil || resp.JSON200.Partitions == nil || len(resp.JSON200.Partitions) == 0 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Partition %s not found", partitionName))
 	}
 
@@ -105,7 +105,7 @@ func (m *PartitionManagerImpl) Get(ctx context.Context, partitionName string) (*
 // Update updates partition properties
 func (m *PartitionManagerImpl) Update(ctx context.Context, partitionName string, update *interfaces.PartitionUpdate) error {
 	// Partition updates are not supported in SLURM REST API v0.0.44
-	return errors.NewSlurmError(errors.ErrorCodeUnsupportedOperation, 
+	return errors.NewSlurmError(errors.ErrorCodeUnsupportedOperation,
 		"Partition updates are not supported in SLURM REST API v0.0.44")
 }
 
@@ -113,14 +113,14 @@ func (m *PartitionManagerImpl) Update(ctx context.Context, partitionName string,
 func (m *PartitionManagerImpl) Watch(ctx context.Context, opts *interfaces.WatchPartitionsOptions) (<-chan interfaces.PartitionEvent, error) {
 	// Create a channel for partition events
 	eventChan := make(chan interfaces.PartitionEvent)
-	
+
 	// For now, return a basic watcher that polls for changes
 	go func() {
 		defer close(eventChan)
-		
+
 		ticker := time.NewTicker(15 * time.Second)
 		defer ticker.Stop()
-		
+
 		for {
 			select {
 			case <-ctx.Done():
@@ -131,7 +131,7 @@ func (m *PartitionManagerImpl) Watch(ctx context.Context, opts *interfaces.Watch
 			}
 		}
 	}()
-	
+
 	return eventChan, nil
 }
 
@@ -193,11 +193,11 @@ func (m *PartitionManagerImpl) convertPartitionToInterface(partition *V0044Parti
 	}
 
 	// Set defaults for missing fields
-	result.AvailableNodes = 0  // Not directly available in v0.0.44
-	result.IdleCPUs = 0        // Not directly available in v0.0.44
-	result.MaxMemory = 0       // Would need to parse from TRES or memory fields
-	result.DefaultMemory = 0   // Would need to parse from TRES or memory fields
-	
+	result.AvailableNodes = 0 // Not directly available in v0.0.44
+	result.IdleCPUs = 0       // Not directly available in v0.0.44
+	result.MaxMemory = 0      // Would need to parse from TRES or memory fields
+	result.DefaultMemory = 0  // Would need to parse from TRES or memory fields
+
 	// Ensure slice fields are not nil
 	if result.AllowedUsers == nil {
 		result.AllowedUsers = []string{}

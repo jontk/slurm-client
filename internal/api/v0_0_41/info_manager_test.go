@@ -45,16 +45,16 @@ func TestInfoManager_Ping_Structure(t *testing.T) {
 }
 
 func TestInfoManager_Stats_NotImplemented(t *testing.T) {
-	// Test that Stats returns not implemented error
+	// Test that Stats returns error when client not initialized
 	infoManager := &InfoManager{
 		client: &WrapperClient{},
 	}
 
 	_, err := infoManager.Stats(context.Background())
 
-	// v0.0.41 Stats is not implemented
+	// Should return error because API client is not initialized
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not implemented")
+	assert.Contains(t, err.Error(), "not initialized")
 	// The impl should now be created
 	assert.NotNil(t, infoManager.impl)
 }

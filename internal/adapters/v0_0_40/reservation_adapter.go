@@ -144,7 +144,7 @@ func (a *ReservationAdapter) Get(ctx context.Context, reservationName string) (*
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(reservationName, "reservationName"); err != nil {
+	if err := a.ValidateResourceName(reservationName, "reservation name"); err != nil {
 		return nil, err
 	}
 
@@ -176,7 +176,7 @@ func (a *ReservationAdapter) Update(ctx context.Context, reservationName string,
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(reservationName, "reservationName"); err != nil {
+	if err := a.ValidateResourceName(reservationName, "reservation name"); err != nil {
 		return err
 	}
 
@@ -190,7 +190,7 @@ func (a *ReservationAdapter) Delete(ctx context.Context, reservationName string)
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(reservationName, "reservationName"); err != nil {
+	if err := a.ValidateResourceName(reservationName, "reservation name"); err != nil {
 		return err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -218,24 +218,4 @@ func (a *ReservationAdapter) Delete(ctx context.Context, reservationName string)
 	}
 
 	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
-}
-
-// validateReservationCreate validates reservation creation request
-func (a *ReservationAdapter) validateReservationCreate(reservation *types.ReservationCreate) error {
-	if reservation == nil {
-		return common.NewValidationError("reservation creation data is required", "reservation", nil)
-	}
-	if reservation.Name == "" {
-		return common.NewValidationError("reservation name is required", "name", reservation.Name)
-	}
-	if reservation.StartTime.IsZero() {
-		return common.NewValidationError("start time is required", "startTime", reservation.StartTime)
-	}
-	if reservation.EndTime.IsZero() {
-		return common.NewValidationError("end time is required", "endTime", reservation.EndTime)
-	}
-	if reservation.NodeList == "" && reservation.NodeCount == 0 {
-		return common.NewValidationError("either node list or node count is required", "nodeList", reservation.NodeList)
-	}
-	return nil
 }

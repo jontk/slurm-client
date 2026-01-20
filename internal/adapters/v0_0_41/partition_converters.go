@@ -152,33 +152,3 @@ func (a *PartitionAdapter) convertAPIPartitionToCommon(apiPartition interface{})
 
 	return partition, nil
 }
-
-// convertCommonToAPIPartitionCreate converts common partition create request to v0.0.41 API format
-func (a *PartitionAdapter) convertCommonToAPIPartitionCreate(create *types.PartitionCreate) interface{} {
-	// Create a basic partition creation request structure
-	// v0.0.41 doesn't support partition creation, return nil
-	var createReq interface{}
-
-	// Note: The exact structure for partition creation in v0.0.41 may be different
-	// This is a placeholder implementation that would need to be adjusted
-	// based on the actual API structure
-
-	// For now, return an empty request
-	_ = create
-	return createReq
-}
-
-// convertCommonToAPIPartitionUpdate converts common partition update request to v0.0.41 API format
-func (a *PartitionAdapter) convertCommonToAPIPartitionUpdate(update *types.PartitionUpdate) interface{} {
-	// Create a basic partition update request structure
-	// v0.0.41 doesn't support partition updates, return nil
-	var updateReq interface{}
-
-	// Note: The exact structure for partition updates in v0.0.41 may be different
-	// This is a placeholder implementation that would need to be adjusted
-	// based on the actual API structure
-
-	// For now, return an empty request
-	_ = update
-	return updateReq
-}

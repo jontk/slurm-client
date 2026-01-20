@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jontk/slurm-client/interfaces"
 	v040 "github.com/jontk/slurm-client/internal/api/v0_0_40"
 	v041 "github.com/jontk/slurm-client/internal/api/v0_0_41"
 	v042 "github.com/jontk/slurm-client/internal/api/v0_0_42"
 	v043 "github.com/jontk/slurm-client/internal/api/v0_0_43"
-	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/internal/versioning"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
@@ -33,10 +33,10 @@ type ClientFactory struct {
 	// Version detection cache
 	detectedVersion *versioning.APIVersion
 	compatibility   *versioning.VersionCompatibilityMatrix
-	
+
 	// Enhanced options for new features
 	enhanced *EnhancedOptions
-	
+
 	// Use adapters instead of wrapper clients
 	useAdapters bool
 }
@@ -202,7 +202,7 @@ func (f *ClientFactory) detectVersion(ctx context.Context) (*versioning.APIVersi
 	if err != nil {
 		return nil, fmt.Errorf("failed to detect version: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("version detection failed with status %d", resp.StatusCode)
@@ -285,7 +285,7 @@ func (f *ClientFactory) createClient(version *versioning.APIVersion) (SlurmClien
 func (f *ClientFactory) createV0_0_40Client() (SlurmClient, error) {
 	// Create enhanced HTTP client with all features
 	httpClient := f.buildEnhancedHTTPClient()
-	
+
 	// Apply authentication if needed
 	if f.auth != nil {
 		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
@@ -293,11 +293,11 @@ func (f *ClientFactory) createV0_0_40Client() (SlurmClient, error) {
 
 	// Check if adapters should be used
 	if f.useAdapters {
-		// Create adapter client config  
+		// Create adapter client config
 		config := &interfaces.ClientConfig{
 			BaseURL:    f.baseURL,
 			HTTPClient: httpClient,
-			APIKey:     "",    // Not used when we have auth provider
+			APIKey:     "", // Not used when we have auth provider
 			Debug:      f.config.Debug,
 		}
 		return NewAdapterClient("v0.0.40", config)
@@ -307,7 +307,7 @@ func (f *ClientFactory) createV0_0_40Client() (SlurmClient, error) {
 	config := &interfaces.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
-		APIKey:     "",    // Not used when we have auth provider
+		APIKey:     "", // Not used when we have auth provider
 		Debug:      f.config.Debug,
 	}
 
@@ -318,7 +318,7 @@ func (f *ClientFactory) createV0_0_40Client() (SlurmClient, error) {
 func (f *ClientFactory) createV0_0_41Client() (SlurmClient, error) {
 	// Create enhanced HTTP client with all features
 	httpClient := f.buildEnhancedHTTPClient()
-	
+
 	// Apply authentication if needed
 	if f.auth != nil {
 		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
@@ -326,11 +326,11 @@ func (f *ClientFactory) createV0_0_41Client() (SlurmClient, error) {
 
 	// Check if adapters should be used
 	if f.useAdapters {
-		// Create adapter client config  
+		// Create adapter client config
 		config := &interfaces.ClientConfig{
 			BaseURL:    f.baseURL,
 			HTTPClient: httpClient,
-			APIKey:     "",    // Not used when we have auth provider
+			APIKey:     "", // Not used when we have auth provider
 			Debug:      f.config.Debug,
 		}
 		return NewAdapterClient("v0.0.41", config)
@@ -340,7 +340,7 @@ func (f *ClientFactory) createV0_0_41Client() (SlurmClient, error) {
 	config := &interfaces.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
-		APIKey:     "",    // Not used when we have auth provider
+		APIKey:     "", // Not used when we have auth provider
 		Debug:      f.config.Debug,
 	}
 
@@ -351,7 +351,7 @@ func (f *ClientFactory) createV0_0_41Client() (SlurmClient, error) {
 func (f *ClientFactory) createV0_0_42Client() (SlurmClient, error) {
 	// Create enhanced HTTP client with all features
 	httpClient := f.buildEnhancedHTTPClient()
-	
+
 	// Apply authentication if needed
 	if f.auth != nil {
 		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
@@ -359,11 +359,11 @@ func (f *ClientFactory) createV0_0_42Client() (SlurmClient, error) {
 
 	// Check if adapters should be used
 	if f.useAdapters {
-		// Create adapter client config  
+		// Create adapter client config
 		config := &interfaces.ClientConfig{
 			BaseURL:    f.baseURL,
 			HTTPClient: httpClient,
-			APIKey:     "",    // Not used when we have auth provider
+			APIKey:     "", // Not used when we have auth provider
 			Debug:      f.config.Debug,
 		}
 		return NewAdapterClient("v0.0.42", config)
@@ -373,7 +373,7 @@ func (f *ClientFactory) createV0_0_42Client() (SlurmClient, error) {
 	config := &interfaces.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
-		APIKey:     "",    // Not used when we have auth provider
+		APIKey:     "", // Not used when we have auth provider
 		Debug:      f.config.Debug,
 	}
 
@@ -384,7 +384,7 @@ func (f *ClientFactory) createV0_0_42Client() (SlurmClient, error) {
 func (f *ClientFactory) createV0_0_43Client() (SlurmClient, error) {
 	// Create enhanced HTTP client with all features
 	httpClient := f.buildEnhancedHTTPClient()
-	
+
 	// Apply authentication if needed
 	if f.auth != nil {
 		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
@@ -392,11 +392,11 @@ func (f *ClientFactory) createV0_0_43Client() (SlurmClient, error) {
 
 	// Check if adapters should be used
 	if f.useAdapters {
-		// Create adapter client config  
+		// Create adapter client config
 		config := &interfaces.ClientConfig{
 			BaseURL:    f.baseURL,
 			HTTPClient: httpClient,
-			APIKey:     "",    // Not used when we have auth provider
+			APIKey:     "", // Not used when we have auth provider
 			Debug:      f.config.Debug,
 		}
 		return NewAdapterClient("v0.0.43", config)
@@ -406,7 +406,7 @@ func (f *ClientFactory) createV0_0_43Client() (SlurmClient, error) {
 	config := &interfaces.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
-		APIKey:     "",    // Not used when we have auth provider
+		APIKey:     "", // Not used when we have auth provider
 		Debug:      f.config.Debug,
 	}
 
@@ -417,7 +417,7 @@ func (f *ClientFactory) createV0_0_43Client() (SlurmClient, error) {
 func (f *ClientFactory) createV0_0_44Client() (SlurmClient, error) {
 	// Create enhanced HTTP client with all features
 	httpClient := f.buildEnhancedHTTPClient()
-	
+
 	// Apply authentication if needed
 	if f.auth != nil {
 		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
@@ -427,7 +427,7 @@ func (f *ClientFactory) createV0_0_44Client() (SlurmClient, error) {
 	config := &interfaces.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
-		APIKey:     "",    // Not used when we have auth provider
+		APIKey:     "", // Not used when we have auth provider
 		Debug:      f.config.Debug,
 	}
 	return NewAdapterClient("v0.0.44", config)

@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"strings"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 )
 
 // AccountAdapter implements the AccountAdapter interface for v0.0.41
@@ -299,7 +299,6 @@ func (a *AccountAdapter) AddUser(ctx context.Context, accountName string, userNa
 	//     Users:    &[]string{userName},
 	// }
 	return fmt.Errorf("AddUser not implemented for v0.0.41 - association API type not found")
-
 }
 
 // RemoveUser removes a user from an account

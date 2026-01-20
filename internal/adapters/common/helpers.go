@@ -13,14 +13,14 @@ import (
 // ConvertTRESListToString converts a list of TRES entries to a comma-separated string
 // This is a generic version that handles various TRES value types
 func ConvertTRESListToString(tresList []struct {
-	Type  *string `json:"type,omitempty"`
+	Type  *string     `json:"type,omitempty"`
 	Value interface{} `json:"value,omitempty"`
 }) string {
 	var parts []string
 	for _, tres := range tresList {
 		if tres.Type != nil && tres.Value != nil {
 			var valueStr string
-			
+
 			// Handle different value types
 			switch v := tres.Value.(type) {
 			case *int64:
@@ -51,7 +51,7 @@ func ConvertTRESListToString(tresList []struct {
 				// For complex types, use fmt.Sprintf
 				valueStr = fmt.Sprintf("%v", tres.Value)
 			}
-			
+
 			if valueStr != "" && valueStr != "<nil>" {
 				parts = append(parts, fmt.Sprintf("%s=%s", *tres.Type, valueStr))
 			}

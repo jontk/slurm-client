@@ -4,12 +4,11 @@
 package v0_0_40
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/common/types"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
+	"github.com/jontk/slurm-client/internal/common/types"
 )
 
 // convertAPIReservationToCommon converts a v0.0.40 API Reservation to common Reservation type
@@ -92,83 +91,4 @@ func (a *ReservationAdapter) convertAPIReservationToCommon(apiReservation api.V0
 	}
 
 	return reservation, nil
-}
-
-// convertCommonReservationCreateToAPI converts common ReservationCreate to v0.0.40 API format
-func (a *ReservationAdapter) convertCommonReservationCreateToAPI(reservation *types.ReservationCreate) (*api.V0040ReservationInfo, error) {
-	apiReservation := &api.V0040ReservationInfo{}
-
-	// Basic fields
-	apiReservation.Name = &reservation.Name
-
-	// Time fields
-	startTime := api.V0040Uint64NoVal{
-		Set:    boolPtr(true),
-		Number: int64Ptr(reservation.StartTime.Unix()),
-	}
-	apiReservation.StartTime = &startTime
-
-	endTime := api.V0040Uint64NoVal{
-		Set:    boolPtr(true),
-		Number: int64Ptr(reservation.EndTime.Unix()),
-	}
-	apiReservation.EndTime = &endTime
-
-	// v0.0.40 doesn't have Duration field in API
-	// Skip duration handling
-
-	// Node information
-	if reservation.NodeList != "" {
-		apiReservation.NodeList = &reservation.NodeList
-	}
-	if reservation.NodeCount > 0 {
-		apiReservation.NodeCount = &reservation.NodeCount
-	}
-
-	// Users and accounts
-	if len(reservation.Users) > 0 {
-		users := strings.Join(reservation.Users, ",")
-		apiReservation.Users = &users
-	}
-	if len(reservation.Accounts) > 0 {
-		accounts := strings.Join(reservation.Accounts, ",")
-		apiReservation.Accounts = &accounts
-	}
-
-	// Flags
-	if len(reservation.Flags) > 0 {
-		flags := make([]string, len(reservation.Flags))
-		for i, flag := range reservation.Flags {
-			flags[i] = string(flag)
-		}
-		apiReservation.Flags = &flags
-	}
-
-	// Features
-	if len(reservation.Features) > 0 {
-		features := strings.Join(reservation.Features, ",")
-		apiReservation.Features = &features
-	}
-
-	// Partition
-	if reservation.PartitionName != "" {
-		apiReservation.Partition = &reservation.PartitionName
-	}
-
-	// TRES - convert map to string format
-	if len(reservation.TRES) > 0 {
-		tresStrs := make([]string, 0, len(reservation.TRES))
-		for tres, count := range reservation.TRES {
-			tresStrs = append(tresStrs, fmt.Sprintf("%s=%d", tres, count))
-		}
-		tres := strings.Join(tresStrs, ",")
-		apiReservation.Tres = &tres
-	}
-
-	// Core count
-	if reservation.CoreCount > 0 {
-		apiReservation.CoreCount = &reservation.CoreCount
-	}
-
-	return apiReservation, nil
 }

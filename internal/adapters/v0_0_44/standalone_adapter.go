@@ -6,11 +6,11 @@ package v0_0_44
 import (
 	"context"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
 	"github.com/jontk/slurm-client/pkg/errors"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 )
 
 // StandaloneAdapter implements the standalone operations for v0.0.44
@@ -62,7 +62,7 @@ func (a *StandaloneAdapter) GetLicenses(ctx context.Context) (*types.LicenseList
 	licenses := make([]types.License, 0, len(resp.JSON200.Licenses))
 	for _, apiLicense := range resp.JSON200.Licenses {
 		license := types.License{}
-		
+
 		// Handle pointer fields
 		if apiLicense.LicenseName != nil {
 			license.Name = *apiLicense.LicenseName
@@ -82,7 +82,7 @@ func (a *StandaloneAdapter) GetLicenses(ctx context.Context) (*types.LicenseList
 		if apiLicense.LastConsumed != nil {
 			license.RemoteUsed = int(*apiLicense.LastConsumed)
 		}
-		
+
 		licenses = append(licenses, license)
 	}
 
@@ -125,7 +125,7 @@ func (a *StandaloneAdapter) CreateTRES(ctx context.Context, req *types.CreateTRE
 	return nil, errors.NewSlurmError(errors.ErrorCodeUnsupportedOperation, "TRES creation not supported in v0.0.44")
 }
 
-// GetShares retrieves fairshare information with optional filtering  
+// GetShares retrieves fairshare information with optional filtering
 func (a *StandaloneAdapter) GetShares(ctx context.Context, opts *types.GetSharesOptions) (*types.SharesList, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
@@ -203,11 +203,11 @@ func (a *StandaloneAdapter) GetDiagnostics(ctx context.Context) (*types.Diagnost
 
 	// v0.0.44 response has different structure, use basic conversion
 	// resp.JSON200.Statistics contains different data than expected
-	
+
 	return diag, nil
 }
 
-// GetDBDiagnostics retrieves SLURM database diagnostics information  
+// GetDBDiagnostics retrieves SLURM database diagnostics information
 func (a *StandaloneAdapter) GetDBDiagnostics(ctx context.Context) (*types.Diagnostics, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
@@ -278,7 +278,7 @@ func (a *StandaloneAdapter) PingDatabase(ctx context.Context) (*types.PingRespon
 
 	// Note: SLURM v0.0.44 doesn't have ping endpoint
 	return &types.PingResponse{
-		Status:  "ok", 
+		Status:  "ok",
 		Message: "v0.0.44 database ping simulation",
 	}, nil
 }

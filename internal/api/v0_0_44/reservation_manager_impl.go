@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -35,7 +35,7 @@ func (m *ReservationManagerImpl) List(ctx context.Context, opts *interfaces.List
 	}
 
 	if resp.HTTPResponse.StatusCode != 200 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
@@ -62,12 +62,12 @@ func (m *ReservationManagerImpl) Get(ctx context.Context, reservationName string
 	}
 
 	if resp.HTTPResponse.StatusCode == 404 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Reservation %s not found", reservationName))
 	}
 
 	if resp.HTTPResponse.StatusCode != 200 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 

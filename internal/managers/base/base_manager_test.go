@@ -15,9 +15,9 @@ import (
 func TestNewBaseManager(t *testing.T) {
 	version := "v0.0.43"
 	resourceType := "TestResource"
-	
+
 	manager := NewBaseManager(version, resourceType)
-	
+
 	assert.NotNil(t, manager)
 	assert.Equal(t, version, manager.version)
 	assert.Equal(t, resourceType, manager.resourceType)
@@ -25,7 +25,7 @@ func TestNewBaseManager(t *testing.T) {
 
 func TestBaseManager_ValidateResourceName(t *testing.T) {
 	manager := NewBaseManager("v0.0.43", "TestResource")
-	
+
 	tests := []struct {
 		name      string
 		value     string
@@ -59,7 +59,7 @@ func TestBaseManager_ValidateResourceName(t *testing.T) {
 			wantErr:   false, // Current implementation doesn't validate length
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := manager.ValidateResourceName(tt.value, tt.fieldName)
@@ -75,7 +75,7 @@ func TestBaseManager_ValidateResourceName(t *testing.T) {
 
 func TestBaseManager_ValidateNonNegative(t *testing.T) {
 	manager := NewBaseManager("v0.0.43", "TestResource")
-	
+
 	tests := []struct {
 		name      string
 		value     int
@@ -103,7 +103,7 @@ func TestBaseManager_ValidateNonNegative(t *testing.T) {
 			errMsg:    "must be non-negative",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := manager.ValidateNonNegative(tt.value, tt.fieldName)
@@ -170,7 +170,7 @@ func TestBaseManager_ValidateRange(t *testing.T) {
 			errMsg:    "must be between 0 and 1",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Note: ValidateRange method is not exposed in base_manager.go
@@ -182,7 +182,7 @@ func TestBaseManager_ValidateRange(t *testing.T) {
 
 func TestBaseManager_HandleAPIError(t *testing.T) {
 	manager := NewBaseManager("v0.0.43", "TestResource")
-	
+
 	tests := []struct {
 		name     string
 		inputErr error
@@ -207,7 +207,7 @@ func TestBaseManager_HandleAPIError(t *testing.T) {
 			errCode:  slurmErrors.ErrorCodeUnknown,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := manager.HandleAPIError(tt.inputErr)
@@ -225,9 +225,9 @@ func TestBaseManager_HandleAPIError(t *testing.T) {
 
 func TestBaseManager_HandleConversionError(t *testing.T) {
 	manager := NewBaseManager("v0.0.43", "TestResource")
-	
+
 	err := manager.HandleConversionError(errors.New("conversion failed"), "test-id")
-	
+
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Failed to convert TestResource")
 	assert.Contains(t, err.Error(), "test-id")
@@ -235,7 +235,7 @@ func TestBaseManager_HandleConversionError(t *testing.T) {
 
 func TestBaseManager_CheckClientInitialized(t *testing.T) {
 	manager := NewBaseManager("v0.0.43", "TestResource")
-	
+
 	tests := []struct {
 		name    string
 		client  interface{}
@@ -252,7 +252,7 @@ func TestBaseManager_CheckClientInitialized(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := manager.CheckClientInitialized(tt.client)
@@ -268,33 +268,33 @@ func TestBaseManager_CheckClientInitialized(t *testing.T) {
 
 func TestBaseManager_CheckNilResponse(t *testing.T) {
 	manager := NewBaseManager("v0.0.43", "TestResource")
-	
+
 	tests := []struct {
-		name        string
-		response    interface{}
-		operation   string
-		wantErr     bool
+		name      string
+		response  interface{}
+		operation string
+		wantErr   bool
 	}{
 		{
-			name:        "nil response",
-			response:    nil,
-			operation:   "List",
-			wantErr:     true,
+			name:      "nil response",
+			response:  nil,
+			operation: "List",
+			wantErr:   true,
 		},
 		{
-			name:        "non-nil response",
-			response:    &struct{}{},
-			operation:   "List",
-			wantErr:     false,
+			name:      "non-nil response",
+			response:  &struct{}{},
+			operation: "List",
+			wantErr:   false,
 		},
 		{
-			name:        "nil pointer",
-			response:    (*struct{})(nil),
-			operation:   "Get",
-			wantErr:     true,
+			name:      "nil pointer",
+			response:  (*struct{})(nil),
+			operation: "Get",
+			wantErr:   true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := manager.CheckNilResponse(tt.response, tt.operation)
@@ -312,13 +312,13 @@ func TestBaseManager_CheckNilResponse(t *testing.T) {
 func TestBaseManager_GetVersion(t *testing.T) {
 	version := "v0.0.43"
 	manager := NewBaseManager(version, "TestResource")
-	
+
 	assert.Equal(t, version, manager.GetVersion())
 }
 
 func TestBaseManager_GetResourceType(t *testing.T) {
 	resourceType := "TestResource"
 	manager := NewBaseManager("v0.0.43", resourceType)
-	
+
 	assert.Equal(t, resourceType, manager.GetResourceType())
 }

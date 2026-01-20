@@ -15,21 +15,21 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 var (
-	baseURL        = flag.String("url", "http://localhost:6820", "SLURM REST API URL")
-	apiVersion     = flag.String("version", "v0.0.43", "API version to use")
-	analyze        = flag.String("analyze", "user", "Analysis type: user, account, or hierarchy")
-	target         = flag.String("target", "", "User or account name to analyze")
-	compareUsers   = flag.Bool("compare-users", false, "Compare fair-share across multiple users")
+	baseURL         = flag.String("url", "http://localhost:6820", "SLURM REST API URL")
+	apiVersion      = flag.String("version", "v0.0.43", "API version to use")
+	analyze         = flag.String("analyze", "user", "Analysis type: user, account, or hierarchy")
+	target          = flag.String("target", "", "User or account name to analyze")
+	compareUsers    = flag.Bool("compare-users", false, "Compare fair-share across multiple users")
 	compareAccounts = flag.Bool("compare-accounts", false, "Compare fair-share across accounts")
 	predictPriority = flag.Bool("predict", false, "Predict job priority for different configurations")
-	showFactors    = flag.Bool("factors", false, "Show detailed priority factor breakdown")
-	outputFormat   = flag.String("format", "table", "Output format: table, csv, or json")
+	showFactors     = flag.Bool("factors", false, "Show detailed priority factor breakdown")
+	outputFormat    = flag.String("format", "table", "Output format: table, csv, or json")
 )
 
 func main() {
@@ -247,12 +247,12 @@ func compareUserFairShare(ctx context.Context, client interfaces.SlurmClient) {
 	users := []string{"user1", "user2", "user3", "user4", "user5"}
 
 	userManager := client.Users()
-	
+
 	type userFairShareData struct {
-		userName        string
-		fairShare       *interfaces.UserFairShare
-		accounts        []interfaces.UserAccount
-		err             error
+		userName  string
+		fairShare *interfaces.UserFairShare
+		accounts  []interfaces.UserAccount
+		err       error
 	}
 
 	results := make([]userFairShareData, 0, len(users))
@@ -260,7 +260,7 @@ func compareUserFairShare(ctx context.Context, client interfaces.SlurmClient) {
 	// Collect fair-share data for all users
 	for _, userName := range users {
 		data := userFairShareData{userName: userName}
-		
+
 		data.fairShare, data.err = userManager.GetUserFairShare(ctx, userName)
 		if data.err == nil {
 			pointerAccounts, _ := userManager.GetUserAccounts(ctx, userName)
@@ -270,7 +270,7 @@ func compareUserFairShare(ctx context.Context, client interfaces.SlurmClient) {
 				data.accounts[i] = *acc
 			}
 		}
-		
+
 		results = append(results, data)
 	}
 
@@ -392,8 +392,8 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 
 	// Define test scenarios
 	scenarios := []struct {
-		name      string
-		job       interfaces.JobSubmission
+		name string
+		job  interfaces.JobSubmission
 	}{
 		{
 			name: "Small Job (1 CPU, 1GB, 1 hour)",
@@ -446,7 +446,7 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 
 	// Run predictions for each scenario and account combination
 	fmt.Println("Priority Predictions by Job Type and Account:")
-	
+
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(w, "Job Type\tAccount\tPriority\tTier\tEst. Start\tQueue Pos")
 	fmt.Fprintln(w, "--------\t-------\t--------\t----\t----------\t---------")
@@ -457,7 +457,7 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 			for _, acc := range accounts {
 				scenario.job.Partition = acc.AccountName
 				priority, err := userManager.CalculateJobPriority(ctx, userName, &scenario.job)
-				
+
 				if err != nil {
 					if errors.IsNotImplementedError(err) {
 						fmt.Fprintf(w, "%s\t%s\tN/A\t-\t-\t-\n", scenario.name, acc.AccountName)
@@ -472,7 +472,7 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 					if !priority.EstimatedStart.IsZero() {
 						estStart = priority.EstimatedStart.Format("Jan 02 15:04")
 					}
-					
+
 					fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\t%d\n",
 						scenario.name,
 						acc.AccountName,
@@ -485,7 +485,7 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 		} else {
 			// Test without account
 			priority, err := userManager.CalculateJobPriority(ctx, userName, &scenario.job)
-			
+
 			if err != nil {
 				fmt.Fprintf(w, "%s\t(none)\tERROR\t-\t-\t-\n", scenario.name)
 				continue
@@ -496,7 +496,7 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 				if !priority.EstimatedStart.IsZero() {
 					estStart = priority.EstimatedStart.Format("Jan 02 15:04")
 				}
-				
+
 				fmt.Fprintf(w, "%s\t(none)\t%d\t%s\t%s\t%d\n",
 					scenario.name,
 					priority.Priority,
@@ -511,11 +511,11 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 	// Show priority factor breakdown if requested
 	if *showFactors && len(accounts) > 0 {
 		fmt.Printf("\n\nDetailed Priority Factor Breakdown:\n")
-		
+
 		// Use medium job as example
 		mediumJob := scenarios[1].job
 		mediumJob.Partition = accounts[0].AccountName
-		
+
 		priority, err := userManager.CalculateJobPriority(ctx, userName, &mediumJob)
 		if err == nil && priority != nil && priority.Factors != nil {
 			displayPriorityFactors(priority.Factors)
@@ -534,7 +534,7 @@ func displayUserFairShareReport(fairShare *interfaces.UserFairShare) {
 	// RawUsage field doesn't exist in UserFairShare
 	fmt.Printf("  Raw Shares: %d\n", fairShare.RawShares)
 	fmt.Printf("  Hierarchical Level: %d\n", fairShare.Level)
-	
+
 	// LastUpdate field doesn't exist in UserFairShare/AccountFairShare
 	if !fairShare.LastDecay.IsZero() {
 		fmt.Printf("  Last Decay: %v\n", fairShare.LastDecay.Format(time.RFC3339))
@@ -563,11 +563,11 @@ func displayAccountFairShareReport(fairShare *interfaces.AccountFairShare) {
 	fmt.Printf("  Fairshare Level: %d\n", fairShare.Level)
 	fmt.Printf("  Total Users: %d (Active: %d)\n", fairShare.UserCount, fairShare.ActiveUsers)
 	fmt.Printf("  Total Jobs: %d\n", fairShare.JobCount)
-	
+
 	if len(fairShare.Children) > 0 {
 		fmt.Printf("  Child Accounts: %d\n", len(fairShare.Children))
 	}
-	
+
 	// LastUpdate field doesn't exist in UserFairShare/AccountFairShare
 	if !fairShare.LastDecay.IsZero() {
 		fmt.Printf("  Last Decay: %v\n", fairShare.LastDecay.Format(time.RFC3339))
@@ -585,7 +585,7 @@ func displayFairShareTree(node *interfaces.FairShareNode, level int, format stri
 			nodeType = "User"
 		}
 		fmt.Printf("%s,%s,%d,%d,%.6f,%.6f,%.6f\n",
-			nodeType, node.Name, level, node.Shares, 
+			nodeType, node.Name, level, node.Shares,
 			node.FairShareFactor, node.Usage, node.NormalizedShares)
 	} else {
 		// Default tree format
@@ -594,9 +594,9 @@ func displayFairShareTree(node *interfaces.FairShareNode, level int, format stri
 		if node.User != "" {
 			nodeType = "U"
 		}
-		
+
 		fmt.Printf("%s├─ [%s] %s (shares: %d, factor: %.6f, usage: %.6f)\n",
-			indent, nodeType, node.Name, node.Shares, 
+			indent, nodeType, node.Name, node.Shares,
 			node.FairShareFactor, node.Usage)
 	}
 
@@ -609,17 +609,17 @@ func displayFairShareTree(node *interfaces.FairShareNode, level int, format stri
 func displayFairShareTrend(fairShare *interfaces.UserFairShare) {
 	fmt.Printf("\n\nFair-Share Trend Analysis:\n")
 	fmt.Println("(Historical data would be displayed here if available)")
-	
+
 	// In a real implementation, this would show:
 	// - Fair-share factor over time (daily/weekly)
 	// - Usage patterns
 	// - Share allocation changes
 	// - Priority ranking changes
-	
+
 	// For now, show a simple representation
 	fmt.Printf("\nCurrent Status:\n")
 	fmt.Printf("  Fair-Share Factor: %.6f", fairShare.FairShareFactor)
-	
+
 	if fairShare.FairShareFactor > 0.5 {
 		fmt.Println(" (Above Average)")
 	} else if fairShare.FairShareFactor > 0.1 {
@@ -627,24 +627,24 @@ func displayFairShareTrend(fairShare *interfaces.UserFairShare) {
 	} else {
 		fmt.Println(" (Below Average - Heavy Usage)")
 	}
-	
-	fmt.Printf("  Usage vs Allocation: %.2f%%\n", 
+
+	fmt.Printf("  Usage vs Allocation: %.2f%%\n",
 		(fairShare.EffectiveUsage/fairShare.NormalizedShares)*100)
 }
 
 func displayPriorityFactors(factors *interfaces.JobPriorityFactors) {
 	fmt.Println("\nPriority Factor Breakdown:")
-	
+
 	// Calculate percentages
 	total := float64(factors.Total)
 	if total == 0 {
 		total = 1 // Avoid division by zero
 	}
-	
+
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(w, "Factor\tValue\tPercentage\tDescription")
 	fmt.Fprintln(w, "------\t-----\t----------\t-----------")
-	
+
 	fmt.Fprintf(w, "Fair-Share\t%d\t%.1f%%\tBased on historical usage vs allocation\n",
 		factors.FairShare, (float64(factors.FairShare)/total)*100)
 	fmt.Fprintf(w, "Age\t%d\t%.1f%%\tTime since job submission\n",
@@ -656,7 +656,7 @@ func displayPriorityFactors(factors *interfaces.JobPriorityFactors) {
 	fmt.Fprintf(w, "QoS\t%d\t%.1f%%\tQuality of Service level\n",
 		factors.QoS, (float64(factors.QoS)/total)*100)
 	fmt.Fprintf(w, "TOTAL\t%d\t100.0%%\tFinal job priority\n", factors.Total)
-	
+
 	w.Flush()
 }
 
@@ -676,37 +676,37 @@ func calculateHierarchyStats(node *interfaces.FairShareNode) hierarchyStats {
 		minFairShare: 1.0,
 		maxFairShare: 0.0,
 	}
-	
+
 	calculateNodeStats(node, 0, &stats)
-	
+
 	if stats.totalNodes > 0 {
 		stats.avgFairShare = stats.fairShareSum / float64(stats.totalNodes)
 	}
-	
+
 	return stats
 }
 
 func calculateNodeStats(node *interfaces.FairShareNode, depth int, stats *hierarchyStats) {
 	stats.totalNodes++
 	stats.fairShareSum += node.FairShareFactor
-	
+
 	if node.FairShareFactor < stats.minFairShare {
 		stats.minFairShare = node.FairShareFactor
 	}
 	if node.FairShareFactor > stats.maxFairShare {
 		stats.maxFairShare = node.FairShareFactor
 	}
-	
+
 	if depth > stats.maxDepth {
 		stats.maxDepth = depth
 	}
-	
+
 	if node.User != "" {
 		stats.totalUsers++
 	} else {
 		stats.totalAccounts++
 	}
-	
+
 	for _, child := range node.Children {
 		calculateNodeStats(child, depth+1, stats)
 	}

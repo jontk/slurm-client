@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -114,12 +114,14 @@ func (r *ReservationManagerImpl) List(ctx context.Context, opts *interfaces.List
 
 // Get retrieves a specific reservation by name
 func (r *ReservationManagerImpl) Get(ctx context.Context, reservationName string) (*interfaces.Reservation, error) {
-	if r.client == nil || r.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap check)
 	if reservationName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "reservation name is required", "reservationName", reservationName, nil)
+	}
+
+	// Then check client initialization
+	if r.client == nil || r.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Prepare parameters for the API call

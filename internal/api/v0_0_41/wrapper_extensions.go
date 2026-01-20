@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/internal/common"
-	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -92,7 +92,7 @@ func (c *WrapperClient) HandleErrorResponse(statusCode int, body []byte) error {
 		// Log the body for debugging (in production, you'd use a proper logger)
 		// fmt.Printf("Error response body: %s\n", string(body))
 	}
-	
+
 	// Map HTTP status code to error
 	var code errors.ErrorCode
 	switch statusCode {
@@ -117,6 +117,6 @@ func (c *WrapperClient) HandleErrorResponse(statusCode int, body []byte) error {
 	default:
 		code = errors.ErrorCodeUnknown
 	}
-	
+
 	return errors.NewSlurmError(code, fmt.Sprintf("HTTP %d error", statusCode))
 }

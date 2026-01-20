@@ -25,8 +25,8 @@ func NewJobBuilder(command string) *JobBuilder {
 			CPUs:             1,                        // Default CPU count
 			Nodes:            1,                        // Default node count
 			Tasks:            1,                        // Default task count
-			Environment:      make(map[string]string), // Initialize empty
-			Dependencies:     []types.JobDependency{}, // Initialize empty
+			Environment:      make(map[string]string),  // Initialize empty
+			Dependencies:     []types.JobDependency{},  // Initialize empty
 			ResourceRequests: types.ResourceRequests{}, // Initialize empty
 			MailType:         []string{},               // Initialize empty
 			ClusterFeatures:  []string{},               // Initialize empty
@@ -301,10 +301,10 @@ func (b *JobBuilder) WithDependencyState(depType, state string, jobIDs ...int32)
 // AsInteractive applies common interactive job settings
 func (b *JobBuilder) AsInteractive() *JobBuilder {
 	return b.
-		WithTimeLimit(60).  // 1 hour default
-		WithCPUs(1).        // Single CPU
-		WithNodes(1).       // Single node
-		WithShared("yes")   // Allow sharing
+		WithTimeLimit(60). // 1 hour default
+		WithCPUs(1).       // Single CPU
+		WithNodes(1).      // Single node
+		WithShared("yes")  // Allow sharing
 }
 
 // AsBatch applies common batch job settings
@@ -319,8 +319,8 @@ func (b *JobBuilder) AsBatch() *JobBuilder {
 func (b *JobBuilder) AsArrayJob(arraySpec string) *JobBuilder {
 	return b.
 		WithArrayString(arraySpec).
-		WithTimeLimit(240).  // 4 hours default
-		WithCPUs(1).         // Single CPU per task
+		WithTimeLimit(240). // 4 hours default
+		WithCPUs(1).        // Single CPU per task
 		WithMailType("END", "FAIL")
 }
 
@@ -328,7 +328,7 @@ func (b *JobBuilder) AsArrayJob(arraySpec string) *JobBuilder {
 func (b *JobBuilder) AsGPUJob(gpuCount int) *JobBuilder {
 	return b.
 		WithGres(fmt.Sprintf("gpu:%d", gpuCount)).
-		WithTimeLimit(480).  // 8 hours default
+		WithTimeLimit(480).            // 8 hours default
 		WithCPUs(int32(gpuCount * 4)). // 4 CPUs per GPU
 		WithFeatures("gpu")
 }
@@ -338,8 +338,8 @@ func (b *JobBuilder) AsHighMemoryJob() *JobBuilder {
 	return b.
 		WithFeatures("highmem").
 		WithResourceRequests().
-			WithMemoryPerNode(64 * GB).  // 64GB default
-			Done().
+		WithMemoryPerNode(64 * GB). // 64GB default
+		Done().
 		WithTimeLimit(720) // 12 hours default
 }
 
@@ -389,7 +389,7 @@ func (b *JobBuilder) BuildForUpdate() (*types.JobUpdate, error) {
 	if b.job.QoS != "" {
 		update.QoS = &b.job.QoS
 	}
-	if b.job.TimeLimit != 30 {  // Not default
+	if b.job.TimeLimit != 30 { // Not default
 		update.TimeLimit = &b.job.TimeLimit
 	}
 	if b.job.Priority != nil {
@@ -427,9 +427,9 @@ func (b *JobBuilder) BuildForUpdate() (*types.JobUpdate, error) {
 func (b *JobBuilder) Clone() *JobBuilder {
 	newBuilder := &JobBuilder{
 		job: &types.JobCreate{
-			Name:              b.job.Name,
-			Account:           b.job.Account,
-			Partition:         b.job.Partition,
+			Name:             b.job.Name,
+			Account:          b.job.Account,
+			Partition:        b.job.Partition,
 			QoS:              b.job.QoS,
 			TimeLimit:        b.job.TimeLimit,
 			CPUs:             b.job.CPUs,
@@ -470,7 +470,7 @@ func (b *JobBuilder) Clone() *JobBuilder {
 	newBuilder.job.ClusterFeatures = append([]string{}, b.job.ClusterFeatures...)
 	newBuilder.job.Features = append([]string{}, b.job.Features...)
 	newBuilder.job.Profile = append([]string{}, b.job.Profile...)
-	
+
 	if b.job.Environment != nil {
 		newBuilder.job.Environment = make(map[string]string)
 		for k, v := range b.job.Environment {
@@ -557,7 +557,7 @@ func (r *JobResourceRequestsBuilder) WithMemoryPerCPU(bytes int64) *JobResourceR
 	return r
 }
 
-// WithMemoryPerNode sets the memory per node in bytes  
+// WithMemoryPerNode sets the memory per node in bytes
 func (r *JobResourceRequestsBuilder) WithMemoryPerNode(bytes int64) *JobResourceRequestsBuilder {
 	return r.WithMemory(bytes)
 }
@@ -626,4 +626,3 @@ func (r *JobResourceRequestsBuilder) WithThreadsPerCore(threads int32) *JobResou
 func (r *JobResourceRequestsBuilder) Done() *JobBuilder {
 	return r.parent
 }
-

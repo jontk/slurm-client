@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -20,7 +20,7 @@ func main() {
 	// Create configuration
 	cfg := config.NewDefault()
 	cfg.BaseURL = "https://cluster.example.com:6820"
-	
+
 	// Create authentication
 	authProvider := auth.NewTokenAuth("your-jwt-token")
 
@@ -56,7 +56,7 @@ func submitArrayJob(ctx context.Context, client slurm.SlurmClient) string {
 	// Create array job submission
 	// Array syntax: jobname[1-100:5] means tasks 1-100 with step of 5
 	job := &interfaces.JobSubmission{
-		Name:      "array-example",
+		Name: "array-example",
 		Script: `#!/bin/bash
 #SBATCH --array=1-20:2  # Create tasks 1,3,5,7,9,11,13,15,17,19
 
@@ -89,18 +89,18 @@ echo "Task $SLURM_ARRAY_TASK_ID completed at $(date)" > output_$SLURM_ARRAY_TASK
 
 	fmt.Printf("Array job submitted with ID: %s\n", resp.JobID)
 	fmt.Printf("Total array tasks: 10 (1,3,5,7,9,11,13,15,17,19)\n")
-	
+
 	return resp.JobID
 }
 
 // monitorArrayJob monitors the progress of an array job
 func monitorArrayJob(ctx context.Context, client slurm.SlurmClient, arrayJobID string) {
 	fmt.Printf("Monitoring array job %s...\n", arrayJobID)
-	
+
 	// Track task states
 	taskStates := make(map[string]string)
 	completedCount := 0
-	
+
 	// Monitor for up to 5 minutes
 	timeout := time.After(5 * time.Minute)
 	ticker := time.NewTicker(5 * time.Second)
@@ -111,7 +111,7 @@ func monitorArrayJob(ctx context.Context, client slurm.SlurmClient, arrayJobID s
 		case <-ticker.C:
 			// List all jobs with array job ID prefix
 			jobs, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
-				UserID: "",  // Filter by current user if needed
+				UserID: "", // Filter by current user if needed
 				Limit:  100,
 			})
 			if err != nil {
@@ -124,23 +124,23 @@ func monitorArrayJob(ctx context.Context, client slurm.SlurmClient, arrayJobID s
 				// Extract array task ID from job name or ID
 				// Format typically: jobid_taskid
 				taskID := extractArrayTaskID(job.ID, arrayJobID)
-				
+
 				oldState, exists := taskStates[taskID]
 				if !exists || oldState != job.State {
 					taskStates[taskID] = job.State
 					fmt.Printf("Task %s: %s", taskID, job.State)
-					
+
 					if exists && oldState != job.State {
 						fmt.Printf(" (was %s)", oldState)
 					}
-					
+
 					if job.State == "COMPLETED" {
 						completedCount++
 						fmt.Printf(" - Runtime: %s", formatRuntime(job.StartTime, job.EndTime))
 					} else if job.State == "FAILED" {
 						fmt.Printf(" - Exit code: %d", job.ExitCode)
 					}
-					
+
 					fmt.Println()
 				}
 			}
@@ -165,14 +165,14 @@ func monitorArrayJob(ctx context.Context, client slurm.SlurmClient, arrayJobID s
 func getArrayTaskDetails(ctx context.Context, client slurm.SlurmClient, arrayJobID string) {
 	// Get details for specific array tasks
 	taskIDs := []string{"1", "5", "10", "15", "19"}
-	
+
 	fmt.Printf("Getting details for array tasks: %v\n", taskIDs)
-	
+
 	for _, taskID := range taskIDs {
 		// Construct the full job ID for the array task
 		// Format depends on SLURM configuration, typically: arrayJobID_taskID
 		fullJobID := fmt.Sprintf("%s_%s", arrayJobID, taskID)
-		
+
 		job, err := client.Jobs().Get(ctx, fullJobID)
 		if err != nil {
 			// Try alternative format
@@ -183,13 +183,13 @@ func getArrayTaskDetails(ctx context.Context, client slurm.SlurmClient, arrayJob
 				continue
 			}
 		}
-		
+
 		fmt.Printf("\nArray Task %s:\n", taskID)
 		fmt.Printf("  State:      %s\n", job.State)
 		fmt.Printf("  Nodes:      %v\n", job.Nodes)
 		fmt.Printf("  CPUs:       %d\n", job.CPUs)
 		fmt.Printf("  Memory:     %d MB\n", job.Memory)
-		
+
 		if job.StartTime != nil {
 			fmt.Printf("  Start Time: %s\n", job.StartTime.Format("15:04:05"))
 		}
@@ -197,7 +197,7 @@ func getArrayTaskDetails(ctx context.Context, client slurm.SlurmClient, arrayJob
 			runtime := job.EndTime.Sub(*job.StartTime)
 			fmt.Printf("  Runtime:    %s\n", runtime.Round(time.Second))
 		}
-		
+
 		// Show environment variables specific to array tasks
 		if arrayTaskID, ok := job.Environment["SLURM_ARRAY_TASK_ID"]; ok {
 			fmt.Printf("  Array Task ID: %s\n", arrayTaskID)
@@ -212,16 +212,16 @@ func getArrayTaskDetails(ctx context.Context, client slurm.SlurmClient, arrayJob
 func cancelArrayTasks(ctx context.Context, client slurm.SlurmClient, arrayJobID string) {
 	// Cancel specific array tasks (e.g., only odd-numbered tasks)
 	tasksToCancel := []string{"11", "13", "15", "17", "19"}
-	
+
 	fmt.Printf("Cancelling array tasks: %v\n", tasksToCancel)
-	
+
 	for _, taskID := range tasksToCancel {
 		// Try different job ID formats
 		jobIDs := []string{
 			fmt.Sprintf("%s_%s", arrayJobID, taskID),
 			fmt.Sprintf("%s[%s]", arrayJobID, taskID),
 		}
-		
+
 		cancelled := false
 		for _, jobID := range jobIDs {
 			err := client.Jobs().Cancel(ctx, jobID)
@@ -231,12 +231,12 @@ func cancelArrayTasks(ctx context.Context, client slurm.SlurmClient, arrayJobID 
 				break
 			}
 		}
-		
+
 		if !cancelled {
 			log.Printf("Failed to cancel task %s", taskID)
 		}
 	}
-	
+
 	// Alternative: Cancel entire array job
 	// This would cancel all pending/running tasks but leave completed ones
 	fmt.Println("\nTo cancel the entire array job, use:")
@@ -249,12 +249,12 @@ func extractArrayTaskID(jobID, arrayJobID string) string {
 	// Extract array task ID from full job ID
 	// This is SLURM configuration dependent
 	// Common formats: arrayJobID_taskID or arrayJobID[taskID]
-	
+
 	prefix1 := arrayJobID + "_"
 	if len(jobID) > len(prefix1) && jobID[:len(prefix1)] == prefix1 {
 		return jobID[len(prefix1):]
 	}
-	
+
 	prefix2 := arrayJobID + "["
 	if len(jobID) > len(prefix2) && jobID[:len(prefix2)] == prefix2 {
 		for i := len(prefix2); i < len(jobID); i++ {
@@ -263,7 +263,7 @@ func extractArrayTaskID(jobID, arrayJobID string) string {
 			}
 		}
 	}
-	
+
 	return jobID
 }
 

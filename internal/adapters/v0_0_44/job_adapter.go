@@ -9,11 +9,11 @@ import (
 	"strconv"
 	"time"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
 	"github.com/jontk/slurm-client/pkg/errors"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 )
 
 // JobAdapter implements the JobAdapter interface for v0.0.44
@@ -788,8 +788,8 @@ func (a *JobAdapter) validateJobUpdate(update *types.JobUpdate) error {
 	}
 	// At least one field should be provided for update
 	if update.Name == nil && update.Account == nil && update.Partition == nil &&
-	   update.QoS == nil && update.TimeLimit == nil && update.Priority == nil &&
-	   update.Nice == nil && update.Comment == nil {
+		update.QoS == nil && update.TimeLimit == nil && update.Priority == nil &&
+		update.Nice == nil && update.Comment == nil {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one field must be provided for update", "update", update, nil)
 	}
 	return nil
@@ -1157,42 +1157,4 @@ func (a *JobAdapter) convertAPIJobAllocateResponseToCommon(apiResp *api.V0044Ope
 	}
 
 	return resp
-}
-
-// extractMetaFromJobAllocation extracts metadata from job allocation response
-func extractMetaFromJobAllocation(meta *api.V0044OpenapiMeta) map[string]interface{} {
-	result := make(map[string]interface{})
-
-	if meta == nil {
-		return result
-	}
-
-	// Extract basic metadata following existing patterns
-	if meta.Client != nil {
-		clientInfo := make(map[string]interface{})
-		if meta.Client.Source != nil {
-			clientInfo["source"] = *meta.Client.Source
-		}
-		if meta.Client.User != nil {
-			clientInfo["user"] = *meta.Client.User
-		}
-		if meta.Client.Group != nil {
-			clientInfo["group"] = *meta.Client.Group
-		}
-		if len(clientInfo) > 0 {
-			result["client"] = clientInfo
-		}
-	}
-
-	if meta.Plugin != nil {
-		pluginInfo := make(map[string]interface{})
-		if meta.Plugin.AccountingStorage != nil {
-			pluginInfo["accounting_storage"] = *meta.Plugin.AccountingStorage
-		}
-		if len(pluginInfo) > 0 {
-			result["plugin"] = pluginInfo
-		}
-	}
-
-	return result
 }

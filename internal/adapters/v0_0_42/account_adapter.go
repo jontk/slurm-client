@@ -261,9 +261,7 @@ func (a *AccountAdapter) CreateAssociation(ctx context.Context, req *types.Accou
 func (a *AccountAdapter) convertAccountAssociationRequestToAPI(req *types.AccountAssociationRequest) (*api.V0042OpenapiAccountsAddCondResp, error) {
 	// Create accounts list from string slice
 	accounts := make(api.V0042StringList, len(req.Accounts))
-	for i, account := range req.Accounts {
-		accounts[i] = account
-	}
+	copy(accounts, req.Accounts)
 
 	// Create association condition
 	assocCond := &api.V0042AccountsAddCond{

@@ -36,7 +36,7 @@ func demonstrateVersionFeatures(ctx context.Context) {
 	// Test each supported version
 	for _, version := range slurm.SupportedVersions() {
 		fmt.Printf("\n--- API Version %s ---\n", version)
-		
+
 		client, err := slurm.NewClientWithVersion(ctx, version,
 			slurm.WithBaseURL("https://localhost:6820"),
 			slurm.WithAuth(auth.NewNoneAuth()),
@@ -54,7 +54,7 @@ func demonstrateVersionFeatures(ctx context.Context) {
 func testVersionCapabilities(ctx context.Context, client slurm.SlurmClient, version string) {
 	// All versions support basic operations
 	fmt.Printf("✓ Basic operations (GetInfo, ListNodes, ListPartitions)\n")
-	
+
 	// Test job operations
 	fmt.Printf("✓ Job operations (ListJobs, SubmitJob, CancelJob)\n")
 
@@ -88,7 +88,7 @@ func testVersionCapabilities(ctx context.Context, client slurm.SlurmClient, vers
 func testLegacyFeatures(ctx context.Context, client slurm.SlurmClient) {
 	// Test legacy v0.0.40 specific features
 	fmt.Printf("  Testing legacy job submission patterns...\n")
-	
+
 	// This would use minimum_switches field in v0.0.40
 	jobReq := &slurm.JobSubmissionRequest{
 		Script: `#!/bin/bash
@@ -114,7 +114,7 @@ echo "Legacy version test"`,
 func testEnhancedFeatures(ctx context.Context, client slurm.SlurmClient) {
 	// Test v0.0.41 enhanced features
 	fmt.Printf("  Testing enhanced filtering and error handling...\n")
-	
+
 	// Test enhanced job listing with filters
 	jobs, err := client.ListJobs(ctx)
 	if err != nil {
@@ -127,17 +127,17 @@ func testEnhancedFeatures(ctx context.Context, client slurm.SlurmClient) {
 func testOptimizedFeatures(ctx context.Context, client slurm.SlurmClient) {
 	// Test v0.0.42 optimized features
 	fmt.Printf("  Testing performance optimizations...\n")
-	
+
 	// Test streamlined partition information
 	partitions, err := client.ListPartitions(ctx)
 	if err != nil {
 		log.Printf("  Optimized partition listing failed: %v", err)
 	} else {
 		fmt.Printf("  ✓ Optimized partition listing: %d partitions\n", len(partitions))
-		
+
 		// Show streamlined partition data
 		for _, partition := range partitions {
-			fmt.Printf("    - %s: %d nodes, %d jobs\n", 
+			fmt.Printf("    - %s: %d nodes, %d jobs\n",
 				partition.Name, len(partition.Nodes), partition.TotalJobs)
 		}
 	}
@@ -146,7 +146,7 @@ func testOptimizedFeatures(ctx context.Context, client slurm.SlurmClient) {
 func testLatestFeatures(ctx context.Context, client slurm.SlurmClient) {
 	// Test v0.0.43 latest features
 	fmt.Printf("  Testing latest API features...\n")
-	
+
 	// Test advanced scheduling (if available)
 	info, err := client.GetInfo(ctx)
 	if err != nil {
@@ -154,20 +154,20 @@ func testLatestFeatures(ctx context.Context, client slurm.SlurmClient) {
 	} else {
 		fmt.Printf("  ✓ Latest API info: %s\n", info.Version)
 	}
-	
+
 	fmt.Printf("  ✓ Reservation management APIs available\n")
 	fmt.Printf("  ✓ Advanced scheduling policies supported\n")
 }
 
 func demonstrateBreakingChanges() {
 	fmt.Println("\n=== Breaking Changes Between Versions ===")
-	
+
 	compatibility := slurm.GetVersionCompatibility()
-	
+
 	for version, info := range compatibility {
 		fmt.Printf("\n--- %s ---\n", version)
 		fmt.Printf("Slurm versions: %v\n", info.SlurmVersions)
-		
+
 		if len(info.BreakingChanges) > 0 {
 			fmt.Printf("Breaking changes:\n")
 			for _, change := range info.BreakingChanges {
@@ -176,7 +176,7 @@ func demonstrateBreakingChanges() {
 		} else {
 			fmt.Printf("No breaking changes\n")
 		}
-		
+
 		if len(info.NewFeatures) > 0 {
 			fmt.Printf("New features:\n")
 			for _, feature := range info.NewFeatures {
@@ -188,17 +188,17 @@ func demonstrateBreakingChanges() {
 
 func demonstrateCompatibilityMatrix() {
 	fmt.Println("\n=== Slurm Version Compatibility Matrix ===")
-	
+
 	slurmVersions := []string{"24.05", "24.11", "25.05", "25.11"}
 	apiVersions := slurm.SupportedVersions()
-	
+
 	// Print header
 	fmt.Printf("%-10s", "Slurm\\API")
 	for _, apiVer := range apiVersions {
 		fmt.Printf("%-12s", apiVer)
 	}
 	fmt.Println()
-	
+
 	// Print compatibility matrix
 	for _, slurmVer := range slurmVersions {
 		fmt.Printf("%-10s", slurmVer)
@@ -211,7 +211,7 @@ func demonstrateCompatibilityMatrix() {
 		}
 		fmt.Println()
 	}
-	
+
 	fmt.Println("\nRecommended API versions by Slurm release:")
 	for _, slurmVer := range slurmVersions {
 		recommended := getRecommendedAPIVersion(slurmVer)
@@ -225,7 +225,7 @@ func isCompatible(slurmVersion, apiVersion string) bool {
 	if !exists {
 		return false
 	}
-	
+
 	for _, supportedSlurm := range info.SlurmVersions {
 		if supportedSlurm == slurmVersion {
 			return true
@@ -238,11 +238,11 @@ func getRecommendedAPIVersion(slurmVersion string) string {
 	// Mapping based on compatibility and stability
 	recommendations := map[string]string{
 		"24.05": "v0.0.40",
-		"24.11": "v0.0.41", 
+		"24.11": "v0.0.41",
 		"25.05": "v0.0.42", // Stable
 		"25.11": "v0.0.43", // Latest
 	}
-	
+
 	if rec, exists := recommendations[slurmVersion]; exists {
 		return rec
 	}

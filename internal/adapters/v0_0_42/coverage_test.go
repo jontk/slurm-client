@@ -16,63 +16,63 @@ import (
 func TestValidationErrorPaths(t *testing.T) {
 	client := &api.ClientWithResponses{}
 
-	// Test cluster adapter with nil context
+	// Test cluster adapter validation with nil context
 	clusterAdapter := NewClusterAdapter(client)
-	_, err := clusterAdapter.List(nil, nil)
+	_, err := clusterAdapter.List(nil, nil) //lint:ignore SA1012 Intentionally testing nil context handling
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context")
 
-	// Test partition adapter with nil context
+	// Test partition adapter validation with nil context
 	partitionAdapter := NewPartitionAdapter(client)
-	_, err = partitionAdapter.List(nil, nil)
+	_, err = partitionAdapter.List(nil, nil) //lint:ignore SA1012 Intentionally testing nil context handling
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context")
 
-	// Test QoS adapter with nil context
+	// Test QoS adapter validation with nil context
 	qosAdapter := NewQoSAdapter(client)
-	_, err = qosAdapter.List(nil, nil)
+	_, err = qosAdapter.List(nil, nil) //lint:ignore SA1012 Intentionally testing nil context handling
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context")
 
-	// Test reservation adapter with nil context
+	// Test reservation adapter validation with nil context
 	reservationAdapter := NewReservationAdapter(client)
-	_, err = reservationAdapter.List(nil, nil)
+	_, err = reservationAdapter.List(nil, nil) //lint:ignore SA1012 Intentionally testing nil context handling
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context")
 
-	// Test job adapter with nil context
+	// Test job adapter validation with nil context
 	jobAdapter := NewJobAdapter(client)
-	_, err = jobAdapter.List(nil, nil)
+	_, err = jobAdapter.List(nil, nil) //lint:ignore SA1012 Intentionally testing nil context handling
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context")
 
-	// Test node adapter with nil context
+	// Test node adapter validation with nil context
 	nodeAdapter := NewNodeAdapter(client)
-	_, err = nodeAdapter.List(nil, nil)
+	_, err = nodeAdapter.List(nil, nil) //lint:ignore SA1012 Intentionally testing nil context handling
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context")
 
-	// Test account adapter with nil context
+	// Test account adapter validation with nil context
 	accountAdapter := NewAccountAdapter(client)
-	_, err = accountAdapter.List(nil, nil)
+	_, err = accountAdapter.List(nil, nil) //lint:ignore SA1012 Intentionally testing nil context handling
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context")
 
-	// Test user adapter with nil context
+	// Test user adapter validation with nil context
 	userAdapter := NewUserAdapter(client)
-	_, err = userAdapter.List(nil, nil)
+	_, err = userAdapter.List(nil, nil) //lint:ignore SA1012 Intentionally testing nil context handling
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context")
 
-	// Test association adapter with nil context
+	// Test association adapter validation with nil context
 	associationAdapter := NewAssociationAdapter(client)
-	_, err = associationAdapter.List(nil, nil)
+	_, err = associationAdapter.List(nil, nil) //lint:ignore SA1012 Intentionally testing nil context handling
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context")
 
-	// Test WCKey adapter with nil context
+	// Test WCKey adapter validation with nil context
 	wckeyAdapter := NewWCKeyAdapter(client)
-	_, err = wckeyAdapter.List(nil, nil)
+	_, err = wckeyAdapter.List(nil, nil) //lint:ignore SA1012 Intentionally testing nil context handling
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context")
 }

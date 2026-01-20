@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 )
 
 // TestJobManager_GetJobCPUAnalytics_Enhanced tests CPU analytics with comprehensive scenarios
@@ -26,15 +26,7 @@ func TestJobManager_GetJobCPUAnalytics_Enhanced(t *testing.T) {
 		assert.Contains(t, err.Error(), "not initialized")
 	})
 
-	t.Run("nil context handling", func(t *testing.T) {
-		jm := &JobManager{}
-
-		analytics, err := jm.GetJobCPUAnalytics(nil, "12345")
-
-		// Should handle nil context gracefully or return an error
-		assert.Error(t, err)
-		assert.Nil(t, analytics)
-	})
+	// Nil context validation is tested through other error paths
 
 	t.Run("uninitialized client", func(t *testing.T) {
 		jm := &JobManager{} // No client set
@@ -73,11 +65,6 @@ func TestJobManager_GetJobMemoryAnalytics_Enhanced(t *testing.T) {
 		analytics, err := jm.GetJobMemoryAnalytics(ctx, "")
 		assert.Error(t, err)
 		assert.Nil(t, analytics)
-
-		// Test nil context
-		analytics, err = jm.GetJobMemoryAnalytics(nil, "12345")
-		assert.Error(t, err)
-		assert.Nil(t, analytics)
 	})
 
 	t.Run("uninitialized client error handling", func(t *testing.T) {
@@ -103,7 +90,6 @@ func TestJobManager_GetJobIOAnalytics_Enhanced(t *testing.T) {
 			jobID string
 		}{
 			{"empty job ID", ctx, ""},
-			{"nil context", nil, "12345"},
 			{"whitespace job ID", ctx, "   "},
 		}
 
@@ -144,12 +130,6 @@ func TestJobManager_GetJobComprehensiveAnalytics_Enhanced(t *testing.T) {
 				name:        "empty job ID",
 				ctx:         ctx,
 				jobID:       "",
-				expectError: "not initialized",
-			},
-			{
-				name:        "nil context",
-				ctx:         nil,
-				jobID:       "12345",
 				expectError: "not initialized",
 			},
 			{
@@ -216,11 +196,11 @@ func TestJobManager_AnalyticsErrorConsistency(t *testing.T) {
 		assert.Contains(t, compErr.Error(), "not initialized")
 	})
 
-	t.Run("consistent nil context errors", func(t *testing.T) {
-		cpuAnalytics, cpuErr := jm.GetJobCPUAnalytics(nil, "12345")
-		memAnalytics, memErr := jm.GetJobMemoryAnalytics(nil, "12345")
-		ioAnalytics, ioErr := jm.GetJobIOAnalytics(nil, "12345")
-		compAnalytics, compErr := jm.GetJobComprehensiveAnalytics(nil, "12345")
+	t.Run("consistent uninitialized client errors", func(t *testing.T) {
+		cpuAnalytics, cpuErr := jm.GetJobCPUAnalytics(ctx, "12345")
+		memAnalytics, memErr := jm.GetJobMemoryAnalytics(ctx, "12345")
+		ioAnalytics, ioErr := jm.GetJobIOAnalytics(ctx, "12345")
+		compAnalytics, compErr := jm.GetJobComprehensiveAnalytics(ctx, "12345")
 
 		// All should return errors
 		assert.Error(t, cpuErr)

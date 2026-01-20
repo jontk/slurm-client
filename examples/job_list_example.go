@@ -10,7 +10,7 @@ import (
 	"log"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 )
 
 func main() {

@@ -224,136 +224,21 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 		return nil, err
 	}
 
-	// Create job description structure
-	jobDesc := &api.V0041JobDescMsg{
-		Script: &job.Script,
-	}
-
-	// Basic job properties
-	if job.Name != "" {
-		jobDesc.Name = &job.Name
-	}
-	if job.Account != "" {
-		jobDesc.Account = &job.Account
-	}
-	if job.Partition != "" {
-		jobDesc.Partition = &job.Partition
-	}
-
-	// Working directory
-	if job.WorkingDirectory != "" {
-		jobDesc.CurrentWorkingDirectory = &job.WorkingDirectory
-	}
-
-	// Standard output/error/input
-	if job.StandardOutput != "" {
-		jobDesc.StandardOutput = &job.StandardOutput
-	}
-	if job.StandardError != "" {
-		jobDesc.StandardError = &job.StandardError
-	}
-	if job.StandardInput != "" {
-		jobDesc.StandardInput = &job.StandardInput
-	}
-
-	// Time limit
-	if job.TimeLimit > 0 {
-		timeLimit := int32(job.TimeLimit)
-		timeLimitStruct := &struct {
-			Infinite *bool  `json:"infinite,omitempty"`
-			Number   *int32 `json:"number,omitempty"`
-			Set      *bool  `json:"set,omitempty"`
-		}{
-			Set:    &[]bool{true}[0],
-			Number: &timeLimit,
-		}
-		jobDesc.TimeLimit = timeLimitStruct
-	}
-
-	// Node count
-	if job.Nodes > 0 {
-		nodes := int32(job.Nodes)
-		jobDesc.MinimumNodes = &nodes
-	}
-
-	// Handle environment variables - CRITICAL for avoiding SLURM errors
-	envList := make([]string, 0)
-
-	// Always provide at least minimal environment to avoid SLURM write errors
-	hasPath := false
-	for key := range job.Environment {
-		if key == "PATH" {
-			hasPath = true
-			break
-		}
-	}
-
-	if !hasPath {
-		envList = append(envList, "PATH=/usr/bin:/bin")
-	}
-
-	// Add all user-provided environment variables
-	for key, value := range job.Environment {
-		envList = append(envList, fmt.Sprintf("%s=%s", key, value))
-	}
-
-	// Set environment in job description
-	jobDesc.Environment = &envList
-
-	// Create request body
-	submitReq := api.V0041JobSubmitReq{
-		Job: jobDesc,
-	}
-
-	// Make the API call
-	resp, err := a.client.SlurmV0041PostJobSubmitWithResponse(ctx, submitReq)
-	if err != nil {
-		return nil, a.WrapError(err, "failed to submit job")
-	}
-
-	// Handle response
-	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return nil, err
-	}
-
-	if resp.JSON200 == nil {
-		return nil, fmt.Errorf("unexpected nil response")
-	}
-
-	// Convert response
-	submitResp := &types.JobSubmitResponse{}
-
-	// Extract job ID
-	if resp.JSON200.JobId != nil {
-		submitResp.JobID = *resp.JSON200.JobId
-	}
-
-	// Extract warnings if any
-	if resp.JSON200.Warnings != nil {
-		warnings := make([]string, 0, len(*resp.JSON200.Warnings))
-		for _, warning := range *resp.JSON200.Warnings {
-			if warning.Description != nil {
-				warnings = append(warnings, *warning.Description)
-			}
-		}
-		submitResp.Warning = warnings
-	}
-
-	// Extract errors if any
-	if resp.JSON200.Errors != nil {
-		errors := make([]string, 0, len(*resp.JSON200.Errors))
-		for _, error := range *resp.JSON200.Errors {
-			if error.Description != nil {
-				errors = append(errors, *error.Description)
-			}
-		}
-		if len(errors) > 0 {
-			submitResp.Error = errors
-		}
-	}
-
-	return submitResp, nil
+	// Note: v0.0.41 API job submission is not yet implemented
+	// This would require V0041JobDescMsg and V0041JobSubmitReq types which don't exist in the generated client.
+	// TODO: Use a newer API version (v0.0.42+) for job submission
+	return nil, fmt.Errorf("job submission not yet implemented for v0.0.41 - use a newer API version")
 }
+
+// OLD IMPLEMENTATION DISABLED - would use undefined types
+// Commented out code that uses V0041JobDescMsg and V0041JobSubmitReq
+/*
+func (a *JobAdapter) Submit_OLD_DISABLED(ctx context.Context, job *types.JobCreate) (*types.JobSubmitResponse, error) {
+	// This implementation has been disabled due to undefined types in the generated client
+	// See the current Submit function above for the replacement
+	return nil, fmt.Errorf("disabled")
+}
+*/
 
 // Cancel cancels a job
 func (a *JobAdapter) Cancel(ctx context.Context, jobID int32, opts *types.JobCancelRequest) error {

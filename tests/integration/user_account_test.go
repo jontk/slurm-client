@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/tests/helpers"
 	"github.com/jontk/slurm-client/tests/mocks"
@@ -230,9 +230,18 @@ func testUserManagement(t *testing.T, ctx context.Context, client interfaces.Slu
 
 		priority, err := userManager.CalculateJobPriority(ctx, "testuser", jobSubmission)
 
-		// All versions should handle this consistently
-		assert.Error(t, err)
-		assert.Nil(t, priority)
+		// v0.0.43+ supports job priority calculation
+		switch apiVersion {
+		case "v0.0.43":
+			assert.NoError(t, err)
+			assert.NotNil(t, priority)
+			assert.Equal(t, "testuser", priority.UserName)
+			assert.Greater(t, priority.Priority, 0)
+		default:
+			// Earlier versions return NotImplementedError
+			assert.Error(t, err)
+			assert.Nil(t, priority)
+		}
 	})
 }
 
@@ -256,7 +265,7 @@ func testUserAccountAssociations(t *testing.T, ctx context.Context, client inter
 
 	t.Run("get_user_account_associations", func(t *testing.T) {
 		opts := &interfaces.ListUserAccountAssociationsOptions{
-			Accounts: []string{"testaccount1", "testaccount2"},
+			Accounts:   []string{"testaccount1", "testaccount2"},
 			ActiveOnly: true,
 		}
 
@@ -343,19 +352,29 @@ func testFairShareOperations(t *testing.T, ctx context.Context, client interface
 
 	t.Run("job_priority_calculation", func(t *testing.T) {
 		jobSubmission := &interfaces.JobSubmission{
-			Script:     "#!/bin/bash\necho 'priority test'",
-			Account:    "testaccount",
-			Partition:  "compute",
-			CPUs:       4,
-			Memory:     8192,
-			TimeLimit:  60,
+			Script:    "#!/bin/bash\necho 'priority test'",
+			Account:   "testaccount",
+			Partition: "compute",
+			CPUs:      4,
+			Memory:    8192,
+			TimeLimit: 60,
 		}
 
 		priority, err := userManager.CalculateJobPriority(ctx, "testuser", jobSubmission)
 
-		// All versions should handle this consistently
-		assert.Error(t, err)
-		assert.Nil(t, priority)
+		// v0.0.43+ supports job priority calculation
+		switch apiVersion {
+		case "v0.0.43":
+			assert.NoError(t, err)
+			assert.NotNil(t, priority)
+			assert.Equal(t, "testuser", priority.UserName)
+			assert.Greater(t, priority.Priority, 0)
+			assert.NotNil(t, priority.Factors)
+		default:
+			// Earlier versions return NotImplementedError
+			assert.Error(t, err)
+			assert.Nil(t, priority)
+		}
 	})
 }
 

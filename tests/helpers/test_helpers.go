@@ -54,3 +54,28 @@ func RequireNotNil(t *testing.T, obj interface{}) {
 	t.Helper()
 	require.NotNil(t, obj)
 }
+
+// IntPtr returns a pointer to an int value
+func IntPtr(v int) *int {
+	return &v
+}
+
+// Int32Ptr returns a pointer to an int32 value
+func Int32Ptr(v int32) *int32 {
+	return &v
+}
+
+// Int64Ptr returns a pointer to an int64 value
+func Int64Ptr(v int64) *int64 {
+	return &v
+}
+
+// StringPtr returns a pointer to a string value
+func StringPtr(v string) *string {
+	return &v
+}
+
+// BoolPtr returns a pointer to a bool value
+func BoolPtr(v bool) *bool {
+	return &v
+}

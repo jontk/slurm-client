@@ -7,51 +7,51 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNodeManager_List_NotImplemented(t *testing.T) {
-	// Test that List returns not implemented error
+	// Test that List returns client error when client is not initialized
 	nodeManager := &NodeManager{
 		client: &WrapperClient{},
 	}
 
 	_, err := nodeManager.List(context.Background(), nil)
 
-	// v0.0.41 NodeManager is not implemented
+	// Should return client not initialized error
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not implemented")
+	assert.Contains(t, err.Error(), "client not initialized")
 	// The impl should now be created
 	assert.NotNil(t, nodeManager.impl)
 }
 
 func TestNodeManager_Get_NotImplemented(t *testing.T) {
-	// Test that Get returns not implemented error
+	// Test that Get returns client error when client is not initialized
 	nodeManager := &NodeManager{
 		client: &WrapperClient{},
 	}
 
 	_, err := nodeManager.Get(context.Background(), "node-001")
 
-	// v0.0.41 NodeManager is not implemented
+	// Should return client not initialized error
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not implemented")
+	assert.Contains(t, err.Error(), "client not initialized")
 	// The impl should now be created
 	assert.NotNil(t, nodeManager.impl)
 }
 
 func TestNodeManager_Update_NotImplemented(t *testing.T) {
-	// Test that Update returns not implemented error
+	// Test that Update returns client error when client is not initialized
 	nodeManager := &NodeManager{
 		client: &WrapperClient{},
 	}
 
 	err := nodeManager.Update(context.Background(), "node-001", &interfaces.NodeUpdate{State: stringPtr("DRAIN")})
 
-	// v0.0.41 NodeManager is not implemented
+	// Should return client not initialized error
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not implemented")
+	assert.Contains(t, err.Error(), "client not initialized")
 	// The impl should now be created
 	assert.NotNil(t, nodeManager.impl)
 }
