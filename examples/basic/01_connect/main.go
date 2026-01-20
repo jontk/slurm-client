@@ -101,13 +101,13 @@ func advancedExample(ctx context.Context) {
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://localhost:6820"),
 		slurm.WithAuth(auth.NewTokenAuth("your-jwt-token")),
-		
+
 		// Set custom timeout
 		slurm.WithTimeout(30*time.Second),
-		
+
 		// Configure retry behavior
 		slurm.WithMaxRetries(5),
-		
+
 		// Custom HTTP client with TLS configuration
 		slurm.WithHTTPClient(&http.Client{
 			Timeout: 30 * time.Second,
@@ -119,10 +119,10 @@ func advancedExample(ctx context.Context) {
 				},
 			},
 		}),
-		
+
 		// Force specific API version
 		slurm.WithVersion("v0.0.43"),
-		
+
 		// Custom user agent
 		slurm.WithUserAgent("my-app/1.0"),
 	)

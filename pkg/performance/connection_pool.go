@@ -28,7 +28,7 @@ type ConnectionPoolConfig struct {
 	// TLSHandshakeTimeout specifies the maximum amount of time waiting for TLS handshake
 	TLSHandshakeTimeout time.Duration
 
-	// ExpectContinueTimeout specifies the amount of time to wait for a server's 
+	// ExpectContinueTimeout specifies the amount of time to wait for a server's
 	// first response headers after fully writing the request headers
 	ExpectContinueTimeout time.Duration
 
@@ -52,51 +52,51 @@ type ConnectionPoolConfig struct {
 // DefaultConnectionPoolConfig returns a performance-optimized configuration
 func DefaultConnectionPoolConfig() *ConnectionPoolConfig {
 	return &ConnectionPoolConfig{
-		MaxIdleConns:                100,
-		MaxIdleConnsPerHost:         30,
-		MaxConnsPerHost:             100,
-		IdleConnTimeout:             90 * time.Second,
-		TLSHandshakeTimeout:         10 * time.Second,
-		ExpectContinueTimeout:       1 * time.Second,
-		ResponseHeaderTimeout:       30 * time.Second,
-		DisableCompression:          false,
-		DisableKeepAlives:           false,
-		EnableTLSSessionResumption:  true,
-		TLSInsecureSkipVerify:       false,
+		MaxIdleConns:               100,
+		MaxIdleConnsPerHost:        30,
+		MaxConnsPerHost:            100,
+		IdleConnTimeout:            90 * time.Second,
+		TLSHandshakeTimeout:        10 * time.Second,
+		ExpectContinueTimeout:      1 * time.Second,
+		ResponseHeaderTimeout:      30 * time.Second,
+		DisableCompression:         false,
+		DisableKeepAlives:          false,
+		EnableTLSSessionResumption: true,
+		TLSInsecureSkipVerify:      false,
 	}
 }
 
 // HighPerformanceConnectionPoolConfig returns configuration optimized for high-throughput scenarios
 func HighPerformanceConnectionPoolConfig() *ConnectionPoolConfig {
 	return &ConnectionPoolConfig{
-		MaxIdleConns:                200,
-		MaxIdleConnsPerHost:         50,
-		MaxConnsPerHost:             200,
-		IdleConnTimeout:             120 * time.Second,
-		TLSHandshakeTimeout:         5 * time.Second,
-		ExpectContinueTimeout:       500 * time.Millisecond,
-		ResponseHeaderTimeout:       15 * time.Second,
-		DisableCompression:          false,
-		DisableKeepAlives:           false,
-		EnableTLSSessionResumption:  true,
-		TLSInsecureSkipVerify:       false,
+		MaxIdleConns:               200,
+		MaxIdleConnsPerHost:        50,
+		MaxConnsPerHost:            200,
+		IdleConnTimeout:            120 * time.Second,
+		TLSHandshakeTimeout:        5 * time.Second,
+		ExpectContinueTimeout:      500 * time.Millisecond,
+		ResponseHeaderTimeout:      15 * time.Second,
+		DisableCompression:         false,
+		DisableKeepAlives:          false,
+		EnableTLSSessionResumption: true,
+		TLSInsecureSkipVerify:      false,
 	}
 }
 
 // ConservativeConnectionPoolConfig returns configuration optimized for resource-constrained environments
 func ConservativeConnectionPoolConfig() *ConnectionPoolConfig {
 	return &ConnectionPoolConfig{
-		MaxIdleConns:                10,
-		MaxIdleConnsPerHost:         5,
-		MaxConnsPerHost:             20,
-		IdleConnTimeout:             30 * time.Second,
-		TLSHandshakeTimeout:         15 * time.Second,
-		ExpectContinueTimeout:       2 * time.Second,
-		ResponseHeaderTimeout:       60 * time.Second,
-		DisableCompression:          false,
-		DisableKeepAlives:           false,
-		EnableTLSSessionResumption:  true,
-		TLSInsecureSkipVerify:       false,
+		MaxIdleConns:               10,
+		MaxIdleConnsPerHost:        5,
+		MaxConnsPerHost:            20,
+		IdleConnTimeout:            30 * time.Second,
+		TLSHandshakeTimeout:        15 * time.Second,
+		ExpectContinueTimeout:      2 * time.Second,
+		ResponseHeaderTimeout:      60 * time.Second,
+		DisableCompression:         false,
+		DisableKeepAlives:          false,
+		EnableTLSSessionResumption: true,
+		TLSInsecureSkipVerify:      false,
 	}
 }
 
@@ -154,25 +154,27 @@ func (p *HTTPClientPool) createOptimizedClient() *http.Client {
 
 	// Create optimized transport
 	transport := &http.Transport{
-		DialContext:             dialer.DialContext,
-		MaxIdleConns:            p.config.MaxIdleConns,
-		MaxIdleConnsPerHost:     p.config.MaxIdleConnsPerHost,
-		MaxConnsPerHost:         p.config.MaxConnsPerHost,
-		IdleConnTimeout:         p.config.IdleConnTimeout,
-		TLSHandshakeTimeout:     p.config.TLSHandshakeTimeout,
-		ExpectContinueTimeout:   p.config.ExpectContinueTimeout,
-		ResponseHeaderTimeout:   p.config.ResponseHeaderTimeout,
-		DisableCompression:      p.config.DisableCompression,
-		DisableKeepAlives:       p.config.DisableKeepAlives,
-		ForceAttemptHTTP2:       true, // Enable HTTP/2 when possible
-		WriteBufferSize:         64 * 1024, // 64KB write buffer
-		ReadBufferSize:          64 * 1024, // 64KB read buffer
+		DialContext:           dialer.DialContext,
+		MaxIdleConns:          p.config.MaxIdleConns,
+		MaxIdleConnsPerHost:   p.config.MaxIdleConnsPerHost,
+		MaxConnsPerHost:       p.config.MaxConnsPerHost,
+		IdleConnTimeout:       p.config.IdleConnTimeout,
+		TLSHandshakeTimeout:   p.config.TLSHandshakeTimeout,
+		ExpectContinueTimeout: p.config.ExpectContinueTimeout,
+		ResponseHeaderTimeout: p.config.ResponseHeaderTimeout,
+		DisableCompression:    p.config.DisableCompression,
+		DisableKeepAlives:     p.config.DisableKeepAlives,
+		ForceAttemptHTTP2:     true,      // Enable HTTP/2 when possible
+		WriteBufferSize:       64 * 1024, // 64KB write buffer
+		ReadBufferSize:        64 * 1024, // 64KB read buffer
 	}
 
 	// Configure TLS settings
 	if p.config.EnableTLSSessionResumption || p.config.TLSInsecureSkipVerify {
+		// #nosec G402 -- InsecureSkipVerify is user-configurable and defaults to false (secure)
+		// This allows users to optionally disable TLS verification for testing/development
 		transport.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: p.config.TLSInsecureSkipVerify,
+			InsecureSkipVerify: p.config.TLSInsecureSkipVerify,    // #nosec G402
 			ClientSessionCache: tls.NewLRUClientSessionCache(256), // Enable session resumption
 		}
 	}
@@ -224,9 +226,9 @@ func (p *HTTPClientPool) Close() {
 
 // ConnectionPoolStats represents statistics about the connection pool
 type ConnectionPoolStats struct {
-	ActiveClients int                      `json:"active_clients"`
-	Endpoints     []EndpointStats          `json:"endpoints"`
-	Config        ConnectionPoolConfig     `json:"config"`
+	ActiveClients int                  `json:"active_clients"`
+	Endpoints     []EndpointStats      `json:"endpoints"`
+	Config        ConnectionPoolConfig `json:"config"`
 }
 
 // EndpointStats represents statistics for a specific endpoint
@@ -278,7 +280,7 @@ func GetConnectionPoolConfigForProfile(profile PerformanceProfile) *ConnectionPo
 
 	case ProfileBatch:
 		config := HighPerformanceConnectionPoolConfig()
-		config.IdleConnTimeout = 300 * time.Second // Longer idle timeout for batch jobs
+		config.IdleConnTimeout = 300 * time.Second       // Longer idle timeout for batch jobs
 		config.ResponseHeaderTimeout = 120 * time.Second // Longer response timeout
 		return config
 
@@ -322,22 +324,22 @@ func (m *HTTPClientPoolManager) GetPoolForVersion(version string, profile Perfor
 
 	// Create new pool with version-specific optimizations
 	config := GetConnectionPoolConfigForProfile(profile)
-	
+
 	// Version-specific optimizations
 	switch version {
 	case "v0.0.40":
 		// Older version, more conservative settings
-		config.MaxConnsPerHost = min(config.MaxConnsPerHost, 20)
-		config.ResponseHeaderTimeout = max(config.ResponseHeaderTimeout, 30*time.Second)
-	
+		config.MaxConnsPerHost = minInt(config.MaxConnsPerHost, 20)
+		config.ResponseHeaderTimeout = maxDuration(config.ResponseHeaderTimeout, 30*time.Second)
+
 	case "v0.0.41":
 		// Stable version with some optimizations
 		config.ExpectContinueTimeout = 750 * time.Millisecond
-	
+
 	case "v0.0.42":
 		// Stable and performant version
 		// Use default optimizations
-	
+
 	case "v0.0.43":
 		// Latest version, enable all optimizations
 		// Latest version supports HTTP/2 optimizations
@@ -376,14 +378,14 @@ func (m *HTTPClientPoolManager) GetGlobalStats() map[string]ConnectionPoolStats 
 
 // Helper functions
 
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}
 	return b
 }
 
-func max(a, b time.Duration) time.Duration {
+func maxDuration(a, b time.Duration) time.Duration {
 	if a > b {
 		return a
 	}

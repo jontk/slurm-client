@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -215,7 +215,6 @@ func (r *ReservationManagerImpl) Create(ctx context.Context, reservation *interf
 	// For v0.0.42, reservation creation is not supported via API
 	// Return appropriate error
 	return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "Reservation creation not supported in v0.0.42 API")
-
 }
 
 // Update updates an existing reservation
@@ -441,14 +440,4 @@ func filterReservations(reservations []interfaces.Reservation, opts *interfaces.
 	}
 
 	return filtered
-}
-
-// convertReservationCreateToAPI - not implemented for v0.0.42 (no POST API)
-func convertReservationCreateToAPI(create *interfaces.ReservationCreate) (*V0042ReservationInfo, error) {
-	return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "Reservation creation not supported in v0.0.42 API")
-}
-
-// convertReservationUpdateToAPI - not implemented for v0.0.42 (no POST API)
-func convertReservationUpdateToAPI(update *interfaces.ReservationUpdate) (*V0042ReservationInfo, error) {
-	return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "Reservation updates not supported in v0.0.42 API")
 }

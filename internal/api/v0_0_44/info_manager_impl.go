@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -35,7 +35,7 @@ func (m *InfoManagerImpl) Get(ctx context.Context) (*interfaces.ClusterInfo, err
 	}
 
 	if resp.HTTPResponse.StatusCode != 200 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
@@ -92,7 +92,7 @@ func (m *InfoManagerImpl) Stats(ctx context.Context) (*interfaces.ClusterStats, 
 	}
 
 	if resp.HTTPResponse.StatusCode != 200 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
@@ -103,12 +103,12 @@ func (m *InfoManagerImpl) Stats(ctx context.Context) (*interfaces.ClusterStats, 
 	// Convert to interface type
 	stats := &interfaces.ClusterStats{
 		// Placeholder values until we understand the exact v0.0.44 response structure
-		TotalJobs:       0,
-		RunningJobs:     0,
-		PendingJobs:     0,
-		TotalNodes:      0,
-		IdleNodes:       0,
-		AllocatedNodes:  0,
+		TotalJobs:      0,
+		RunningJobs:    0,
+		PendingJobs:    0,
+		TotalNodes:     0,
+		IdleNodes:      0,
+		AllocatedNodes: 0,
 	}
 
 	return stats, nil

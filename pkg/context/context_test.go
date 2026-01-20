@@ -15,7 +15,7 @@ import (
 
 func TestDefaultTimeoutConfig(t *testing.T) {
 	config := DefaultTimeoutConfig()
-	
+
 	require.NotNil(t, config)
 	assert.Equal(t, DefaultTimeout, config.Default)
 	assert.Equal(t, 30*time.Second, config.Read)
@@ -86,7 +86,7 @@ func TestWithTimeout(t *testing.T) {
 				// For other operations, we expect a timeout context
 				deadline, hasDeadline := timeoutCtx.Deadline()
 				assert.True(t, hasDeadline)
-				
+
 				// Check that the deadline is approximately correct
 				expectedDeadline := time.Now().Add(tt.expectedTime)
 				assert.WithinDuration(t, expectedDeadline, deadline, 100*time.Millisecond)
@@ -102,7 +102,7 @@ func TestWithTimeoutNilConfig(t *testing.T) {
 
 	deadline, hasDeadline := timeoutCtx.Deadline()
 	assert.True(t, hasDeadline)
-	
+
 	// Should use default config
 	expectedDeadline := time.Now().Add(30 * time.Second)
 	assert.WithinDuration(t, expectedDeadline, deadline, 100*time.Millisecond)
@@ -119,7 +119,7 @@ func TestWithTimeoutWatchWithTimeout(t *testing.T) {
 
 	deadline, hasDeadline := timeoutCtx.Deadline()
 	assert.True(t, hasDeadline)
-	
+
 	expectedDeadline := time.Now().Add(1 * time.Minute)
 	assert.WithinDuration(t, expectedDeadline, deadline, 100*time.Millisecond)
 }
@@ -128,7 +128,7 @@ func TestWithDeadline(t *testing.T) {
 	t.Run("no existing deadline", func(t *testing.T) {
 		ctx := context.Background()
 		deadline := time.Now().Add(1 * time.Hour)
-		
+
 		deadlineCtx, cancel := WithDeadline(ctx, deadline)
 		defer cancel()
 
@@ -144,7 +144,7 @@ func TestWithDeadline(t *testing.T) {
 
 		laterDeadline := time.Now().Add(2 * time.Hour)
 		deadlineCtx, cancelFunc := WithDeadline(ctx, laterDeadline)
-		
+
 		// Cancel function should be a no-op
 		cancelFunc()
 
@@ -173,13 +173,13 @@ func TestEnsureTimeout(t *testing.T) {
 	t.Run("no existing deadline", func(t *testing.T) {
 		ctx := context.Background()
 		defaultTimeout := 30 * time.Second
-		
+
 		timeoutCtx, cancel := EnsureTimeout(ctx, defaultTimeout)
 		defer cancel()
 
 		deadline, hasDeadline := timeoutCtx.Deadline()
 		assert.True(t, hasDeadline)
-		
+
 		expectedDeadline := time.Now().Add(defaultTimeout)
 		assert.WithinDuration(t, expectedDeadline, deadline, 100*time.Millisecond)
 	})
@@ -190,7 +190,7 @@ func TestEnsureTimeout(t *testing.T) {
 		defer cancel()
 
 		timeoutCtx, cancelFunc := EnsureTimeout(ctx, 30*time.Second)
-		
+
 		// Cancel function should be a no-op
 		cancelFunc()
 
@@ -202,13 +202,13 @@ func TestEnsureTimeout(t *testing.T) {
 
 	t.Run("zero default timeout", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		timeoutCtx, cancel := EnsureTimeout(ctx, 0)
 		defer cancel()
 
 		deadline, hasDeadline := timeoutCtx.Deadline()
 		assert.True(t, hasDeadline)
-		
+
 		// Should use DefaultTimeout
 		expectedDeadline := time.Now().Add(DefaultTimeout)
 		assert.WithinDuration(t, expectedDeadline, deadline, 100*time.Millisecond)
@@ -294,9 +294,9 @@ func TestWrapContextError(t *testing.T) {
 	t.Run("context error", func(t *testing.T) {
 		operation := "test-operation"
 		timeout := 30 * time.Second
-		
+
 		wrappedErr := WrapContextError(context.DeadlineExceeded, operation, timeout)
-		
+
 		require.IsType(t, &ContextError{}, wrappedErr)
 		contextErr := wrappedErr.(*ContextError)
 		assert.Equal(t, operation, contextErr.Operation)
@@ -308,9 +308,9 @@ func TestWrapContextError(t *testing.T) {
 		originalErr := errors.New("not a context error")
 		operation := "test-operation"
 		timeout := 30 * time.Second
-		
+
 		wrappedErr := WrapContextError(originalErr, operation, timeout)
-		
+
 		// Should return the original error unchanged
 		assert.Equal(t, originalErr, wrappedErr)
 	})
@@ -318,9 +318,9 @@ func TestWrapContextError(t *testing.T) {
 	t.Run("nil error", func(t *testing.T) {
 		operation := "test-operation"
 		timeout := 30 * time.Second
-		
+
 		wrappedErr := WrapContextError(nil, operation, timeout)
-		
+
 		// Should return nil unchanged
 		assert.Nil(t, wrappedErr)
 	})

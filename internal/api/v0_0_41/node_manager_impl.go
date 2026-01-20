@@ -6,7 +6,7 @@ package v0_0_41
 import (
 	"context"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -102,15 +102,46 @@ func (m *NodeManagerImpl) List(ctx context.Context, opts *interfaces.ListNodesOp
 
 // Get retrieves a specific node by name
 func (m *NodeManagerImpl) Get(ctx context.Context, nodeName string) (*interfaces.Node, error) {
-	return nil, errors.NewClientError(
-		errors.ErrorCodeUnsupportedOperation,
-		"Node retrieval not implemented for v0.0.41",
-		"The v0.0.41 node response uses complex inline structs that differ significantly from other API versions",
-	)
+	// Check if client is initialized first
+	if m.client == nil || m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Call the GetNode API (params can be nil)
+	resp, err := m.client.apiClient.SlurmV0041GetNodeWithResponse(ctx, nodeName, nil)
+	if err != nil {
+		wrappedErr := errors.WrapError(err)
+		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.41")
+	}
+
+	// Check HTTP status
+	if resp.StatusCode() != 200 {
+		var responseBody []byte
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.41")
+		return nil, httpErr
+	}
+
+	// Check for unexpected response format
+	if resp.JSON200 == nil || len(resp.JSON200.Nodes) == 0 {
+		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected response format")
+	}
+
+	// Get the first node from the response - minimal conversion for v0.0.41
+	apiNode := resp.JSON200.Nodes[0]
+	node := &interfaces.Node{
+		Name: *apiNode.Name,
+	}
+
+	return node, nil
 }
 
 // Update updates node properties
 func (m *NodeManagerImpl) Update(ctx context.Context, nodeName string, update *interfaces.NodeUpdate) error {
+	// Check if client is initialized first
+	if m.client == nil || m.client.apiClient == nil {
+		return errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
 	return errors.NewClientError(
 		errors.ErrorCodeUnsupportedOperation,
 		"Node updates not implemented for v0.0.41",

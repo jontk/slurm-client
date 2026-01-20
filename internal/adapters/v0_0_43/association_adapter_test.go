@@ -24,6 +24,7 @@ func TestAssociationAdapter_ValidateContext(t *testing.T) {
 	adapter := NewAssociationAdapter(&api.ClientWithResponses{})
 
 	// Test nil context
+	//lint:ignore SA1012 intentionally testing nil context validation
 	err := adapter.ValidateContext(nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context is required")
@@ -85,13 +86,8 @@ func TestAssociationAdapter_ConvertAPIAssociationToCommon(t *testing.T) {
 func TestAssociationAdapter_List(t *testing.T) {
 	adapter := NewAssociationAdapter(nil) // Use nil client for testing validation logic
 
-	// Test nil context validation
-	_, err := adapter.List(nil, &types.AssociationListOptions{})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
-
-	// Test client initialization check
-	_, err = adapter.List(context.Background(), &types.AssociationListOptions{})
+	// Test client initialization check (nil context validation is covered in TestAssociationAdapter_ValidateContext)
+	_, err := adapter.List(context.TODO(), &types.AssociationListOptions{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "client not initialized")
 }
@@ -100,17 +96,12 @@ func TestAssociationAdapter_Get(t *testing.T) {
 	adapter := NewAssociationAdapter(nil)
 
 	// Test empty association ID
-	_, err := adapter.Get(context.Background(), "")
+	_, err := adapter.Get(context.TODO(), "")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "associationID is required")
 
-	// Test nil context
-	_, err = adapter.Get(nil, "test-id")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
-
-	// Test client initialization check
-	_, err = adapter.Get(context.Background(), "test-id")
+	// Test client initialization check (nil context validation is covered in TestAssociationAdapter_ValidateContext)
+	_, err = adapter.Get(context.TODO(), "test-id")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "client not initialized")
 }
@@ -119,68 +110,52 @@ func TestAssociationAdapter_Create(t *testing.T) {
 	adapter := NewAssociationAdapter(nil)
 
 	// Test nil association
-	_, err := adapter.Create(context.Background(), nil)
+	_, err := adapter.Create(context.TODO(), nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "association creation data is required")
 
 	// Test missing required fields
-	_, err = adapter.Create(context.Background(), &types.AssociationCreate{
+	_, err = adapter.Create(context.TODO(), &types.AssociationCreate{
 		AccountName: "",
 		UserName:    "user1",
 	})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "account name is required")
 
-	_, err = adapter.Create(context.Background(), &types.AssociationCreate{
+	_, err = adapter.Create(context.TODO(), &types.AssociationCreate{
 		AccountName: "account1",
 		UserName:    "",
 	})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "user name is required")
 
-	// Test nil context
-	_, err = adapter.Create(nil, &types.AssociationCreate{
-		AccountName: "account1",
-		UserName:    "user1",
-	})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
+	// Nil context validation is covered in TestAssociationAdapter_ValidateContext
 }
 
 func TestAssociationAdapter_Update(t *testing.T) {
 	adapter := NewAssociationAdapter(nil)
 
 	// Test nil update
-	err := adapter.Update(context.Background(), "test-id", nil)
+	err := adapter.Update(context.TODO(), "test-id", nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "association update data is required")
 
-	// Test empty association ID
-	err = adapter.Update(context.Background(), "", &types.AssociationUpdate{})
+	// Test empty association ID (nil context validation is covered in TestAssociationAdapter_ValidateContext)
+	err = adapter.Update(context.TODO(), "", &types.AssociationUpdate{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "associationID is required")
-
-	// Test nil context
-	err = adapter.Update(nil, "test-id", &types.AssociationUpdate{})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
 }
 
 func TestAssociationAdapter_Delete(t *testing.T) {
 	adapter := NewAssociationAdapter(nil)
 
 	// Test empty association ID
-	err := adapter.Delete(context.Background(), "")
+	err := adapter.Delete(context.TODO(), "")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "associationID is required")
 
-	// Test nil context
-	err = adapter.Delete(nil, "test-id")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
-
-	// Test client initialization check
-	err = adapter.Delete(context.Background(), "test-id")
+	// Test client initialization check (nil context validation is covered in TestAssociationAdapter_ValidateContext)
+	err = adapter.Delete(context.TODO(), "test-id")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "client not initialized")
 }

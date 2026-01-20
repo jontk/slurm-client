@@ -4,7 +4,7 @@
 package performance
 
 import (
-	"crypto/md5"
+	"crypto/md5" // #nosec G501 -- MD5 used only for non-cryptographic cache key hashing
 	"encoding/hex"
 	"encoding/json"
 	"sync"
@@ -37,15 +37,15 @@ func DefaultCacheConfig() *CacheConfig {
 		EnableCompression: true,
 		CleanupInterval:   1 * time.Minute,
 		TTLByOperation: map[string]time.Duration{
-			"info.version":     30 * time.Minute, // API version info rarely changes
-			"info.stats":       30 * time.Second,  // Cluster stats change frequently
-			"info.get":         10 * time.Minute,  // Cluster info changes moderately
-			"partitions.list":  10 * time.Minute,  // Partitions change infrequently
-			"partitions.get":   10 * time.Minute,
-			"nodes.list":       2 * time.Minute,   // Node states change frequently
-			"nodes.get":        2 * time.Minute,
-			"jobs.list":        30 * time.Second,  // Job lists change very frequently
-			"jobs.get":         1 * time.Minute,   // Individual job details change frequently
+			"info.version":    30 * time.Minute, // API version info rarely changes
+			"info.stats":      30 * time.Second, // Cluster stats change frequently
+			"info.get":        10 * time.Minute, // Cluster info changes moderately
+			"partitions.list": 10 * time.Minute, // Partitions change infrequently
+			"partitions.get":  10 * time.Minute,
+			"nodes.list":      2 * time.Minute, // Node states change frequently
+			"nodes.get":       2 * time.Minute,
+			"jobs.list":       30 * time.Second, // Job lists change very frequently
+			"jobs.get":        1 * time.Minute,  // Individual job details change frequently
 		},
 	}
 }
@@ -132,17 +132,20 @@ func (c *ResponseCache) GenerateKey(operation string, params map[string]interfac
 	}
 
 	// Convert to JSON for consistent ordering
+	//nolint:errchkjson // Cache key generation - fallback to operation name if marshal fails
 	jsonData, _ := json.Marshal(data)
-	
+
 	// Create MD5 hash for compact key
-	hash := md5.Sum(jsonData)
+	// #nosec G401 -- MD5 is used for non-cryptographic cache key generation, not security
+	// Collision resistance is not critical for cache keys, and MD5 provides good speed/size tradeoff
+	hash := md5.Sum(jsonData) // #nosec G401
 	return operation + ":" + hex.EncodeToString(hash[:])
 }
 
 // Get retrieves a value from the cache
 func (c *ResponseCache) Get(operation string, params map[string]interface{}) ([]byte, bool) {
 	key := c.GenerateKey(operation, params)
-	
+
 	c.mutex.RLock()
 	item, exists := c.items[key]
 	c.mutex.RUnlock()
@@ -157,7 +160,7 @@ func (c *ResponseCache) Get(operation string, params map[string]interface{}) ([]
 		c.mutex.Lock()
 		delete(c.items, key)
 		c.mutex.Unlock()
-		
+
 		c.updateStats(func(s *CacheStats) { s.Misses++; s.Evictions++ })
 		return nil, false
 	}
@@ -182,7 +185,7 @@ func (c *ResponseCache) Get(operation string, params map[string]interface{}) ([]
 // Set stores a value in the cache
 func (c *ResponseCache) Set(operation string, params map[string]interface{}, value []byte) {
 	key := c.GenerateKey(operation, params)
-	
+
 	// Determine TTL for this operation
 	ttl := c.config.DefaultTTL
 	if operationTTL, exists := c.config.TTLByOperation[operation]; exists {
@@ -222,7 +225,7 @@ func (c *ResponseCache) Set(operation string, params map[string]interface{}, val
 // Delete removes an item from the cache
 func (c *ResponseCache) Delete(operation string, params map[string]interface{}) {
 	key := c.GenerateKey(operation, params)
-	
+
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -260,9 +263,9 @@ func (c *ResponseCache) Clear() {
 
 	itemCount := len(c.items)
 	c.items = make(map[string]*CacheItem)
-	c.updateStatsUnsafe(func(s *CacheStats) { 
+	c.updateStatsUnsafe(func(s *CacheStats) {
 		s.Evictions += int64(itemCount)
-		s.Clears++ 
+		s.Clears++
 	})
 }
 
@@ -273,7 +276,7 @@ func (c *ResponseCache) GetStats() CacheStats {
 
 	stats := c.stats
 	stats.CurrentItems = int64(len(c.items))
-	
+
 	// Calculate additional metrics
 	if stats.Hits+stats.Misses > 0 {
 		stats.HitRatio = float64(stats.Hits) / float64(stats.Hits+stats.Misses)
@@ -296,7 +299,7 @@ func (c *ResponseCache) GetDetailedStats() DetailedCacheStats {
 	for _, item := range c.items {
 		itemSize := int64(len(item.Value))
 		totalSize += itemSize
-		
+
 		stats.Items = append(stats.Items, CacheItemStats{
 			Key:        item.Key,
 			Size:       itemSize,
@@ -315,11 +318,11 @@ func (c *ResponseCache) GetDetailedStats() DetailedCacheStats {
 func (c *ResponseCache) Close() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	
+
 	if c.closed {
 		return
 	}
-	
+
 	if c.cleanup != nil {
 		c.cleanup.Stop()
 	}
@@ -406,7 +409,7 @@ type CacheStats struct {
 
 // DetailedCacheStats includes per-item statistics
 type DetailedCacheStats struct {
-	Basic CacheStats      `json:"basic"`
+	Basic CacheStats       `json:"basic"`
 	Items []CacheItemStats `json:"items"`
 }
 
@@ -505,12 +508,12 @@ func matchesPattern(key, pattern string) bool {
 	if pattern == "*" {
 		return true
 	}
-	
+
 	if len(pattern) > 0 && pattern[len(pattern)-1] == '*' {
 		prefix := pattern[:len(pattern)-1]
 		return len(key) >= len(prefix) && key[:len(prefix)] == prefix
 	}
-	
+
 	return key == pattern
 }
 
@@ -519,7 +522,7 @@ func GetCacheConfigForProfile(profile PerformanceProfile) *CacheConfig {
 	switch profile {
 	case ProfileHighThroughput:
 		return AggressiveCacheConfig()
-	
+
 	case ProfileLowLatency:
 		config := DefaultCacheConfig()
 		config.DefaultTTL = 30 * time.Second // Shorter TTL for fresher data
@@ -527,16 +530,16 @@ func GetCacheConfigForProfile(profile PerformanceProfile) *CacheConfig {
 		config.TTLByOperation["jobs.get"] = 15 * time.Second
 		config.TTLByOperation["info.stats"] = 10 * time.Second
 		return config
-	
+
 	case ProfileConservative:
 		return ConservativeCacheConfig()
-	
+
 	case ProfileBatch:
 		config := AggressiveCacheConfig()
 		config.DefaultTTL = 30 * time.Minute // Much longer TTL for batch processing
 		config.MaxSize = 10000
 		return config
-	
+
 	default:
 		return DefaultCacheConfig()
 	}

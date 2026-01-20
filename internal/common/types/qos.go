@@ -19,7 +19,7 @@ type QoS struct {
 	UsageThreshold float64
 
 	// Preemption settings
-	PreemptMode      string
+	PreemptMode       string
 	PreemptExemptTime int // in minutes
 
 	// Flags
@@ -51,9 +51,9 @@ type QoS struct {
 // QoSLimits represents resource limits for a QoS
 type QoSLimits struct {
 	// Per-user limits
-	MaxCPUsPerUser     *int
-	MaxJobsPerUser     *int
-	MaxNodesPerUser    *int
+	MaxCPUsPerUser       *int
+	MaxJobsPerUser       *int
+	MaxNodesPerUser      *int
 	MaxSubmitJobsPerUser *int
 
 	// Per-account limits

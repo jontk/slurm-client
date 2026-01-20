@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"strings"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
 	"github.com/jontk/slurm-client/pkg/errors"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 )
 
 // AccountAdapter implements the AccountAdapter interface for v0.0.43
@@ -140,7 +140,7 @@ func (a *AccountAdapter) Get(ctx context.Context, accountName string) (*types.Ac
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(accountName, "accountName"); err != nil {
+	if err := a.ValidateResourceName(accountName, "account name"); err != nil {
 		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -240,7 +240,7 @@ func (a *AccountAdapter) Update(ctx context.Context, accountName string, update 
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(accountName, "accountName"); err != nil {
+	if err := a.ValidateResourceName(accountName, "account name"); err != nil {
 		return err
 	}
 	if err := a.validateAccountUpdate(update); err != nil {
@@ -289,7 +289,7 @@ func (a *AccountAdapter) Delete(ctx context.Context, accountName string) error {
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(accountName, "accountName"); err != nil {
+	if err := a.ValidateResourceName(accountName, "account name"); err != nil {
 		return err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -348,13 +348,7 @@ func (a *AccountAdapter) validateAccountUpdate(update *types.AccountUpdate) erro
 	if update == nil {
 		return errors.NewValidationErrorf("update", nil, "account update data is required")
 	}
-	// At least one field should be provided for update
-	if update.Description == nil && update.Organization == nil && len(update.Coordinators) == 0 &&
-	   update.DefaultQoS == nil && len(update.QoSList) == 0 && len(update.AllowedPartitions) == 0 &&
-	   update.DefaultPartition == nil && update.FairShare == nil && update.Priority == nil &&
-	   update.MaxJobs == nil && update.MaxWallTime == nil {
-		return errors.NewValidationErrorf("update", update, "at least one field must be provided for update")
-	}
+	// Empty updates are allowed - the API will handle no-op updates
 
 	// Validate numeric fields if provided
 	if update.FairShare != nil && *update.FairShare < 0 {

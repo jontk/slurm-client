@@ -73,11 +73,11 @@ func TestSimpleJobSubmit(t *testing.T) {
 			name: "full_payload",
 			body: map[string]interface{}{
 				"job": map[string]interface{}{
-					"name":                       "test-job",
-					"script":                     "#!/bin/bash\necho test\n",
-					"partition":                  "debug",
-					"minimum_cpus":               1,
-					"current_working_directory":  "/tmp",
+					"name":                      "test-job",
+					"script":                    "#!/bin/bash\necho test\n",
+					"partition":                 "debug",
+					"minimum_cpus":              1,
+					"current_working_directory": "/tmp",
 					"memory_per_node": map[string]interface{}{
 						"set":    true,
 						"number": 1024,
@@ -131,7 +131,7 @@ func TestSimpleJobSubmit(t *testing.T) {
 			if resp.StatusCode != 200 && resp.StatusCode != 201 {
 				t.Logf("Request failed with status %d", resp.StatusCode)
 			}
-			
+
 			fmt.Println("---")
 		})
 	}

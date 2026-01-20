@@ -5,6 +5,7 @@ package errors
 
 import (
 	"context"
+	stderrors "errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -74,6 +75,16 @@ func classifyNetworkError(err error) *SlurmError {
 		return nil
 	}
 
+	// Check for context errors first (before net.Error check)
+	// because context.DeadlineExceeded also implements net.Error with Timeout() == true
+	// Use errors.Is() to handle wrapped errors
+	if stderrors.Is(err, context.Canceled) {
+		return NewSlurmErrorWithCause(ErrorCodeContextCanceled, "Operation was canceled", err)
+	}
+	if stderrors.Is(err, context.DeadlineExceeded) {
+		return NewSlurmErrorWithCause(ErrorCodeDeadlineExceeded, "Operation deadline exceeded", err)
+	}
+
 	errStr := err.Error()
 
 	// Check for specific network error types
@@ -136,6 +147,14 @@ func classifyURLError(urlErr *url.Error) *SlurmError {
 		if u.Port() != "" {
 			_, _ = fmt.Sscanf(u.Port(), "%d", &port) // Ignore error, port parsing is best-effort
 		}
+	}
+
+	// Check for context errors first (before network classification)
+	if urlErr.Err == context.Canceled {
+		return NewSlurmErrorWithCause(ErrorCodeContextCanceled, "Operation was canceled", urlErr)
+	}
+	if urlErr.Err == context.DeadlineExceeded {
+		return NewSlurmErrorWithCause(ErrorCodeDeadlineExceeded, "Operation deadline exceeded", urlErr)
 	}
 
 	// Check underlying error

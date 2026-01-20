@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -131,12 +131,14 @@ func (c *ClusterManagerImpl) List(ctx context.Context, opts *interfaces.ListClus
 
 // Get retrieves a specific cluster by name
 func (c *ClusterManagerImpl) Get(ctx context.Context, clusterName string) (*interfaces.Cluster, error) {
-	if c.client == nil || c.client.apiClient == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
-	}
-
+	// Validate input first (cheap check)
 	if clusterName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "cluster name is required", "clusterName", clusterName, nil)
+	}
+
+	// Then check client initialization
+	if c.client == nil || c.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Prepare get parameters

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
+	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // ErrorAdapter handles API-specific error conversion for v0.0.43
@@ -88,12 +88,12 @@ func (e *ErrorAdapter) HandleAPIResponse(statusCode int, body []byte, operation 
 			fmt.Errorf("HTTP 403: %s", string(body)),
 		)
 	case http.StatusNotFound:
-		err := errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("%s: resource not found", operation))
+		err := errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("%s: resource not found: HTTP %d", operation, statusCode))
 		err.StatusCode = statusCode
 		err.Details = string(body)
 		return err
 	case http.StatusConflict:
-		err := errors.NewSlurmError(errors.ErrorCodeConflict, fmt.Sprintf("%s: resource conflict", operation))
+		err := errors.NewSlurmError(errors.ErrorCodeConflict, fmt.Sprintf("%s: resource conflict: HTTP %d", operation, statusCode))
 		err.StatusCode = statusCode
 		err.Details = string(body)
 		return err
@@ -106,7 +106,7 @@ func (e *ErrorAdapter) HandleAPIResponse(statusCode int, body []byte, operation 
 			fmt.Errorf("HTTP 422: %s", string(body)),
 		)
 	case http.StatusInternalServerError, http.StatusBadGateway, http.StatusServiceUnavailable:
-		err := errors.NewSlurmError(errors.ErrorCodeServerInternal, fmt.Sprintf("%s: server error", operation))
+		err := errors.NewSlurmError(errors.ErrorCodeServerInternal, fmt.Sprintf("%s: server error: HTTP %d", operation, statusCode))
 		err.StatusCode = statusCode
 		err.Details = string(body)
 		return err

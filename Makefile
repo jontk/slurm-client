@@ -1,6 +1,6 @@
 # Makefile for slurm-client
 
-.PHONY: build test lint fmt vet clean docs help install-tools generate download-specs
+.PHONY: build test check-mocks lint fmt vet clean docs help install-tools generate download-specs generate-mocks
 
 # Variables
 BINARY_NAME=slurm-client
@@ -15,8 +15,26 @@ build:
 	@echo "Building..."
 	go build -v ./...
 
+# Check if mock builders are generated
+check-mocks:
+	@if [ ! -d "tests/mocks/generated/v0_0_40" ] || \
+	    [ ! -d "tests/mocks/generated/v0_0_42" ] || \
+	    [ ! -d "tests/mocks/generated/v0_0_43" ] || \
+	    [ ! -d "tests/mocks/generated/v0_0_44" ]; then \
+		echo "❌ Error: Mock builders not found!"; \
+		echo ""; \
+		echo "Mock builders are required for tests but not committed to git."; \
+		echo "Please generate them first:"; \
+		echo ""; \
+		echo "    make generate-mocks"; \
+		echo ""; \
+		echo "This only needs to be done once after cloning the repository."; \
+		exit 1; \
+	fi
+	@echo "✅ Mock builders found"
+
 # Run tests
-test:
+test: check-mocks
 	@echo "Running tests..."
 	go test -v -race -coverprofile=coverage.out ./...
 
@@ -154,6 +172,18 @@ generate: install-tools download-specs
 		go run tools/codegen/generate.go $$version || echo "Failed to generate $$version client"; \
 	done
 
+# Generate mock builders from OpenAPI specs
+generate-mocks: install-tools
+	@echo "Generating mock builders..."
+	@for version in v0.0.40 v0.0.41 v0.0.42 v0.0.43 v0.0.44; do \
+		echo "Generating mock builders for $$version..."; \
+		go run tools/codegen/generate_mocks.go $$version || echo "Failed to generate $$version mocks"; \
+	done
+
+# Generate both API clients and mock builders
+generate-all: generate generate-mocks
+	@echo "All code generation complete"
+
 # Generate specific version client
 generate-version: install-tools
 	@if [ -z "$(VERSION)" ]; then \
@@ -167,8 +197,9 @@ generate-version: install-tools
 help:
 	@echo "Available targets:"
 	@echo "  build           - Build the library"
-	@echo "  test            - Run tests"
+	@echo "  test            - Run tests (auto-checks for mock builders)"
 	@echo "  test-coverage   - Run tests with coverage report"
+	@echo "  check-mocks     - Verify mock builders are generated"
 	@echo "  benchmark       - Run benchmarks"
 	@echo "  lint            - Run linter"
 	@echo "  fmt             - Format code"
@@ -179,6 +210,8 @@ help:
 	@echo "  build-slurm     - Build SLURM with REST API v0.0.44 support"
 	@echo "  download-specs  - Download OpenAPI specifications"
 	@echo "  generate        - Generate all API clients from specs"
+	@echo "  generate-mocks  - Generate mock builders from specs"
+	@echo "  generate-all    - Generate both API clients and mock builders"
 	@echo "  generate-version - Generate specific version client (VERSION=v0.0.44)"
 	@echo "  tidy            - Tidy up dependencies"
 	@echo "  update          - Update dependencies"

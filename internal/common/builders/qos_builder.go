@@ -21,9 +21,9 @@ func NewQoSBuilder(name string) *QoSBuilder {
 	return &QoSBuilder{
 		qos: &types.QoSCreate{
 			Name:           name,
-			Priority:       0,        // Default priority
-			UsageFactor:    1.0,      // Default usage factor
-			UsageThreshold: 0,        // Default usage threshold
+			Priority:       0,          // Default priority
+			UsageFactor:    1.0,        // Default usage factor
+			UsageThreshold: 0,          // Default usage threshold
 			Flags:          []string{}, // Initialize empty
 			PreemptMode:    []string{}, // Initialize empty
 		},
@@ -481,4 +481,3 @@ func (l *QoSLimitsBuilder) WithMinNodesPerJob(nodes int) *QoSLimitsBuilder {
 func (l *QoSLimitsBuilder) Done() *QoSBuilder {
 	return l.parent
 }
-

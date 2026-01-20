@@ -19,19 +19,19 @@ type AccountBuilder struct {
 func NewAccountBuilder(name string) *AccountBuilder {
 	return &AccountBuilder{
 		account: &types.AccountCreate{
-			Name:            name,
-			FairShare:       1,                         // Default fair share
-			SharesRaw:       1,                         // Default raw shares
-			Priority:        0,                         // Default priority
-			Coordinators:    []string{},                // Initialize empty
-			QoSList:         []string{},                // Initialize empty
-			AllowedPartitions: []string{},              // Initialize empty
-			GrpTRES:         make(map[string]int64),    // Initialize empty
-			GrpTRESMins:     make(map[string]int64),    // Initialize empty
-			GrpTRESRunMins:  make(map[string]int64),    // Initialize empty
-			MaxTRES:         make(map[string]int64),    // Initialize empty
-			MaxTRESPerNode:  make(map[string]int64),    // Initialize empty
-			MinTRES:         make(map[string]int64),    // Initialize empty
+			Name:              name,
+			FairShare:         1,                      // Default fair share
+			SharesRaw:         1,                      // Default raw shares
+			Priority:          0,                      // Default priority
+			Coordinators:      []string{},             // Initialize empty
+			QoSList:           []string{},             // Initialize empty
+			AllowedPartitions: []string{},             // Initialize empty
+			GrpTRES:           make(map[string]int64), // Initialize empty
+			GrpTRESMins:       make(map[string]int64), // Initialize empty
+			GrpTRESRunMins:    make(map[string]int64), // Initialize empty
+			MaxTRES:           make(map[string]int64), // Initialize empty
+			MaxTRESPerNode:    make(map[string]int64), // Initialize empty
+			MinTRES:           make(map[string]int64), // Initialize empty
 		},
 		errors: []error{},
 	}
@@ -689,7 +689,7 @@ func (b *AccountBuilder) validateBusinessRules() error {
 	// Validate job limits consistency
 	if b.account.MaxJobsPerUser > 0 && b.account.MaxJobs > 0 {
 		if b.account.MaxJobsPerUser > b.account.MaxJobs {
-			return fmt.Errorf("max jobs per user (%d) cannot exceed max jobs (%d)", 
+			return fmt.Errorf("max jobs per user (%d) cannot exceed max jobs (%d)",
 				b.account.MaxJobsPerUser, b.account.MaxJobs)
 		}
 	}
@@ -697,7 +697,7 @@ func (b *AccountBuilder) validateBusinessRules() error {
 	// Validate group vs individual limits
 	if b.account.GrpJobs > 0 && b.account.MaxJobs > 0 {
 		if b.account.GrpJobs > b.account.MaxJobs {
-			return fmt.Errorf("group jobs (%d) should not exceed max jobs (%d)", 
+			return fmt.Errorf("group jobs (%d) should not exceed max jobs (%d)",
 				b.account.GrpJobs, b.account.MaxJobs)
 		}
 	}
@@ -705,15 +705,15 @@ func (b *AccountBuilder) validateBusinessRules() error {
 	// Validate TRES consistency
 	if cpuMax, exists := b.account.MaxTRES["cpu"]; exists {
 		if b.account.MaxCPUs > 0 && cpuMax != int64(b.account.MaxCPUs) {
-			return fmt.Errorf("MaxCPUs (%d) and MaxTRES[cpu] (%d) should be consistent", 
+			return fmt.Errorf("MaxCPUs (%d) and MaxTRES[cpu] (%d) should be consistent",
 				b.account.MaxCPUs, cpuMax)
 		}
 	}
 
-	// Validate memory consistency  
+	// Validate memory consistency
 	if memMax, exists := b.account.MaxTRES["mem"]; exists {
 		if b.account.MaxMemory > 0 && memMax != b.account.MaxMemory {
-			return fmt.Errorf("MaxMemory (%d) and MaxTRES[mem] (%d) should be consistent", 
+			return fmt.Errorf("MaxMemory (%d) and MaxTRES[mem] (%d) should be consistent",
 				b.account.MaxMemory, memMax)
 		}
 	}
@@ -721,7 +721,7 @@ func (b *AccountBuilder) validateBusinessRules() error {
 	// Validate node consistency
 	if nodeMax, exists := b.account.MaxTRES["node"]; exists {
 		if b.account.MaxNodes > 0 && nodeMax != int64(b.account.MaxNodes) {
-			return fmt.Errorf("MaxNodes (%d) and MaxTRES[node] (%d) should be consistent", 
+			return fmt.Errorf("MaxNodes (%d) and MaxTRES[node] (%d) should be consistent",
 				b.account.MaxNodes, nodeMax)
 		}
 	}

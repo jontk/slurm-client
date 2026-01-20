@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"net/http"
-	
+
 	"github.com/jontk/slurm-client/internal/adapters/common"
 	adapterV0043 "github.com/jontk/slurm-client/internal/adapters/v0_0_43"
 	apiV0043 "github.com/jontk/slurm-client/internal/api/v0_0_43"
@@ -117,14 +117,14 @@ func createHighPriorityQoS(ctx context.Context, adapter common.VersionAdapter) e
 		WithDescription("High priority QoS for critical workloads").
 		WithPreemptExemptTime(10). // 10 minutes exempt from preemption
 		WithLimits().
-			WithMaxCPUsPerUser(500).
-			WithMaxJobsPerUser(20).
-			WithMaxNodesPerUser(25).
-			WithMaxWallTime(24 * time.Hour).
-			WithMaxMemoryPerNode(256 * builders.GB).
-			WithMaxMemoryPerCPU(8 * builders.GB).
-			WithMinCPUsPerJob(4). // Require at least 4 CPUs
-			Done().
+		WithMaxCPUsPerUser(500).
+		WithMaxJobsPerUser(20).
+		WithMaxNodesPerUser(25).
+		WithMaxWallTime(24 * time.Hour).
+		WithMaxMemoryPerNode(256 * builders.GB).
+		WithMaxMemoryPerCPU(8 * builders.GB).
+		WithMinCPUsPerJob(4). // Require at least 4 CPUs
+		Done().
 		Build()
 
 	if err != nil {
@@ -153,12 +153,12 @@ func createBatchQoS(ctx context.Context, adapter common.VersionAdapter) error {
 		AsBatchQueue(). // Use preset for batch jobs
 		WithDescription("QoS for long-running batch jobs").
 		WithLimits().
-			WithMaxCPUsPerUser(200).
-			WithMaxJobsPerUser(100).
-			WithMaxSubmitJobsPerUser(500). // Can queue many jobs
-			WithMaxWallTime(7 * 24 * time.Hour). // 7 days max
-			WithMaxMemoryPerNode(128 * builders.GB).
-			Done().
+		WithMaxCPUsPerUser(200).
+		WithMaxJobsPerUser(100).
+		WithMaxSubmitJobsPerUser(500).       // Can queue many jobs
+		WithMaxWallTime(7 * 24 * time.Hour). // 7 days max
+		WithMaxMemoryPerNode(128 * builders.GB).
+		Done().
 		Build()
 
 	if err != nil {
@@ -187,12 +187,12 @@ func createInteractiveQoS(ctx context.Context, adapter common.VersionAdapter) er
 		WithDescription("QoS for interactive development sessions").
 		WithGraceTime(300). // 5 minute grace period
 		WithLimits().
-			WithMaxCPUsPerUser(32).
-			WithMaxJobsPerUser(5). // Limited concurrent sessions
-			WithMaxWallTime(8 * time.Hour). // 8 hour sessions
-			WithMaxMemoryPerNode(64 * builders.GB).
-			WithMaxNodesPerJob(1). // Single node only
-			Done().
+		WithMaxCPUsPerUser(32).
+		WithMaxJobsPerUser(5).          // Limited concurrent sessions
+		WithMaxWallTime(8 * time.Hour). // 8 hour sessions
+		WithMaxMemoryPerNode(64 * builders.GB).
+		WithMaxNodesPerJob(1). // Single node only
+		Done().
 		Build()
 
 	if err != nil {
@@ -238,9 +238,9 @@ func updateQoSWithBuilder(ctx context.Context, adapter common.VersionAdapter) er
 		WithPriority(200).
 		WithUsageFactor(1.5).
 		WithLimits().
-			WithMaxCPUsPerUser(150).
-			WithMaxJobsPerUser(15).
-			Done().
+		WithMaxCPUsPerUser(150).
+		WithMaxJobsPerUser(15).
+		Done().
 		BuildForUpdate() // Note: BuildForUpdate() instead of Build()
 
 	if err != nil {
@@ -268,15 +268,15 @@ func cloneAndModifyQoS(ctx context.Context, adapter common.VersionAdapter) error
 		WithPriority(300).
 		WithFlags("gpu", "DenyOnLimit").
 		WithLimits().
-			WithMaxCPUsPerUser(64).
-			WithMaxNodesPerUser(4).
-			WithMaxMemoryPerNode(128 * builders.GB).
-			Done()
+		WithMaxCPUsPerUser(64).
+		WithMaxNodesPerUser(4).
+		WithMaxMemoryPerNode(128 * builders.GB).
+		Done()
 
 	// Clone and create variants
 	variants := []struct {
-		name        string
-		modifier    func(*builders.QoSBuilder) *builders.QoSBuilder
+		name     string
+		modifier func(*builders.QoSBuilder) *builders.QoSBuilder
 	}{
 		{
 			name: "gpu-small",
@@ -292,9 +292,9 @@ func cloneAndModifyQoS(ctx context.Context, adapter common.VersionAdapter) error
 			modifier: func(b *builders.QoSBuilder) *builders.QoSBuilder {
 				return b.WithPriority(400).
 					WithLimits().
-						WithMaxCPUsPerUser(128).
-						WithMaxNodesPerUser(8).
-						Done()
+					WithMaxCPUsPerUser(128).
+					WithMaxNodesPerUser(8).
+					Done()
 			},
 		},
 		{
@@ -303,9 +303,9 @@ func cloneAndModifyQoS(ctx context.Context, adapter common.VersionAdapter) error
 				return b.WithPriority(500).
 					WithFlags("debug").
 					WithLimits().
-						WithMaxWallTime(1 * time.Hour).
-						WithMaxJobsPerUser(1).
-						Done()
+					WithMaxWallTime(1 * time.Hour).
+					WithMaxJobsPerUser(1).
+					Done()
 			},
 		},
 	}
@@ -315,18 +315,18 @@ func cloneAndModifyQoS(ctx context.Context, adapter common.VersionAdapter) error
 	for _, variant := range variants {
 		// Clone the base template
 		cloned := baseTemplate.Clone()
-		
+
 		// Apply variant-specific modifications
 		builder := variant.modifier(cloned)
-		
+
 		// Get the built QoS from the modified builder
 		builtQoS, _ := builder.Build()
-		
+
 		// Update the name
 		newBuilder := builders.NewQoSBuilder(variant.name).
 			WithDescription(fmt.Sprintf("GPU QoS variant: %s", variant.name)).
 			WithPriority(builtQoS.Priority). // Preserve modified priority
-			WithFlags(builtQoS.Flags...)    // Preserve all flags
+			WithFlags(builtQoS.Flags...)     // Preserve all flags
 
 		// Build the QoS
 		qos, err := newBuilder.Build()

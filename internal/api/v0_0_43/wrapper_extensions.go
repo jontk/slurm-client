@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -337,10 +337,10 @@ func (c *WrapperClient) GetDiagnostics(ctx context.Context) (*interfaces.Diagnos
 
 	// Convert response to our interface types
 	diagnostics := &interfaces.Diagnostics{
-		DataCollected:        time.Now(),
-		RPCsByMessageType:    make(map[string]int),
-		RPCsByUser:           make(map[string]int),
-		Statistics:           make(map[string]interface{}),
+		DataCollected:     time.Now(),
+		RPCsByMessageType: make(map[string]int),
+		RPCsByUser:        make(map[string]int),
+		Statistics:        make(map[string]interface{}),
 	}
 
 	// Extract diagnostics information from the response
@@ -426,10 +426,10 @@ func (c *WrapperClient) GetDBDiagnostics(ctx context.Context) (*interfaces.Diagn
 
 	// Convert response to our interface types
 	diagnostics := &interfaces.Diagnostics{
-		DataCollected:        time.Now(),
-		RPCsByMessageType:    make(map[string]int),
-		RPCsByUser:           make(map[string]int),
-		Statistics:           make(map[string]interface{}),
+		DataCollected:     time.Now(),
+		RPCsByMessageType: make(map[string]int),
+		RPCsByUser:        make(map[string]int),
+		Statistics:        make(map[string]interface{}),
 	}
 
 	// Extract DB diagnostics information from the response
@@ -627,7 +627,7 @@ func (c *WrapperClient) GetInstances(ctx context.Context, opts *interfaces.GetIn
 				continue
 			}
 		}
-		
+
 		convertedInstance := interfaces.Instance{
 			Cluster:   getStringFromPtr(inst.Cluster),
 			ExtraInfo: getStringFromPtr(inst.Extra),
@@ -705,17 +705,23 @@ func (c *WrapperClient) GetTRES(ctx context.Context) (*interfaces.TRESList, erro
 	tresList := make([]interfaces.TRES, 0)
 	// resp.JSON200.TRES is of type V0043TresList which is []V0043Tres
 	for _, tres := range resp.JSON200.TRES {
-			convertedTRES := interfaces.TRES{
-				ID:          uint64(getIntFromPtr(tres.Id)),
-				Type:        tres.Type, // Type is required, not a pointer
-				Name:        getStringFromPtr(tres.Name),
-				Count:       getInt64FromPtr(tres.Count),
-				AllocSecs:   0, // Not available in this structure
-				Created:     time.Now(),
-				Modified:    time.Now(),
-				Description: "", // Not available in this structure
-			}
-			tresList = append(tresList, convertedTRES)
+		tresID := getIntFromPtr(tres.Id)
+		// TRES IDs should be non-negative
+		if tresID < 0 {
+			tresID = 0
+		}
+		// #nosec G115 -- tresID is validated to be non-negative before conversion
+		convertedTRES := interfaces.TRES{
+			ID:          uint64(tresID),
+			Type:        tres.Type, // Type is required, not a pointer
+			Name:        getStringFromPtr(tres.Name),
+			Count:       getInt64FromPtr(tres.Count),
+			AllocSecs:   0, // Not available in this structure
+			Created:     time.Now(),
+			Modified:    time.Now(),
+			Description: "", // Not available in this structure
+		}
+		tresList = append(tresList, convertedTRES)
 	}
 
 	result := &interfaces.TRESList{
@@ -892,22 +898,6 @@ func getIntFromPtr(ptr *int32) int {
 func getInt64FromPtr(ptr *int64) int64 {
 	if ptr == nil {
 		return 0
-	}
-	return *ptr
-}
-
-// getUint64FromPtr safely extracts uint64 value from int64 pointer
-func getUint64FromPtr(ptr *int64) uint64 {
-	if ptr == nil {
-		return 0
-	}
-	return uint64(*ptr)
-}
-
-// getFloatFromPtr safely extracts float64 value from pointer
-func getFloatFromPtr(ptr *float64) float64 {
-	if ptr == nil {
-		return 0.0
 	}
 	return *ptr
 }

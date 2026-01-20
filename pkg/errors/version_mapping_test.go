@@ -9,7 +9,6 @@ import (
 	"testing"
 )
 
-
 func TestGetVersionMapping(t *testing.T) {
 	tests := []struct {
 		version string

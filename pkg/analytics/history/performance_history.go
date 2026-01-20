@@ -10,7 +10,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/analytics"
 )
 
@@ -67,10 +67,20 @@ func (pht *PerformanceHistoryTracker) GetJobPerformanceHistory(
 	anomalies := pht.detectAnomalies(timeSeriesData, statistics)
 
 	return &interfaces.JobPerformanceHistory{
-		JobID:          job.ID,
-		JobName:        job.Name,
-		StartTime:      func() time.Time { if job.StartTime != nil { return *job.StartTime }; return time.Time{} }(),
-		EndTime:        func() time.Time { if job.EndTime != nil { return *job.EndTime }; return time.Time{} }(),
+		JobID:   job.ID,
+		JobName: job.Name,
+		StartTime: func() time.Time {
+			if job.StartTime != nil {
+				return *job.StartTime
+			}
+			return time.Time{}
+		}(),
+		EndTime: func() time.Time {
+			if job.EndTime != nil {
+				return *job.EndTime
+			}
+			return time.Time{}
+		}(),
 		TimeSeriesData: timeSeriesData,
 		Statistics:     statistics,
 		Trends:         trends,
@@ -171,13 +181,13 @@ func (pht *PerformanceHistoryTracker) groupSamplesByInterval(
 
 	var groups [][]interfaces.JobComprehensiveAnalytics
 	var currentGroup []interfaces.JobComprehensiveAnalytics
-	
+
 	baseTime := samples[0].StartTime.Truncate(interval)
 	currentTime := baseTime
 
 	for _, sample := range samples {
 		sampleTime := sample.StartTime.Truncate(interval)
-		
+
 		if sampleTime.After(currentTime) {
 			// Start new group
 			if len(currentGroup) > 0 {
@@ -252,10 +262,10 @@ func (pht *PerformanceHistoryTracker) calculatePerformanceStatistics(
 	samples []interfaces.JobComprehensiveAnalytics,
 ) interfaces.PerformanceStatistics {
 	var (
-		cpuValues  []float64
-		memValues  []float64
-		ioValues   []float64
-		effValues  []float64
+		cpuValues []float64
+		memValues []float64
+		ioValues  []float64
+		effValues []float64
 	)
 
 	for _, sample := range samples {
@@ -405,6 +415,7 @@ func (pht *PerformanceHistoryTracker) calculateTrend(x, y []float64) interfaces.
 			direction = "decreasing"
 		}
 		// Calculate percentage change per hour
+		//nolint:gosec // G602 - y[0] is safe, length checked at function start (len(y) >= 2)
 		if y[0] != 0 {
 			changeRate = (slope / y[0]) * 100
 		}
@@ -537,26 +548,26 @@ func (pht *PerformanceHistoryTracker) max(values []float64) float64 {
 	if len(values) == 0 {
 		return 0
 	}
-	max := values[0]
+	maxVal := values[0]
 	for _, v := range values {
-		if v > max {
-			max = v
+		if v > maxVal {
+			maxVal = v
 		}
 	}
-	return max
+	return maxVal
 }
 
 func (pht *PerformanceHistoryTracker) min(values []float64) float64 {
 	if len(values) == 0 {
 		return 0
 	}
-	min := values[0]
+	minVal := values[0]
 	for _, v := range values {
-		if v < min {
-			min = v
+		if v < minVal {
+			minVal = v
 		}
 	}
-	return min
+	return minVal
 }
 
 func (pht *PerformanceHistoryTracker) stdDev(values []float64) float64 {

@@ -6,10 +6,11 @@ package v0_0_41
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
-	"strings"
 )
 
 // AssociationAdapter implements the AssociationAdapter interface for v0.0.41

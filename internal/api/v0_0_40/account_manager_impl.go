@@ -6,7 +6,7 @@ package v0_0_40
 import (
 	"context"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -73,14 +73,14 @@ func (a *AccountManagerImpl) List(ctx context.Context, opts *interfaces.ListAcco
 	if len(resp.JSON200.Accounts) > 0 {
 		for _, acc := range resp.JSON200.Accounts {
 			account := a.convertV0040AccountToInterface(acc)
-			
+
 			// Apply name filter if specified
 			if len(nameFilter) > 0 {
 				if !nameFilter[account.Name] {
 					continue
 				}
 			}
-			
+
 			accountList.Accounts = append(accountList.Accounts, *account)
 		}
 	}
@@ -131,7 +131,7 @@ func (a *AccountManagerImpl) Create(ctx context.Context, account *interfaces.Acc
 
 	// Convert to API format
 	apiAccount := a.convertInterfaceAccountCreateToV0040(account)
-	
+
 	// Create request body
 	reqBody := V0040OpenapiAccountsResp{
 		Accounts: []V0040Account{*apiAccount},
@@ -310,11 +310,11 @@ func (a *AccountManagerImpl) GetFairShareHierarchy(ctx context.Context, rootAcco
 // convertV0040AccountToInterface converts v0.0.40 account to interface format
 func (a *AccountManagerImpl) convertV0040AccountToInterface(acc V0040Account) *interfaces.Account {
 	account := &interfaces.Account{}
-	
+
 	account.Name = acc.Name
 	account.Description = acc.Description
 	// Organization field doesn't exist in V0040Account, skip it
-	
+
 	// Convert coordinators
 	// Convert coordinators
 	if acc.Coordinators != nil && len(*acc.Coordinators) > 0 {
@@ -323,18 +323,18 @@ func (a *AccountManagerImpl) convertV0040AccountToInterface(acc V0040Account) *i
 			account.CoordinatorUsers[i] = coord.Name
 		}
 	}
-	
+
 	return account
 }
 
 // convertInterfaceAccountCreateToV0040 converts interface account create to v0.0.40 format
 func (a *AccountManagerImpl) convertInterfaceAccountCreateToV0040(acc *interfaces.AccountCreate) *V0040Account {
 	apiAccount := &V0040Account{
-		Name:         acc.Name,
-		Description:  acc.Description,
+		Name:        acc.Name,
+		Description: acc.Description,
 		// Organization field doesn't exist in V0040Account
 	}
-	
+
 	if len(acc.CoordinatorUsers) > 0 {
 		coords := make(V0040CoordList, len(acc.CoordinatorUsers))
 		for i, user := range acc.CoordinatorUsers {
@@ -344,7 +344,7 @@ func (a *AccountManagerImpl) convertInterfaceAccountCreateToV0040(acc *interface
 		}
 		apiAccount.Coordinators = &coords
 	}
-	
+
 	return apiAccount
 }
 
@@ -353,16 +353,16 @@ func (a *AccountManagerImpl) convertInterfaceAccountToV0040Update(existing *inte
 	apiAccount := &V0040Account{
 		Name: existing.Name,
 	}
-	
+
 	// Apply updates
 	if update.Description != nil {
 		apiAccount.Description = *update.Description
 	} else {
 		apiAccount.Description = existing.Description
 	}
-	
+
 	// Organization field doesn't exist in V0040Account
-	
+
 	if len(update.CoordinatorUsers) > 0 {
 		coords := make(V0040CoordList, len(update.CoordinatorUsers))
 		for i, user := range update.CoordinatorUsers {
@@ -380,11 +380,11 @@ func (a *AccountManagerImpl) convertInterfaceAccountToV0040Update(existing *inte
 		}
 		apiAccount.Coordinators = &coords
 	}
-	
+
 	return apiAccount
 }
 
 // CreateAssociation creates a user-account association
-func (m *AccountManagerImpl) CreateAssociation(ctx context.Context, userName, accountName string, opts *interfaces.AssociationOptions) (*interfaces.AssociationCreateResponse, error) {
+func (a *AccountManagerImpl) CreateAssociation(ctx context.Context, userName, accountName string, opts *interfaces.AssociationOptions) (*interfaces.AssociationCreateResponse, error) {
 	return nil, errors.NewNotImplementedError("CreateAssociation", "v0.0.40")
 }

@@ -56,7 +56,7 @@ func listAllJobs(ctx context.Context, client slurm.SlurmClient) {
 	}
 
 	fmt.Printf("Total jobs: %d\n", jobList.Total)
-	
+
 	// Display first 5 jobs
 	for i, job := range jobList.Jobs {
 		if i >= 5 {

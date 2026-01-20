@@ -6,9 +6,9 @@ package builders
 import (
 	"testing"
 
+	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/jontk/slurm-client/internal/common/types"
 )
 
 func TestUserBuilder_Basic(t *testing.T) {
@@ -148,8 +148,8 @@ func TestUserBuilder_GroupLimits(t *testing.T) {
 			WithGrpCPUs(500).
 			WithGrpMemoryGB(1000).
 			WithGrpSubmitJobs(1000).
-			WithGrpWallTime(5040).  // 3.5 days
-			WithGrpCPUTime(10080).  // 7 days
+			WithGrpWallTime(5040). // 3.5 days
+			WithGrpCPUTime(10080). // 7 days
 			Build()
 
 		require.NoError(t, err)
@@ -183,20 +183,20 @@ func TestUserBuilder_TRES(t *testing.T) {
 		assert.Equal(t, int64(500), user.GrpTRES["cpu"])
 		assert.Equal(t, int64(1000*GB), user.GrpTRES["mem"])
 		assert.Equal(t, int64(5), user.GrpTRES["gpu"])
-		
+
 		require.NotNil(t, user.GrpTRESMins)
 		assert.Equal(t, int64(50000), user.GrpTRESMins["cpu"])
-		
+
 		require.NotNil(t, user.GrpTRESRunMins)
 		assert.Equal(t, int64(25000), user.GrpTRESRunMins["gpu"])
-		
+
 		require.NotNil(t, user.MaxTRES)
 		assert.Equal(t, int64(250), user.MaxTRES["cpu"])
 		assert.Equal(t, int64(500*GB), user.MaxTRES["mem"])
-		
+
 		require.NotNil(t, user.MaxTRESPerNode)
 		assert.Equal(t, int64(2), user.MaxTRESPerNode["gpu"])
-		
+
 		require.NotNil(t, user.MinTRES)
 		assert.Equal(t, int64(1), user.MinTRES["cpu"])
 	})

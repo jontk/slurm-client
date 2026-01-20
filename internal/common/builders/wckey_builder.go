@@ -110,11 +110,11 @@ func (b *WCKeyBuilder) Validate() error {
 	if b.wckey.Cluster == "" {
 		return fmt.Errorf("WCKey cluster is required")
 	}
-	
+
 	if len(b.errors) > 0 {
 		return fmt.Errorf("builder has errors: %v", b.errors)
 	}
-	
+
 	return nil
 }
 

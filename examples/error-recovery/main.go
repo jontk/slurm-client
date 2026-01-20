@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	"github.com/jontk/slurm-client/pkg/errors"
@@ -23,7 +23,7 @@ func main() {
 	// Create configuration
 	cfg := config.NewDefault()
 	cfg.BaseURL = "https://cluster.example.com:6820"
-	
+
 	// Create authentication
 	authProvider := auth.NewTokenAuth("your-jwt-token")
 
@@ -107,7 +107,7 @@ func handleJobSubmissionError(err error, job *interfaces.JobSubmission) {
 
 		case errors.ErrorCodeResourceExhausted:
 			fmt.Println("\nResource Exhaustion - Analyzing requirements:")
-			fmt.Printf("  Requested: CPUs=%d, Memory=%dGB\n", 
+			fmt.Printf("  Requested: CPUs=%d, Memory=%dGB\n",
 				job.CPUs, job.Memory/(1024*1024*1024))
 			fmt.Println("  Suggested actions:")
 			fmt.Println("    - Reduce resource requirements")
@@ -168,7 +168,7 @@ func handleJobSubmissionError(err error, job *interfaces.JobSubmission) {
 func demonstrateRetryStrategies(ctx context.Context, cfg *config.Config, auth auth.Provider) {
 	// Strategy 1: Exponential backoff with jitter
 	fmt.Println("1. Exponential Backoff with Jitter:")
-	
+
 	exponentialRetry := retry.NewHTTPExponentialBackoff().
 		WithMaxRetries(5).
 		WithMinWaitTime(100 * time.Millisecond).
@@ -191,7 +191,7 @@ func demonstrateRetryStrategies(ctx context.Context, cfg *config.Config, auth au
 
 	// Strategy 2: Linear backoff for predictable delays
 	fmt.Println("\n2. Linear Backoff:")
-	
+
 	// Create a simple retry policy with fixed delay
 	// LinearBackoff is not available in the current implementation
 	// Using HTTPExponentialBackoff with minimal settings
@@ -215,7 +215,7 @@ func demonstrateRetryStrategies(ctx context.Context, cfg *config.Config, auth au
 
 	// Strategy 3: Custom retry with error inspection
 	fmt.Println("\n3. Custom Retry Logic:")
-	
+
 	customRetry := &customRetryPolicy{
 		maxRetries: 3,
 		shouldRetry: func(err error, attempt int) bool {
@@ -253,7 +253,7 @@ func demonstrateCircuitBreaker(ctx context.Context, cfg *config.Config, auth aut
 	breaker := &circuitBreaker{
 		failureThreshold: 3,
 		recoveryTimeout:  30 * time.Second,
-		state:           "closed",
+		state:            "closed",
 	}
 
 	fmt.Printf("Circuit breaker initial state: %s\n", breaker.state)
@@ -261,7 +261,7 @@ func demonstrateCircuitBreaker(ctx context.Context, cfg *config.Config, auth aut
 	// Simulate requests with circuit breaker
 	for i := 0; i < 10; i++ {
 		fmt.Printf("\nRequest %d:\n", i+1)
-		
+
 		if breaker.isOpen() {
 			fmt.Println("  Circuit OPEN - failing fast")
 			continue
@@ -269,11 +269,11 @@ func demonstrateCircuitBreaker(ctx context.Context, cfg *config.Config, auth aut
 
 		// Try the operation
 		err := simulateOperation(i < 5) // First 5 fail, rest succeed
-		
+
 		if err != nil {
 			breaker.recordFailure()
 			fmt.Printf("  Failed: %v\n", err)
-			fmt.Printf("  Circuit state: %s (failures: %d/%d)\n", 
+			fmt.Printf("  Circuit state: %s (failures: %d/%d)\n",
 				breaker.state, breaker.failures, breaker.failureThreshold)
 		} else {
 			breaker.recordSuccess()
@@ -287,7 +287,7 @@ func demonstrateCircuitBreaker(ctx context.Context, cfg *config.Config, auth aut
 	// Show recovery
 	fmt.Println("\nWaiting for circuit recovery...")
 	time.Sleep(2 * time.Second)
-	
+
 	if breaker.state == "half-open" {
 		fmt.Println("Circuit is HALF-OPEN - testing with single request")
 		err := simulateOperation(false) // Success
@@ -312,13 +312,13 @@ func demonstrateGracefulDegradation(ctx context.Context, cfg *config.Config, aut
 
 	// Primary operation with fallbacks
 	jobID := "12345"
-	
+
 	// Level 1: Try to get detailed job info
 	fmt.Println("Attempting primary operation (detailed job info)...")
 	job, err := client.Jobs().Get(ctx, jobID)
 	if err != nil {
 		fmt.Printf("Primary failed: %v\n", err)
-		
+
 		// Level 2: Fall back to job list with filtering
 		fmt.Println("\nFalling back to job list...")
 		jobs, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
@@ -327,18 +327,18 @@ func demonstrateGracefulDegradation(ctx context.Context, cfg *config.Config, aut
 		})
 		if err != nil {
 			fmt.Printf("List fallback failed: %v\n", err)
-			
+
 			// Level 3: Fall back to basic connectivity check
 			fmt.Println("\nFalling back to connectivity check...")
 			err = client.Info().Ping(ctx)
 			if err != nil {
 				fmt.Printf("Connectivity check failed: %v\n", err)
-				
+
 				// Level 4: Use cached data if available
 				fmt.Println("\nFalling back to cached data...")
 				cachedJob := getCachedJobData(jobID)
 				if cachedJob != nil {
-					fmt.Printf("Using cached data (age: %v)\n", 
+					fmt.Printf("Using cached data (age: %v)\n",
 						time.Since(cachedJob.CachedAt))
 					displayJobInfo(cachedJob.Job)
 				} else {
@@ -379,7 +379,7 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 
 	// Workflow: Submit job with automatic recovery
 	fmt.Println("Job submission with automatic recovery:")
-	
+
 	job := &interfaces.JobSubmission{
 		Name:      "recovery-test",
 		Command:   "python process.py",
@@ -392,10 +392,10 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 	// Attempt submission with recovery logic
 	var jobID string
 	maxAttempts := 3
-	
+
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		fmt.Printf("\nAttempt %d/%d:\n", attempt, maxAttempts)
-		
+
 		resp, err := client.Jobs().Submit(ctx, job)
 		if err == nil {
 			jobID = resp.JobID
@@ -406,7 +406,7 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 		// Analyze error and adapt
 		if slurmErr, ok := err.(*errors.SlurmError); ok {
 			fmt.Printf("  Failed: %s - %s\n", slurmErr.Code, slurmErr.Message)
-			
+
 			// Adapt based on error
 			switch slurmErr.Code {
 			case errors.ErrorCodeResourceExhausted:
@@ -415,7 +415,7 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 				job.Memory = job.Memory / 2
 				fmt.Printf("  Adapting: Reduced to CPUs=%d, Memory=%dGB\n",
 					job.CPUs, job.Memory/(1024*1024))
-					
+
 			case errors.ErrorCodeValidationFailed:
 				// Try different partition
 				if job.Partition == "compute" {
@@ -424,12 +424,12 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 					job.Partition = "compute"
 				}
 				fmt.Printf("  Adapting: Changed partition to '%s'\n", job.Partition)
-				
+
 			case errors.ErrorCodeRateLimited:
 				// Wait and retry
 				fmt.Println("  Adapting: Waiting 5 seconds due to rate limit...")
 				time.Sleep(5 * time.Second)
-				
+
 			default:
 				if !slurmErr.IsRetryable() {
 					fmt.Println("  Error is not retryable - giving up")
@@ -437,7 +437,7 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 				}
 			}
 		}
-		
+
 		if attempt < maxAttempts {
 			backoff := time.Duration(attempt) * time.Second
 			fmt.Printf("  Waiting %v before retry...\n", backoff)
@@ -447,7 +447,7 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 
 	if jobID == "" {
 		fmt.Println("\nAll attempts failed - initiating fallback workflow")
-		
+
 		// Fallback: Submit to local queue for later processing
 		err := submitToLocalQueue(job)
 		if err != nil {
@@ -460,30 +460,30 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 
 	// Monitor job with error recovery
 	fmt.Printf("\nMonitoring job %s with error recovery:\n", jobID)
-	
+
 	monitoringAttempts := 0
 	for {
 		monitoringAttempts++
-		
+
 		jobInfo, err := client.Jobs().Get(ctx, jobID)
 		if err != nil {
 			fmt.Printf("Monitoring error (attempt %d): %v\n", monitoringAttempts, err)
-			
+
 			if monitoringAttempts >= 3 {
 				fmt.Println("Monitoring failed - job may still be running")
 				break
 			}
-			
+
 			time.Sleep(2 * time.Second)
 			continue
 		}
-		
+
 		fmt.Printf("Job state: %s\n", jobInfo.State)
-		
+
 		if jobInfo.State == "COMPLETED" || jobInfo.State == "FAILED" {
 			if jobInfo.State == "FAILED" && jobInfo.ExitCode != 0 {
 				fmt.Printf("Job failed with exit code %d\n", jobInfo.ExitCode)
-				
+
 				// Automatic resubmission for specific exit codes
 				if shouldResubmit(jobInfo.ExitCode) {
 					fmt.Println("Automatically resubmitting job...")
@@ -492,7 +492,7 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 			}
 			break
 		}
-		
+
 		time.Sleep(5 * time.Second)
 	}
 }
@@ -543,7 +543,7 @@ func (cb *circuitBreaker) isOpen() bool {
 func (cb *circuitBreaker) recordFailure() {
 	cb.failures++
 	cb.lastFailureTime = time.Now()
-	
+
 	if cb.failures >= cb.failureThreshold {
 		cb.state = "open"
 	}
@@ -612,11 +612,11 @@ func shouldResubmit(exitCode int) bool {
 
 func testRetryableOperation(ctx context.Context, client slurm.SlurmClient, strategyName string) {
 	fmt.Printf("Testing %s:\n", strategyName)
-	
+
 	start := time.Now()
 	_, err := client.Jobs().Get(ctx, "nonexistent-job")
 	elapsed := time.Since(start)
-	
+
 	if err != nil {
 		fmt.Printf("  Operation failed after retries: %v\n", err)
 		fmt.Printf("  Total time with retries: %v\n", elapsed)

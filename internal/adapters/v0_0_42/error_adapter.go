@@ -87,12 +87,12 @@ func (e *ErrorAdapter) HandleAPIResponse(statusCode int, body []byte, operation 
 			fmt.Errorf("HTTP 403: %s", string(body)),
 		)
 	case http.StatusNotFound:
-		err := errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("%s: resource not found", operation))
+		err := errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("%s: resource not found: HTTP %d", operation, statusCode))
 		err.StatusCode = statusCode
 		err.Details = string(body)
 		return err
 	case http.StatusConflict:
-		err := errors.NewSlurmError(errors.ErrorCodeConflict, fmt.Sprintf("%s: resource conflict", operation))
+		err := errors.NewSlurmError(errors.ErrorCodeConflict, fmt.Sprintf("%s: resource conflict: HTTP %d", operation, statusCode))
 		err.StatusCode = statusCode
 		err.Details = string(body)
 		return err
@@ -105,7 +105,7 @@ func (e *ErrorAdapter) HandleAPIResponse(statusCode int, body []byte, operation 
 			fmt.Errorf("HTTP 422: %s", string(body)),
 		)
 	case http.StatusInternalServerError, http.StatusBadGateway, http.StatusServiceUnavailable:
-		err := errors.NewSlurmError(errors.ErrorCodeServerInternal, fmt.Sprintf("%s: server error", operation))
+		err := errors.NewSlurmError(errors.ErrorCodeServerInternal, fmt.Sprintf("%s: server error: HTTP %d", operation, statusCode))
 		err.StatusCode = statusCode
 		err.Details = string(body)
 		return err
@@ -130,6 +130,9 @@ func (e *ErrorAdapter) ParseSlurmError(err error) (string, string, int) {
 			code = apiErr.Errors[0].ErrorCode
 			message = apiErr.Errors[0].Description
 			errno = apiErr.Errors[0].ErrorNumber
+		} else if apiErr.SlurmError != nil && apiErr.SlurmError.Message != "" {
+			// Fall back to SlurmError.Message when Errors array is empty
+			message = apiErr.SlurmError.Message
 		}
 	}
 

@@ -41,7 +41,7 @@ func TestJobsWithRealServer(t *testing.T) {
 		token: token,
 		base:  http.DefaultTransport,
 	}
-	
+
 	httpClient := &http.Client{
 		Transport: transport,
 		Timeout:   30 * time.Second,
@@ -59,28 +59,28 @@ func TestJobsWithRealServer(t *testing.T) {
 	t.Run("List Jobs", func(t *testing.T) {
 		resp, err := apiClient.SlurmV0043GetJobsWithResponse(ctx, &api.SlurmV0043GetJobsParams{})
 		require.NoError(t, err)
-		
+
 		assert.Equal(t, 200, resp.StatusCode())
-		
+
 		if resp.JSON200 != nil {
 			t.Logf("Found %d jobs on the server", len(resp.JSON200.Jobs))
-			
+
 			// Log first few jobs
 			for i, job := range resp.JSON200.Jobs {
 				if i >= 3 {
 					break
 				}
-				
+
 				jobID := "unknown"
 				if job.JobId != nil {
 					jobID = fmt.Sprintf("%d", *job.JobId)
 				}
-				
+
 				jobName := "unknown"
 				if job.Name != nil {
 					jobName = *job.Name
 				}
-				
+
 				state := "unknown"
 				if job.JobState != nil {
 					states := *job.JobState
@@ -88,7 +88,7 @@ func TestJobsWithRealServer(t *testing.T) {
 						state = string(states[0])
 					}
 				}
-				
+
 				t.Logf("  Job %s: name=%s, state=%s", jobID, jobName, state)
 			}
 		}
@@ -97,37 +97,37 @@ func TestJobsWithRealServer(t *testing.T) {
 	t.Run("List Partitions", func(t *testing.T) {
 		resp, err := apiClient.SlurmV0043GetPartitionsWithResponse(ctx, &api.SlurmV0043GetPartitionsParams{})
 		require.NoError(t, err)
-		
+
 		// Skip if we get a 502 due to slurmdbd not being connected
 		if resp.StatusCode() == 502 {
 			t.Skip("Skipping partitions test: slurmdbd is not connected (HTTP 502)")
 			return
 		}
-		
+
 		assert.Equal(t, 200, resp.StatusCode())
-		
+
 		if resp.JSON200 != nil {
 			t.Logf("Found %d partitions on the server", len(resp.JSON200.Partitions))
-			
+
 			for _, partition := range resp.JSON200.Partitions {
 				name := "unknown"
 				if partition.Name != nil {
 					name = *partition.Name
 				}
-				
-				state := "unknown" 
+
+				state := "unknown"
 				if partition.Partition != nil && partition.Partition.State != nil {
 					states := *partition.Partition.State
 					if len(states) > 0 {
 						state = string(states[0])
 					}
 				}
-				
+
 				nodes := "unknown"
 				if partition.Nodes != nil && partition.Nodes.Configured != nil {
 					nodes = *partition.Nodes.Configured
 				}
-				
+
 				t.Logf("  Partition %s: state=%s, nodes=%s", name, state, nodes)
 			}
 		}
@@ -136,18 +136,18 @@ func TestJobsWithRealServer(t *testing.T) {
 	t.Run("Get Nodes", func(t *testing.T) {
 		resp, err := apiClient.SlurmV0043GetNodesWithResponse(ctx, &api.SlurmV0043GetNodesParams{})
 		require.NoError(t, err)
-		
+
 		assert.Equal(t, 200, resp.StatusCode())
-		
+
 		if resp.JSON200 != nil {
 			t.Logf("Found %d nodes on the server", len(resp.JSON200.Nodes))
-			
+
 			for _, node := range resp.JSON200.Nodes {
 				name := "unknown"
 				if node.Name != nil {
 					name = *node.Name
 				}
-				
+
 				state := "unknown"
 				if node.State != nil {
 					states := *node.State
@@ -155,14 +155,14 @@ func TestJobsWithRealServer(t *testing.T) {
 						state = string(states[0])
 					}
 				}
-				
+
 				t.Logf("  Node %s: state=%s", name, state)
-				
+
 				// Log CPU info if available
 				if node.Cpus != nil {
 					t.Logf("    CPUs: %d", *node.Cpus)
 				}
-				
+
 				// Log memory if available
 				if node.RealMemory != nil {
 					t.Logf("    Memory: %d MB", *node.RealMemory)
@@ -174,19 +174,19 @@ func TestJobsWithRealServer(t *testing.T) {
 	t.Run("Get Diagnostics", func(t *testing.T) {
 		resp, err := apiClient.SlurmV0043GetDiagWithResponse(ctx)
 		require.NoError(t, err)
-		
+
 		assert.Equal(t, 200, resp.StatusCode())
-		
+
 		if resp.JSON200 != nil {
 			stats := &resp.JSON200.Statistics
-			
+
 			t.Logf("SLURM Diagnostics:")
-			
+
 			// Log server thread count
 			if stats.ServerThreadCount != nil {
 				t.Logf("  Server thread count: %d", *stats.ServerThreadCount)
 			}
-			
+
 			// Log job stats
 			if stats.JobsSubmitted != nil {
 				t.Logf("  Jobs submitted: %d", *stats.JobsSubmitted)
@@ -203,7 +203,7 @@ func TestJobsWithRealServer(t *testing.T) {
 			if stats.JobsFailed != nil {
 				t.Logf("  Jobs failed: %d", *stats.JobsFailed)
 			}
-			
+
 			// Log agent stats
 			if stats.AgentCount != nil {
 				t.Logf("  Agent count: %d", *stats.AgentCount)
@@ -214,4 +214,3 @@ func TestJobsWithRealServer(t *testing.T) {
 		}
 	})
 }
-

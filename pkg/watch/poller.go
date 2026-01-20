@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 )
 
 // DefaultPollInterval is the default polling interval for watch operations
@@ -87,12 +87,12 @@ func (p *JobPoller) pollLoop(ctx context.Context, opts *interfaces.WatchJobsOpti
 func (p *JobPoller) performPoll(ctx context.Context, opts *interfaces.WatchJobsOptions, eventChan chan<- interfaces.JobEvent, isInitial bool) {
 	// Convert watch options to list options
 	listOpts := &interfaces.ListJobsOptions{}
-	if opts.JobIDs != nil && len(opts.JobIDs) > 0 {
+	if len(opts.JobIDs) > 0 {
 		// For specific job IDs, we'll fetch all jobs and filter
 		// (Most SLURM APIs don't support filtering by multiple job IDs directly)
 		listOpts.Limit = 0 // No limit
 	}
-	if opts.States != nil && len(opts.States) > 0 {
+	if len(opts.States) > 0 {
 		listOpts.States = opts.States
 	}
 
@@ -113,10 +113,11 @@ func (p *JobPoller) performPoll(ctx context.Context, opts *interfaces.WatchJobsO
 	defer p.mu.Unlock()
 
 	currentJobs := make(map[string]bool)
-	
+
 	for _, job := range jobList.Jobs {
+		job := job // Create local copy to avoid memory aliasing
 		// Filter by job IDs if specified
-		if opts.JobIDs != nil && len(opts.JobIDs) > 0 {
+		if len(opts.JobIDs) > 0 {
 			found := false
 			for _, id := range opts.JobIDs {
 				if job.ID == id {
@@ -130,31 +131,33 @@ func (p *JobPoller) performPoll(ctx context.Context, opts *interfaces.WatchJobsO
 		}
 
 		currentJobs[job.ID] = true
-		
+
 		previousState, exists := p.jobStates[job.ID]
-		
+
 		if !exists {
 			// New job detected
 			p.jobStates[job.ID] = job.State
 			if !isInitial && (!opts.ExcludeNew) {
+				jobCopy := job
 				eventChan <- interfaces.JobEvent{
 					Type:      "job_new",
 					JobID:     job.ID,
 					NewState:  job.State,
 					Timestamp: time.Now(),
-					Job:       &job,
+					Job:       &jobCopy,
 				}
 			}
 		} else if previousState != job.State {
 			// State change detected
 			p.jobStates[job.ID] = job.State
+			jobCopy := job
 			eventChan <- interfaces.JobEvent{
 				Type:      "job_state_change",
 				JobID:     job.ID,
 				OldState:  previousState,
 				NewState:  job.State,
 				Timestamp: time.Now(),
-				Job:       &job,
+				Job:       &jobCopy,
 			}
 		}
 	}
@@ -250,7 +253,7 @@ func (p *NodePoller) pollLoop(ctx context.Context, opts *interfaces.WatchNodesOp
 func (p *NodePoller) performPoll(ctx context.Context, opts *interfaces.WatchNodesOptions, eventChan chan<- interfaces.NodeEvent, isInitial bool) {
 	// Convert watch options to list options
 	listOpts := &interfaces.ListNodesOptions{}
-	if opts.States != nil && len(opts.States) > 0 {
+	if len(opts.States) > 0 {
 		listOpts.States = opts.States
 	}
 
@@ -271,10 +274,11 @@ func (p *NodePoller) performPoll(ctx context.Context, opts *interfaces.WatchNode
 	defer p.mu.Unlock()
 
 	currentNodes := make(map[string]bool)
-	
+
 	for _, node := range nodeList.Nodes {
+		node := node // Create local copy to avoid memory aliasing
 		// Filter by node names if specified
-		if opts.NodeNames != nil && len(opts.NodeNames) > 0 {
+		if len(opts.NodeNames) > 0 {
 			found := false
 			for _, name := range opts.NodeNames {
 				if node.Name == name {
@@ -288,31 +292,33 @@ func (p *NodePoller) performPoll(ctx context.Context, opts *interfaces.WatchNode
 		}
 
 		currentNodes[node.Name] = true
-		
+
 		previousState, exists := p.nodeStates[node.Name]
-		
+
 		if !exists {
 			// New node detected (unusual but possible)
 			p.nodeStates[node.Name] = node.State
 			if !isInitial {
+				nodeCopy := node
 				eventChan <- interfaces.NodeEvent{
 					Type:      "node_new",
 					NodeName:  node.Name,
 					NewState:  node.State,
 					Timestamp: time.Now(),
-					Node:      &node,
+					Node:      &nodeCopy,
 				}
 			}
 		} else if previousState != node.State {
 			// State change detected
 			p.nodeStates[node.Name] = node.State
+			nodeCopy := node
 			eventChan <- interfaces.NodeEvent{
 				Type:      "node_state_change",
 				NodeName:  node.Name,
 				OldState:  previousState,
 				NewState:  node.State,
 				Timestamp: time.Now(),
-				Node:      &node,
+				Node:      &nodeCopy,
 			}
 		}
 	}
@@ -391,7 +397,7 @@ func (p *PartitionPoller) pollLoop(ctx context.Context, opts *interfaces.WatchPa
 func (p *PartitionPoller) performPoll(ctx context.Context, opts *interfaces.WatchPartitionsOptions, eventChan chan<- interfaces.PartitionEvent, isInitial bool) {
 	// Convert watch options to list options
 	listOpts := &interfaces.ListPartitionsOptions{}
-	if opts.States != nil && len(opts.States) > 0 {
+	if len(opts.States) > 0 {
 		listOpts.States = opts.States
 	}
 
@@ -412,8 +418,9 @@ func (p *PartitionPoller) performPoll(ctx context.Context, opts *interfaces.Watc
 	defer p.mu.Unlock()
 
 	for _, partition := range partitionList.Partitions {
+		partition := partition // Create local copy to avoid memory aliasing
 		// Filter by partition names if specified
-		if opts.PartitionNames != nil && len(opts.PartitionNames) > 0 {
+		if len(opts.PartitionNames) > 0 {
 			found := false
 			for _, name := range opts.PartitionNames {
 				if partition.Name == name {
@@ -427,29 +434,31 @@ func (p *PartitionPoller) performPoll(ctx context.Context, opts *interfaces.Watc
 		}
 
 		previousState, exists := p.partitionStates[partition.Name]
-		
+
 		if !exists {
 			// First time seeing this partition
 			p.partitionStates[partition.Name] = partition.State
 			if !isInitial {
+				partitionCopy := partition
 				eventChan <- interfaces.PartitionEvent{
 					Type:          "partition_new",
 					PartitionName: partition.Name,
 					NewState:      partition.State,
 					Timestamp:     time.Now(),
-					Partition:     &partition,
+					Partition:     &partitionCopy,
 				}
 			}
 		} else if previousState != partition.State {
 			// State change detected
 			p.partitionStates[partition.Name] = partition.State
+			partitionCopy := partition
 			eventChan <- interfaces.PartitionEvent{
 				Type:          "partition_state_change",
 				PartitionName: partition.Name,
 				OldState:      previousState,
 				NewState:      partition.State,
 				Timestamp:     time.Now(),
-				Partition:     &partition,
+				Partition:     &partitionCopy,
 			}
 		}
 	}

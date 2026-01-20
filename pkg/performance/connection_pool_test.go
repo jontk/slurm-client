@@ -14,7 +14,7 @@ import (
 
 func TestDefaultConnectionPoolConfig(t *testing.T) {
 	config := DefaultConnectionPoolConfig()
-	
+
 	require.NotNil(t, config)
 	assert.Equal(t, 100, config.MaxIdleConns)
 	assert.Equal(t, 30, config.MaxIdleConnsPerHost)
@@ -31,7 +31,7 @@ func TestDefaultConnectionPoolConfig(t *testing.T) {
 
 func TestHighPerformanceConnectionPoolConfig(t *testing.T) {
 	config := HighPerformanceConnectionPoolConfig()
-	
+
 	require.NotNil(t, config)
 	assert.Equal(t, 200, config.MaxIdleConns)
 	assert.Equal(t, 50, config.MaxIdleConnsPerHost)
@@ -44,7 +44,7 @@ func TestHighPerformanceConnectionPoolConfig(t *testing.T) {
 
 func TestConservativeConnectionPoolConfig(t *testing.T) {
 	config := ConservativeConnectionPoolConfig()
-	
+
 	require.NotNil(t, config)
 	assert.Equal(t, 10, config.MaxIdleConns)
 	assert.Equal(t, 5, config.MaxIdleConnsPerHost)
@@ -58,22 +58,22 @@ func TestConservativeConnectionPoolConfig(t *testing.T) {
 func TestNewHTTPClientPool(t *testing.T) {
 	t.Run("with config", func(t *testing.T) {
 		config := &ConnectionPoolConfig{
-			MaxIdleConns: 50,
+			MaxIdleConns:    50,
 			MaxConnsPerHost: 25,
 		}
-		
+
 		pool := NewHTTPClientPool(config)
 		defer pool.Close()
-		
+
 		require.NotNil(t, pool)
 		assert.Equal(t, config, pool.config)
 		assert.NotNil(t, pool.clients)
 	})
-	
+
 	t.Run("with nil config", func(t *testing.T) {
 		pool := NewHTTPClientPool(nil)
 		defer pool.Close()
-		
+
 		require.NotNil(t, pool)
 		assert.Equal(t, DefaultConnectionPoolConfig(), pool.config)
 	})
@@ -82,26 +82,26 @@ func TestNewHTTPClientPool(t *testing.T) {
 func TestHTTPClientPool_GetClient(t *testing.T) {
 	pool := NewHTTPClientPool(nil)
 	defer pool.Close()
-	
+
 	endpoint1 := "https://slurm.example.com"
 	endpoint2 := "https://slurm2.example.com"
-	
+
 	// First call creates client
 	client1 := pool.GetClient(endpoint1)
 	require.NotNil(t, client1)
-	
+
 	// Second call to same endpoint returns same client
 	client1Again := pool.GetClient(endpoint1)
 	assert.Equal(t, client1, client1Again)
-	
+
 	// Different endpoint returns different client
 	client2 := pool.GetClient(endpoint2)
 	assert.NotEqual(t, client1, client2)
-	
+
 	// Verify client configuration
 	transport, ok := client1.Transport.(*http.Transport)
 	require.True(t, ok)
-	
+
 	assert.Equal(t, pool.config.MaxIdleConns, transport.MaxIdleConns)
 	assert.Equal(t, pool.config.MaxIdleConnsPerHost, transport.MaxIdleConnsPerHost)
 	assert.Equal(t, pool.config.MaxConnsPerHost, transport.MaxConnsPerHost)
@@ -122,49 +122,49 @@ func TestHTTPClientPool_TLSConfiguration(t *testing.T) {
 			EnableTLSSessionResumption: true,
 			TLSInsecureSkipVerify:      false,
 		}
-		
+
 		pool := NewHTTPClientPool(config)
 		defer pool.Close()
-		
+
 		client := pool.GetClient("https://example.com")
 		transport, ok := client.Transport.(*http.Transport)
 		require.True(t, ok)
-		
+
 		require.NotNil(t, transport.TLSClientConfig)
 		assert.False(t, transport.TLSClientConfig.InsecureSkipVerify)
 		assert.NotNil(t, transport.TLSClientConfig.ClientSessionCache)
 	})
-	
+
 	t.Run("with insecure skip verify", func(t *testing.T) {
 		config := &ConnectionPoolConfig{
 			EnableTLSSessionResumption: false,
 			TLSInsecureSkipVerify:      true,
 		}
-		
+
 		pool := NewHTTPClientPool(config)
 		defer pool.Close()
-		
+
 		client := pool.GetClient("https://example.com")
 		transport, ok := client.Transport.(*http.Transport)
 		require.True(t, ok)
-		
+
 		require.NotNil(t, transport.TLSClientConfig)
 		assert.True(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})
-	
+
 	t.Run("no TLS config when not needed", func(t *testing.T) {
 		config := &ConnectionPoolConfig{
 			EnableTLSSessionResumption: false,
 			TLSInsecureSkipVerify:      false,
 		}
-		
+
 		pool := NewHTTPClientPool(config)
 		defer pool.Close()
-		
+
 		client := pool.GetClient("https://example.com")
 		transport, ok := client.Transport.(*http.Transport)
 		require.True(t, ok)
-		
+
 		// TLS config should not be set when both flags are false
 		assert.Nil(t, transport.TLSClientConfig)
 	})
@@ -173,21 +173,21 @@ func TestHTTPClientPool_TLSConfiguration(t *testing.T) {
 func TestHTTPClientPool_GetStats(t *testing.T) {
 	pool := NewHTTPClientPool(nil)
 	defer pool.Close()
-	
+
 	// Initially no clients
 	stats := pool.GetStats()
 	assert.Equal(t, 0, stats.ActiveClients)
 	assert.Empty(t, stats.Endpoints)
 	assert.Equal(t, *pool.config, stats.Config)
-	
+
 	// Add some clients
 	pool.GetClient("https://example1.com")
 	pool.GetClient("https://example2.com")
-	
+
 	stats = pool.GetStats()
 	assert.Equal(t, 2, stats.ActiveClients)
 	assert.Len(t, stats.Endpoints, 2)
-	
+
 	// Check endpoint stats
 	endpoints := make(map[string]bool)
 	for _, ep := range stats.Endpoints {
@@ -199,18 +199,18 @@ func TestHTTPClientPool_GetStats(t *testing.T) {
 
 func TestHTTPClientPool_Close(t *testing.T) {
 	pool := NewHTTPClientPool(nil)
-	
+
 	// Add some clients
 	pool.GetClient("https://example1.com")
 	pool.GetClient("https://example2.com")
-	
+
 	// Verify clients exist
 	stats := pool.GetStats()
 	assert.Equal(t, 2, stats.ActiveClients)
-	
+
 	// Close pool
 	pool.Close()
-	
+
 	// Verify clients are cleared
 	stats = pool.GetStats()
 	assert.Equal(t, 0, stats.ActiveClients)
@@ -256,7 +256,7 @@ func TestGetConnectionPoolConfigForProfile(t *testing.T) {
 			},
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(string(tt.profile), func(t *testing.T) {
 			config := GetConnectionPoolConfigForProfile(tt.profile)
@@ -269,7 +269,7 @@ func TestGetConnectionPoolConfigForProfile(t *testing.T) {
 func TestNewHTTPClientPoolManager(t *testing.T) {
 	manager := NewHTTPClientPoolManager()
 	defer manager.Close()
-	
+
 	require.NotNil(t, manager)
 	assert.NotNil(t, manager.pools)
 }
@@ -277,19 +277,19 @@ func TestNewHTTPClientPoolManager(t *testing.T) {
 func TestHTTPClientPoolManager_GetPoolForVersion(t *testing.T) {
 	manager := NewHTTPClientPoolManager()
 	defer manager.Close()
-	
+
 	// First call creates pool
 	pool1 := manager.GetPoolForVersion("v0.0.41", ProfileDefault)
 	require.NotNil(t, pool1)
-	
+
 	// Second call to same version+profile returns same pool
 	pool1Again := manager.GetPoolForVersion("v0.0.41", ProfileDefault)
 	assert.Equal(t, pool1, pool1Again)
-	
+
 	// Different version returns different pool
 	pool2 := manager.GetPoolForVersion("v0.0.42", ProfileDefault)
 	assert.NotEqual(t, pool1, pool2)
-	
+
 	// Different profile returns different pool
 	pool3 := manager.GetPoolForVersion("v0.0.41", ProfileHighThroughput)
 	assert.NotEqual(t, pool1, pool3)
@@ -298,7 +298,7 @@ func TestHTTPClientPoolManager_GetPoolForVersion(t *testing.T) {
 func TestHTTPClientPoolManager_VersionSpecificOptimizations(t *testing.T) {
 	manager := NewHTTPClientPoolManager()
 	defer manager.Close()
-	
+
 	tests := []struct {
 		version              string
 		expectedOptimization func(*http.Client) bool
@@ -333,12 +333,12 @@ func TestHTTPClientPoolManager_VersionSpecificOptimizations(t *testing.T) {
 			},
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.version, func(t *testing.T) {
 			pool := manager.GetPoolForVersion(tt.version, ProfileDefault)
 			client := pool.GetClient("https://example.com")
-			
+
 			assert.True(t, tt.expectedOptimization(client))
 		})
 	}
@@ -347,46 +347,46 @@ func TestHTTPClientPoolManager_VersionSpecificOptimizations(t *testing.T) {
 func TestHTTPClientPoolManager_GetGlobalStats(t *testing.T) {
 	manager := NewHTTPClientPoolManager()
 	defer manager.Close()
-	
+
 	// Initially no pools
 	stats := manager.GetGlobalStats()
 	assert.Empty(t, stats)
-	
+
 	// Create some pools
 	pool1 := manager.GetPoolForVersion("v0.0.41", ProfileDefault)
 	pool2 := manager.GetPoolForVersion("v0.0.42", ProfileHighThroughput)
-	
+
 	// Add clients to pools
 	pool1.GetClient("https://example1.com")
 	pool2.GetClient("https://example2.com")
-	
+
 	stats = manager.GetGlobalStats()
 	assert.Len(t, stats, 2)
 	assert.Contains(t, stats, "v0.0.41:default")
 	assert.Contains(t, stats, "v0.0.42:high_throughput")
-	
+
 	assert.Equal(t, 1, stats["v0.0.41:default"].ActiveClients)
 	assert.Equal(t, 1, stats["v0.0.42:high_throughput"].ActiveClients)
 }
 
 func TestHTTPClientPoolManager_Close(t *testing.T) {
 	manager := NewHTTPClientPoolManager()
-	
+
 	// Create some pools
 	pool1 := manager.GetPoolForVersion("v0.0.41", ProfileDefault)
 	pool2 := manager.GetPoolForVersion("v0.0.42", ProfileDefault)
-	
+
 	// Add clients
 	pool1.GetClient("https://example1.com")
 	pool2.GetClient("https://example2.com")
-	
+
 	// Verify pools exist
 	stats := manager.GetGlobalStats()
 	assert.Len(t, stats, 2)
-	
+
 	// Close manager
 	manager.Close()
-	
+
 	// Verify pools are cleared
 	stats = manager.GetGlobalStats()
 	assert.Empty(t, stats)
@@ -398,7 +398,7 @@ func TestHelperFunctions(t *testing.T) {
 		assert.Equal(t, 5, min(10, 5))
 		assert.Equal(t, 5, min(5, 5))
 	})
-	
+
 	t.Run("max function", func(t *testing.T) {
 		assert.Equal(t, 10*time.Second, max(5*time.Second, 10*time.Second))
 		assert.Equal(t, 10*time.Second, max(10*time.Second, 5*time.Second))
@@ -415,11 +415,11 @@ func TestPerformanceProfiles(t *testing.T) {
 		ProfileConservative,
 		ProfileBatch,
 	}
-	
+
 	for _, profile := range profiles {
 		assert.NotEmpty(t, string(profile))
 	}
-	
+
 	// Test that each profile has expected string values
 	assert.Equal(t, "default", string(ProfileDefault))
 	assert.Equal(t, "high_throughput", string(ProfileHighThroughput))
@@ -435,7 +435,7 @@ func TestConnectionPoolConfigCompleteness(t *testing.T) {
 		HighPerformanceConnectionPoolConfig(),
 		ConservativeConnectionPoolConfig(),
 	}
-	
+
 	for i, config := range configs {
 		t.Run([]string{"default", "high_perf", "conservative"}[i], func(t *testing.T) {
 			// Verify all fields are set to non-zero values
@@ -456,36 +456,36 @@ func TestHTTPClientConfiguration(t *testing.T) {
 		config := &ConnectionPoolConfig{
 			DisableCompression: true,
 		}
-		
+
 		pool := NewHTTPClientPool(config)
 		defer pool.Close()
-		
+
 		client := pool.GetClient("https://example.com")
 		transport := client.Transport.(*http.Transport)
-		
+
 		assert.True(t, transport.DisableCompression)
 	})
-	
+
 	t.Run("keep alives disabled", func(t *testing.T) {
 		config := &ConnectionPoolConfig{
 			DisableKeepAlives: true,
 		}
-		
+
 		pool := NewHTTPClientPool(config)
 		defer pool.Close()
-		
+
 		client := pool.GetClient("https://example.com")
 		transport := client.Transport.(*http.Transport)
-		
+
 		assert.True(t, transport.DisableKeepAlives)
 	})
-	
+
 	t.Run("client timeout", func(t *testing.T) {
 		pool := NewHTTPClientPool(nil)
 		defer pool.Close()
-		
+
 		client := pool.GetClient("https://example.com")
-		
+
 		// Client timeout should be 0 (handled at request level)
 		assert.Equal(t, time.Duration(0), client.Timeout)
 	})
@@ -495,16 +495,16 @@ func TestTLSClientSessionCache(t *testing.T) {
 	config := &ConnectionPoolConfig{
 		EnableTLSSessionResumption: true,
 	}
-	
+
 	pool := NewHTTPClientPool(config)
 	defer pool.Close()
-	
+
 	client := pool.GetClient("https://example.com")
 	transport := client.Transport.(*http.Transport)
-	
+
 	require.NotNil(t, transport.TLSClientConfig)
 	require.NotNil(t, transport.TLSClientConfig.ClientSessionCache)
-	
+
 	// Verify it's an LRU cache (the implementation returns an interface)
 	assert.NotNil(t, transport.TLSClientConfig.ClientSessionCache)
 }

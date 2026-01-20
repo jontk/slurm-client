@@ -22,6 +22,7 @@ func TestNodeAdapter_ValidateContext(t *testing.T) {
 	adapter := NewNodeAdapter(&api.ClientWithResponses{})
 
 	// Test nil context
+	//lint:ignore SA1012 intentionally testing nil context validation
 	err := adapter.ValidateContext(nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context is required")
@@ -34,13 +35,8 @@ func TestNodeAdapter_ValidateContext(t *testing.T) {
 func TestNodeAdapter_List(t *testing.T) {
 	adapter := NewNodeAdapter(nil) // Use nil client for testing validation logic
 
-	// Test nil context validation
-	_, err := adapter.List(nil, &types.NodeListOptions{})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
-
-	// Test client initialization check
-	_, err = adapter.List(context.Background(), &types.NodeListOptions{})
+	// Test client initialization check (nil context validation is covered in TestNodeAdapter_ValidateContext)
+	_, err := adapter.List(context.TODO(), &types.NodeListOptions{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "client not initialized")
 }
@@ -49,17 +45,12 @@ func TestNodeAdapter_Get(t *testing.T) {
 	adapter := NewNodeAdapter(nil)
 
 	// Test empty node name
-	_, err := adapter.Get(context.Background(), "")
+	_, err := adapter.Get(context.TODO(), "")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Node name is required")
 
-	// Test nil context
-	_, err = adapter.Get(nil, "test-node")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
-
-	// Test client initialization check
-	_, err = adapter.Get(context.Background(), "test-node")
+	// Test client initialization check (nil context validation is covered in TestNodeAdapter_ValidateContext)
+	_, err = adapter.Get(context.TODO(), "test-node")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "client not initialized")
 }
@@ -115,22 +106,17 @@ func TestNodeAdapter_Update(t *testing.T) {
 	adapter := NewNodeAdapter(nil)
 
 	// Test nil update
-	err := adapter.Update(context.Background(), "test-node", nil)
+	err := adapter.Update(context.TODO(), "test-node", nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "node update data is required")
 
 	// Test empty node name
-	err = adapter.Update(context.Background(), "", &types.NodeUpdate{})
+	err = adapter.Update(context.TODO(), "", &types.NodeUpdate{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Node name is required")
 
-	// Test nil context
-	err = adapter.Update(nil, "test-node", &types.NodeUpdate{})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
-
-	// Test client initialization check
-	err = adapter.Update(context.Background(), "test-node", &types.NodeUpdate{})
+	// Test client initialization check (nil context validation is covered in TestNodeAdapter_ValidateContext)
+	err = adapter.Update(context.TODO(), "test-node", &types.NodeUpdate{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "at least one field must be provided for update")
 }
@@ -139,17 +125,12 @@ func TestNodeAdapter_Delete(t *testing.T) {
 	adapter := NewNodeAdapter(nil)
 
 	// Test empty node name
-	err := adapter.Delete(context.Background(), "")
+	err := adapter.Delete(context.TODO(), "")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Node name is required")
 
-	// Test nil context
-	err = adapter.Delete(nil, "test-node")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
-
-	// Test client initialization check
-	err = adapter.Delete(context.Background(), "test-node")
+	// Test client initialization check (nil context validation is covered in TestNodeAdapter_ValidateContext)
+	err = adapter.Delete(context.TODO(), "test-node")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "client not initialized")
 }

@@ -30,7 +30,7 @@ func main() {
 	fmt.Println("\n=== Example 2: Explicit Version Selection ===")
 	for _, version := range slurm.SupportedVersions() {
 		fmt.Printf("Testing version %s:\n", version)
-		client, err := slurm.NewClientWithVersion(ctx, version, 
+		client, err := slurm.NewClientWithVersion(ctx, version,
 			slurm.WithBaseURL("https://localhost:6820"),
 			slurm.WithAuth(auth.NewNoneAuth()),
 		)
@@ -38,7 +38,7 @@ func main() {
 			log.Printf("  Error creating client for %s: %v", version, err)
 			continue
 		}
-		
+
 		// Test basic connectivity
 		info, err := client.GetInfo(ctx)
 		if err != nil {
@@ -71,7 +71,7 @@ func main() {
 		BaseURL: "https://localhost:6820",
 		Timeout: "30s",
 		Auth: config.AuthConfig{
-			Type: "token",
+			Type:  "token",
 			Token: os.Getenv("SLURM_TOKEN"),
 		},
 		Retry: config.RetryConfig{
@@ -111,7 +111,7 @@ func printBasicInfo(ctx context.Context, client slurm.SlurmClient) {
 
 	fmt.Printf("  Server Version: %s\n", info.Version)
 	fmt.Printf("  Release: %s\n", info.Release)
-	
+
 	// List available partitions
 	partitions, err := client.ListPartitions(ctx)
 	if err != nil {

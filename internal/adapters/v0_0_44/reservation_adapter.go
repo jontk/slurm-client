@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"strings"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 )
 
 // ReservationAdapter implements the ReservationAdapter interface for v0.0.44
@@ -132,7 +132,7 @@ func (a *ReservationAdapter) Get(ctx context.Context, reservationName string) (*
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(reservationName, "reservationName"); err != nil {
+	if err := a.ValidateResourceName(reservationName, "Reservation name"); err != nil {
 		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -235,7 +235,7 @@ func (a *ReservationAdapter) Update(ctx context.Context, reservationName string,
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(reservationName, "reservationName"); err != nil {
+	if err := a.ValidateResourceName(reservationName, "Reservation name"); err != nil {
 		return err
 	}
 	if err := a.validateReservationUpdate(update); err != nil {
@@ -286,7 +286,7 @@ func (a *ReservationAdapter) Delete(ctx context.Context, reservationName string)
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(reservationName, "reservationName"); err != nil {
+	if err := a.ValidateResourceName(reservationName, "Reservation name"); err != nil {
 		return err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -343,7 +343,7 @@ func (a *ReservationAdapter) validateReservationUpdate(update *types.Reservation
 	}
 	// At least one field should be provided for update
 	if update.StartTime == nil && update.EndTime == nil && update.Duration == nil &&
-	   len(update.Users) == 0 && len(update.Accounts) == 0 && update.NodeCount == nil {
+		len(update.Users) == 0 && len(update.Accounts) == 0 && update.NodeCount == nil {
 		return common.NewValidationError("at least one field must be provided for update", "update", update)
 	}
 	if update.StartTime != nil && update.EndTime != nil && update.StartTime.After(*update.EndTime) {

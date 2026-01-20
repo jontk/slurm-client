@@ -30,7 +30,7 @@ func newAuthTransport(base http.RoundTripper, auth auth.Provider) http.RoundTrip
 func (t *authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Clone the request to avoid modifying the original
 	reqCopy := req.Clone(req.Context())
-	
+
 	// Apply authentication if available
 	if t.auth != nil {
 		// Use the request's context for authentication
@@ -39,7 +39,7 @@ func (t *authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 			// In production, you might want to handle this differently
 		}
 	}
-	
+
 	// Execute the request
 	return t.base.RoundTrip(reqCopy)
 }
@@ -49,20 +49,20 @@ func createAuthenticatedHTTPClient(baseClient *http.Client, authProvider auth.Pr
 	if baseClient == nil {
 		baseClient = &http.Client{}
 	}
-	
+
 	// Clone the client to avoid modifying the original
 	client := &http.Client{
 		Timeout:       baseClient.Timeout,
 		CheckRedirect: baseClient.CheckRedirect,
 		Jar:           baseClient.Jar,
 	}
-	
+
 	// Wrap the transport with authentication
 	if baseClient.Transport != nil {
 		client.Transport = newAuthTransport(baseClient.Transport, authProvider)
 	} else {
 		client.Transport = newAuthTransport(http.DefaultTransport, authProvider)
 	}
-	
+
 	return client
 }

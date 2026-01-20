@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -51,7 +51,7 @@ func (m *NodeManagerImpl) List(ctx context.Context, opts *interfaces.ListNodesOp
 			errorMsg := fmt.Sprintf("API error: %v", (*resp.JSONDefault.Errors)[0])
 			return nil, errors.NewSlurmError(errors.ErrorCodeInvalidRequest, errorMsg)
 		}
-		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
@@ -67,7 +67,7 @@ func (m *NodeManagerImpl) List(ctx context.Context, opts *interfaces.ListNodesOp
 	if resp.JSON200.Nodes != nil {
 		for _, node := range resp.JSON200.Nodes {
 			convertedNode := m.convertNodeToInterface(&node)
-			
+
 			// Apply partition filtering if specified (post-retrieval filtering)
 			if opts != nil && opts.Partition != "" {
 				partitionFound := false
@@ -81,7 +81,7 @@ func (m *NodeManagerImpl) List(ctx context.Context, opts *interfaces.ListNodesOp
 					continue
 				}
 			}
-			
+
 			nodeList.Nodes = append(nodeList.Nodes, *convertedNode)
 		}
 	}
@@ -103,17 +103,17 @@ func (m *NodeManagerImpl) Get(ctx context.Context, nodeName string) (*interfaces
 	}
 
 	if resp.HTTPResponse.StatusCode == 404 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Node %s not found", nodeName))
 	}
 
 	if resp.HTTPResponse.StatusCode != 200 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
 	if resp.JSON200 == nil || len(resp.JSON200.Nodes) == 0 {
-		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Node %s not found", nodeName))
 	}
 
@@ -121,7 +121,7 @@ func (m *NodeManagerImpl) Get(ctx context.Context, nodeName string) (*interfaces
 	return m.convertNodeToInterface(&node), nil
 }
 
-// CreateNode creates a new node in the cluster (new in v0.0.44)  
+// CreateNode creates a new node in the cluster (new in v0.0.44)
 // Note: Placeholder implementation until NodeCreate interface is defined
 func (m *NodeManagerImpl) CreateNode(ctx context.Context, nodeName string, cpus int, memory int64) (interface{}, error) {
 	if m.client.apiClient == nil {
@@ -156,7 +156,7 @@ func (m *NodeManagerImpl) CreateNode(ctx context.Context, nodeName string, cpus 
 			errorMsg := fmt.Sprintf("Node creation failed: %v", (*resp.JSONDefault.Errors)[0])
 			return nil, errors.NewSlurmError(errors.ErrorCodeValidationFailed, errorMsg)
 		}
-		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
@@ -206,12 +206,12 @@ func (m *NodeManagerImpl) Update(ctx context.Context, nodeName string, update *i
 	}
 
 	if resp.HTTPResponse.StatusCode == 404 {
-		return errors.NewSlurmError(errors.ErrorCodeResourceNotFound, 
+		return errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Node %s not found", nodeName))
 	}
 
 	if resp.HTTPResponse.StatusCode != 200 {
-		return errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
@@ -222,14 +222,14 @@ func (m *NodeManagerImpl) Update(ctx context.Context, nodeName string, update *i
 func (m *NodeManagerImpl) Watch(ctx context.Context, opts *interfaces.WatchNodesOptions) (<-chan interfaces.NodeEvent, error) {
 	// Create a channel for node events
 	eventChan := make(chan interfaces.NodeEvent)
-	
+
 	// For now, return a basic watcher that polls for changes
 	go func() {
 		defer close(eventChan)
-		
+
 		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
-		
+
 		for {
 			select {
 			case <-ctx.Done():
@@ -240,7 +240,7 @@ func (m *NodeManagerImpl) Watch(ctx context.Context, opts *interfaces.WatchNodes
 			}
 		}
 	}()
-	
+
 	return eventChan, nil
 }
 
@@ -336,12 +336,12 @@ func (m *NodeManagerImpl) Drain(ctx context.Context, nodeName string, reason str
 	}
 
 	if resp.HTTPResponse.StatusCode == 404 {
-		return errors.NewSlurmError(errors.ErrorCodeResourceNotFound, 
+		return errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Node %s not found", nodeName))
 	}
 
 	if resp.HTTPResponse.StatusCode != 200 {
-		return errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 
@@ -366,12 +366,12 @@ func (m *NodeManagerImpl) Resume(ctx context.Context, nodeName string) error {
 	}
 
 	if resp.HTTPResponse.StatusCode == 404 {
-		return errors.NewSlurmError(errors.ErrorCodeResourceNotFound, 
+		return errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Node %s not found", nodeName))
 	}
 
 	if resp.HTTPResponse.StatusCode != 200 {
-		return errors.NewSlurmError(errors.ErrorCodeServerInternal, 
+		return errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
 

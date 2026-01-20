@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/jontk/slurm-client/actions/workflows/ci.yml/badge.svg)](https://github.com/jontk/slurm-client/actions/workflows/ci.yml)
 [![Security](https://github.com/jontk/slurm-client/actions/workflows/security.yml/badge.svg)](https://github.com/jontk/slurm-client/actions/workflows/security.yml)
+[![codecov](https://codecov.io/gh/jontk/slurm-client/branch/main/graph/badge.svg)](https://codecov.io/gh/jontk/slurm-client)
 [![Go Reference](https://pkg.go.dev/badge/github.com/jontk/slurm-client.svg)](https://pkg.go.dev/github.com/jontk/slurm-client)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jontk/slurm-client)](https://goreportcard.com/report/github.com/jontk/slurm-client)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -201,11 +202,91 @@ client, err := slurm.NewClientWithVersion(ctx, "v0.0.42", options...)
 client, err := slurm.NewClientForSlurmVersion(ctx, "25.05", options...)
 ```
 
+## 📋 Supported Versions
+
+### API Version Support
+
+| API Version | Builder Support | Mock Server | Status | Notes |
+|-------------|----------------|-------------|---------|-------|
+| v0.0.44 | ✅ Complete (129 methods) | ✅ Native | **Supported** | Latest version |
+| v0.0.43 | ✅ Complete (128 methods) | ✅ Native | **Supported** | QoS, Reservations, Accounts |
+| v0.0.42 | ✅ Complete (123 methods) | ✅ Native | **Supported** | Stable baseline |
+| v0.0.41 | ❌ No builders | ⚠️ Fallback | **Best-effort** | Inline schemas unsupported |
+| v0.0.40 | ✅ Complete (126 methods) | ⚠️ Fallback | **Best-effort** | Legacy support |
+
+### Support Tiers
+
+**Supported** (v0.0.42, v0.0.43, v0.0.44):
+- ✅ Full test coverage and validation
+- ✅ Complete builder pattern support
+- ✅ Native mock server implementations
+- ✅ Regular security updates
+- ✅ Bug fixes and improvements
+- ✅ Documentation and examples
+
+**Best-effort** (v0.0.40, v0.0.41):
+- ⚠️ Limited test coverage
+- ⚠️ Mock server uses fallback implementations
+- ⚠️ May not receive new features
+- ⚠️ Security fixes only for critical issues
+- ⚠️ Use for legacy compatibility only
+
+### Deprecation Policy
+
+When new SLURM REST API versions are released, the library follows this deprecation process:
+
+1. **New Version Released**: Added with full support within 30 days
+2. **Support Window**: Latest 3 versions receive full support
+3. **Deprecation Notice**: Oldest supported version moves to best-effort
+4. **Removal Timeline**: Best-effort versions deprecated after 12 months of inactivity
+
+**Example Timeline:**
+- v0.0.45 released → v0.0.45, v0.0.44, v0.0.43 are **Supported**
+- v0.0.42 moves to **Best-effort**
+- v0.0.41, v0.0.40 marked **Deprecated**
+
+**Current Status (as of 2026-01-19):**
+- **Supported:** v0.0.44, v0.0.43, v0.0.42 (full support, regular updates)
+- **Best-effort:** v0.0.41, v0.0.40 (minimal maintenance, use at your own risk)
+
+### Migration Assistance
+
+For migration between versions, see [MIGRATION.md](MIGRATION.md) which includes:
+- Breaking changes between versions
+- API compatibility matrices
+- Step-by-step migration guides
+- Common pitfalls and solutions
+
 ## 📦 Installation
+
+### For Library Users
 
 ```bash
 go get github.com/jontk/slurm-client
 ```
+
+That's it! The library is ready to use in your applications.
+
+### For Contributors/Developers
+
+If you're cloning the repository to contribute or run tests:
+
+```bash
+# Clone the repository
+git clone https://github.com/jontk/slurm-client.git
+cd slurm-client
+
+# Install dependencies
+go mod download
+
+# Generate mock builders (required for tests)
+make generate-mocks
+
+# Run tests
+make test
+```
+
+**Note**: The mock builders are generated from OpenAPI specs and are not committed to the repository. You must run `make generate-mocks` before running tests locally. CI automatically generates them.
 
 ## ⚡ Quick Start (Recommended Approach)
 
@@ -1158,7 +1239,6 @@ We welcome contributions! This project follows enterprise development practices:
 ## 📚 Documentation
 
 - **[Architecture Documentation](docs/ARCHITECTURE.md)**: Technical design and patterns
-- **[Project Requirements](docs/PRD.md)**: Comprehensive requirements and specifications
 - **[API Documentation](docs/api/)**: Version-specific API documentation
 - **[Examples](examples/)**: Practical usage examples and tutorials
 

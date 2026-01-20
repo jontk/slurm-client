@@ -33,7 +33,7 @@ func (m *UserBaseManager) ValidateUserCreate(user *types.UserCreate) error {
 		)
 	}
 
-	if err := m.ValidateResourceName(user.Name, "user.Name"); err != nil {
+	if err := m.ValidateResourceName(user.Name, "user name"); err != nil {
 		return err
 	}
 

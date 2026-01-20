@@ -38,9 +38,9 @@ type mockResponse struct {
 	errorResponse ErrorResponse
 }
 
-func (m mockResponse) StatusCode() int                    { return m.statusCode }
-func (m mockResponse) HasErrors() bool                    { return m.hasErrors }
-func (m mockResponse) GetErrorResponse() ErrorResponse   { return m.errorResponse }
+func (m mockResponse) StatusCode() int                 { return m.statusCode }
+func (m mockResponse) HasErrors() bool                 { return m.hasErrors }
+func (m mockResponse) GetErrorResponse() ErrorResponse { return m.errorResponse }
 
 func TestHandleAPIResponse(t *testing.T) {
 	tests := []struct {
@@ -105,7 +105,7 @@ func TestHandleAPIResponse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := HandleAPIResponse(tt.response, tt.version)
-			
+
 			if tt.expectError {
 				require.Error(t, err)
 				if tt.errorType != nil {
@@ -148,7 +148,7 @@ func TestCheckNilResponse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := CheckNilResponse(tt.response, tt.operation)
-			
+
 			if tt.expectError {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.operation)
@@ -186,7 +186,7 @@ func TestWrapAndEnhanceError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := WrapAndEnhanceError(tt.err, tt.version)
-			
+
 			if tt.isNil {
 				assert.Nil(t, result)
 			} else {
@@ -202,7 +202,7 @@ func TestWrapAndEnhanceError(t *testing.T) {
 
 func TestHandleConversionError(t *testing.T) {
 	baseErr := errors.NewClientError(errors.ErrorCodeServerInternal, "base error")
-	
+
 	tests := []struct {
 		name         string
 		err          error
@@ -236,14 +236,14 @@ func TestHandleConversionError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := HandleConversionError(tt.err, tt.resourceType, tt.resourceID)
-			
+
 			require.Error(t, err)
 			// HandleConversionError creates a server error, not a client error
 			if slurmErr, ok := err.(*errors.SlurmError); ok {
 				assert.Equal(t, errors.ErrorCodeServerInternal, slurmErr.Code)
 			}
 			assert.Contains(t, err.Error(), tt.resourceType)
-			
+
 			if slurmErr, ok := err.(*errors.SlurmError); ok && tt.expectDetail {
 				assert.NotEmpty(t, slurmErr.Details)
 			}
@@ -277,7 +277,7 @@ func TestCheckClientInitialized(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := CheckClientInitialized(tt.client)
-			
+
 			if tt.expectError {
 				require.Error(t, err)
 				assert.True(t, errors.IsClientError(err))
@@ -318,12 +318,12 @@ func TestNewResourceNotFoundError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := NewResourceNotFoundError(tt.resourceType, tt.identifier)
-			
+
 			require.Error(t, err)
 			slurmErr, ok := err.(*errors.SlurmError)
 			require.True(t, ok)
 			assert.Equal(t, errors.ErrorCodeResourceNotFound, slurmErr.Code)
-			
+
 			for _, exp := range tt.expectInMsg {
 				assert.Contains(t, err.Error(), exp)
 			}
@@ -365,7 +365,7 @@ func TestNewValidationError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := NewValidationError(tt.message, tt.field, tt.value)
-			
+
 			require.Error(t, err)
 			valErr, ok := err.(*errors.ValidationError)
 			require.True(t, ok)
@@ -434,7 +434,7 @@ func TestFormatResourceID(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// We can't test the private function directly, but we can test it through HandleConversionError
 			err := HandleConversionError(errors.NewClientError(errors.ErrorCodeServerInternal, "test"), "resource", tt.id)
-			
+
 			if tt.id != nil {
 				assert.Contains(t, err.Error(), tt.expected)
 			}
@@ -490,10 +490,10 @@ func TestExtractErrorDetail(t *testing.T) {
 					errors: []ErrorDetail{tt.errorDetail},
 				},
 			}
-			
+
 			err := HandleAPIResponse(resp, "v0.0.43")
 			require.Error(t, err)
-			
+
 			// Verify expected content in error message
 			for _, exp := range tt.expectInMsg {
 				assert.Contains(t, err.Error(), exp)
@@ -549,7 +549,7 @@ func TestIsNilPointer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := CheckNilResponse(tt.value, "test")
-			
+
 			if tt.expected {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), "nil")
@@ -593,11 +593,10 @@ func TestFormatResourceIDEdgeCases(t *testing.T) {
 			// Test through HandleConversionError which uses formatResourceID
 			err := HandleConversionError(errors.NewClientError(errors.ErrorCodeServerInternal, "test"), "resource", tt.id)
 			require.Error(t, err)
-			
+
 			if tt.expected != "" {
 				assert.Contains(t, err.Error(), tt.expected)
 			}
 		})
 	}
 }
-

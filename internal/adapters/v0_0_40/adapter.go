@@ -8,39 +8,39 @@ import (
 	"fmt"
 
 	"github.com/jontk/slurm-client/internal/adapters/common"
-	"github.com/jontk/slurm-client/internal/common/types"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
+	"github.com/jontk/slurm-client/internal/common/types"
 )
 
 // Adapter implements the VersionAdapter interface for API version v0.0.40
 type Adapter struct {
-	version              string
-	client               *api.ClientWithResponses
-	qosAdapter           *QoSAdapter
-	jobAdapter           *JobAdapter
-	partitionAdapter     *PartitionAdapter
-	nodeAdapter          *NodeAdapter
-	accountAdapter       *AccountAdapter
-	userAdapter          *UserAdapter
-	reservationAdapter   *ReservationAdapter
-	associationAdapter   *AssociationAdapter
-	standaloneAdapter    *StandaloneAdapter
+	version            string
+	client             *api.ClientWithResponses
+	qosAdapter         *QoSAdapter
+	jobAdapter         *JobAdapter
+	partitionAdapter   *PartitionAdapter
+	nodeAdapter        *NodeAdapter
+	accountAdapter     *AccountAdapter
+	userAdapter        *UserAdapter
+	reservationAdapter *ReservationAdapter
+	associationAdapter *AssociationAdapter
+	standaloneAdapter  *StandaloneAdapter
 }
 
 // NewAdapter creates a new v0.0.40 adapter
 func NewAdapter(client *api.ClientWithResponses) *Adapter {
 	return &Adapter{
-		version:              "v0.0.40",
-		client:               client,
-		qosAdapter:           NewQoSAdapter(client),
-		jobAdapter:           NewJobAdapter(client),
-		partitionAdapter:     NewPartitionAdapter(client),
-		nodeAdapter:          NewNodeAdapter(client),
-		accountAdapter:       NewAccountAdapter(client),
-		userAdapter:          NewUserAdapter(client),
-		reservationAdapter:   NewReservationAdapter(client),
-		associationAdapter:   NewAssociationAdapter(client),
-		standaloneAdapter:    NewStandaloneAdapter(client),
+		version:            "v0.0.40",
+		client:             client,
+		qosAdapter:         NewQoSAdapter(client),
+		jobAdapter:         NewJobAdapter(client),
+		partitionAdapter:   NewPartitionAdapter(client),
+		nodeAdapter:        NewNodeAdapter(client),
+		accountAdapter:     NewAccountAdapter(client),
+		userAdapter:        NewUserAdapter(client),
+		reservationAdapter: NewReservationAdapter(client),
+		associationAdapter: NewAssociationAdapter(client),
+		standaloneAdapter:  NewStandaloneAdapter(client),
 	}
 }
 

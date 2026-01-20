@@ -6,7 +6,7 @@ package v0_0_40
 import (
 	"context"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -24,6 +24,11 @@ func NewUserManagerImpl(client *WrapperClient) *UserManagerImpl {
 
 // List retrieves a list of users with optional filtering
 func (u *UserManagerImpl) List(ctx context.Context, opts *interfaces.ListUsersOptions) (*interfaces.UserList, error) {
+	// Check if client is initialized
+	if u.client == nil || u.client.apiClient == nil || u.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
 	if err := u.client.CheckContext(ctx); err != nil {
 		return nil, err
 	}
@@ -87,6 +92,11 @@ func (u *UserManagerImpl) List(ctx context.Context, opts *interfaces.ListUsersOp
 func (u *UserManagerImpl) Get(ctx context.Context, userName string) (*interfaces.User, error) {
 	if userName == "" {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "userName", userName, nil)
+	}
+
+	// Check if client is initialized
+	if u.client == nil || u.client.apiClient == nil || u.client.apiClient.ClientInterface == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	if err := u.client.CheckContext(ctx); err != nil {
@@ -194,7 +204,7 @@ func (u *UserManagerImpl) GetBulkAccountUsers(ctx context.Context, accountNames 
 // convertV0040UserToInterface converts v0.0.40 user to interface format
 func (u *UserManagerImpl) convertV0040UserToInterface(usr V0040User) *interfaces.User {
 	user := &interfaces.User{}
-	
+
 	// usr.Name is string, not *string
 	user.Name = usr.Name
 	// Uid field doesn't exist in V0040User - skip UID setting
@@ -207,33 +217,33 @@ func (u *UserManagerImpl) convertV0040UserToInterface(usr V0040User) *interfaces
 	if usr.Default != nil && usr.Default.Wckey != nil {
 		user.DefaultWCKey = *usr.Default.Wckey
 	}
-	
+
 	// Convert admin level - AdministratorLevel is *V0040AdminLvl which is []string
 	if usr.AdministratorLevel != nil && len(*usr.AdministratorLevel) > 0 {
 		adminLevels := *usr.AdministratorLevel
 		// Take the first admin level
 		user.AdminLevel = adminLevels[0]
 	}
-	
+
 	return user
 }
 
 // Create creates a new user
-func (m *UserManagerImpl) Create(ctx context.Context, user *interfaces.UserCreate) (*interfaces.UserCreateResponse, error) {
+func (u *UserManagerImpl) Create(ctx context.Context, user *interfaces.UserCreate) (*interfaces.UserCreateResponse, error) {
 	return nil, errors.NewNotImplementedError("Create", "v0.0.40")
 }
 
 // Update updates a user
-func (m *UserManagerImpl) Update(ctx context.Context, userName string, update *interfaces.UserUpdate) error {
+func (u *UserManagerImpl) Update(ctx context.Context, userName string, update *interfaces.UserUpdate) error {
 	return errors.NewNotImplementedError("Update", "v0.0.40")
 }
 
 // Delete deletes a user
-func (m *UserManagerImpl) Delete(ctx context.Context, userName string) error {
+func (u *UserManagerImpl) Delete(ctx context.Context, userName string) error {
 	return errors.NewNotImplementedError("Delete", "v0.0.40")
 }
 
 // CreateAssociation creates a user-account association
-func (m *UserManagerImpl) CreateAssociation(ctx context.Context, accountName string, opts *interfaces.AssociationOptions) (*interfaces.AssociationCreateResponse, error) {
+func (u *UserManagerImpl) CreateAssociation(ctx context.Context, accountName string, opts *interfaces.AssociationOptions) (*interfaces.AssociationCreateResponse, error) {
 	return nil, errors.NewNotImplementedError("CreateAssociation", "v0.0.40")
 }

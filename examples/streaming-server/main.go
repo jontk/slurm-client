@@ -20,7 +20,7 @@ import (
 func main() {
 	// Create configuration
 	cfg := config.NewDefault()
-	
+
 	// Try to get config from environment
 	if url := os.Getenv("SLURM_REST_URL"); url != "" {
 		cfg.BaseURL = url

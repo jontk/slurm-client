@@ -102,11 +102,11 @@ func EnsureTimeout(ctx context.Context, defaultTimeout time.Duration) (context.C
 		// Already has a deadline, return as-is
 		return ctx, func() {}
 	}
-	
+
 	if defaultTimeout == 0 {
 		defaultTimeout = DefaultTimeout
 	}
-	
+
 	return context.WithTimeout(ctx, defaultTimeout)
 }
 

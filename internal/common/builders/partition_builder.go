@@ -20,7 +20,7 @@ func NewPartitionBuilder(name string) *PartitionBuilder {
 	return &PartitionBuilder{
 		partition: &types.PartitionCreate{
 			Name:                 name,
-			State:                types.PartitionStateUp, // Default state
+			State:                types.PartitionStateUp,  // Default state
 			Priority:             1,                       // Default priority
 			MaxNodes:             1000,                    // Default max nodes
 			MaxTime:              1440,                    // Default max time (24 hours)
@@ -395,10 +395,10 @@ func (b *PartitionBuilder) AsInteractivePartition() *PartitionBuilder {
 // AsGPUPartition applies common GPU partition settings
 func (b *PartitionBuilder) AsGPUPartition() *PartitionBuilder {
 	return b.
-		WithPriority(100).          // Medium-high priority
-		WithMaxTime(1440).          // 24 hours max
-		WithDefaultTime(120).       // 2 hours default
-		WithTresStr("gpu:1").       // GPU resources
+		WithPriority(100).               // Medium-high priority
+		WithMaxTime(1440).               // 24 hours max
+		WithDefaultTime(120).            // 2 hours default
+		WithTresStr("gpu:1").            // GPU resources
 		WithJobDefault("gres", "gpu:1"). // Default GPU requirement
 		WithQoS("gpu")
 }
@@ -406,12 +406,12 @@ func (b *PartitionBuilder) AsGPUPartition() *PartitionBuilder {
 // AsHighMemoryPartition applies common high memory partition settings
 func (b *PartitionBuilder) AsHighMemoryPartition() *PartitionBuilder {
 	return b.
-		WithPriority(75).               // Medium priority
-		WithMaxTime(2880).              // 48 hours max
-		WithDefaultTime(240).           // 4 hours default
-		WithMaxMemPerNode(512 * GB).    // 512GB max memory
-		WithDefaultMemPerNode(64 * GB). // 64GB default memory
-		WithJobDefault("mem", "64G").   // Default memory requirement
+		WithPriority(75).             // Medium priority
+		WithMaxTime(2880).            // 48 hours max
+		WithDefaultTime(240).         // 4 hours default
+		WithMaxMemPerNode(512*GB).    // 512GB max memory
+		WithDefaultMemPerNode(64*GB). // 64GB default memory
+		WithJobDefault("mem", "64G"). // Default memory requirement
 		WithQoS("highmem")
 }
 
@@ -580,38 +580,38 @@ func (b *PartitionBuilder) BuildForUpdate() (*types.PartitionUpdate, error) {
 func (b *PartitionBuilder) Clone() *PartitionBuilder {
 	newBuilder := &PartitionBuilder{
 		partition: &types.PartitionCreate{
-			Name:                 b.partition.Name,
-			AllocNodes:           b.partition.AllocNodes,
-			AllowAllocNodes:      b.partition.AllowAllocNodes,
-			DefaultMemPerCPU:     b.partition.DefaultMemPerCPU,
-			DefaultMemPerNode:    b.partition.DefaultMemPerNode,
-			DefaultTime:          b.partition.DefaultTime,
-			DefMemPerNode:        b.partition.DefMemPerNode,
-			GraceTime:            b.partition.GraceTime,
-			MaxCPUsPerNode:       b.partition.MaxCPUsPerNode,
-			MaxMemPerNode:        b.partition.MaxMemPerNode,
-			MaxMemPerCPU:         b.partition.MaxMemPerCPU,
-			MaxNodes:             b.partition.MaxNodes,
-			MaxTime:              b.partition.MaxTime,
-			MinNodes:             b.partition.MinNodes,
-			Nodes:                b.partition.Nodes,
-			OverTimeLimit:        b.partition.OverTimeLimit,
-			Priority:             b.partition.Priority,
-			PriorityJobFactor:    b.partition.PriorityJobFactor,
-			PriorityTier:         b.partition.PriorityTier,
-			QoS:                  b.partition.QoS,
-			State:                b.partition.State,
-			TresStr:              b.partition.TresStr,
-			BillingWeightStr:     b.partition.BillingWeightStr,
-			ResumeTimeout:        b.partition.ResumeTimeout,
-			SuspendTime:          b.partition.SuspendTime,
-			SuspendTimeout:       b.partition.SuspendTimeout,
-			Hidden:               b.partition.Hidden,
-			ExclusiveUser:        b.partition.ExclusiveUser,
-			LLN:                  b.partition.LLN,
-			RootOnly:             b.partition.RootOnly,
-			ReqResv:              b.partition.ReqResv,
-			PowerDownOnIdle:      b.partition.PowerDownOnIdle,
+			Name:              b.partition.Name,
+			AllocNodes:        b.partition.AllocNodes,
+			AllowAllocNodes:   b.partition.AllowAllocNodes,
+			DefaultMemPerCPU:  b.partition.DefaultMemPerCPU,
+			DefaultMemPerNode: b.partition.DefaultMemPerNode,
+			DefaultTime:       b.partition.DefaultTime,
+			DefMemPerNode:     b.partition.DefMemPerNode,
+			GraceTime:         b.partition.GraceTime,
+			MaxCPUsPerNode:    b.partition.MaxCPUsPerNode,
+			MaxMemPerNode:     b.partition.MaxMemPerNode,
+			MaxMemPerCPU:      b.partition.MaxMemPerCPU,
+			MaxNodes:          b.partition.MaxNodes,
+			MaxTime:           b.partition.MaxTime,
+			MinNodes:          b.partition.MinNodes,
+			Nodes:             b.partition.Nodes,
+			OverTimeLimit:     b.partition.OverTimeLimit,
+			Priority:          b.partition.Priority,
+			PriorityJobFactor: b.partition.PriorityJobFactor,
+			PriorityTier:      b.partition.PriorityTier,
+			QoS:               b.partition.QoS,
+			State:             b.partition.State,
+			TresStr:           b.partition.TresStr,
+			BillingWeightStr:  b.partition.BillingWeightStr,
+			ResumeTimeout:     b.partition.ResumeTimeout,
+			SuspendTime:       b.partition.SuspendTime,
+			SuspendTimeout:    b.partition.SuspendTimeout,
+			Hidden:            b.partition.Hidden,
+			ExclusiveUser:     b.partition.ExclusiveUser,
+			LLN:               b.partition.LLN,
+			RootOnly:          b.partition.RootOnly,
+			ReqResv:           b.partition.ReqResv,
+			PowerDownOnIdle:   b.partition.PowerDownOnIdle,
 		},
 		errors: append([]error{}, b.errors...),
 	}
@@ -655,7 +655,7 @@ func (b *PartitionBuilder) validateBusinessRules() error {
 	// Validate memory limits consistency
 	if b.partition.DefaultMemPerNode > 0 && b.partition.MaxMemPerNode > 0 {
 		if b.partition.DefaultMemPerNode > b.partition.MaxMemPerNode {
-			return fmt.Errorf("default memory per node (%d) cannot exceed max memory per node (%d)", 
+			return fmt.Errorf("default memory per node (%d) cannot exceed max memory per node (%d)",
 				b.partition.DefaultMemPerNode, b.partition.MaxMemPerNode)
 		}
 	}

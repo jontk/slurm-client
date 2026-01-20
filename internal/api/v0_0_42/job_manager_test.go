@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/internal/testutil"
 	"github.com/jontk/slurm-client/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -444,7 +444,6 @@ func TestJobManager_convertJobUpdateToAPI(t *testing.T) {
 func int32Ptr(i int32) *int32 {
 	return &i
 }
-
 
 func boolPtr(b bool) *bool {
 	return &b

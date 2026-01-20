@@ -158,7 +158,7 @@ func TestGetErrorCategory(t *testing.T) {
 			expected: "QoS Management",
 		},
 		{
-			name:     "Reservation category", 
+			name:     "Reservation category",
 			code:     6001,
 			expected: "Reservation Management",
 		},

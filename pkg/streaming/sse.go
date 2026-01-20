@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 )
 
 // SSEServer provides Server-Sent Events interface for SLURM events
@@ -250,7 +250,7 @@ func parseStringSlice(s string) []string {
 	if s == "" {
 		return nil
 	}
-	
+
 	var result []string
 	for _, item := range splitString(s, ",") {
 		if trimmed := trimSpace(item); trimmed != "" {
@@ -281,16 +281,16 @@ func splitString(s, sep string) []string {
 func trimSpace(s string) string {
 	start := 0
 	end := len(s)
-	
+
 	// Trim leading spaces
 	for start < end && (s[start] == ' ' || s[start] == '\t' || s[start] == '\n' || s[start] == '\r') {
 		start++
 	}
-	
+
 	// Trim trailing spaces
 	for end > start && (s[end-1] == ' ' || s[end-1] == '\t' || s[end-1] == '\n' || s[end-1] == '\r') {
 		end--
 	}
-	
+
 	return s[start:end]
 }

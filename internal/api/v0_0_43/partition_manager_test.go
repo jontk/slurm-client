@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -86,7 +86,7 @@ func TestConvertAPIPartitionToInterface(t *testing.T) {
 			OverTimeLimit *V0043Uint16NoValStruct `json:"over_time_limit,omitempty"`
 			Oversubscribe *struct {
 				Flags *[]V0043PartitionInfoMaximumsOversubscribeFlags `json:"flags,omitempty"`
-				Jobs  *int32                   `json:"jobs,omitempty"`
+				Jobs  *int32                                          `json:"jobs,omitempty"`
 			} `json:"oversubscribe,omitempty"`
 			PartitionMemoryPerCpu  *V0043Uint64NoValStruct `json:"partition_memory_per_cpu,omitempty"`
 			PartitionMemoryPerNode *V0043Uint64NoValStruct `json:"partition_memory_per_node,omitempty"`

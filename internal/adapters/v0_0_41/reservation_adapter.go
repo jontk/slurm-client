@@ -7,9 +7,9 @@ import (
 	"context"
 	"fmt"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 )
 
 // ReservationAdapter implements the ReservationAdapter interface for v0.0.41
@@ -69,7 +69,7 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 	// Convert response to common types
 	resList := &types.ReservationList{
 		Reservations: make([]types.Reservation, 0, len(resp.JSON200.Reservations)),
-		Total: 0,
+		Total:        0,
 	}
 
 	for _, apiRes := range resp.JSON200.Reservations {
@@ -169,16 +169,8 @@ func (a *ReservationAdapter) Delete(ctx context.Context, name string) error {
 		return err
 	}
 
-	// Make the API call
-	resp, err := a.client.SlurmV0041DeleteReservationWithResponse(ctx, name)
-	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to delete reservation %s", name))
-	}
-
-	// Handle response
-	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return err
-	}
-
-	return nil
+	// Note: v0.0.41 API does not support reservation deletion
+	// The SlurmV0041DeleteReservationWithResponse method does not exist in the generated client
+	// TODO: Use a newer API version (v0.0.42+) for reservation deletion
+	return fmt.Errorf("reservation deletion not supported in v0.0.41 - use a newer API version")
 }

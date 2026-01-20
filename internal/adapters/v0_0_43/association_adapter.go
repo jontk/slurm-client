@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"strings"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
 	"github.com/jontk/slurm-client/pkg/errors"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 )
 
 // AssociationAdapter implements the AssociationAdapter interface for v0.0.43
@@ -200,7 +200,7 @@ func (a *AssociationAdapter) Create(ctx context.Context, association *types.Asso
 		return nil, err
 	}
 	if association == nil {
-		return nil, a.HandleValidationError("association is required")
+		return nil, a.HandleValidationError("association creation data is required")
 	}
 
 	// Apply default cluster if not provided
@@ -261,7 +261,7 @@ func (a *AssociationAdapter) Update(ctx context.Context, associationID string, u
 		return err
 	}
 	if update == nil {
-		return a.HandleValidationError("update is required")
+		return a.HandleValidationError("association update data is required")
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return err
@@ -347,14 +347,12 @@ func (a *AssociationAdapter) validateAssociationCreate(association *types.Associ
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "association creation data is required", "association", nil, nil)
 	}
 	if association.AccountName == "" {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account is required", "account", association.AccountName, nil)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account name is required", "account", association.AccountName, nil)
 	}
 	if association.UserName == "" {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "user is required", "user", association.UserName, nil)
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "user", association.UserName, nil)
 	}
-	if association.Cluster == "" {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "cluster is required", "cluster", association.Cluster, nil)
-	}
+	// Note: Cluster is optional here because it's set to a default value before validation
 	return nil
 }
 
@@ -363,11 +361,7 @@ func (a *AssociationAdapter) validateAssociationUpdate(update *types.Association
 	if update == nil {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "association update data is required", "update", nil, nil)
 	}
-	// At least one field should be provided for update
-	if update.DefaultQoS == nil && len(update.QoSList) == 0 &&
-	   update.MaxJobs == nil && update.MaxWallTime == nil {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one field must be provided for update", "update", update, nil)
-	}
+	// Empty updates are allowed - the API will handle no-op updates
 	return nil
 }
 
@@ -422,8 +416,8 @@ func (a *AssociationAdapter) convertCommonAssociationUpdateToAPI(existing *types
 func (a *AssociationAdapter) getDefaultClusterName() string {
 	// Common default cluster names used in SLURM configurations
 	// Priority order:
-	// 1. "linux" - most common default
-	// 2. "cluster" - generic default
+	// 1. "cluster" - most common generic default
+	// 2. "default" - alternative default
 	// 3. "main" - typical fallback
-	return "linux"
+	return "cluster"
 }

@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -56,15 +56,15 @@ func TestAccountManagerImpl_List(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			result, err := a.List(context.Background(), tt.opts)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("List() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -81,7 +81,7 @@ func TestAccountManagerImpl_List(t *testing.T) {
 					t.Errorf("List() unexpected error: %v", err)
 				}
 			}
-			
+
 			if result != nil && tt.wantErr {
 				t.Errorf("List() expected nil result on error")
 			}
@@ -129,15 +129,15 @@ func TestAccountManagerImpl_Get(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			result, err := a.Get(context.Background(), tt.accountName)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("Get() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -158,7 +158,7 @@ func TestAccountManagerImpl_Get(t *testing.T) {
 					t.Errorf("Get() unexpected error: %v", err)
 				}
 			}
-			
+
 			if result != nil && tt.wantErr {
 				t.Errorf("Get() expected nil result on error")
 			}
@@ -218,15 +218,15 @@ func TestAccountManagerImpl_Create(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			result, err := a.Create(context.Background(), tt.account)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("Create() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -247,7 +247,7 @@ func TestAccountManagerImpl_Create(t *testing.T) {
 					t.Errorf("Create() unexpected error: %v", err)
 				}
 			}
-			
+
 			if result != nil && tt.wantErr {
 				t.Errorf("Create() expected nil result on error")
 			}
@@ -309,15 +309,15 @@ func TestAccountManagerImpl_Update(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			err := a.Update(context.Background(), tt.accountName, tt.update)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("Update() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -382,15 +382,15 @@ func TestAccountManagerImpl_Delete(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			err := a.Delete(context.Background(), tt.accountName)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("Delete() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -455,15 +455,15 @@ func TestAccountManagerImpl_GetAccountHierarchy(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			result, err := a.GetAccountHierarchy(context.Background(), tt.rootAccount)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("GetAccountHierarchy() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -484,7 +484,7 @@ func TestAccountManagerImpl_GetAccountHierarchy(t *testing.T) {
 					t.Errorf("GetAccountHierarchy() unexpected error: %v", err)
 				}
 			}
-			
+
 			if result != nil && tt.wantErr {
 				t.Errorf("GetAccountHierarchy() expected nil result on error")
 			}
@@ -532,15 +532,15 @@ func TestAccountManagerImpl_GetParentAccounts(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			result, err := a.GetParentAccounts(context.Background(), tt.accountName)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("GetParentAccounts() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -561,7 +561,7 @@ func TestAccountManagerImpl_GetParentAccounts(t *testing.T) {
 					t.Errorf("GetParentAccounts() unexpected error: %v", err)
 				}
 			}
-			
+
 			if result != nil && tt.wantErr {
 				t.Errorf("GetParentAccounts() expected nil result on error")
 			}
@@ -633,15 +633,15 @@ func TestAccountManagerImpl_GetChildAccounts(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			result, err := a.GetChildAccounts(context.Background(), tt.accountName, tt.depth)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("GetChildAccounts() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -662,7 +662,7 @@ func TestAccountManagerImpl_GetChildAccounts(t *testing.T) {
 					t.Errorf("GetChildAccounts() unexpected error: %v", err)
 				}
 			}
-			
+
 			if result != nil && tt.wantErr {
 				t.Errorf("GetChildAccounts() expected nil result on error")
 			}
@@ -710,15 +710,15 @@ func TestAccountManagerImpl_GetAccountQuotas(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			result, err := a.GetAccountQuotas(context.Background(), tt.accountName)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("GetAccountQuotas() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -739,7 +739,7 @@ func TestAccountManagerImpl_GetAccountQuotas(t *testing.T) {
 					t.Errorf("GetAccountQuotas() unexpected error: %v", err)
 				}
 			}
-			
+
 			if result != nil && tt.wantErr {
 				t.Errorf("GetAccountQuotas() expected nil result on error")
 			}
@@ -791,15 +791,15 @@ func TestAccountManagerImpl_GetAccountQuotaUsage(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			result, err := a.GetAccountQuotaUsage(context.Background(), tt.accountName, tt.timeframe)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("GetAccountQuotaUsage() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -820,7 +820,7 @@ func TestAccountManagerImpl_GetAccountQuotaUsage(t *testing.T) {
 					t.Errorf("GetAccountQuotaUsage() unexpected error: %v", err)
 				}
 			}
-			
+
 			if result != nil && tt.wantErr {
 				t.Errorf("GetAccountQuotaUsage() expected nil result on error")
 			}
@@ -874,15 +874,15 @@ func TestAccountManagerImpl_GetAccountUsers(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			result, err := a.GetAccountUsers(context.Background(), tt.accountName, tt.opts)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("GetAccountUsers() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -903,7 +903,7 @@ func TestAccountManagerImpl_GetAccountUsers(t *testing.T) {
 					t.Errorf("GetAccountUsers() unexpected error: %v", err)
 				}
 			}
-			
+
 			if result != nil && tt.wantErr {
 				t.Errorf("GetAccountUsers() expected nil result on error")
 			}
@@ -965,15 +965,15 @@ func TestAccountManagerImpl_ValidateUserAccess(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			result, err := a.ValidateUserAccess(context.Background(), tt.userName, tt.accountName)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("ValidateUserAccess() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -994,7 +994,7 @@ func TestAccountManagerImpl_ValidateUserAccess(t *testing.T) {
 					t.Errorf("ValidateUserAccess() unexpected error: %v", err)
 				}
 			}
-			
+
 			if result != nil && tt.wantErr {
 				t.Errorf("ValidateUserAccess() expected nil result on error")
 			}
@@ -1056,15 +1056,15 @@ func TestAccountManagerImpl_GetAccountUsersWithPermissions(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			result, err := a.GetAccountUsersWithPermissions(context.Background(), tt.accountName, tt.permissions)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("GetAccountUsersWithPermissions() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -1085,7 +1085,7 @@ func TestAccountManagerImpl_GetAccountUsersWithPermissions(t *testing.T) {
 					t.Errorf("GetAccountUsersWithPermissions() unexpected error: %v", err)
 				}
 			}
-			
+
 			if result != nil && tt.wantErr {
 				t.Errorf("GetAccountUsersWithPermissions() expected nil result on error")
 			}
@@ -1133,15 +1133,15 @@ func TestAccountManagerImpl_GetAccountFairShare(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			result, err := a.GetAccountFairShare(context.Background(), tt.accountName)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("GetAccountFairShare() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -1162,7 +1162,7 @@ func TestAccountManagerImpl_GetAccountFairShare(t *testing.T) {
 					t.Errorf("GetAccountFairShare() unexpected error: %v", err)
 				}
 			}
-			
+
 			if result != nil && tt.wantErr {
 				t.Errorf("GetAccountFairShare() expected nil result on error")
 			}
@@ -1210,15 +1210,15 @@ func TestAccountManagerImpl_GetFairShareHierarchy(t *testing.T) {
 			a := &AccountManagerImpl{
 				client: tt.client,
 			}
-			
+
 			result, err := a.GetFairShareHierarchy(context.Background(), tt.rootAccount)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("GetFairShareHierarchy() expected error but got none")
 					return
 				}
-				
+
 				// Check error type
 				switch tt.errType {
 				case "client error":
@@ -1239,7 +1239,7 @@ func TestAccountManagerImpl_GetFairShareHierarchy(t *testing.T) {
 					t.Errorf("GetFairShareHierarchy() unexpected error: %v", err)
 				}
 			}
-			
+
 			if result != nil && tt.wantErr {
 				t.Errorf("GetFairShareHierarchy() expected nil result on error")
 			}

@@ -7,7 +7,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -32,15 +32,15 @@ func (a *AssociationManagerImpl) List(ctx context.Context, opts *interfaces.List
 	// Prepare parameters
 	params := &SlurmdbV0040GetAssociationsParams{}
 	if opts != nil {
-		if opts.Accounts != nil && len(opts.Accounts) > 0 {
+		if len(opts.Accounts) > 0 {
 			accountsStr := strings.Join(opts.Accounts, ",")
 			params.Account = &accountsStr
 		}
-		if opts.Users != nil && len(opts.Users) > 0 {
+		if len(opts.Users) > 0 {
 			usersStr := strings.Join(opts.Users, ",")
 			params.User = &usersStr
 		}
-		if opts.Clusters != nil && len(opts.Clusters) > 0 {
+		if len(opts.Clusters) > 0 {
 			clustersStr := strings.Join(opts.Clusters, ",")
 			params.Cluster = &clustersStr
 		}
@@ -113,7 +113,7 @@ func (a *AssociationManagerImpl) Get(ctx context.Context, opts *interfaces.GetAs
 
 // Create creates a new association
 func (a *AssociationManagerImpl) Create(ctx context.Context, associations []*interfaces.AssociationCreate) (*interfaces.AssociationCreateResponse, error) {
-	if associations == nil || len(associations) == 0 {
+	if len(associations) == 0 {
 		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "association data is required", "associations", associations, nil)
 	}
 
@@ -127,7 +127,7 @@ func (a *AssociationManagerImpl) Create(ctx context.Context, associations []*int
 		apiAssoc := a.convertInterfaceAssociationCreateToV0040(assoc)
 		apiAssocs = append(apiAssocs, *apiAssoc)
 	}
-	
+
 	// Create request body
 	reqBody := V0040OpenapiAssocsResp{
 		Associations: apiAssocs,
@@ -148,14 +148,14 @@ func (a *AssociationManagerImpl) Create(ctx context.Context, associations []*int
 	createdAssocs := make([]*interfaces.Association, 0, len(associations))
 	for _, assoc := range associations {
 		createdAssoc := &interfaces.Association{
-			ID:          0, // ID will be set by server
-			Account:     assoc.Account,
-			User:        assoc.User,
-			Cluster:     assoc.Cluster,
+			ID:      0, // ID will be set by server
+			Account: assoc.Account,
+			User:    assoc.User,
+			Cluster: assoc.Cluster,
 		}
 		createdAssocs = append(createdAssocs, createdAssoc)
 	}
-	
+
 	return &interfaces.AssociationCreateResponse{
 		Associations: createdAssocs,
 		Created:      len(associations),
@@ -165,7 +165,7 @@ func (a *AssociationManagerImpl) Create(ctx context.Context, associations []*int
 
 // Update updates existing associations
 func (a *AssociationManagerImpl) Update(ctx context.Context, associations []*interfaces.AssociationUpdate) error {
-	if associations == nil || len(associations) == 0 {
+	if len(associations) == 0 {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "update data is required", "associations", associations, nil)
 	}
 
@@ -186,7 +186,7 @@ func (a *AssociationManagerImpl) Update(ctx context.Context, associations []*int
 		if err != nil {
 			return err
 		}
-		
+
 		// Apply updates to existing association
 		apiAssoc := a.convertInterfaceAssociationToV0040Update(existing, update)
 		apiAssocs = append(apiAssocs, *apiAssoc)
@@ -236,7 +236,6 @@ func (a *AssociationManagerImpl) Delete(ctx context.Context, opts *interfaces.De
 	return nil
 }
 
-
 // GetUserAssociations retrieves all associations for a specific user
 func (a *AssociationManagerImpl) GetUserAssociations(ctx context.Context, userName string) ([]*interfaces.Association, error) {
 	if userName == "" {
@@ -254,9 +253,7 @@ func (a *AssociationManagerImpl) GetUserAssociations(ctx context.Context, userNa
 	}
 
 	associations := make([]*interfaces.Association, len(result.Associations))
-	for i := range result.Associations {
-		associations[i] = result.Associations[i]
-	}
+	copy(associations, result.Associations)
 
 	return associations, nil
 }
@@ -278,9 +275,7 @@ func (a *AssociationManagerImpl) GetAccountAssociations(ctx context.Context, acc
 	}
 
 	associations := make([]*interfaces.Association, len(result.Associations))
-	for i := range result.Associations {
-		associations[i] = result.Associations[i]
-	}
+	copy(associations, result.Associations)
 
 	return associations, nil
 }
@@ -302,18 +297,15 @@ func (a *AssociationManagerImpl) GetClusterAssociations(ctx context.Context, clu
 	}
 
 	associations := make([]*interfaces.Association, len(result.Associations))
-	for i := range result.Associations {
-		associations[i] = result.Associations[i]
-	}
+	copy(associations, result.Associations)
 
 	return associations, nil
 }
 
-
 // convertV0040AssociationToInterface converts v0.0.40 association to interface format
 func (a *AssociationManagerImpl) convertV0040AssociationToInterface(assoc V0040Assoc) *interfaces.Association {
 	association := &interfaces.Association{}
-	
+
 	if assoc.Account != nil {
 		association.Account = *assoc.Account
 	}
@@ -328,9 +320,9 @@ func (a *AssociationManagerImpl) convertV0040AssociationToInterface(assoc V0040A
 	if assoc.Id != nil && assoc.Id.Id != nil {
 		association.ID = uint32(*assoc.Id.Id)
 	}
-	
+
 	// TODO: Add more field conversions as needed
-	
+
 	return association
 }
 
@@ -341,13 +333,13 @@ func (a *AssociationManagerImpl) convertInterfaceAssociationCreateToV0040(assoc 
 		User:    assoc.User, // User is string, not *string
 		Cluster: &assoc.Cluster,
 	}
-	
+
 	if assoc.Partition != "" {
 		apiAssoc.Partition = &assoc.Partition
 	}
-	
+
 	// TODO: Add more field conversions as needed
-	
+
 	return apiAssoc
 }
 
@@ -358,14 +350,14 @@ func (a *AssociationManagerImpl) convertInterfaceAssociationToV0040Update(existi
 		User:    existing.User, // User is string, not *string
 		Cluster: &existing.Cluster,
 	}
-	
+
 	if existing.Partition != "" {
 		apiAssoc.Partition = &existing.Partition
 	}
-	
+
 	// Apply updates
 	// TODO: Add more field conversions as needed based on what fields can be updated
-	
+
 	return apiAssoc
 }
 
@@ -382,25 +374,25 @@ func (a *AssociationManagerImpl) ValidateAssociation(ctx context.Context, user, 
 	if user == "" || account == "" || cluster == "" {
 		return false, errors.NewValidationError(errors.ErrorCodeValidationFailed, "user, account and cluster are required", "params", nil, nil)
 	}
-	
+
 	// Use List with filters to check if association exists
 	listOpts := &interfaces.ListAssociationsOptions{
 		Users:    []string{user},
 		Accounts: []string{account},
 		Clusters: []string{cluster},
 	}
-	
+
 	result, err := a.List(ctx, listOpts)
 	if err != nil {
 		return false, err
 	}
-	
+
 	// Check if any associations match
 	for _, assoc := range result.Associations {
 		if assoc.User == user && assoc.Account == account && assoc.Cluster == cluster {
 			return true, nil
 		}
 	}
-	
+
 	return false, nil
 }

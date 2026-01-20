@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
 	"time"
 
 	"github.com/jontk/slurm-client"
@@ -79,10 +78,10 @@ func demonstrateBasicErrorHandling(ctx context.Context) {
 	// Test invalid job submission
 	invalidJobReq := &slurm.JobSubmissionRequest{
 		Script:    "#!/bin/bash\necho 'test'",
-		Name:      "",  // Invalid: empty name
+		Name:      "", // Invalid: empty name
 		Partition: "nonexistent-partition",
-		Nodes:     -1,  // Invalid: negative nodes
-		Tasks:     0,   // Invalid: zero tasks
+		Nodes:     -1, // Invalid: negative nodes
+		Tasks:     0,  // Invalid: zero tasks
 		Time:      "invalid-time-format",
 	}
 
@@ -95,7 +94,7 @@ func demonstrateBasicErrorHandling(ctx context.Context) {
 func demonstrateAdvancedRetryPolicies(ctx context.Context) {
 	// Example 1: Exponential backoff with jitter
 	fmt.Println("Testing exponential backoff with jitter...")
-	
+
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://localhost:6820"),
 		slurm.WithAuth(auth.NewNoneAuth()),
@@ -111,14 +110,14 @@ func demonstrateAdvancedRetryPolicies(ctx context.Context) {
 	start := time.Now()
 	_, err = client.GetInfo(ctx)
 	duration := time.Since(start)
-	
+
 	if err != nil {
 		fmt.Printf("✓ Retry policy executed in %s: %v\n", duration, err)
 	}
 
 	// Example 2: Custom retry policy
 	fmt.Println("\nTesting custom retry policy...")
-	
+
 	customRetryPolicy := &retry.Policy{
 		MaxRetries: 3,
 		BaseDelay:  200 * time.Millisecond,
@@ -145,7 +144,7 @@ func demonstrateAdvancedRetryPolicies(ctx context.Context) {
 	start = time.Now()
 	_, err = retryClient.ListJobs(ctx)
 	duration = time.Since(start)
-	
+
 	if err != nil {
 		fmt.Printf("✓ Custom retry policy executed in %s: %v\n", duration, err)
 	}
@@ -174,7 +173,7 @@ func demonstrateCircuitBreakerPattern(ctx context.Context) {
 	// Test multiple calls to trigger circuit breaker
 	for i := 1; i <= 5; i++ {
 		fmt.Printf("Attempt %d - Circuit breaker state: %s\n", i, circuitBreaker.state)
-		
+
 		err := circuitBreaker.Call(func() error {
 			_, err := client.GetInfo(ctx)
 			return err
@@ -185,7 +184,7 @@ func demonstrateCircuitBreakerPattern(ctx context.Context) {
 		} else {
 			fmt.Printf("  ✓ Call succeeded\n")
 		}
-		
+
 		time.Sleep(100 * time.Millisecond)
 	}
 }
@@ -214,7 +213,7 @@ func demonstrateGracefulDegradation(ctx context.Context) {
 	info, err := getInfoWithFallback(ctx, primaryClient, fallbackClient)
 	if err != nil {
 		fmt.Printf("✗ Both primary and fallback failed: %v\n", err)
-		
+
 		// Last resort: offline mode with cached data
 		info = getCachedInfo()
 		fmt.Printf("✓ Using cached data: %s\n", info.Version)
@@ -240,7 +239,7 @@ func demonstrateGracefulDegradation(ctx context.Context) {
 func demonstrateTimeoutAndCancellation(ctx context.Context) {
 	// Example 1: Request timeout
 	fmt.Println("Testing request timeout...")
-	
+
 	shortTimeoutClient, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://localhost:6820"),
 		slurm.WithAuth(auth.NewNoneAuth()),
@@ -254,14 +253,14 @@ func demonstrateTimeoutAndCancellation(ctx context.Context) {
 	start := time.Now()
 	_, err = shortTimeoutClient.GetInfo(ctx)
 	duration := time.Since(start)
-	
+
 	if err != nil {
 		fmt.Printf("✓ Request timed out after %s: %v\n", duration, err)
 	}
 
 	// Example 2: Context cancellation
 	fmt.Println("\nTesting context cancellation...")
-	
+
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://localhost:6820"),
 		slurm.WithAuth(auth.NewNoneAuth()),
@@ -274,7 +273,7 @@ func demonstrateTimeoutAndCancellation(ctx context.Context) {
 
 	// Create context with cancellation
 	cancelCtx, cancel := context.WithCancel(ctx)
-	
+
 	// Start operation
 	go func() {
 		time.Sleep(500 * time.Millisecond)
@@ -285,21 +284,21 @@ func demonstrateTimeoutAndCancellation(ctx context.Context) {
 	start = time.Now()
 	_, err = client.ListJobs(cancelCtx)
 	duration = time.Since(start)
-	
+
 	if err != nil {
 		fmt.Printf("✓ Operation cancelled after %s: %v\n", duration, err)
 	}
 
 	// Example 3: Deadline exceeded
 	fmt.Println("\nTesting deadline exceeded...")
-	
+
 	deadlineCtx, deadlineCancel := context.WithDeadline(ctx, time.Now().Add(200*time.Millisecond))
 	defer deadlineCancel()
 
 	start = time.Now()
 	_, err = client.GetInfo(deadlineCtx)
 	duration = time.Since(start)
-	
+
 	if err != nil {
 		fmt.Printf("✓ Deadline exceeded after %s: %v\n", duration, err)
 	}
@@ -330,27 +329,23 @@ func handleSlurmError(operation string, err error) {
 }
 
 func isNetworkError(err error) bool {
-	return err != nil && (
-		err.Error() == "connection refused" ||
+	return err != nil && (err.Error() == "connection refused" ||
 		err.Error() == "no route to host" ||
 		err.Error() == "network unreachable")
 }
 
 func isAuthenticationError(err error) bool {
-	return err != nil && (
-		err.Error() == "401 Unauthorized" ||
+	return err != nil && (err.Error() == "401 Unauthorized" ||
 		err.Error() == "403 Forbidden")
 }
 
 func isValidationError(err error) bool {
-	return err != nil && (
-		err.Error() == "400 Bad Request" ||
+	return err != nil && (err.Error() == "400 Bad Request" ||
 		err.Error() == "422 Unprocessable Entity")
 }
 
 func isServerError(err error) bool {
-	return err != nil && (
-		err.Error() == "500 Internal Server Error" ||
+	return err != nil && (err.Error() == "500 Internal Server Error" ||
 		err.Error() == "502 Bad Gateway" ||
 		err.Error() == "503 Service Unavailable")
 }
@@ -428,16 +423,16 @@ func (cb *CircuitBreaker) Call(operation func() error) error {
 
 	// Execute operation
 	err := operation()
-	
+
 	if err != nil {
 		cb.failureCount++
 		cb.lastFailTime = time.Now()
-		
+
 		if cb.failureCount >= cb.threshold {
 			cb.state = "OPEN"
 			fmt.Printf("  Circuit breaker: %s → OPEN (failures: %d)\n", cb.state, cb.failureCount)
 		}
-		
+
 		return err
 	}
 

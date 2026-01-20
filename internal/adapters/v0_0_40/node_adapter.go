@@ -133,7 +133,7 @@ func (a *NodeAdapter) Get(ctx context.Context, nodeName string) (*types.Node, er
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(nodeName, "nodeName"); err != nil {
+	if err := a.ValidateResourceName(nodeName, "node name"); err != nil {
 		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -188,7 +188,7 @@ func (a *NodeAdapter) Update(ctx context.Context, nodeName string, update *types
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(nodeName, "nodeName"); err != nil {
+	if err := a.ValidateResourceName(nodeName, "node name"); err != nil {
 		return err
 	}
 	if err := a.validateNodeUpdate(update); err != nil {
@@ -229,7 +229,7 @@ func (a *NodeAdapter) Delete(ctx context.Context, nodeName string) error {
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(nodeName, "nodeName"); err != nil {
+	if err := a.ValidateResourceName(nodeName, "node name"); err != nil {
 		return err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {

@@ -29,14 +29,14 @@ Create a client using the adapter pattern for version-agnostic, production-ready
 	import (
 	    "context"
 	    "log"
-	    
+
 	    "github.com/jontk/slurm-client"
 	    "github.com/jontk/slurm-client/pkg/auth"
 	)
-	
+
 	func main() {
 	    ctx := context.Background()
-	    
+
 	    // 🎯 Adapter Pattern: Auto-detects version, handles conversions
 	    client, err := slurm.NewClient(ctx,
 	        slurm.WithBaseURL("https://cluster.example.com:6820"),
@@ -47,15 +47,15 @@ Create a client using the adapter pattern for version-agnostic, production-ready
 	        log.Fatal(err)
 	    }
 	    defer client.Close()
-	    
+
 	    // Version-agnostic API calls with automatic type conversion
 	    jobs, err := client.Jobs().List(ctx, nil)
 	    if err != nil {
 	        log.Fatal(err)
 	    }
-	    
+
 	    for _, job := range jobs {
-	        log.Printf("Job %d: %s (state: %s)\n", 
+	        log.Printf("Job %d: %s (state: %s)\n",
 	            job.JobID, job.Name, job.State)
 	    }
 	}
@@ -65,18 +65,18 @@ Create a client using the adapter pattern for version-agnostic, production-ready
 The library implements two complementary patterns:
 
 1. 🎯 Adapter Pattern (Recommended for 95% of users)
-   - Version-agnostic interfaces that work across all SLURM versions
-   - Automatic type conversion and validation
-   - Simplified error handling with structured errors
-   - Production-ready with caching and optimizations
-   - Best for: Applications, automation, most use cases
+  - Version-agnostic interfaces that work across all SLURM versions
+  - Automatic type conversion and validation
+  - Simplified error handling with structured errors
+  - Production-ready with caching and optimizations
+  - Best for: Applications, automation, most use cases
 
 2. ⚠️ Wrapper Pattern (Advanced users only)
-   - Direct access to version-specific APIs
-   - Full control over API calls and responses
-   - Minimal overhead but requires version knowledge
-   - Manual type conversion and error handling
-   - Best for: Debugging, performance-critical code, migration
+  - Direct access to version-specific APIs
+  - Full control over API calls and responses
+  - Minimal overhead but requires version knowledge
+  - Manual type conversion and error handling
+  - Best for: Debugging, performance-critical code, migration
 
 # Version Support
 
@@ -122,9 +122,9 @@ The library provides structured error handling with typed errors:
 	if err != nil {
 	    var apiErr *types.APIError
 	    if errors.As(err, &apiErr) {
-	        log.Printf("API Error: %s (code: %s)\n", 
+	        log.Printf("API Error: %s (code: %s)\n",
 	            apiErr.Message, apiErr.ErrorCode)
-	        
+
 	        // Check specific error types
 	        if apiErr.IsAuthError() {
 	            // Handle authentication errors
@@ -154,7 +154,7 @@ Context Usage:
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	jobs, err := client.Jobs().List(ctx, nil)
-	
+
 	// With cancellation
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
@@ -171,7 +171,7 @@ Filtering and Pagination:
 	    Users:  []string{"alice", "bob"},
 	}
 	jobs, err := client.Jobs().List(ctx, filters)
-	
+
 	// Pagination support
 	opts := &types.ListOptions{
 	    Limit:  100,

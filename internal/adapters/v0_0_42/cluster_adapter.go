@@ -160,7 +160,7 @@ func (a *ClusterAdapter) Create(ctx context.Context, cluster *types.ClusterCreat
 	}
 
 	if cluster.SelectPlugin != "" {
-		apiCluster.SelectPlugin = &cluster.SelectPlugin
+		apiCluster.SelectPlugin = &cluster.SelectPlugin //lint:ignore SA1019 Deprecated upstream but required for backward compatibility
 	}
 
 	if len(cluster.Flags) > 0 {
@@ -251,7 +251,9 @@ func (a *ClusterAdapter) convertAPIClusterToCommon(apiCluster api.V0042ClusterRe
 		cluster.RpcVersion = *apiCluster.RpcVersion
 	}
 
+	//lint:ignore SA1019 Deprecated upstream but required for backward compatibility
 	if apiCluster.SelectPlugin != nil {
+		//lint:ignore SA1019 Deprecated upstream but required for backward compatibility
 		cluster.SelectPlugin = *apiCluster.SelectPlugin
 	}
 

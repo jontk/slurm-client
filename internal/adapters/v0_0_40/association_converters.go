@@ -51,17 +51,3 @@ func (a *AssociationAdapter) convertCommonAssociationCreateToAPI(association *ty
 
 	return apiAssociation, nil
 }
-
-// extractResourceLimits extracts resource limits from API structures
-func (a *AssociationAdapter) extractResourceLimits(limits interface{}) *types.ResourceLimits {
-	// This would need to be implemented based on the actual API structure
-	// For now, return nil as placeholder
-	return nil
-}
-
-// extractTRES extracts TRES information from API structures
-func (a *AssociationAdapter) extractTRES(tres interface{}) string {
-	// This would need to be implemented based on the actual API structure
-	// For now, return empty string as placeholder
-	return ""
-}

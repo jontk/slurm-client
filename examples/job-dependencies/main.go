@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -20,7 +20,7 @@ func main() {
 	// Create configuration
 	cfg := config.NewDefault()
 	cfg.BaseURL = "https://cluster.example.com:6820"
-	
+
 	// Create authentication
 	authProvider := auth.NewTokenAuth("your-jwt-token")
 
@@ -57,7 +57,7 @@ func runSimpleJobChain(ctx context.Context, client slurm.SlurmClient) {
 
 	// Job 1: Preprocessing
 	job1 := &interfaces.JobSubmission{
-		Name:      "preprocess",
+		Name: "preprocess",
 		Script: `#!/bin/bash
 echo "Starting preprocessing at $(date)"
 # Download and prepare data
@@ -79,7 +79,7 @@ echo "Preprocessing completed"
 
 	// Job 2: Processing (depends on Job 1)
 	job2 := &interfaces.JobSubmission{
-		Name:      "process",
+		Name: "process",
 		Script: `#!/bin/bash
 echo "Starting main processing at $(date)"
 # Process the data
@@ -103,7 +103,7 @@ echo "Processing completed"
 
 	// Job 3: Postprocessing (depends on Job 2)
 	job3 := &interfaces.JobSubmission{
-		Name:      "postprocess",
+		Name: "postprocess",
 		Script: `#!/bin/bash
 echo "Starting postprocessing at $(date)"
 # Generate reports and clean up
@@ -134,7 +134,7 @@ func runFanOutWorkflow(ctx context.Context, client slurm.SlurmClient) {
 
 	// Setup job
 	setupJob := &interfaces.JobSubmission{
-		Name:      "setup-fanout",
+		Name: "setup-fanout",
 		Script: `#!/bin/bash
 echo "Setting up parallel workflow"
 # Split data into chunks for parallel processing
@@ -157,7 +157,7 @@ echo "Setup completed - data split into 3 chunks"
 	var parallelJobIDs []string
 	for i := 0; i < 3; i++ {
 		parallelJob := &interfaces.JobSubmission{
-			Name:      fmt.Sprintf("parallel-task-%d", i),
+			Name: fmt.Sprintf("parallel-task-%d", i),
 			Script: fmt.Sprintf(`#!/bin/bash
 echo "Processing chunk %d"
 # Process specific chunk
@@ -187,7 +187,7 @@ echo "Chunk %d processing completed"
 	}
 
 	mergeJob := &interfaces.JobSubmission{
-		Name:      "merge-results",
+		Name: "merge-results",
 		Script: `#!/bin/bash
 echo "Merging results from parallel jobs"
 cat result_*.out > final_result.out
@@ -206,14 +206,14 @@ echo "Merge completed"
 	if err != nil {
 		log.Fatalf("Failed to submit merge job: %v", err)
 	}
-	fmt.Printf("Merge job submitted: %s (depends on %d parallel jobs)\n", 
+	fmt.Printf("Merge job submitted: %s (depends on %d parallel jobs)\n",
 		mergeResp.JobID, len(parallelJobIDs))
 }
 
 // runComplexDAGWorkflow creates a complex Directed Acyclic Graph workflow
 func runComplexDAGWorkflow(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Creating complex DAG workflow")
-	
+
 	// Define workflow stages
 	type workflowJob struct {
 		name         string
@@ -222,7 +222,7 @@ func runComplexDAGWorkflow(ctx context.Context, client slurm.SlurmClient) {
 		dependencies []string
 		jobID        string
 	}
-	
+
 	jobs := map[string]*workflowJob{
 		"data-fetch": {
 			name: "data-fetch",
@@ -288,7 +288,7 @@ python3 deploy.py --evaluation evaluation/ --models models/
 			dependencies: []string{"evaluate"},
 		},
 	}
-	
+
 	// Submit jobs in dependency order
 	for _, job := range jobs {
 		// Build dependency list
@@ -298,7 +298,7 @@ python3 deploy.py --evaluation evaluation/ --models models/
 				deps = append(deps, fmt.Sprintf("afterok:%s", depJob.jobID))
 			}
 		}
-		
+
 		// Submit job
 		submission := &interfaces.JobSubmission{
 			Name:      job.name,
@@ -312,13 +312,13 @@ python3 deploy.py --evaluation evaluation/ --models models/
 			// Note: Dependencies would be set on submission
 			// submission.Dependencies = deps
 		}
-		
+
 		resp, err := client.Jobs().Submit(ctx, submission)
 		if err != nil {
 			log.Printf("Failed to submit job %s: %v", job.name, err)
 			continue
 		}
-		
+
 		job.jobID = resp.JobID
 		fmt.Printf("Submitted %s: %s", job.name, job.jobID)
 		if len(deps) > 0 {
@@ -331,7 +331,7 @@ python3 deploy.py --evaluation evaluation/ --models models/
 // runConditionalWorkflow creates a workflow with conditional execution
 func runConditionalWorkflow(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Creating conditional workflow with error handling")
-	
+
 	// Validation job
 	validationJob := &interfaces.JobSubmission{
 		Name: "validate-input",
@@ -353,13 +353,13 @@ exit 0
 		Memory:    1024,
 		TimeLimit: 5,
 	}
-	
+
 	valResp, err := client.Jobs().Submit(ctx, validationJob)
 	if err != nil {
 		log.Fatalf("Failed to submit validation job: %v", err)
 	}
 	fmt.Printf("Validation job submitted: %s\n", valResp.JobID)
-	
+
 	// Success path - runs only if validation succeeds
 	successJob := &interfaces.JobSubmission{
 		Name: "process-valid-data",
@@ -374,14 +374,14 @@ echo "Processing completed successfully"
 		TimeLimit: 60,
 		// Note: afterok dependency on validation job
 	}
-	
+
 	successResp, err := client.Jobs().Submit(ctx, successJob)
 	if err != nil {
 		log.Printf("Failed to submit success job: %v", err)
 	} else {
 		fmt.Printf("Success job submitted: %s (runs on validation success)\n", successResp.JobID)
 	}
-	
+
 	// Failure path - runs only if validation fails
 	failureJob := &interfaces.JobSubmission{
 		Name: "handle-invalid-data",
@@ -399,14 +399,14 @@ echo "Fetched backup data"
 		TimeLimit: 10,
 		// Note: afternotok dependency - runs if validation fails
 	}
-	
+
 	failureResp, err := client.Jobs().Submit(ctx, failureJob)
 	if err != nil {
 		log.Printf("Failed to submit failure job: %v", err)
 	} else {
 		fmt.Printf("Failure job submitted: %s (runs on validation failure)\n", failureResp.JobID)
 	}
-	
+
 	// Cleanup job - runs regardless of validation result
 	cleanupJob := &interfaces.JobSubmission{
 		Name: "cleanup",
@@ -424,7 +424,7 @@ echo "Cleanup completed"
 		TimeLimit: 5,
 		// Note: afterany dependency - runs regardless of validation result
 	}
-	
+
 	cleanupResp, err := client.Jobs().Submit(ctx, cleanupJob)
 	if err != nil {
 		log.Printf("Failed to submit cleanup job: %v", err)
@@ -436,48 +436,48 @@ echo "Cleanup completed"
 // monitorJobChain monitors a chain of dependent jobs
 func monitorJobChain(ctx context.Context, client slurm.SlurmClient, jobIDs []string) {
 	fmt.Println("\nMonitoring job chain...")
-	
+
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
-	
+
 	timeout := time.After(10 * time.Minute)
-	
+
 	for {
 		select {
 		case <-ticker.C:
 			allComplete := true
-			
+
 			for i, jobID := range jobIDs {
 				job, err := client.Jobs().Get(ctx, jobID)
 				if err != nil {
 					log.Printf("Failed to get job %s: %v", jobID, err)
 					continue
 				}
-				
+
 				fmt.Printf("Job %d (%s): %s", i+1, job.Name, job.State)
-				
+
 				if job.State == "PENDING" {
 					fmt.Printf(" - waiting")
 				}
-				
+
 				if job.State != "COMPLETED" && job.State != "FAILED" && job.State != "CANCELLED" {
 					allComplete = false
 				}
-				
+
 				fmt.Println()
 			}
-			
+
 			if allComplete {
 				fmt.Println("All jobs in chain completed!")
 				return
 			}
-			
+
 			fmt.Println("---")
-			
+
 		case <-timeout:
 			fmt.Println("Monitoring timeout reached")
 			return
-			
+
 		case <-ctx.Done():
 			fmt.Println("Context cancelled")
 			return

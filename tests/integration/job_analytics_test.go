@@ -90,7 +90,7 @@ func testBasicAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID string
 		// Verify response structure - mock server nests data under "utilization"
 		assert.Contains(t, utilization, "utilization")
 		utilizationData := utilization["utilization"].(map[string]interface{})
-		
+
 		assert.Equal(t, jobID, utilizationData["job_id"])
 		assert.Contains(t, utilizationData, "cpu_utilization")
 		assert.Contains(t, utilizationData, "memory_utilization")
@@ -126,7 +126,7 @@ func testBasicAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID string
 		// Verify response structure - mock server nests data under "efficiency"
 		assert.Contains(t, efficiency, "efficiency")
 		efficiencyData := efficiency["efficiency"].(map[string]interface{})
-		
+
 		assert.Equal(t, jobID, efficiencyData["job_id"])
 		assert.Contains(t, efficiencyData, "overall_efficiency_score")
 		assert.Contains(t, efficiencyData, "cpu_efficiency")
@@ -153,7 +153,7 @@ func testBasicAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID string
 		// Verify response structure - mock server nests data under "performance"
 		assert.Contains(t, performance, "performance")
 		performanceData := performance["performance"].(map[string]interface{})
-		
+
 		assert.Equal(t, jobID, performanceData["job_id"])
 		assert.Contains(t, performanceData, "cpu_analytics")
 		assert.Contains(t, performanceData, "memory_analytics")
@@ -173,15 +173,18 @@ func testAdvancedAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID, st
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var liveMetrics map[string]interface{}
-		err = json.NewDecoder(resp.Body).Decode(&liveMetrics)
+		var response map[string]interface{}
+		err = json.NewDecoder(resp.Body).Decode(&response)
 		require.NoError(t, err)
 
-		// Verify response structure
+		// Verify response structure - mock server wraps data under "live_metrics"
+		assert.Contains(t, response, "live_metrics")
+		liveMetrics := response["live_metrics"].(map[string]interface{})
+
 		assert.Equal(t, jobID, liveMetrics["job_id"])
 		assert.Contains(t, liveMetrics, "timestamp")
-		assert.Contains(t, liveMetrics, "cpu_metrics")
-		assert.Contains(t, liveMetrics, "memory_metrics")
+		assert.Contains(t, liveMetrics, "cpu_usage")
+		assert.Contains(t, liveMetrics, "memory_usage")
 
 		t.Logf("Job %s live metrics response received successfully", jobID)
 	})
@@ -195,15 +198,19 @@ func testAdvancedAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID, st
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var trends map[string]interface{}
-		err = json.NewDecoder(resp.Body).Decode(&trends)
+		var response map[string]interface{}
+		err = json.NewDecoder(resp.Body).Decode(&response)
 		require.NoError(t, err)
 
 		// Verify response structure
-		assert.Equal(t, jobID, trends["job_id"])
-		assert.Contains(t, trends, "time_window")
-		assert.Contains(t, trends, "cpu_trend")
-		assert.Contains(t, trends, "memory_trend")
+		assert.Equal(t, jobID, response["job_id"])
+		assert.Contains(t, response, "trends")
+		assert.Contains(t, response, "analysis")
+
+		// Verify analysis contains trend information
+		analysis := response["analysis"].(map[string]interface{})
+		assert.Contains(t, analysis, "cpu_trend")
+		assert.Contains(t, analysis, "memory_trend")
 
 		t.Logf("Job %s resource trends response received successfully", jobID)
 	})
@@ -217,11 +224,14 @@ func testAdvancedAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID, st
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var stepUtil map[string]interface{}
-		err = json.NewDecoder(resp.Body).Decode(&stepUtil)
+		var response map[string]interface{}
+		err = json.NewDecoder(resp.Body).Decode(&response)
 		require.NoError(t, err)
 
-		// Verify response structure
+		// Verify response structure - mock server wraps data under "step_utilization"
+		assert.Contains(t, response, "step_utilization")
+		stepUtil := response["step_utilization"].(map[string]interface{})
+
 		assert.Equal(t, jobID, stepUtil["job_id"])
 		assert.Equal(t, stepID, stepUtil["step_id"])
 		assert.Contains(t, stepUtil, "cpu_utilization")
@@ -234,7 +244,7 @@ func testAdvancedAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID, st
 func testHistoricalAnalyticsEndpoints(t *testing.T, baseURL, apiVersion string) {
 	// Test performance history endpoint
 	t.Run("PerformanceHistory", func(t *testing.T) {
-		url := fmt.Sprintf("%s/slurm/%s/jobs/performance/history?user_id=testuser&limit=10", baseURL, apiVersion)
+		url := fmt.Sprintf("%s/slurm/%s/jobs/performance/history?job_id=1001&limit=10", baseURL, apiVersion)
 		resp, err := http.Get(url)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -245,10 +255,12 @@ func testHistoricalAnalyticsEndpoints(t *testing.T, baseURL, apiVersion string) 
 		err = json.NewDecoder(resp.Body).Decode(&history)
 		require.NoError(t, err)
 
-		// Verify response structure
-		assert.Contains(t, history, "user_id")
-		assert.Contains(t, history, "time_range")
-		assert.Contains(t, history, "jobs")
+		// Verify response structure - mock server nests data under "performance_history"
+		assert.Contains(t, history, "performance_history")
+		historyData := history["performance_history"].(map[string]interface{})
+		assert.Contains(t, historyData, "job_id")
+		assert.Contains(t, historyData, "start_time")
+		assert.Contains(t, historyData, "time_series_data")
 
 		t.Logf("Performance history response received successfully")
 	})
@@ -262,14 +274,17 @@ func testHistoricalAnalyticsEndpoints(t *testing.T, baseURL, apiVersion string) 
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var trends map[string]interface{}
-		err = json.NewDecoder(resp.Body).Decode(&trends)
+		var response map[string]interface{}
+		err = json.NewDecoder(resp.Body).Decode(&response)
 		require.NoError(t, err)
 
-		// Verify response structure
-		assert.Contains(t, trends, "time_window")
-		assert.Contains(t, trends, "partition")
-		assert.Contains(t, trends, "efficiency_trend")
+		// Verify response structure - mock server wraps data under "performance_trends"
+		assert.Contains(t, response, "performance_trends")
+		trends := response["performance_trends"].(map[string]interface{})
+
+		assert.Contains(t, trends, "cluster_performance")
+		assert.Contains(t, trends, "resource_trends")
+		assert.Contains(t, trends, "partition_trends")
 
 		t.Logf("Performance trends response received successfully")
 	})
@@ -283,14 +298,17 @@ func testHistoricalAnalyticsEndpoints(t *testing.T, baseURL, apiVersion string) 
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var userTrends map[string]interface{}
-		err = json.NewDecoder(resp.Body).Decode(&userTrends)
+		var response map[string]interface{}
+		err = json.NewDecoder(resp.Body).Decode(&response)
 		require.NoError(t, err)
 
-		// Verify response structure
+		// Verify response structure - mock server wraps data under "user_efficiency_trends"
+		assert.Contains(t, response, "user_efficiency_trends")
+		userTrends := response["user_efficiency_trends"].(map[string]interface{})
+
 		assert.Contains(t, userTrends, "user_id")
-		assert.Contains(t, userTrends, "time_window")
-		assert.Contains(t, userTrends, "efficiency_data")
+		assert.Contains(t, userTrends, "efficiency_trends")
+		assert.Contains(t, userTrends, "monthly_data")
 
 		t.Logf("User efficiency trends response received successfully")
 	})
@@ -301,8 +319,8 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 	t.Run("CompareJobPerformance", func(t *testing.T) {
 		url := fmt.Sprintf("%s/slurm/%s/jobs/performance/compare", baseURL, apiVersion)
 		payload := `{"job_ids": ["1001", "1002"]}`
-		
-		resp, err := http.Post(url, "application/json", 
+
+		resp, err := http.Post(url, "application/json",
 			strings.NewReader(fmt.Sprintf(`{"job_ids": ["%s", "1002"]}`, jobID)))
 		if err != nil {
 			// Fallback to GET request if POST is not handled
@@ -318,16 +336,17 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 		err = json.NewDecoder(resp.Body).Decode(&comparison)
 		require.NoError(t, err)
 
-		// Verify response structure
-		assert.Contains(t, comparison, "jobs")
-		assert.Contains(t, comparison, "summary")
+		// Verify response structure - mock server nests data under "performance_comparison"
+		assert.Contains(t, comparison, "performance_comparison")
+		comparisonData := comparison["performance_comparison"].(map[string]interface{})
+		assert.Contains(t, comparisonData, "metrics")
 
 		t.Logf("Job performance comparison response received successfully, payload: %s", payload)
 	})
 
 	// Test similar jobs performance endpoint
 	t.Run("SimilarJobsPerformance", func(t *testing.T) {
-		url := fmt.Sprintf("%s/slurm/%s/jobs/performance/similar?job_id=%s&criteria=cpus,memory&limit=5", baseURL, apiVersion, jobID)
+		url := fmt.Sprintf("%s/slurm/%s/jobs/performance/similar?reference_job_id=%s&criteria=cpus,memory&limit=5", baseURL, apiVersion, jobID)
 		resp, err := http.Get(url)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -338,10 +357,11 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 		err = json.NewDecoder(resp.Body).Decode(&similar)
 		require.NoError(t, err)
 
-		// Verify response structure
-		assert.Contains(t, similar, "reference_job_id")
-		assert.Contains(t, similar, "similar_jobs")
-		assert.Contains(t, similar, "criteria")
+		// Verify response structure - mock server nests data under "similar_jobs_performance"
+		assert.Contains(t, similar, "similar_jobs_performance")
+		similarData := similar["similar_jobs_performance"].(map[string]interface{})
+		assert.Contains(t, similarData, "reference_job_id")
+		assert.Contains(t, similarData, "similar_jobs")
 
 		t.Logf("Similar jobs performance response received successfully")
 	})
@@ -350,8 +370,8 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 	t.Run("AnalyzeBatchJobs", func(t *testing.T) {
 		url := fmt.Sprintf("%s/slurm/%s/jobs/performance/analyze_batch", baseURL, apiVersion)
 		payload := fmt.Sprintf(`{"job_ids": ["%s", "1002"]}`, jobID)
-		
-		resp, err := http.Post(url, "application/json", 
+
+		resp, err := http.Post(url, "application/json",
 			strings.NewReader(fmt.Sprintf(`{"job_ids": ["%s", "1002"]}`, jobID)))
 		if err != nil {
 			// Fallback to GET request if POST is not handled
@@ -367,9 +387,11 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 		err = json.NewDecoder(resp.Body).Decode(&batchAnalysis)
 		require.NoError(t, err)
 
-		// Verify response structure
-		assert.Contains(t, batchAnalysis, "jobs")
-		assert.Contains(t, batchAnalysis, "summary")
+		// Verify response structure - mock server nests data under "batch_analysis"
+		assert.Contains(t, batchAnalysis, "batch_analysis")
+		batchData := batchAnalysis["batch_analysis"].(map[string]interface{})
+		assert.Contains(t, batchData, "job_analyses")
+		assert.Contains(t, batchData, "analysis_summary")
 
 		t.Logf("Batch analysis response received successfully, payload: %s", payload)
 	})
@@ -387,9 +409,12 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 		err = json.NewDecoder(resp.Body).Decode(&workflow)
 		require.NoError(t, err)
 
-		// Verify response structure
-		assert.Contains(t, workflow, "workflow_id")
-		assert.Contains(t, workflow, "jobs")
+		// Verify response structure - mock server nests data under "workflow_performance"
+		assert.Contains(t, workflow, "workflow_performance")
+		workflowData := workflow["workflow_performance"].(map[string]interface{})
+		assert.Contains(t, workflowData, "workflow_id")
+		assert.Contains(t, workflowData, "job_performance")
+		assert.Contains(t, workflowData, "performance_summary")
 
 		t.Logf("Workflow performance response received successfully")
 	})
@@ -407,10 +432,12 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 		err = json.NewDecoder(resp.Body).Decode(&report)
 		require.NoError(t, err)
 
-		// Verify response structure
-		assert.Contains(t, report, "generated_at")
-		assert.Contains(t, report, "summary")
-		assert.Contains(t, report, "user_analysis")
+		// Verify response structure - mock server nests data under "efficiency_report"
+		assert.Contains(t, report, "efficiency_report")
+		reportData := report["efficiency_report"].(map[string]interface{})
+		assert.Contains(t, reportData, "report_metadata")
+		assert.Contains(t, reportData, "executive_summary")
+		assert.Contains(t, reportData, "detailed_metrics")
 
 		t.Logf("Efficiency report response received successfully")
 	})
@@ -444,7 +471,7 @@ func TestJobAnalyticsErrorHandling(t *testing.T) {
 			var errorResp map[string]interface{}
 			err = json.NewDecoder(resp.Body).Decode(&errorResp)
 			require.NoError(t, err)
-			assert.Contains(t, errorResp, "error")
+			assert.Contains(t, errorResp, "errors")
 
 			t.Logf("Endpoint %s correctly returned 404 for non-existent job", endpoint)
 		}
@@ -496,15 +523,15 @@ func TestJobAnalyticsPerformance(t *testing.T) {
 			url := baseURL + endpoint
 			resp, err := http.Get(url)
 			responseTime := time.Since(start)
-			
+
 			require.NoError(t, err)
 			resp.Body.Close()
-			
+
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			
+
 			// Assert reasonable response times (should be under 1 second for mock)
 			assert.Less(t, responseTime, time.Second)
-			
+
 			t.Logf("Endpoint %s response time: %v", endpoint, responseTime)
 		}
 	})
@@ -513,32 +540,32 @@ func TestJobAnalyticsPerformance(t *testing.T) {
 	t.Run("ConcurrentRequests", func(t *testing.T) {
 		numRequests := 10
 		done := make(chan bool, numRequests)
-		
+
 		start := time.Now()
-		
+
 		for i := 0; i < numRequests; i++ {
 			go func(requestID int) {
 				url := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/utilization", baseURL, jobID)
 				resp, err := http.Get(url)
-				
+
 				assert.NoError(t, err)
 				if resp != nil {
 					assert.Equal(t, http.StatusOK, resp.StatusCode)
 					resp.Body.Close()
 				}
-				
+
 				done <- true
 			}(i)
 		}
-		
+
 		// Wait for all requests to complete
 		for i := 0; i < numRequests; i++ {
 			<-done
 		}
-		
+
 		totalTime := time.Since(start)
 		t.Logf("Completed %d concurrent requests in %v", numRequests, totalTime)
-		
+
 		// Should handle concurrent requests reasonably well
 		assert.Less(t, totalTime, 5*time.Second)
 	})
@@ -559,10 +586,10 @@ func TestJobAnalyticsVersionFeatures(t *testing.T) {
 			defer mockServer.Close()
 
 			config := mockServer.GetConfig()
-			
+
 			// Verify that all expected features are supported
 			for _, feature := range expectedFeatures {
-				assert.True(t, config.SupportedOperations[feature], 
+				assert.True(t, config.SupportedOperations[feature],
 					"Feature %s should be supported in %s", feature, version)
 			}
 

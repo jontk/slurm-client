@@ -44,7 +44,7 @@ func TestUserBaseManager_ValidateUserCreate(t *testing.T) {
 		{
 			name: "valid user",
 			user: &types.UserCreate{
-				Name:       "testuser",
+				Name:         "testuser",
 				DefaultWCKey: "default",
 			},
 			wantErr: false,

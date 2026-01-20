@@ -137,10 +137,10 @@ func TestConsistentLazyInitialization(t *testing.T) {
 
 			// Get all managers
 			managers := map[string]interface{}{
-				"Jobs":        client.Jobs(),
-				"Nodes":       client.Nodes(),
-				"Partitions":  client.Partitions(),
-				"Info":        client.Info(),
+				"Jobs":       client.Jobs(),
+				"Nodes":      client.Nodes(),
+				"Partitions": client.Partitions(),
+				"Info":       client.Info(),
 			}
 
 			// For versions that support these managers

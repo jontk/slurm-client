@@ -8,15 +8,15 @@ import (
 	"fmt"
 	"time"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/pkg/errors"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 )
 
 // StandaloneAdapter implements the standalone operations for v0.0.43
 type StandaloneAdapter struct {
-	client        *api.ClientWithResponses
-	errorAdapter  *ErrorAdapter
+	client       *api.ClientWithResponses
+	errorAdapter *ErrorAdapter
 }
 
 // NewStandaloneAdapter creates a new standalone adapter
@@ -451,8 +451,8 @@ func (a *StandaloneAdapter) CreateTRES(ctx context.Context, req *types.CreateTRE
 	apiReq := api.V0043OpenapiTresResp{
 		TRES: []api.V0043Tres{
 			{
-				Type:  req.Type,
-				Name:  &req.Name,
+				Type: req.Type,
+				Name: &req.Name,
 			},
 		},
 	}

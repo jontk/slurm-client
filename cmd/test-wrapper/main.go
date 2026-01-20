@@ -55,7 +55,7 @@ func main() {
 	// Test 2: Get API version
 	fmt.Println("\n=== Test 2: Get API Version ===")
 	fmt.Printf("Client API Version: %s\n", client.Version())
-	
+
 	// Test 2b: Get cluster info
 	fmt.Println("\n=== Test 2b: Get Cluster Info ===")
 	info, err := infoMgr.Get(ctx)
@@ -110,7 +110,7 @@ func main() {
 	} else {
 		fmt.Printf("Found %d partitions\n", len(partitions.Partitions))
 		for _, partition := range partitions.Partitions {
-			fmt.Printf("  Partition: Name=%s, State=%s, Nodes=%s\n", 
+			fmt.Printf("  Partition: Name=%s, State=%s, Nodes=%s\n",
 				partition.Name, partition.State, partition.Nodes)
 		}
 	}
@@ -125,7 +125,7 @@ func main() {
 		fmt.Printf("Found %d accounts\n", len(accounts.Accounts))
 		for i, account := range accounts.Accounts {
 			if i < 5 { // Show first 5 accounts
-				fmt.Printf("  Account: Name=%s, Description=%s\n", 
+				fmt.Printf("  Account: Name=%s, Description=%s\n",
 					account.Name, account.Description)
 			}
 		}
@@ -144,7 +144,7 @@ func main() {
 		fmt.Printf("Found %d users\n", len(users.Users))
 		for i, user := range users.Users {
 			if i < 5 { // Show first 5 users
-				fmt.Printf("  User: Name=%s, DefaultAccount=%s\n", 
+				fmt.Printf("  User: Name=%s, DefaultAccount=%s\n",
 					user.Name, user.DefaultAccount)
 			}
 		}

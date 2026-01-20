@@ -144,7 +144,7 @@ func (a *UserAdapter) Get(ctx context.Context, userName string) (*types.User, er
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(userName, "userName"); err != nil {
+	if err := a.ValidateResourceName(userName, "user name"); err != nil {
 		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -249,7 +249,7 @@ func (a *UserAdapter) Update(ctx context.Context, userName string, update *types
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(userName, "userName"); err != nil {
+	if err := a.ValidateResourceName(userName, "user name"); err != nil {
 		return err
 	}
 	if err := a.validateUserUpdate(update); err != nil {
@@ -298,7 +298,7 @@ func (a *UserAdapter) Delete(ctx context.Context, userName string) error {
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(userName, "userName"); err != nil {
+	if err := a.ValidateResourceName(userName, "user name"); err != nil {
 		return err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {

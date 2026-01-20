@@ -4,8 +4,8 @@
 package v0_0_40
 
 import (
-	"github.com/jontk/slurm-client/internal/common/types"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
+	"github.com/jontk/slurm-client/internal/common/types"
 )
 
 // convertAPIUserToCommon converts a v0.0.40 API User to common User type

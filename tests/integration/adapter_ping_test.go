@@ -42,7 +42,7 @@ func TestPingWithRealServer(t *testing.T) {
 		token: token,
 		base:  http.DefaultTransport,
 	}
-	
+
 	httpClient := &http.Client{
 		Transport: transport,
 		Timeout:   30 * time.Second,
@@ -61,28 +61,28 @@ func TestPingWithRealServer(t *testing.T) {
 		// Use the correct ping endpoint
 		resp, err := apiClient.SlurmV0043GetPingWithResponse(ctx)
 		require.NoError(t, err)
-		
+
 		assert.Equal(t, 200, resp.StatusCode())
-		
+
 		if resp.JSON200 != nil {
 			t.Logf("Ping response received")
-			
+
 			// Log the response
 			jsonData, _ := json.MarshalIndent(resp.JSON200, "", "  ")
 			t.Logf("Response: %s", string(jsonData))
-			
+
 			// Check pings
 			if resp.JSON200.Pings != nil {
 				for i, ping := range resp.JSON200.Pings {
 					t.Logf("  Ping %d: hostname=%s, status=%s, responding=%v, latency=%d",
-						i+1, 
-						getStringValue(ping.Hostname), 
+						i+1,
+						getStringValue(ping.Hostname),
 						getStringValue(ping.Pinged),
 						ping.Responding,
 						getInt64Value(ping.Latency))
 				}
 			}
-			
+
 			// Check meta information
 			if resp.JSON200.Meta != nil && resp.JSON200.Meta.Slurm != nil {
 				if resp.JSON200.Meta.Slurm.Version != nil {
@@ -101,26 +101,26 @@ func TestPingWithRealServer(t *testing.T) {
 		// Make a raw HTTP request for the OpenAPI spec
 		req, err := http.NewRequestWithContext(ctx, "GET", serverURL+"/openapi/v3", nil)
 		require.NoError(t, err)
-		
+
 		resp, err := httpClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
-		
+
 		assert.Equal(t, 200, resp.StatusCode)
-		
+
 		var openapi map[string]interface{}
 		err = json.NewDecoder(resp.Body).Decode(&openapi)
 		require.NoError(t, err)
-		
+
 		// Check OpenAPI version
 		if openAPIVersion, ok := openapi["openapi"].(string); ok {
 			t.Logf("OpenAPI version: %s", openAPIVersion)
 		}
-		
+
 		// Check available paths
 		if paths, ok := openapi["paths"].(map[string]interface{}); ok {
 			t.Logf("Found %d API endpoints", len(paths))
-			
+
 			// Count QoS endpoints
 			qosCount := 0
 			for path := range paths {
@@ -141,17 +141,9 @@ func getStringValue(ptr *string) string {
 	return *ptr
 }
 
-func getIntValue(ptr *int) int {
-	if ptr == nil {
-		return 0
-	}
-	return *ptr
-}
-
 func getInt64Value(ptr *int64) int64 {
 	if ptr == nil {
 		return 0
 	}
 	return *ptr
 }
-

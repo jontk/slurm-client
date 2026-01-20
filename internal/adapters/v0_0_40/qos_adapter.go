@@ -6,10 +6,10 @@ package v0_0_40
 import (
 	"context"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
 	"github.com/jontk/slurm-client/pkg/errors"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
 // QoSAdapter implements the QoSAdapter interface for v0.0.40
@@ -48,7 +48,7 @@ func (a *QoSAdapter) Get(ctx context.Context, qosName string) (*types.QoS, error
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(qosName, "qosName"); err != nil {
+	if err := a.ValidateResourceName(qosName, "QoS name"); err != nil {
 		return nil, err
 	}
 
@@ -73,7 +73,7 @@ func (a *QoSAdapter) Update(ctx context.Context, qosName string, update *types.Q
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(qosName, "qosName"); err != nil {
+	if err := a.ValidateResourceName(qosName, "QoS name"); err != nil {
 		return err
 	}
 
@@ -87,7 +87,7 @@ func (a *QoSAdapter) Delete(ctx context.Context, qosName string) error {
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(qosName, "qosName"); err != nil {
+	if err := a.ValidateResourceName(qosName, "QoS name"); err != nil {
 		return err
 	}
 

@@ -194,24 +194,3 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob interface{}) (*types.Job, erro
 
 	return job, nil
 }
-
-// convertCommonToAPIJobUpdate converts common JobUpdate to v0.0.41 API request
-func (a *JobAdapter) convertCommonToAPIJobUpdate(update *types.JobUpdate) map[string]interface{} {
-	req := make(map[string]interface{})
-
-	// Set fields that can be updated
-	if update.Comment != nil {
-		req["comment"] = *update.Comment
-	}
-	if update.Priority != nil {
-		req["priority"] = *update.Priority
-	}
-	if update.QoS != nil {
-		req["qos"] = *update.QoS
-	}
-	if update.TimeLimit != nil {
-		req["time_limit"] = *update.TimeLimit
-	}
-
-	return req
-}

@@ -255,7 +255,7 @@ func DefaultCompatibilityMatrix() *VersionCompatibilityMatrix {
 					Mitigation:  "Feature available only in v0.0.44+",
 				},
 				{
-					Type:        "endpoint_added", 
+					Type:        "endpoint_added",
 					Description: "Job resource layout endpoint added",
 					OldValue:    "",
 					NewValue:    "/slurm/v0.0.44/resources/{job_id}",

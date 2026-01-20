@@ -44,14 +44,14 @@ func TestQoSBuilder_Limits(t *testing.T) {
 	t.Run("comprehensive limits", func(t *testing.T) {
 		qos, err := NewQoSBuilder("limited-qos").
 			WithLimits().
-				WithMaxCPUsPerUser(100).
-				WithMaxJobsPerUser(10).
-				WithMaxNodesPerUser(5).
-				WithMaxWallTime(24 * time.Hour).
-				WithMaxMemoryPerNode(64 * GB).
-				WithMaxMemoryPerCPU(4 * GB).
-				WithMinCPUsPerJob(2).
-				Done().
+			WithMaxCPUsPerUser(100).
+			WithMaxJobsPerUser(10).
+			WithMaxNodesPerUser(5).
+			WithMaxWallTime(24 * time.Hour).
+			WithMaxMemoryPerNode(64 * GB).
+			WithMaxMemoryPerCPU(4 * GB).
+			WithMinCPUsPerJob(2).
+			Done().
 			Build()
 
 		require.NoError(t, err)
@@ -68,8 +68,8 @@ func TestQoSBuilder_Limits(t *testing.T) {
 	t.Run("negative limits fail", func(t *testing.T) {
 		_, err := NewQoSBuilder("test").
 			WithLimits().
-				WithMaxCPUsPerUser(-1).
-				Done().
+			WithMaxCPUsPerUser(-1).
+			Done().
 			Build()
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "must be non-negative")
@@ -157,9 +157,9 @@ func TestQoSBuilder_Clone(t *testing.T) {
 		WithPriority(100).
 		WithFlags("flag1", "flag2").
 		WithLimits().
-			WithMaxCPUsPerUser(50).
-			WithMaxJobsPerUser(5).
-			Done()
+		WithMaxCPUsPerUser(50).
+		WithMaxJobsPerUser(5).
+		Done()
 
 	// Clone and modify
 	cloned := original.Clone()
@@ -199,15 +199,15 @@ func TestQoSBuilder_BuildForUpdate(t *testing.T) {
 		assert.Equal(t, 200, *update.Priority)
 
 		// Default values should not be included
-		assert.Nil(t, update.UsageFactor) // 1.0 is default
+		assert.Nil(t, update.UsageFactor)    // 1.0 is default
 		assert.Nil(t, update.UsageThreshold) // 0 is default
 	})
 
 	t.Run("with limits", func(t *testing.T) {
 		update, err := NewQoSBuilder("test").
 			WithLimits().
-				WithMaxCPUsPerUser(100).
-				Done().
+			WithMaxCPUsPerUser(100).
+			Done().
 			BuildForUpdate()
 
 		require.NoError(t, err)
@@ -273,21 +273,21 @@ func TestQoSBuilder_ComplexScenario(t *testing.T) {
 		WithUsageFactor(1.75).
 		WithUsageThreshold(0.85).
 		WithLimits().
-			WithMaxCPUsPerUser(200).
-			WithMaxJobsPerUser(25).
-			WithMaxNodesPerUser(10).
-			WithMaxSubmitJobsPerUser(100).
-			WithMaxCPUsPerAccount(1000).
-			WithMaxJobsPerAccount(100).
-			WithMaxNodesPerAccount(50).
-			WithMaxCPUsPerJob(64).
-			WithMaxNodesPerJob(4).
-			WithMaxWallTime(48 * time.Hour).
-			WithMaxMemoryPerNode(256 * GB).
-			WithMaxMemoryPerCPU(8 * GB).
-			WithMinCPUsPerJob(4).
-			WithMinNodesPerJob(1).
-			Done().
+		WithMaxCPUsPerUser(200).
+		WithMaxJobsPerUser(25).
+		WithMaxNodesPerUser(10).
+		WithMaxSubmitJobsPerUser(100).
+		WithMaxCPUsPerAccount(1000).
+		WithMaxJobsPerAccount(100).
+		WithMaxNodesPerAccount(50).
+		WithMaxCPUsPerJob(64).
+		WithMaxNodesPerJob(4).
+		WithMaxWallTime(48 * time.Hour).
+		WithMaxMemoryPerNode(256 * GB).
+		WithMaxMemoryPerCPU(8 * GB).
+		WithMinCPUsPerJob(4).
+		WithMinNodesPerJob(1).
+		Done().
 		Build()
 
 	require.NoError(t, err)

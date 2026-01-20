@@ -7,36 +7,36 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPartitionManager_List_NotImplemented(t *testing.T) {
-	// Test that List returns not implemented error
+	// Test that List returns error when client not initialized
 	partitionManager := &PartitionManager{
 		client: &WrapperClient{},
 	}
 
 	_, err := partitionManager.List(context.Background(), nil)
 
-	// v0.0.41 PartitionManager is not implemented
+	// Should return error because API client is not initialized
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not implemented")
+	assert.Contains(t, err.Error(), "not initialized")
 	// The impl should now be created
 	assert.NotNil(t, partitionManager.impl)
 }
 
 func TestPartitionManager_Get_NotImplemented(t *testing.T) {
-	// Test that Get returns not implemented error
+	// Test that Get returns error when client not initialized
 	partitionManager := &PartitionManager{
 		client: &WrapperClient{},
 	}
 
 	_, err := partitionManager.Get(context.Background(), "gpu")
 
-	// v0.0.41 PartitionManager is not implemented
+	// Should return error because API client is not initialized
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not implemented")
+	assert.Contains(t, err.Error(), "not initialized")
 	// The impl should now be created
 	assert.NotNil(t, partitionManager.impl)
 }

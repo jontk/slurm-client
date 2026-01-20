@@ -7,11 +7,11 @@ import (
 	"context"
 	"fmt"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 	"github.com/jontk/slurm-client/internal/common"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/internal/managers/base"
 	"github.com/jontk/slurm-client/pkg/errors"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 )
 
 // UserAdapter implements the UserAdapter interface for v0.0.44
@@ -137,7 +137,7 @@ func (a *UserAdapter) Get(ctx context.Context, userName string) (*types.User, er
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(userName, "userName"); err != nil {
+	if err := a.ValidateResourceName(userName, "user name"); err != nil {
 		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -235,7 +235,7 @@ func (a *UserAdapter) Update(ctx context.Context, userName string, update *types
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(userName, "userName"); err != nil {
+	if err := a.ValidateResourceName(userName, "user name"); err != nil {
 		return err
 	}
 	if err := a.validateUserUpdate(update); err != nil {
@@ -284,7 +284,7 @@ func (a *UserAdapter) Delete(ctx context.Context, userName string) error {
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(userName, "userName"); err != nil {
+	if err := a.ValidateResourceName(userName, "user name"); err != nil {
 		return err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -332,7 +332,7 @@ func (a *UserAdapter) validateUserUpdate(update *types.UserUpdate) error {
 	}
 	// At least one field should be provided for update
 	if update.DefaultAccount == nil && update.DefaultQoS == nil && len(update.QoSList) == 0 &&
-	   len(update.Accounts) == 0 && update.AdminLevel == nil && update.MaxJobs == nil {
+		len(update.Accounts) == 0 && update.AdminLevel == nil && update.MaxJobs == nil {
 		return common.NewValidationError("at least one field must be provided for update", "update", update)
 	}
 	return nil

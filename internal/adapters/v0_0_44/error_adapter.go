@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
+	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // ErrorAdapter handles API-specific error conversion for v0.0.44

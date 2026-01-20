@@ -44,8 +44,8 @@ func TestPartitionBaseManager_ValidatePartitionCreate(t *testing.T) {
 		{
 			name: "valid partition",
 			partition: &types.PartitionCreate{
-				Name:       "compute",
-				MaxTime:    3600,
+				Name:        "compute",
+				MaxTime:     3600,
 				DefaultTime: 1800,
 			},
 			wantErr: false,

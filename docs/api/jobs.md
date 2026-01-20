@@ -292,4 +292,5 @@ if err != nil {
 
 - [API Overview](./README.md)
 - [Node Management API](./nodes.md)
-- [Examples](../../examples/job-management)
+- [Job Examples](../../examples/basic) - Basic job submission and management
+- [Job Analytics](../../examples/job-analytics) - Job performance and analytics examples

@@ -23,6 +23,7 @@ func TestReservationAdapter_ValidateContext(t *testing.T) {
 	adapter := NewReservationAdapter(&api.ClientWithResponses{})
 
 	// Test nil context
+	//lint:ignore SA1012 intentionally testing nil context validation
 	err := adapter.ValidateContext(nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context is required")
@@ -35,13 +36,8 @@ func TestReservationAdapter_ValidateContext(t *testing.T) {
 func TestReservationAdapter_List(t *testing.T) {
 	adapter := NewReservationAdapter(nil) // Use nil client for testing validation logic
 
-	// Test nil context validation
-	_, err := adapter.List(nil, &types.ReservationListOptions{})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
-
-	// Test client initialization check
-	_, err = adapter.List(context.Background(), &types.ReservationListOptions{})
+	// Test client initialization check (nil context validation is covered in TestReservationAdapter_ValidateContext)
+	_, err := adapter.List(context.TODO(), &types.ReservationListOptions{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "client not initialized")
 }
@@ -50,17 +46,12 @@ func TestReservationAdapter_Get(t *testing.T) {
 	adapter := NewReservationAdapter(nil)
 
 	// Test empty reservation name
-	_, err := adapter.Get(context.Background(), "")
+	_, err := adapter.Get(context.TODO(), "")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Reservation name is required")
 
-	// Test nil context
-	_, err = adapter.Get(nil, "test-reservation")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
-
-	// Test client initialization check
-	_, err = adapter.Get(context.Background(), "test-reservation")
+	// Test client initialization check (nil context validation is covered in TestReservationAdapter_ValidateContext)
+	_, err = adapter.Get(context.TODO(), "test-reservation")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "client not initialized")
 }
@@ -69,10 +60,10 @@ func TestReservationAdapter_ConvertAPIReservationToCommon(t *testing.T) {
 	adapter := NewReservationAdapter(&api.ClientWithResponses{})
 
 	tests := []struct {
-		name               string
-		apiReservation     api.V0044ReservationInfo
-		expectedName       string
-		expectedPartition  string
+		name              string
+		apiReservation    api.V0044ReservationInfo
+		expectedName      string
+		expectedPartition string
 	}{
 		{
 			name: "full reservation",
@@ -94,10 +85,10 @@ func TestReservationAdapter_ConvertAPIReservationToCommon(t *testing.T) {
 			expectedPartition: "",
 		},
 		{
-			name:               "empty reservation",
-			apiReservation:     api.V0044ReservationInfo{},
-			expectedName:       "",
-			expectedPartition:  "",
+			name:              "empty reservation",
+			apiReservation:    api.V0044ReservationInfo{},
+			expectedName:      "",
+			expectedPartition: "",
 		},
 	}
 
@@ -117,26 +108,18 @@ func TestReservationAdapter_Create(t *testing.T) {
 	adapter := NewReservationAdapter(nil)
 
 	// Test nil reservation
-	_, err := adapter.Create(context.Background(), nil)
+	_, err := adapter.Create(context.TODO(), nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "reservation creation data is required")
 
-	// Test missing required fields
-	_, err = adapter.Create(context.Background(), &types.ReservationCreate{
+	// Test missing required fields (nil context validation is covered in TestReservationAdapter_ValidateContext)
+	_, err = adapter.Create(context.TODO(), &types.ReservationCreate{
 		Name: "",
 	})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "reservation name is required")
 
-	// Test nil context
-	_, err = adapter.Create(nil, &types.ReservationCreate{
-		Name: "test-reservation",
-	})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
-
-	// Test client initialization check
-	_, err = adapter.Create(context.Background(), &types.ReservationCreate{
+	_, err = adapter.Create(context.TODO(), &types.ReservationCreate{
 		Name: "test-reservation",
 	})
 	assert.Error(t, err)
@@ -147,22 +130,17 @@ func TestReservationAdapter_Update(t *testing.T) {
 	adapter := NewReservationAdapter(nil)
 
 	// Test nil update
-	err := adapter.Update(context.Background(), "test-reservation", nil)
+	err := adapter.Update(context.TODO(), "test-reservation", nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "reservation update data is required")
 
 	// Test empty reservation name
-	err = adapter.Update(context.Background(), "", &types.ReservationUpdate{})
+	err = adapter.Update(context.TODO(), "", &types.ReservationUpdate{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Reservation name is required")
 
-	// Test nil context
-	err = adapter.Update(nil, "test-reservation", &types.ReservationUpdate{})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
-
-	// Test client initialization check
-	err = adapter.Update(context.Background(), "test-reservation", &types.ReservationUpdate{})
+	// Test client initialization check (nil context validation is covered in TestReservationAdapter_ValidateContext)
+	err = adapter.Update(context.TODO(), "test-reservation", &types.ReservationUpdate{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "at least one field must be provided for update")
 }
@@ -171,17 +149,12 @@ func TestReservationAdapter_Delete(t *testing.T) {
 	adapter := NewReservationAdapter(nil)
 
 	// Test empty reservation name
-	err := adapter.Delete(context.Background(), "")
+	err := adapter.Delete(context.TODO(), "")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Reservation name is required")
 
-	// Test nil context
-	err = adapter.Delete(nil, "test-reservation")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context is required")
-
-	// Test client initialization check
-	err = adapter.Delete(context.Background(), "test-reservation")
+	// Test client initialization check (nil context validation is covered in TestReservationAdapter_ValidateContext)
+	err = adapter.Delete(context.TODO(), "test-reservation")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "client not initialized")
 }

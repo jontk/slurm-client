@@ -271,7 +271,7 @@ func TestPartitionAdapter_ErrorHandling(t *testing.T) {
 			errorMsg := err.Error()
 			assert.True(t,
 				strings.Contains(errorMsg, "client") ||
-				strings.Contains(errorMsg, "not supported"),
+					strings.Contains(errorMsg, "not supported"),
 				"Expected client validation or not supported error, got: %v", err)
 		})
 	}

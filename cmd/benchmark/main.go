@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/internal/factory"
-	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -38,7 +38,7 @@ func main() {
 		log.Fatal("SLURM_JWT environment variable is required")
 	}
 
-	versions := []string{}
+	var versions []string
 	if os.Args[1] == "all" {
 		versions = []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43"}
 	} else {
@@ -54,7 +54,7 @@ func main() {
 		// Benchmark wrapper implementation
 		fmt.Printf("\n--- Wrapper Implementation ---\n")
 		wrapperResults := benchmarkImplementation(version, jwtToken, false)
-		
+
 		// Benchmark adapter implementation
 		fmt.Printf("\n--- Adapter Implementation ---\n")
 		adapterResults := benchmarkImplementation(version, jwtToken, true)
@@ -76,7 +76,7 @@ func benchmarkImplementation(version, jwtToken string, useAdapters bool) []Bench
 	initStart := time.Now()
 	client, err := createClient(version, jwtToken, useAdapters)
 	initDuration := time.Since(initStart)
-	
+
 	results = append(results, BenchmarkResult{
 		Implementation: implName,
 		Version:        version,
@@ -129,7 +129,7 @@ func benchmarkImplementation(version, jwtToken string, useAdapters bool) []Bench
 			start := time.Now()
 			err := op.fn()
 			duration := time.Since(start)
-			
+
 			if err == nil {
 				totalDuration += duration
 				successCount++
@@ -212,7 +212,7 @@ func compareResults(wrapperResults, adapterResults []BenchmarkResult) {
 				if wrapperResult.Duration > 0 {
 					pctDiff = float64(diff) / float64(wrapperResult.Duration) * 100
 				}
-				
+
 				if adapterResult.Duration < wrapperResult.Duration {
 					winner = "Adapter"
 				} else if wrapperResult.Duration < adapterResult.Duration {
@@ -238,7 +238,7 @@ func compareResults(wrapperResults, adapterResults []BenchmarkResult) {
 				if adapterResult.Error != nil {
 					adapterStatus = "FAILED"
 				}
-				
+
 				fmt.Printf("%-20s %15s %15s %10s %s\n",
 					adapterResult.Operation,
 					wrapperStatus,
@@ -270,9 +270,9 @@ func compareResults(wrapperResults, adapterResults []BenchmarkResult) {
 		}
 	}
 
-	fmt.Printf("Wrapper: %d/%d operations succeeded, Total time: %v\n", 
+	fmt.Printf("Wrapper: %d/%d operations succeeded, Total time: %v\n",
 		wrapperSuccesses, len(wrapperResults)-1, totalWrapperTime)
-	fmt.Printf("Adapter: %d/%d operations succeeded, Total time: %v\n", 
+	fmt.Printf("Adapter: %d/%d operations succeeded, Total time: %v\n",
 		adapterSuccesses, len(adapterResults)-1, totalAdapterTime)
 
 	if totalWrapperTime > 0 && totalAdapterTime > 0 {

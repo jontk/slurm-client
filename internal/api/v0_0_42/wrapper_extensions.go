@@ -6,8 +6,8 @@ package v0_0_42
 import (
 	"context"
 
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/internal/common"
-	"github.com/jontk/slurm-client/internal/interfaces"
 )
 
 // === Manager Methods ===

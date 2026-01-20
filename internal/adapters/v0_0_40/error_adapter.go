@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/jontk/slurm-client/pkg/errors"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
+	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // ErrorAdapter handles API-specific error conversion for v0.0.40
@@ -29,7 +29,7 @@ func (e *ErrorAdapter) HandleAPIResponse(statusCode int, body []byte, operation 
 
 	// Try to parse the error response
 	var apiResp struct {
-		Meta *api.V0040OpenapiMeta `json:"meta,omitempty"`
+		Meta   *api.V0040OpenapiMeta `json:"meta,omitempty"`
 		Errors []struct {
 			Error            *string `json:"error,omitempty"`
 			ErrorDescription *string `json:"error_description,omitempty"`

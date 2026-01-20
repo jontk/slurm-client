@@ -134,7 +134,7 @@ func (a *PartitionAdapter) Get(ctx context.Context, partitionName string) (*type
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(partitionName, "partitionName"); err != nil {
+	if err := a.ValidateResourceName(partitionName, "partition name"); err != nil {
 		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {

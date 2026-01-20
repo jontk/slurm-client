@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	"github.com/jontk/slurm-client/pkg/errors"
@@ -99,7 +99,7 @@ func (suite *V0043RealServerTestSuite) TestBasicConnectivity() {
 			suite.logError("Stats", err)
 		}
 		suite.Require().NoError(err)
-		suite.T().Logf("Cluster stats: Total nodes=%d, Running jobs=%d", 
+		suite.T().Logf("Cluster stats: Total nodes=%d, Running jobs=%d",
 			stats.TotalNodes, stats.RunningJobs)
 	})
 }
@@ -173,10 +173,10 @@ func (suite *V0043RealServerTestSuite) TestNodeManager() {
 		suite.Require().NoError(err)
 		suite.NotNil(nodes)
 		suite.T().Logf("Found %d nodes", len(nodes.Nodes))
-		
+
 		for i, node := range nodes.Nodes {
 			if i < 3 {
-				suite.T().Logf("  Node: %s, State: %s, CPUs: %d", 
+				suite.T().Logf("  Node: %s, State: %s, CPUs: %d",
 					node.Name, node.State, node.CPUs)
 			}
 		}
@@ -188,7 +188,7 @@ func (suite *V0043RealServerTestSuite) TestNodeManager() {
 			Limit: 1,
 		})
 		suite.Require().NoError(err)
-		
+
 		if len(nodes.Nodes) == 0 {
 			suite.T().Skip("No nodes found")
 			return
@@ -219,10 +219,10 @@ func (suite *V0043RealServerTestSuite) TestPartitionManager() {
 		suite.Require().NoError(err)
 		suite.NotNil(partitions)
 		suite.T().Logf("Found %d partitions", len(partitions.Partitions))
-		
+
 		for i, partition := range partitions.Partitions {
 			if i < 3 {
-				suite.T().Logf("  Partition: %s, State: %s, Nodes: %d", 
+				suite.T().Logf("  Partition: %s, State: %s, Nodes: %d",
 					partition.Name, partition.State, partition.TotalNodes)
 			}
 		}
@@ -237,7 +237,7 @@ func (suite *V0043RealServerTestSuite) TestQoSManager() {
 		qosList, err := suite.client.QoS().List(ctx, &interfaces.ListQoSOptions{
 			Limit: 10,
 		})
-		
+
 		if err != nil {
 			suite.logError("ListQoS", err)
 			// Check if it's a database connection error
@@ -246,7 +246,7 @@ func (suite *V0043RealServerTestSuite) TestQoSManager() {
 				return
 			}
 		}
-		
+
 		suite.Require().NoError(err)
 		suite.NotNil(qosList)
 		suite.T().Logf("Found %d QoS entries", len(qosList.QoS))
@@ -261,7 +261,7 @@ func (suite *V0043RealServerTestSuite) TestUserAccountManagement() {
 		users, err := suite.client.Users().List(ctx, &interfaces.ListUsersOptions{
 			Limit: 5,
 		})
-		
+
 		if err != nil {
 			suite.logError("ListUsers", err)
 			if suite.isDatabaseError(err) {
@@ -269,7 +269,7 @@ func (suite *V0043RealServerTestSuite) TestUserAccountManagement() {
 				return
 			}
 		}
-		
+
 		suite.Require().NoError(err)
 		suite.NotNil(users)
 		suite.T().Logf("Found %d users", len(users.Users))
@@ -279,7 +279,7 @@ func (suite *V0043RealServerTestSuite) TestUserAccountManagement() {
 		accounts, err := suite.client.Accounts().List(ctx, &interfaces.ListAccountsOptions{
 			Limit: 5,
 		})
-		
+
 		if err != nil {
 			suite.logError("ListAccounts", err)
 			if suite.isDatabaseError(err) {
@@ -287,7 +287,7 @@ func (suite *V0043RealServerTestSuite) TestUserAccountManagement() {
 				return
 			}
 		}
-		
+
 		suite.Require().NoError(err)
 		suite.NotNil(accounts)
 		suite.T().Logf("Found %d accounts", len(accounts.Accounts))
@@ -308,7 +308,7 @@ func (suite *V0043RealServerTestSuite) TestV0043SpecificFeatures() {
 		associations, err := suite.client.Associations().List(ctx, &interfaces.ListAssociationsOptions{
 			Limit: 5,
 		})
-		
+
 		if err != nil {
 			suite.logError("ListAssociations", err)
 			if suite.isDatabaseError(err) {
@@ -316,7 +316,7 @@ func (suite *V0043RealServerTestSuite) TestV0043SpecificFeatures() {
 				return
 			}
 		}
-		
+
 		suite.Require().NoError(err)
 		suite.NotNil(associations)
 		suite.T().Logf("Found %d associations", len(associations.Associations))
@@ -330,7 +330,7 @@ func (suite *V0043RealServerTestSuite) TestV0043SpecificFeatures() {
 		}
 
 		clusters, err := suite.client.Clusters().List(ctx, nil)
-		
+
 		if err != nil {
 			suite.logError("ListClusters", err)
 			if suite.isDatabaseError(err) {
@@ -338,7 +338,7 @@ func (suite *V0043RealServerTestSuite) TestV0043SpecificFeatures() {
 				return
 			}
 		}
-		
+
 		suite.Require().NoError(err)
 		suite.NotNil(clusters)
 		suite.T().Logf("Found %d clusters", len(clusters.Clusters))
@@ -366,7 +366,7 @@ func (suite *V0043RealServerTestSuite) TestReservationManager() {
 
 func (suite *V0043RealServerTestSuite) logError(operation string, err error) {
 	suite.T().Logf("Error in %s: %v", operation, err)
-	
+
 	var slurmErr *errors.SlurmError
 	if goerrors.As(err, &slurmErr) {
 		suite.T().Logf("  Error Code: %s", slurmErr.Code)
@@ -375,7 +375,7 @@ func (suite *V0043RealServerTestSuite) logError(operation string, err error) {
 		suite.T().Logf("  Error Details: %s", slurmErr.Details)
 		suite.T().Logf("  Status Code: %d", slurmErr.StatusCode)
 	}
-	
+
 	var apiErr *errors.SlurmAPIError
 	if goerrors.As(err, &apiErr) {
 		suite.T().Logf("  API Error Number: %d", apiErr.ErrorNumber)
@@ -383,7 +383,7 @@ func (suite *V0043RealServerTestSuite) logError(operation string, err error) {
 		suite.T().Logf("  API Error Source: %s", apiErr.Source)
 		if len(apiErr.Errors) > 0 {
 			for i, detail := range apiErr.Errors {
-				suite.T().Logf("  API Error Detail %d: [%d] %s - %s (source: %s)", 
+				suite.T().Logf("  API Error Detail %d: [%d] %s - %s (source: %s)",
 					i+1, detail.ErrorNumber, detail.ErrorCode, detail.Description, detail.Source)
 			}
 		}
@@ -394,7 +394,7 @@ func (suite *V0043RealServerTestSuite) isDatabaseError(err error) bool {
 	if err == nil {
 		return false
 	}
-	
+
 	errStr := err.Error()
 	return v0043Contains(errStr, "Unable to connect to database") ||
 		v0043Contains(errStr, "Failed to open slurmdbd connection") ||
@@ -404,10 +404,10 @@ func (suite *V0043RealServerTestSuite) isDatabaseError(err error) bool {
 }
 
 func v0043Contains(str, substr string) bool {
-	return len(substr) > 0 && len(str) >= len(substr) && 
-		(str == substr || len(str) > len(substr) && 
-		(str[:len(substr)] == substr || str[len(str)-len(substr):] == substr ||
-		v0043FindSubstring(str, substr) >= 0))
+	return len(substr) > 0 && len(str) >= len(substr) &&
+		(str == substr || len(str) > len(substr) &&
+			(str[:len(substr)] == substr || str[len(str)-len(substr):] == substr ||
+				v0043FindSubstring(str, substr) >= 0))
 }
 
 func v0043FindSubstring(str, substr string) int {

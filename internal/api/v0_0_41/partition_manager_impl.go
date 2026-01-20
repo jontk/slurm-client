@@ -6,7 +6,7 @@ package v0_0_41
 import (
 	"context"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -22,22 +22,78 @@ func NewPartitionManagerImpl(client *WrapperClient) *PartitionManagerImpl {
 
 // List partitions with optional filtering
 func (m *PartitionManagerImpl) List(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error) {
-	// Note: v0.0.41 has complex inline struct for partitions
-	// Return basic error for now
-	return nil, errors.NewClientError(
-		errors.ErrorCodeUnsupportedOperation,
-		"Partition listing not implemented for v0.0.41",
-		"The v0.0.41 partition response uses complex inline structs that differ significantly from other API versions",
-	)
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Call the GetPartitions API
+	resp, err := m.client.apiClient.SlurmV0041GetPartitionsWithResponse(ctx, nil)
+	if err != nil {
+		wrappedErr := errors.WrapError(err)
+		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.41")
+	}
+
+	// Check HTTP status
+	if resp.StatusCode() != 200 {
+		var responseBody []byte
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.41")
+		return nil, httpErr
+	}
+
+	// Check for unexpected response format
+	if resp.JSON200 == nil || len(resp.JSON200.Partitions) == 0 {
+		return &interfaces.PartitionList{Partitions: []interfaces.Partition{}, Total: 0}, nil
+	}
+
+	// Minimal conversion for v0.0.41 - just extract partition names
+	partitions := make([]interfaces.Partition, 0, len(resp.JSON200.Partitions))
+	for _, apiPart := range resp.JSON200.Partitions {
+		partition := interfaces.Partition{
+			Name: *apiPart.Name,
+		}
+		partitions = append(partitions, partition)
+	}
+
+	return &interfaces.PartitionList{
+		Partitions: partitions,
+		Total:      len(partitions),
+	}, nil
 }
 
 // Get retrieves a specific partition by name
 func (m *PartitionManagerImpl) Get(ctx context.Context, partitionName string) (*interfaces.Partition, error) {
-	return nil, errors.NewClientError(
-		errors.ErrorCodeUnsupportedOperation,
-		"Partition retrieval not implemented for v0.0.41",
-		"The v0.0.41 partition response uses complex inline structs that differ significantly from other API versions",
-	)
+	// Check if API client is available
+	if m.client.apiClient == nil {
+		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
+	}
+
+	// Call the GetPartition API
+	resp, err := m.client.apiClient.SlurmV0041GetPartitionWithResponse(ctx, partitionName, nil)
+	if err != nil {
+		wrappedErr := errors.WrapError(err)
+		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.41")
+	}
+
+	// Check HTTP status
+	if resp.StatusCode() != 200 {
+		var responseBody []byte
+		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.41")
+		return nil, httpErr
+	}
+
+	// Check for unexpected response format
+	if resp.JSON200 == nil || len(resp.JSON200.Partitions) == 0 {
+		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected response format")
+	}
+
+	// Minimal conversion for v0.0.41
+	apiPart := resp.JSON200.Partitions[0]
+	partition := &interfaces.Partition{
+		Name: *apiPart.Name,
+	}
+
+	return partition, nil
 }
 
 // Update updates partition properties

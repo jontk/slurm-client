@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 	"github.com/jontk/slurm-client/pkg/auth"
 )
@@ -24,15 +24,15 @@ func TestAdapterPatternWithMockServer(t *testing.T) {
 	// Create a mock server that simulates SLURM REST API
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/slurm/v0.0.43/slurmdb/qos/":
+		case "/slurmdb/v0.0.43/qos/":
 			handleListQoS(t, w, r)
-		case "/slurm/v0.0.43/slurmdb/qos/high-priority":
+		case "/slurmdb/v0.0.43/qos/high-priority":
 			handleGetQoS(t, w, r)
-		case "/slurm/v0.0.43/slurmdb/qos":
+		case "/slurmdb/v0.0.43/qos":
 			if r.Method == http.MethodPost {
 				handleCreateQoS(t, w, r)
 			}
-		case "/slurm/v0.0.43/slurmdb/qos/test-qos":
+		case "/slurmdb/v0.0.43/qos/test-qos":
 			if r.Method == http.MethodDelete {
 				handleDeleteQoS(t, w, r)
 			}
@@ -59,12 +59,12 @@ func TestAdapterPatternWithMockServer(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, qosList)
 		assert.Len(t, qosList.QoS, 2)
-		
+
 		// Check first QoS
 		assert.Equal(t, "normal", qosList.QoS[0].Name)
 		assert.Equal(t, 100, qosList.QoS[0].Priority)
 		assert.Equal(t, 1.0, qosList.QoS[0].UsageFactor)
-		
+
 		// Check limits conversion
 		assert.Equal(t, 300, qosList.QoS[0].GraceTime)
 		assert.Equal(t, 10, qosList.QoS[0].MaxJobsPerUser)
@@ -82,16 +82,16 @@ func TestAdapterPatternWithMockServer(t *testing.T) {
 
 	t.Run("Create QoS", func(t *testing.T) {
 		createReq := &interfaces.QoSCreate{
-			Name:        "test-qos",
-			Description: "Test QoS created via adapter",
-			Priority:        500,
-			Flags:           []string{"DenyOnLimit"},
-			UsageFactor:     2.0,
-			GraceTime:       600,
-			MaxJobsPerUser:  20,
+			Name:              "test-qos",
+			Description:       "Test QoS created via adapter",
+			Priority:          500,
+			Flags:             []string{"DenyOnLimit"},
+			UsageFactor:       2.0,
+			GraceTime:         600,
+			MaxJobsPerUser:    20,
 			MaxJobsPerAccount: 100,
 		}
-		
+
 		resp, err := client.QoS().Create(ctx, createReq)
 		require.NoError(t, err)
 		assert.NotNil(t, resp)
@@ -269,7 +269,7 @@ func handleListQoS(t *testing.T, w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
@@ -287,7 +287,7 @@ func handleGetQoS(t *testing.T, w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
@@ -297,7 +297,7 @@ func handleCreateQoS(t *testing.T, w http.ResponseWriter, r *http.Request) {
 	response := api.V0043OpenapiSlurmdbdQosResp{
 		Errors: &api.V0043OpenapiErrors{},
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
@@ -311,10 +311,6 @@ func handleDeleteQoS(t *testing.T, w http.ResponseWriter, r *http.Request) {
 // Helper functions for adapter pattern test
 func apStringPtr(s string) *string {
 	return &s
-}
-
-func apIntPtr(i int) *int {
-	return &i
 }
 
 func apInt32Ptr(i int32) *int32 {

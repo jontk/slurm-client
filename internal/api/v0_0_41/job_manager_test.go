@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/internal/testutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -46,7 +46,7 @@ func TestJobManager_Get_Structure(t *testing.T) {
 }
 
 func TestJobManager_Submit_NotImplemented(t *testing.T) {
-	// Test that Submit returns not implemented error
+	// Test that Submit returns client error when client is not initialized
 	jobManager := &JobManager{
 		client: &WrapperClient{},
 	}
@@ -59,9 +59,9 @@ func TestJobManager_Submit_NotImplemented(t *testing.T) {
 
 	_, err := jobManager.Submit(context.Background(), jobSub)
 
-	// v0.0.41 Submit is not implemented
+	// Should return client not initialized error
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not implemented")
+	assert.Contains(t, err.Error(), "client not initialized")
 	// The impl should now be created
 	assert.NotNil(t, jobManager.impl)
 }
@@ -82,16 +82,16 @@ func TestJobManager_Cancel_Structure(t *testing.T) {
 }
 
 func TestJobManager_Update_NotImplemented(t *testing.T) {
-	// Test that Update returns not implemented error
+	// Test that Update returns client error when client is not initialized
 	jobManager := &JobManager{
 		client: &WrapperClient{},
 	}
 
 	err := jobManager.Update(context.Background(), "12345", &interfaces.JobUpdate{Priority: testutil.IntPtr(100)})
 
-	// v0.0.41 Update is not implemented
+	// Should return client not initialized error
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not implemented")
+	assert.Contains(t, err.Error(), "client not initialized")
 	// The impl should now be created
 	assert.NotNil(t, jobManager.impl)
 }
@@ -157,4 +157,3 @@ func TestFilterJobs(t *testing.T) {
 	assert.Len(t, filtered, 1)
 	assert.Equal(t, "2", filtered[0].ID)
 }
-

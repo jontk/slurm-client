@@ -6,9 +6,9 @@ package v0_0_40
 import (
 	"context"
 
+	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/pkg/errors"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 )
 
 // StandaloneAdapter implements the standalone operations for v0.0.40

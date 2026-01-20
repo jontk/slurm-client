@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 )
 
 // WebSocketServer provides a WebSocket interface for SLURM events
@@ -60,12 +60,12 @@ type StreamRequest struct {
 
 // JobStreamOptions for job streaming
 type JobStreamOptions struct {
-	UserID          string   `json:"user_id,omitempty"`
-	States          []string `json:"states,omitempty"`
-	Partition       string   `json:"partition,omitempty"`
-	JobIDs          []string `json:"job_ids,omitempty"`
-	ExcludeNew      bool     `json:"exclude_new,omitempty"`
-	ExcludeCompleted bool    `json:"exclude_completed,omitempty"`
+	UserID           string   `json:"user_id,omitempty"`
+	States           []string `json:"states,omitempty"`
+	Partition        string   `json:"partition,omitempty"`
+	JobIDs           []string `json:"job_ids,omitempty"`
+	ExcludeNew       bool     `json:"exclude_new,omitempty"`
+	ExcludeCompleted bool     `json:"exclude_completed,omitempty"`
 }
 
 // NodeStreamOptions for node streaming
@@ -89,7 +89,11 @@ func (ws *WebSocketServer) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 		log.Printf("WebSocket upgrade error: %v", err)
 		return
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Printf("WebSocket close error: %v", err)
+		}
+	}()
 
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()

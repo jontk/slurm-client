@@ -13,13 +13,13 @@ import (
 func (a *AccountAdapter) convertAPIAccountToCommon(apiAccount interface{}) (*types.Account, error) {
 	// Type assertion to handle the anonymous struct - simplified to avoid undefined types
 	accountData, ok := apiAccount.(struct {
-		Name            *string   `json:"name,omitempty"`
-		Description     *string   `json:"description,omitempty"`
-		Organization    *string   `json:"organization,omitempty"`
-		Coordinators    *[]struct {
+		Name         *string `json:"name,omitempty"`
+		Description  *string `json:"description,omitempty"`
+		Organization *string `json:"organization,omitempty"`
+		Coordinators *[]struct {
 			Name *string `json:"name,omitempty"`
 		} `json:"coordinators,omitempty"`
-		Flags           *[]string `json:"flags,omitempty"`
+		Flags *[]string `json:"flags,omitempty"`
 	})
 	if !ok {
 		return nil, fmt.Errorf("unexpected account data type")
@@ -67,9 +67,9 @@ func (a *AccountAdapter) convertCommonToAPIAccount(account *types.Account) inter
 	// without relying on undefined specific types
 	req := struct {
 		Accounts []struct {
-			Name         *string   `json:"name,omitempty"`
-			Description  *string   `json:"description,omitempty"`
-			Organization *string   `json:"organization,omitempty"`
+			Name         *string `json:"name,omitempty"`
+			Description  *string `json:"description,omitempty"`
+			Organization *string `json:"organization,omitempty"`
 			Coordinators *[]struct {
 				Name *string `json:"name,omitempty"`
 			} `json:"coordinators,omitempty"`
@@ -77,9 +77,9 @@ func (a *AccountAdapter) convertCommonToAPIAccount(account *types.Account) inter
 		} `json:"accounts"`
 	}{
 		Accounts: []struct {
-			Name         *string   `json:"name,omitempty"`
-			Description  *string   `json:"description,omitempty"`
-			Organization *string   `json:"organization,omitempty"`
+			Name         *string `json:"name,omitempty"`
+			Description  *string `json:"description,omitempty"`
+			Organization *string `json:"organization,omitempty"`
 			Coordinators *[]struct {
 				Name *string `json:"name,omitempty"`
 			} `json:"coordinators,omitempty"`
@@ -120,38 +120,6 @@ func (a *AccountAdapter) convertCommonToAPIAccount(account *types.Account) inter
 			})
 		}
 		acc.Coordinators = &coords
-	}
-
-	return req
-}
-
-// convertCommonToAPIAccountUpdate converts common AccountUpdate to v0.0.41 API request
-func (a *AccountAdapter) convertCommonToAPIAccountUpdate(update *types.AccountUpdate) interface{} {
-	// For v0.0.41, updates are done by sending the full account object
-	// Return a simplified structure for update operations
-	req := struct {
-		Accounts []struct {
-			Description  *string   `json:"description,omitempty"`
-			Organization *string   `json:"organization,omitempty"`
-			Coordinators []string  `json:"coordinators,omitempty"`
-		} `json:"accounts"`
-	}{
-		Accounts: []struct {
-			Description  *string   `json:"description,omitempty"`
-			Organization *string   `json:"organization,omitempty"`
-			Coordinators []string  `json:"coordinators,omitempty"`
-		}{{}},
-	}
-
-	acc := &req.Accounts[0]
-	if update.Description != nil {
-		acc.Description = update.Description
-	}
-	if update.Organization != nil {
-		acc.Organization = update.Organization
-	}
-	if len(update.Coordinators) > 0 {
-		acc.Coordinators = update.Coordinators
 	}
 
 	return req

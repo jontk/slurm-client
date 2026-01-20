@@ -48,7 +48,7 @@ func handleConnectionErrors(ctx context.Context) {
 		slurm.WithAuth(auth.NewTokenAuth("token")),
 		slurm.WithTimeout(5*time.Second),
 	)
-	
+
 	if err != nil {
 		// Check for specific error types
 		var netErr net.Error
@@ -84,7 +84,7 @@ func handleAuthErrors(ctx context.Context) {
 		var slurmErr *slurmErrors.SlurmError
 		if errors.As(err, &slurmErr) {
 			fmt.Printf("SLURM Error: %s (Code: %s)\n", slurmErr.Message, slurmErr.Code)
-			
+
 			// Check specific error types
 			switch slurmErr.Code {
 			case slurmErrors.ErrorCodeInvalidCredentials:
@@ -178,7 +178,7 @@ func handleRetryAndRecovery(ctx context.Context) {
 	// Implement custom retry logic
 	var jobList *slurm.JobList
 	maxAttempts := 3
-	
+
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		jobList, err = client.Jobs().List(ctx, nil)
 		if err == nil {
@@ -190,18 +190,18 @@ func handleRetryAndRecovery(ctx context.Context) {
 		if errors.As(err, &slurmErr) {
 			// Don't retry on client errors
 			if slurmErr.Code == slurmErrors.ErrorCodeInvalidRequest ||
-			   slurmErr.Code == slurmErrors.ErrorCodeInvalidCredentials ||
-			   slurmErr.Code == slurmErrors.ErrorCodePermissionDenied {
+				slurmErr.Code == slurmErrors.ErrorCodeInvalidCredentials ||
+				slurmErr.Code == slurmErrors.ErrorCodePermissionDenied {
 				fmt.Printf("Client error (not retrying): %v\n", err)
 				break
 			}
-			
+
 			// Check if error is retryable
 			if slurmErr.Code == slurmErrors.ErrorCodeServerInternal ||
-			   slurmErr.Code == slurmErrors.ErrorCodeRateLimited {
+				slurmErr.Code == slurmErrors.ErrorCodeRateLimited {
 				if attempt < maxAttempts {
 					backoff := time.Duration(attempt) * time.Second
-					fmt.Printf("Attempt %d failed: %v. Retrying in %v...\n", 
+					fmt.Printf("Attempt %d failed: %v. Retrying in %v...\n",
 						attempt, err, backoff)
 					time.Sleep(backoff)
 					continue
@@ -218,7 +218,8 @@ func handleRetryAndRecovery(ctx context.Context) {
 	}
 }
 
-// Example of a robust operation wrapper
+// Example of a robust operation wrapper - commented out as unused
+/*
 func robustOperation[T any](
 	ctx context.Context,
 	operation func() (T, error),
@@ -268,3 +269,4 @@ func robustOperation[T any](
 
 	return result, err
 }
+*/

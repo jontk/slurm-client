@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 	"github.com/jontk/slurm-client/pkg/watch"
 )
@@ -513,14 +513,14 @@ func (m *NodeManagerImpl) Drain(ctx context.Context, nodeName string, reason str
 	if m.client.apiClient == nil {
 		return errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
-	
+
 	// Create node update with DRAIN state
 	drainState := "DRAIN"
 	update := &interfaces.NodeUpdate{
 		State:  &drainState,
 		Reason: &reason,
 	}
-	
+
 	return m.Update(ctx, nodeName, update)
 }
 
@@ -530,13 +530,13 @@ func (m *NodeManagerImpl) Resume(ctx context.Context, nodeName string) error {
 	if m.client.apiClient == nil {
 		return errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
-	
-	// Create node update with RESUME state  
+
+	// Create node update with RESUME state
 	resumeState := "RESUME"
 	update := &interfaces.NodeUpdate{
 		State: &resumeState,
 	}
-	
+
 	return m.Update(ctx, nodeName, update)
 }
 

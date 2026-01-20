@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/internal/adapters/common"
 	v040adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_40"
 	v041adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_41"
@@ -21,7 +22,6 @@ import (
 	v042api "github.com/jontk/slurm-client/internal/api/v0_0_42"
 	v043api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 	v044api "github.com/jontk/slurm-client/internal/api/v0_0_44"
-	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/internal/common/types"
 )
 
@@ -225,8 +225,8 @@ func (m *adapterJobManager) List(ctx context.Context, opts *interfaces.ListJobsO
 	// Convert options
 	adapterOpts := &types.JobListOptions{}
 	if opts != nil {
-		adapterOpts.Users = []string{opts.UserID}  // Convert UserID to array
-		adapterOpts.Partitions = []string{opts.Partition}  // Convert Partition to array
+		adapterOpts.Users = []string{opts.UserID}         // Convert UserID to array
+		adapterOpts.Partitions = []string{opts.Partition} // Convert Partition to array
 		adapterOpts.Limit = opts.Limit
 		adapterOpts.Offset = opts.Offset
 		// Convert states
@@ -243,7 +243,7 @@ func (m *adapterJobManager) List(ctx context.Context, opts *interfaces.ListJobsO
 
 	// Convert result
 	jobList := &interfaces.JobList{
-		Jobs: make([]interfaces.Job, 0, len(result.Jobs)),
+		Jobs:  make([]interfaces.Job, 0, len(result.Jobs)),
 		Total: len(result.Jobs), // Use actual count since Meta may not exist
 	}
 
@@ -260,7 +260,7 @@ func (m *adapterJobManager) Get(ctx context.Context, jobID string) (*interfaces.
 	if err != nil {
 		return nil, fmt.Errorf("invalid job ID: %w", err)
 	}
-	
+
 	job, err := m.adapter.Get(ctx, int32(jobIDInt))
 	if err != nil {
 		return nil, err
@@ -277,7 +277,7 @@ func (m *adapterJobManager) Submit(ctx context.Context, job *interfaces.JobSubmi
 		Account:          job.Account,
 		Script:           job.Script,
 		Command:          job.Command,
-		Partition:        job.Partition,  
+		Partition:        job.Partition,
 		CPUs:             int32(job.CPUs),
 		TimeLimit:        int32(job.TimeLimit),
 		WorkingDirectory: job.WorkingDir,
@@ -310,13 +310,13 @@ func (m *adapterJobManager) Update(ctx context.Context, jobID string, update *in
 	adapterUpdate := &types.JobUpdate{
 		Name: update.Name,
 	}
-	
+
 	// Convert time limit if present
 	if update.TimeLimit != nil {
 		timeLimit := int32(*update.TimeLimit)
 		adapterUpdate.TimeLimit = &timeLimit
 	}
-	
+
 	// Convert priority if present
 	if update.Priority != nil {
 		priority := int32(*update.Priority)
@@ -406,7 +406,7 @@ func (m *adapterJobManager) Requeue(ctx context.Context, jobID string) error {
 func (m *adapterJobManager) Watch(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
 	// Convert WatchJobsOptions to types.JobWatchOptions
 	adapterOpts := &types.JobWatchOptions{}
-	
+
 	if opts != nil {
 		// Convert JobIDs from []string to []int32
 		if len(opts.JobIDs) > 0 {
@@ -416,26 +416,26 @@ func (m *adapterJobManager) Watch(ctx context.Context, opts *interfaces.WatchJob
 				adapterOpts.JobID = int32(jobIDInt)
 			}
 		}
-		
+
 		// Convert state filters
 		if len(opts.States) > 0 {
 			adapterOpts.EventTypes = opts.States
 		}
 	}
-	
+
 	// Call adapter's Watch method
 	adapterEventChan, err := m.adapter.Watch(ctx, adapterOpts)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Create interface event channel
 	interfaceEventChan := make(chan interfaces.JobEvent, 10)
-	
+
 	// Start goroutine to convert events
 	go func() {
 		defer close(interfaceEventChan)
-		
+
 		for adapterEvent := range adapterEventChan {
 			// Convert types.JobWatchEvent to interfaces.JobEvent
 			interfaceEvent := interfaces.JobEvent{
@@ -445,7 +445,7 @@ func (m *adapterJobManager) Watch(ctx context.Context, opts *interfaces.WatchJob
 				NewState:  string(adapterEvent.NewState),
 				Timestamp: adapterEvent.EventTime,
 			}
-			
+
 			select {
 			case interfaceEventChan <- interfaceEvent:
 			case <-ctx.Done():
@@ -453,7 +453,7 @@ func (m *adapterJobManager) Watch(ctx context.Context, opts *interfaces.WatchJob
 			}
 		}
 	}()
-	
+
 	return interfaceEventChan, nil
 }
 
@@ -565,7 +565,7 @@ func convertJobToInterface(job types.Job) interfaces.Job {
 	if job.NodeList != "" {
 		nodes = []string{job.NodeList} // Simple conversion - could be improved to split properly
 	}
-	
+
 	return interfaces.Job{
 		ID:          fmt.Sprintf("%d", job.JobID),
 		Name:        job.Name,
@@ -677,39 +677,39 @@ func (m *adapterNodeManager) Update(ctx context.Context, nodeName string, update
 func (m *adapterNodeManager) Watch(ctx context.Context, opts *interfaces.WatchNodesOptions) (<-chan interfaces.NodeEvent, error) {
 	// Convert WatchNodesOptions to types.NodeWatchOptions
 	adapterOpts := &types.NodeWatchOptions{}
-	
+
 	if opts != nil {
 		// Convert node names
 		if len(opts.NodeNames) > 0 {
 			adapterOpts.NodeNames = opts.NodeNames
 		}
-		
+
 		// Convert states
 		if len(opts.States) > 0 {
 			for _, state := range opts.States {
 				adapterOpts.States = append(adapterOpts.States, types.NodeState(state))
 			}
 		}
-		
+
 		// Convert partition
 		if opts.Partition != "" {
 			adapterOpts.Partitions = []string{opts.Partition}
 		}
 	}
-	
+
 	// Call adapter's Watch method
 	adapterEventChan, err := m.adapter.Watch(ctx, adapterOpts)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Create interface event channel
 	interfaceEventChan := make(chan interfaces.NodeEvent, 10)
-	
+
 	// Start goroutine to convert events
 	go func() {
 		defer close(interfaceEventChan)
-		
+
 		for adapterEvent := range adapterEventChan {
 			// Convert types.NodeWatchEvent to interfaces.NodeEvent
 			interfaceEvent := interfaces.NodeEvent{
@@ -719,7 +719,7 @@ func (m *adapterNodeManager) Watch(ctx context.Context, opts *interfaces.WatchNo
 				NewState:  string(adapterEvent.NewState),
 				Timestamp: adapterEvent.EventTime,
 			}
-			
+
 			select {
 			case interfaceEventChan <- interfaceEvent:
 			case <-ctx.Done():
@@ -727,7 +727,7 @@ func (m *adapterNodeManager) Watch(ctx context.Context, opts *interfaces.WatchNo
 			}
 		}
 	}()
-	
+
 	return interfaceEventChan, nil
 }
 
@@ -847,7 +847,7 @@ func (m *adapterPartitionManager) Create(ctx context.Context, partition *interfa
 		State:            types.PartitionState(partition.State),
 		Priority:         int32(partition.Priority),
 	}
-	
+
 	// Handle allowed/denied users
 	if len(partition.AllowedUsers) > 0 {
 		adapterCreate.AllowAccounts = partition.AllowedUsers
@@ -855,13 +855,13 @@ func (m *adapterPartitionManager) Create(ctx context.Context, partition *interfa
 	if len(partition.DeniedUsers) > 0 {
 		adapterCreate.DenyAccounts = partition.DeniedUsers
 	}
-	
+
 	// Call adapter
 	resp, err := m.adapter.Create(ctx, adapterCreate)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &interfaces.PartitionCreateResponse{
 		PartitionName: resp.PartitionName,
 	}, nil
@@ -939,7 +939,7 @@ func convertUserToInterface(user types.User) interfaces.User {
 			// Other fields would need to be populated from associations
 		})
 	}
-	
+
 	// Convert coordinators
 	coordinatorAccounts := make([]string, 0, len(user.Coordinators))
 	for _, coord := range user.Coordinators {
@@ -954,9 +954,9 @@ func convertUserToInterface(user types.User) interfaces.User {
 		AdminLevel:          string(user.AdminLevel),
 		CoordinatorAccounts: coordinatorAccounts,
 		Accounts:            accounts,
-		Quotas:              nil, // Would need proper conversion
-		FairShare:           nil, // Would need proper conversion
-		Associations:        nil, // Would need proper conversion
+		Quotas:              nil,        // Would need proper conversion
+		FairShare:           nil,        // Would need proper conversion
+		Associations:        nil,        // Would need proper conversion
 		Created:             time.Now(), // Not available in types.User
 		Modified:            time.Now(), // Not available in types.User,
 		Metadata:            nil,
@@ -1063,7 +1063,7 @@ func (m *adapterInfoManager) Version(ctx context.Context) (*interfaces.APIVersio
 	}, nil
 }
 
-// PingDatabase tests connectivity to the SLURM database (not supported by legacy adapters)  
+// PingDatabase tests connectivity to the SLURM database (not supported by legacy adapters)
 func (m *adapterInfoManager) PingDatabase(ctx context.Context) error {
 	return fmt.Errorf("database ping not supported by legacy adapters")
 }
@@ -1192,8 +1192,8 @@ func (m *adapterAccountManager) Get(ctx context.Context, accountName string) (*i
 func (m *adapterAccountManager) Create(ctx context.Context, account *interfaces.AccountCreate) (*interfaces.AccountCreateResponse, error) {
 	// Convert create request
 	adapterCreate := &types.AccountCreate{
-		Name:        account.Name,
-		Description: account.Description,
+		Name:         account.Name,
+		Description:  account.Description,
 		Organization: account.Organization,
 		// Add other fields as needed
 	}
@@ -1212,7 +1212,7 @@ func (m *adapterAccountManager) Create(ctx context.Context, account *interfaces.
 func (m *adapterAccountManager) Update(ctx context.Context, accountName string, update *interfaces.AccountUpdate) error {
 	// Convert update request
 	adapterUpdate := &types.AccountUpdate{
-		Description: update.Description,
+		Description:  update.Description,
 		Organization: update.Organization,
 		// Add other fields as needed
 	}
@@ -1358,13 +1358,13 @@ func (m *adapterUserManager) Create(ctx context.Context, user *interfaces.UserCr
 		AdminLevel:     types.AdminLevel(user.AdminLevel),
 		// Add other fields as needed
 	}
-	
+
 	// Call adapter
 	resp, err := m.adapter.Create(ctx, adapterCreate)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &interfaces.UserCreateResponse{
 		UserName: resp.UserName,
 	}, nil
@@ -1387,7 +1387,7 @@ func (m *adapterUserManager) Update(ctx context.Context, userName string, update
 		}
 		// Add other fields as needed
 	}
-	
+
 	return m.adapter.Update(ctx, userName, adapterUpdate)
 }
 
@@ -1501,7 +1501,7 @@ func (m *adapterReservationManager) Update(ctx context.Context, reservationName 
 		if update.Accounts != nil {
 			adapterUpdate.Accounts = update.Accounts
 		}
-		if update.Nodes != nil && len(update.Nodes) > 0 {
+		if len(update.Nodes) > 0 {
 			nodeList := strings.Join(update.Nodes, ",")
 			adapterUpdate.NodeList = &nodeList
 		}
@@ -1519,7 +1519,7 @@ func (m *adapterReservationManager) Update(ctx context.Context, reservationName 
 			duration := int32(*update.Duration)
 			adapterUpdate.Duration = &duration
 		}
-		if update.Flags != nil && len(update.Flags) > 0 {
+		if len(update.Flags) > 0 {
 			adapterUpdate.Flags = make([]types.ReservationFlag, len(update.Flags))
 			for i, flag := range update.Flags {
 				adapterUpdate.Flags[i] = types.ReservationFlag(flag)
@@ -1659,7 +1659,7 @@ func (m *adapterAssociationManager) Create(ctx context.Context, associations []*
 	// We can't reconstruct the association details from the response
 	return &interfaces.AssociationCreateResponse{
 		Associations: []*interfaces.Association{}, // Empty since we don't have details in response
-		Created:      1, // Assume success if no error
+		Created:      1,                           // Assume success if no error
 		Updated:      0,
 		Errors:       nil,
 		Warnings:     nil,

@@ -138,7 +138,7 @@ func (a *PartitionAdapter) Get(ctx context.Context, partitionName string) (*type
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(partitionName, "partitionName"); err != nil {
+	if err := a.ValidateResourceName(partitionName, "partition name"); err != nil {
 		return nil, err
 	}
 	if err := a.CheckClientInitialized(a.client); err != nil {
@@ -212,71 +212,6 @@ func (a *PartitionAdapter) Delete(ctx context.Context, partitionName string) err
 		errors.ErrorCodeUnsupportedOperation,
 		"partition deletion not supported in v0.0.43",
 		"Method not allowed (405)")
-}
-
-// validatePartitionCreate validates partition creation request
-func (a *PartitionAdapter) validatePartitionCreate(partition *types.PartitionCreate) error {
-	if partition == nil {
-		return common.NewValidationError("partition creation data is required", "partition", nil)
-	}
-	if partition.Name == "" {
-		return common.NewValidationError("partition name is required", "name", partition.Name)
-	}
-	// Validate numeric fields
-	if partition.MaxNodes < 0 {
-		return common.NewValidationError("max nodes must be non-negative", "maxNodes", partition.MaxNodes)
-	}
-	if partition.MinNodes < 0 {
-		return common.NewValidationError("min nodes must be non-negative", "minNodes", partition.MinNodes)
-	}
-	if partition.MinNodes > 0 && partition.MaxNodes > 0 && partition.MinNodes > partition.MaxNodes {
-		return common.NewValidationError("min nodes cannot be greater than max nodes", "minNodes/maxNodes", nil)
-	}
-	if partition.DefaultTime < 0 {
-		return common.NewValidationError("default time must be non-negative", "defaultTime", partition.DefaultTime)
-	}
-	if partition.MaxTime < 0 {
-		return common.NewValidationError("max time must be non-negative", "maxTime", partition.MaxTime)
-	}
-	if partition.Priority < 0 {
-		return common.NewValidationError("priority must be non-negative", "priority", partition.Priority)
-	}
-	return nil
-}
-
-// validatePartitionUpdate validates partition update request
-func (a *PartitionAdapter) validatePartitionUpdate(update *types.PartitionUpdate) error {
-	if update == nil {
-		return common.NewValidationError("partition update data is required", "update", nil)
-	}
-	// At least one field should be provided for update
-	if update.State == nil && update.AllowAccounts == nil && update.DenyAccounts == nil &&
-		update.AllowQoS == nil && update.DenyQoS == nil && update.MaxNodes == nil &&
-		update.MinNodes == nil && update.DefaultTime == nil && update.MaxTime == nil &&
-		update.Priority == nil && update.Hidden == nil && update.RootOnly == nil {
-		return common.NewValidationError("at least one field must be provided for update", "update", update)
-	}
-
-	// Validate numeric fields if provided
-	if update.MaxNodes != nil && *update.MaxNodes < 0 {
-		return common.NewValidationError("max nodes must be non-negative", "maxNodes", *update.MaxNodes)
-	}
-	if update.MinNodes != nil && *update.MinNodes < 0 {
-		return common.NewValidationError("min nodes must be non-negative", "minNodes", *update.MinNodes)
-	}
-	if update.MinNodes != nil && update.MaxNodes != nil && *update.MinNodes > *update.MaxNodes {
-		return common.NewValidationError("min nodes cannot be greater than max nodes", "minNodes/maxNodes", nil)
-	}
-	if update.DefaultTime != nil && *update.DefaultTime < 0 {
-		return common.NewValidationError("default time must be non-negative", "defaultTime", *update.DefaultTime)
-	}
-	if update.MaxTime != nil && *update.MaxTime < 0 {
-		return common.NewValidationError("max time must be non-negative", "maxTime", *update.MaxTime)
-	}
-	if update.Priority != nil && *update.Priority < 0 {
-		return common.NewValidationError("priority must be non-negative", "priority", *update.Priority)
-	}
-	return nil
 }
 
 // filterPartitionList applies client-side filtering to partition list

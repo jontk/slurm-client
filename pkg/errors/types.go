@@ -6,6 +6,7 @@ package errors
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -20,7 +21,7 @@ const (
 	ErrorCodeTLSHandshake      ErrorCode = "TLS_HANDSHAKE"
 
 	// Authentication and authorization errors
-	ErrorCodeInvalidCredentials ErrorCode = "INVALID_CREDENTIALS"
+	ErrorCodeInvalidCredentials ErrorCode = "INVALID_CREDENTIALS" // #nosec G101 -- This is an error code constant, not hardcoded credentials
 	ErrorCodeTokenExpired       ErrorCode = "TOKEN_EXPIRED"
 	ErrorCodePermissionDenied   ErrorCode = "PERMISSION_DENIED"
 	ErrorCodeUnauthorized       ErrorCode = "UNAUTHORIZED"
@@ -111,7 +112,9 @@ func (e *SlurmError) IsRetryable() bool {
 // IsTemporary returns true if the error is likely temporary
 func (e *SlurmError) IsTemporary() bool {
 	return e.Category == CategoryNetwork ||
+		e.Category == CategoryContext ||
 		e.Code == ErrorCodeServerInternal ||
+		e.Code == ErrorCodeSlurmDaemonDown ||
 		e.Code == ErrorCodeResourceExhausted ||
 		e.Code == ErrorCodeRateLimited
 }
@@ -208,12 +211,30 @@ func NewValidationError(code ErrorCode, message, field string, value interface{}
 func NewSlurmAPIError(statusCode int, apiVersion string, details []SlurmAPIErrorDetail) *SlurmAPIError {
 	var code ErrorCode
 	var message string
+	var detailsStr string
 
 	if len(details) > 0 {
 		// Use first error for primary classification
 		primary := details[0]
 		code = mapSlurmErrorCodeToClientCode(primary.ErrorCode, statusCode)
 		message = primary.Description
+
+		// Build details string from error source and additional errors
+		if primary.Source != "" {
+			detailsStr = fmt.Sprintf("Source: %s", primary.Source)
+		}
+
+		// Add additional errors if present
+		if len(details) > 1 {
+			additionalErrors := make([]string, 0, len(details)-1)
+			for i := 1; i < len(details); i++ {
+				additionalErrors = append(additionalErrors, details[i].Description)
+			}
+			if detailsStr != "" {
+				detailsStr += "; "
+			}
+			detailsStr += fmt.Sprintf("Additional errors: %s", strings.Join(additionalErrors, "; "))
+		}
 	} else {
 		code = mapHTTPStatusToErrorCode(statusCode)
 		message = http.StatusText(statusCode)
@@ -224,6 +245,7 @@ func NewSlurmAPIError(statusCode int, apiVersion string, details []SlurmAPIError
 			Code:       code,
 			Category:   getErrorCategory(code),
 			Message:    message,
+			Details:    detailsStr,
 			Timestamp:  time.Now(),
 			StatusCode: statusCode,
 			APIVersion: apiVersion,
@@ -321,6 +343,9 @@ func mapSlurmErrorCodeToClientCode(slurmErrorCode string, statusCode int) ErrorC
 		return ErrorCodeConflict
 	case "SLURM_NODE_NOT_AVAIL":
 		return ErrorCodeResourceExhausted
+	case "VALIDATION_ERROR":
+		// Return the error code as-is for generic VALIDATION_ERROR
+		return ErrorCode(slurmErrorCode)
 	default:
 		// Fall back to HTTP status code mapping
 		return mapHTTPStatusToErrorCode(statusCode)

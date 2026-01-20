@@ -34,7 +34,7 @@ func (m *ReservationBaseManager) ValidateReservationCreate(reservation *types.Re
 		)
 	}
 
-	if err := m.ValidateResourceName(reservation.Name, "reservation.Name"); err != nil {
+	if err := m.ValidateResourceName(reservation.Name, "reservation name"); err != nil {
 		return err
 	}
 

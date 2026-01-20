@@ -35,12 +35,23 @@ func (f RoundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
 }
 
+// ContextKey is a custom type for context keys to avoid collisions
+type ContextKey string
+
+const (
+	// ContextKeyRequestID is the key for storing request IDs in context
+	ContextKeyRequestID ContextKey = "request_id"
+)
+
+// For backwards compatibility, keep private alias
+const contextKeyRequestID = ContextKeyRequestID
+
 // WithTimeout adds timeout handling to requests
 func WithTimeout(timeout time.Duration) Middleware {
 	return func(next http.RoundTripper) http.RoundTripper {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			ctx := req.Context()
-			
+
 			// Only add timeout if context doesn't already have a deadline
 			if _, hasDeadline := ctx.Deadline(); !hasDeadline && timeout > 0 {
 				var cancel context.CancelFunc
@@ -48,7 +59,7 @@ func WithTimeout(timeout time.Duration) Middleware {
 				defer cancel()
 				req = req.WithContext(ctx)
 			}
-			
+
 			return next.RoundTrip(req)
 		})
 	}
@@ -59,18 +70,18 @@ func WithLogging(logger logging.Logger) Middleware {
 	return func(next http.RoundTripper) http.RoundTripper {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			start := time.Now()
-			
+
 			// Log request
 			reqLogger := logging.LogAPICall(logger, req.Method, req.URL.Path,
 				"host", req.URL.Host,
 				"content_length", req.ContentLength,
 			)
-			
+
 			reqLogger.Debug("sending request")
-			
+
 			// Execute request
 			resp, err := next.RoundTrip(req)
-			
+
 			// Log response
 			duration := time.Since(start)
 			if err != nil {
@@ -79,13 +90,13 @@ func WithLogging(logger logging.Logger) Middleware {
 				)
 				return nil, err
 			}
-			
+
 			reqLogger.Info("request completed",
 				"status_code", resp.StatusCode,
 				"duration_ms", duration.Milliseconds(),
 				"content_length", resp.ContentLength,
 			)
-			
+
 			return resp, nil
 		})
 	}
@@ -97,27 +108,27 @@ func WithRetry(maxAttempts int, shouldRetry ShouldRetryFunc) Middleware {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			var lastErr error
 			var lastResp *http.Response
-			
+
 			for attempt := 0; attempt < maxAttempts; attempt++ {
 				// Clone request for retry
 				reqCopy := cloneRequest(req)
-				
+
 				resp, err := next.RoundTrip(reqCopy)
-				
+
 				// Check if we should retry
 				if !shouldRetry(resp, err, attempt) {
 					return resp, err
 				}
-				
+
 				// Close response body if present
 				if resp != nil && resp.Body != nil {
-					io.Copy(io.Discard, resp.Body)
-					resp.Body.Close()
+					_, _ = io.Copy(io.Discard, resp.Body) // Intentionally ignore error during cleanup
+					_ = resp.Body.Close()                 // Intentionally ignore error during cleanup
 				}
-				
+
 				lastErr = err
 				lastResp = resp
-				
+
 				// Calculate backoff
 				if attempt < maxAttempts-1 {
 					backoff := calculateBackoff(attempt)
@@ -129,7 +140,7 @@ func WithRetry(maxAttempts int, shouldRetry ShouldRetryFunc) Middleware {
 					}
 				}
 			}
-			
+
 			// Return last response/error
 			if lastErr != nil {
 				return nil, fmt.Errorf("all %d attempts failed: %w", maxAttempts, lastErr)
@@ -148,27 +159,35 @@ func DefaultShouldRetry(resp *http.Response, err error, attempt int) bool {
 	if err != nil && err == context.Canceled {
 		return false
 	}
-	
+
 	// Retry on network errors
 	if err != nil {
 		return true
 	}
-	
+
 	// Retry on 5xx errors
 	if resp != nil && resp.StatusCode >= 500 {
 		return true
 	}
-	
+
 	// Retry on 429 (Too Many Requests)
 	if resp != nil && resp.StatusCode == 429 {
 		return true
 	}
-	
+
 	return false
 }
 
 // calculateBackoff calculates exponential backoff with jitter
 func calculateBackoff(attempt int) time.Duration {
+	// Cap attempt to prevent integer overflow (max ~8.5 minutes at attempt 9)
+	if attempt < 0 {
+		attempt = 0
+	}
+	if attempt > 9 {
+		attempt = 9
+	}
+	// #nosec G115 -- attempt is bounded to [0,9] range, preventing overflow
 	base := time.Duration(1<<uint(attempt)) * time.Second
 	jitter := time.Duration(float64(base) * 0.1)
 	return base + jitter
@@ -180,12 +199,12 @@ func WithHeaders(headers map[string]string) Middleware {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			// Clone request to avoid modifying the original
 			req = cloneRequest(req)
-			
+
 			// Add headers
 			for key, value := range headers {
 				req.Header.Set(key, value)
 			}
-			
+
 			return next.RoundTrip(req)
 		})
 	}
@@ -204,15 +223,15 @@ func WithRequestID(generator func() string) Middleware {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			// Generate request ID
 			requestID := generator()
-			
+
 			// Clone request and add header
 			req = cloneRequest(req)
 			req.Header.Set("X-Request-ID", requestID)
-			
+
 			// Add to context for logging
-			ctx := context.WithValue(req.Context(), "request_id", requestID)
+			ctx := context.WithValue(req.Context(), contextKeyRequestID, requestID)
 			req = req.WithContext(ctx)
-			
+
 			return next.RoundTrip(req)
 		})
 	}
@@ -223,13 +242,13 @@ func WithMetrics(collector MetricsCollector) Middleware {
 	return func(next http.RoundTripper) http.RoundTripper {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			start := time.Now()
-			
+
 			// Record request
 			collector.RecordRequest(req.Method, req.URL.Path)
-			
+
 			// Execute request
 			resp, err := next.RoundTrip(req)
-			
+
 			// Record response
 			duration := time.Since(start)
 			if err != nil {
@@ -237,7 +256,7 @@ func WithMetrics(collector MetricsCollector) Middleware {
 			} else {
 				collector.RecordResponse(req.Method, req.URL.Path, resp.StatusCode, duration)
 			}
-			
+
 			return resp, err
 		})
 	}
@@ -254,14 +273,14 @@ type MetricsCollector interface {
 func cloneRequest(req *http.Request) *http.Request {
 	// Clone the request
 	r := req.Clone(req.Context())
-	
+
 	// Clone body if present
 	if req.Body != nil {
-		bodyBytes, _ := io.ReadAll(req.Body)
+		bodyBytes, _ := io.ReadAll(req.Body) // Best effort body cloning
 		req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 		r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 	}
-	
+
 	return r
 }
 
@@ -273,21 +292,21 @@ func WithCircuitBreaker(threshold int, timeout time.Duration) Middleware {
 		failures:  0,
 		lastFail:  time.Time{},
 	}
-	
+
 	return func(next http.RoundTripper) http.RoundTripper {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			if !breaker.Allow() {
 				return nil, fmt.Errorf("circuit breaker is open")
 			}
-			
+
 			resp, err := next.RoundTrip(req)
-			
+
 			if err != nil || (resp != nil && resp.StatusCode >= 500) {
 				breaker.RecordFailure()
 			} else {
 				breaker.RecordSuccess()
 			}
-			
+
 			return resp, err
 		})
 	}
@@ -304,7 +323,7 @@ func (cb *circuitBreaker) Allow() bool {
 	if cb.failures < cb.threshold {
 		return true
 	}
-	
+
 	// Check if timeout has passed
 	return time.Since(cb.lastFail) > cb.timeout
 }

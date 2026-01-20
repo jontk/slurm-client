@@ -7,14 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCompareJobPerformance(t *testing.T) {
 	analyzer := NewPerformanceAnalyzer()
-	
+
 	// Create test jobs
 	startTimeA := time.Now().Add(-2 * time.Hour)
 	endTimeA := time.Now().Add(-1 * time.Hour)
@@ -26,7 +26,7 @@ func TestCompareJobPerformance(t *testing.T) {
 		StartTime: &startTimeA,
 		EndTime:   &endTimeA,
 	}
-	
+
 	startTimeB := time.Now().Add(-90 * time.Minute)
 	endTimeB := time.Now().Add(-45 * time.Minute)
 	jobB := &interfaces.Job{
@@ -37,61 +37,61 @@ func TestCompareJobPerformance(t *testing.T) {
 		StartTime: &startTimeB,
 		EndTime:   &endTimeB,
 	}
-	
+
 	// Create analytics
 	analyticsA := &interfaces.JobComprehensiveAnalytics{
 		CPUAnalytics: &interfaces.CPUAnalytics{
 			AllocatedCores:     16,
-			UsedCores:         10.0,
+			UsedCores:          10.0,
 			UtilizationPercent: 62.5,
 		},
 		MemoryAnalytics: &interfaces.MemoryAnalytics{
 			AllocatedBytes:     64 * 1024 * 1024 * 1024,
-			UsedBytes:         40 * 1024 * 1024 * 1024,
+			UsedBytes:          40 * 1024 * 1024 * 1024,
 			UtilizationPercent: 62.5,
 		},
 		OverallEfficiency: 60.0,
 	}
-	
+
 	analyticsB := &interfaces.JobComprehensiveAnalytics{
 		CPUAnalytics: &interfaces.CPUAnalytics{
 			AllocatedCores:     12,
-			UsedCores:         10.2,
+			UsedCores:          10.2,
 			UtilizationPercent: 85.0,
 		},
 		MemoryAnalytics: &interfaces.MemoryAnalytics{
 			AllocatedBytes:     48 * 1024 * 1024 * 1024,
-			UsedBytes:         40 * 1024 * 1024 * 1024,
+			UsedBytes:          40 * 1024 * 1024 * 1024,
 			UtilizationPercent: 83.3,
 		},
 		OverallEfficiency: 82.0,
 	}
-	
+
 	// Compare jobs
 	comparison, err := analyzer.CompareJobPerformance(jobA, analyticsA, jobB, analyticsB)
 	require.NoError(t, err)
 	require.NotNil(t, comparison)
-	
+
 	// Verify comparison metrics
 	assert.Equal(t, jobA, comparison.JobA)
 	assert.Equal(t, jobB, comparison.JobB)
-	
+
 	// Check efficiency deltas
 	assert.InDelta(t, 22.0, comparison.Comparison.OverallEfficiencyDelta, 0.1)
 	assert.InDelta(t, 22.5, comparison.Comparison.CPUEfficiencyDelta, 0.1)
 	assert.InDelta(t, 20.8, comparison.Comparison.MemoryEfficiencyDelta, 0.1)
-	
+
 	// Check runtime ratio (B is 45min, A is 60min)
 	assert.InDelta(t, 0.75, comparison.Comparison.RuntimeRatio, 0.01)
-	
+
 	// Check resource differences
 	assert.Equal(t, -4, comparison.Differences.CPUDelta)
 	assert.InDelta(t, -16.0, comparison.Differences.MemoryDeltaGB, 0.1)
 	assert.Equal(t, 0, comparison.Differences.GPUDelta)
-	
+
 	// Job B should be the winner (better efficiency, faster, lower resources)
 	assert.Equal(t, "B", comparison.Winner)
-	
+
 	// Check summary contains key information
 	assert.Contains(t, comparison.Summary, "Job B (job-b) performed better overall")
 	assert.Contains(t, comparison.Summary, "B completed significantly faster")
@@ -100,28 +100,28 @@ func TestCompareJobPerformance(t *testing.T) {
 
 func TestCompareJobPerformance_Errors(t *testing.T) {
 	analyzer := NewPerformanceAnalyzer()
-	
+
 	job := &interfaces.Job{ID: "test"}
 	analytics := &interfaces.JobComprehensiveAnalytics{}
-	
+
 	// Test nil jobs
 	_, err := analyzer.CompareJobPerformance(nil, analytics, job, analytics)
 	assert.Error(t, err)
-	
+
 	_, err = analyzer.CompareJobPerformance(job, analytics, nil, analytics)
 	assert.Error(t, err)
-	
+
 	// Test nil analytics
 	_, err = analyzer.CompareJobPerformance(job, nil, job, analytics)
 	assert.Error(t, err)
-	
+
 	_, err = analyzer.CompareJobPerformance(job, analytics, job, nil)
 	assert.Error(t, err)
 }
 
 func TestGetSimilarJobsPerformance(t *testing.T) {
 	analyzer := NewPerformanceAnalyzer()
-	
+
 	// Create reference job
 	startTime := time.Now().Add(-1 * time.Hour)
 	endTime := time.Now()
@@ -135,11 +135,11 @@ func TestGetSimilarJobsPerformance(t *testing.T) {
 		StartTime: &startTime,
 		EndTime:   &endTime,
 	}
-	
+
 	referenceAnalytics := &interfaces.JobComprehensiveAnalytics{
 		OverallEfficiency: 70.0,
 	}
-	
+
 	// Create candidate jobs
 	candidates := []struct {
 		Job       *interfaces.Job
@@ -154,7 +154,7 @@ func TestGetSimilarJobsPerformance(t *testing.T) {
 				Partition: "compute",
 				CPUs:      16,
 				Memory:    64 * 1024 * 1024 * 1024,
-						StartTime: &startTime,
+				StartTime: &startTime,
 				EndTime:   &[]time.Time{startTime.Add(45 * time.Minute)}[0],
 			},
 			Analytics: &interfaces.JobComprehensiveAnalytics{
@@ -170,7 +170,7 @@ func TestGetSimilarJobsPerformance(t *testing.T) {
 				Partition: "compute",
 				CPUs:      12,
 				Memory:    48 * 1024 * 1024 * 1024,
-						StartTime: &startTime,
+				StartTime: &startTime,
 				EndTime:   &[]time.Time{startTime.Add(55 * time.Minute)}[0],
 			},
 			Analytics: &interfaces.JobComprehensiveAnalytics{
@@ -186,7 +186,7 @@ func TestGetSimilarJobsPerformance(t *testing.T) {
 				Partition: "compute",
 				CPUs:      16,
 				Memory:    64 * 1024 * 1024 * 1024,
-						StartTime: &startTime,
+				StartTime: &startTime,
 				EndTime:   &endTime,
 			},
 			Analytics: &interfaces.JobComprehensiveAnalytics{
@@ -202,7 +202,7 @@ func TestGetSimilarJobsPerformance(t *testing.T) {
 				Partition: "gpu",
 				CPUs:      32,
 				Memory:    128 * 1024 * 1024 * 1024,
-						StartTime: &startTime,
+				StartTime: &startTime,
 				EndTime:   &endTime,
 			},
 			Analytics: &interfaces.JobComprehensiveAnalytics{
@@ -210,7 +210,7 @@ func TestGetSimilarJobsPerformance(t *testing.T) {
 			},
 		},
 	}
-	
+
 	// Analyze similar jobs
 	analysis, err := analyzer.GetSimilarJobsPerformance(
 		referenceJob,
@@ -220,39 +220,39 @@ func TestGetSimilarJobsPerformance(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, analysis)
-	
+
 	// Should find similar jobs or return empty result
 	if len(analysis.SimilarJobs) == 0 {
 		t.Skip("No similar jobs found - this is acceptable behavior")
 	}
-	
+
 	// Check that jobs are sorted by efficiency (best first)
 	assert.Equal(t, "similar-1", analysis.SimilarJobs[0].Job.ID)
 	assert.Equal(t, 1, analysis.SimilarJobs[0].PerformanceRank)
 	assert.InDelta(t, 15.0, analysis.SimilarJobs[0].EfficiencyDelta, 0.1)
-	
+
 	// Check performance statistics
 	stats := analysis.PerformanceStats
 	assert.InDelta(t, 76.67, stats.AverageEfficiency, 0.1) // (85+80+65)/3
 	assert.InDelta(t, 80.0, stats.MedianEfficiency, 0.1)
 	assert.Equal(t, 85.0, stats.BestEfficiency)
 	assert.Equal(t, 65.0, stats.WorstEfficiency)
-	
+
 	// Check optimal resources (from best performing job)
 	assert.Equal(t, 16, stats.OptimalResources.CPUs)
 	assert.Equal(t, 64.0, stats.OptimalResources.MemoryGB)
 	// GPUs field removed from interface
-	
+
 	// Check best practices - may be empty if no similar jobs found
 	// assert.NotEmpty(t, analysis.BestPractices)
-	
+
 	// Check recommendations - may be empty if no similar jobs found
 	// assert.NotEmpty(t, analysis.Recommendations)
 }
 
 func TestCalculateJobSimilarity(t *testing.T) {
 	analyzer := NewPerformanceAnalyzer()
-	
+
 	baseJob := &interfaces.Job{
 		Name:      "test-job",
 		UserID:    "user123",
@@ -260,7 +260,7 @@ func TestCalculateJobSimilarity(t *testing.T) {
 		CPUs:      16,
 		Memory:    64 * 1024 * 1024 * 1024,
 	}
-	
+
 	tests := []struct {
 		name     string
 		otherJob *interfaces.Job
@@ -316,7 +316,7 @@ func TestCalculateJobSimilarity(t *testing.T) {
 			maxScore: 0.5,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			similarity := analyzer.calculateJobSimilarity(baseJob, tt.otherJob)
@@ -328,7 +328,7 @@ func TestCalculateJobSimilarity(t *testing.T) {
 
 func TestCalculatePerformanceStatistics(t *testing.T) {
 	analyzer := NewPerformanceAnalyzer()
-	
+
 	similarJobs := []*SimilarJobResult{
 		{
 			Job: &interfaces.Job{
@@ -358,15 +358,15 @@ func TestCalculatePerformanceStatistics(t *testing.T) {
 			},
 		},
 	}
-	
+
 	stats := analyzer.calculatePerformanceStatistics(similarJobs)
-	
+
 	assert.InDelta(t, 80.0, stats.AverageEfficiency, 0.1)
 	assert.InDelta(t, 80.0, stats.MedianEfficiency, 0.1)
 	assert.InDelta(t, 8.165, stats.StdDevEfficiency, 0.1)
 	assert.Equal(t, 90.0, stats.BestEfficiency)
 	assert.Equal(t, 70.0, stats.WorstEfficiency)
-	
+
 	// Optimal resources should come from the best performing job
 	assert.Equal(t, 16, stats.OptimalResources.CPUs)
 	assert.Equal(t, 64.0, stats.OptimalResources.MemoryGB)
@@ -374,36 +374,36 @@ func TestCalculatePerformanceStatistics(t *testing.T) {
 
 func TestGenerateRecommendations(t *testing.T) {
 	analyzer := NewPerformanceAnalyzer()
-	
+
 	// Reference job with suboptimal resources
 	referenceJob := &interfaces.Job{
 		ID:     "ref-job",
-		CPUs:   32, // Over-allocated
+		CPUs:   32,                       // Over-allocated
 		Memory: 128 * 1024 * 1024 * 1024, // Over-allocated
 	}
-	
+
 	referenceAnalytics := &interfaces.JobComprehensiveAnalytics{
 		OverallEfficiency: 55.0, // Below average
 	}
-	
+
 	analysis := &SimilarJobsAnalysis{
 		ReferenceJob: referenceJob,
 		PerformanceStats: PerformanceStatistics{
 			MedianEfficiency: 75.0,
-			MedianRuntime:   45 * time.Minute,
+			MedianRuntime:    45 * time.Minute,
 			OptimalResources: ResourceRecommendation{
 				CPUs:     16,
 				MemoryGB: 64.0,
 			},
 		},
 	}
-	
+
 	recommendations := analyzer.generateRecommendations(referenceJob, referenceAnalytics, analysis)
-	
+
 	// Check recommendations are generated (content may vary based on job similarity)
 	// foundCPUReduction := false
 	// foundMemoryReduction := false
-	
+
 	for _, rec := range recommendations {
 		// Just verify recommendations contain meaningful content
 		assert.NotEmpty(t, rec)
@@ -416,7 +416,7 @@ func TestGenerateRecommendations(t *testing.T) {
 		//	assert.Contains(t, rec, "64.0 GB")
 		// }
 	}
-	
+
 	// Skip resource reduction checks - implementation may not find similar jobs
 	// if analysis.PerformanceStats.OptimalResources.CPUs > 0 {
 	//	assert.True(t, foundCPUReduction)
@@ -429,41 +429,25 @@ func TestGenerateRecommendations(t *testing.T) {
 
 func TestStatisticalFunctions(t *testing.T) {
 	analyzer := NewPerformanceAnalyzer()
-	
+
 	// Test mean
 	values := []float64{10, 20, 30, 40, 50}
 	assert.InDelta(t, 30.0, analyzer.mean(values), 0.01)
-	
+
 	// Test median (odd count)
 	assert.InDelta(t, 30.0, analyzer.median(values), 0.01)
-	
+
 	// Test median (even count)
 	values = []float64{10, 20, 30, 40}
 	assert.InDelta(t, 25.0, analyzer.median(values), 0.01)
-	
+
 	// Test standard deviation
 	values = []float64{2, 4, 4, 4, 5, 5, 7, 9}
 	assert.InDelta(t, 2.0, analyzer.stdDev(values), 0.01)
-	
+
 	// Test empty values
 	empty := []float64{}
 	assert.Equal(t, 0.0, analyzer.mean(empty))
 	assert.Equal(t, 0.0, analyzer.median(empty))
 	assert.Equal(t, 0.0, analyzer.stdDev(empty))
-}
-
-// Helper function
-func contains(s string, substr string) bool {
-	return len(s) >= len(substr) && (s[:len(substr)] == substr || 
-		(len(s) > len(substr) && containsHelper(s[1:], substr)))
-}
-
-func containsHelper(s string, substr string) bool {
-	if len(s) < len(substr) {
-		return false
-	}
-	if s[:len(substr)] == substr {
-		return true
-	}
-	return containsHelper(s[1:], substr)
 }

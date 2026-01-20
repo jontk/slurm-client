@@ -10,37 +10,37 @@ import (
 
 // Adapter implements the VersionAdapter interface for API version v0.0.44
 type Adapter struct {
-	version              string
-	client               *api.ClientWithResponses
-	qosAdapter           *QoSAdapter
-	jobAdapter           *JobAdapter
-	partitionAdapter     *PartitionAdapter
-	nodeAdapter          *NodeAdapter
-	accountAdapter       *AccountAdapter
-	userAdapter          *UserAdapter
-	reservationAdapter   *ReservationAdapter
-	associationAdapter   *AssociationAdapter
-	wcKeyAdapter         *WCKeyAdapter
-	standaloneAdapter    *StandaloneAdapter
-	clusterAdapter       *ClusterAdapter
+	version            string
+	client             *api.ClientWithResponses
+	qosAdapter         *QoSAdapter
+	jobAdapter         *JobAdapter
+	partitionAdapter   *PartitionAdapter
+	nodeAdapter        *NodeAdapter
+	accountAdapter     *AccountAdapter
+	userAdapter        *UserAdapter
+	reservationAdapter *ReservationAdapter
+	associationAdapter *AssociationAdapter
+	wcKeyAdapter       *WCKeyAdapter
+	standaloneAdapter  *StandaloneAdapter
+	clusterAdapter     *ClusterAdapter
 }
 
 // NewAdapter creates a new v0.0.44 adapter
 func NewAdapter(client *api.ClientWithResponses) *Adapter {
 	return &Adapter{
-		version:              "v0.0.44",
-		client:               client,
-		qosAdapter:           NewQoSAdapter(client),
-		jobAdapter:           NewJobAdapter(client),
-		partitionAdapter:     NewPartitionAdapter(client),
-		nodeAdapter:          NewNodeAdapter(client),
-		accountAdapter:       NewAccountAdapter(client),
-		userAdapter:          NewUserAdapter(client),
-		reservationAdapter:   NewReservationAdapter(client),
-		associationAdapter:   NewAssociationAdapter(client),
-		wcKeyAdapter:         NewWCKeyAdapter(client),
-		standaloneAdapter:    NewStandaloneAdapter(client),
-		clusterAdapter:       NewClusterAdapter(client),
+		version:            "v0.0.44",
+		client:             client,
+		qosAdapter:         NewQoSAdapter(client),
+		jobAdapter:         NewJobAdapter(client),
+		partitionAdapter:   NewPartitionAdapter(client),
+		nodeAdapter:        NewNodeAdapter(client),
+		accountAdapter:     NewAccountAdapter(client),
+		userAdapter:        NewUserAdapter(client),
+		reservationAdapter: NewReservationAdapter(client),
+		associationAdapter: NewAssociationAdapter(client),
+		wcKeyAdapter:       NewWCKeyAdapter(client),
+		standaloneAdapter:  NewStandaloneAdapter(client),
+		clusterAdapter:     NewClusterAdapter(client),
 	}
 }
 

@@ -148,7 +148,7 @@ func (a *AssociationAdapter) Get(ctx context.Context, associationID string) (*ty
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-	if err := a.ValidateResourceName(associationID, "associationID"); err != nil {
+	if err := a.ValidateResourceName(associationID, "Association name"); err != nil {
 		return nil, err
 	}
 
@@ -237,7 +237,7 @@ func (a *AssociationAdapter) Update(ctx context.Context, associationID string, u
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(associationID, "associationID"); err != nil {
+	if err := a.ValidateResourceName(associationID, "Association name"); err != nil {
 		return err
 	}
 
@@ -251,7 +251,7 @@ func (a *AssociationAdapter) Delete(ctx context.Context, associationID string) e
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-	if err := a.ValidateResourceName(associationID, "associationID"); err != nil {
+	if err := a.ValidateResourceName(associationID, "Association name"); err != nil {
 		return err
 	}
 
