@@ -33,7 +33,7 @@ func (m *PartitionBaseManager) ValidatePartitionCreate(partition *types.Partitio
 		)
 	}
 
-	if err := m.ValidateResourceName(partition.Name, "partition.Name"); err != nil {
+	if err := m.ValidateResourceName(partition.Name, "partition name"); err != nil {
 		return err
 	}
 

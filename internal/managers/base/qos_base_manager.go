@@ -28,12 +28,12 @@ func (m *QoSBaseManager) ValidateQoSCreate(qos *types.QoSCreate) error {
 	if qos == nil {
 		return errors.NewValidationError(
 			errors.ErrorCodeValidationFailed,
-			"QoS data is required",
+			"QoS creation data is required",
 			"qos", qos, nil,
 		)
 	}
 
-	if err := m.ValidateResourceName(qos.Name, "qos.Name"); err != nil {
+	if err := m.ValidateResourceName(qos.Name, "QoS name"); err != nil {
 		return err
 	}
 
@@ -74,7 +74,7 @@ func (m *QoSBaseManager) ValidateQoSUpdate(update *types.QoSUpdate) error {
 	if update == nil {
 		return errors.NewValidationError(
 			errors.ErrorCodeValidationFailed,
-			"Update data is required",
+			"QoS update data is required",
 			"update", update, nil,
 		)
 	}

@@ -9,8 +9,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/internal/factory"
-	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -23,7 +23,7 @@ func main() {
 	}
 
 	version := os.Args[1]
-	
+
 	// Get JWT token from environment
 	jwtToken := os.Getenv("SLURM_JWT")
 	if jwtToken == "" {

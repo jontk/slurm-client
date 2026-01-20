@@ -61,14 +61,14 @@ func BenchmarkRetryWithError(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ctx := context.Background()
 		attempts := 0
-		
+
 		// Simulate retry loop without actual delays
 		for attempts < policy.MaxRetries() {
 			_, err := failingFunc()
 			if err == nil {
 				break
 			}
-			
+
 			// Check if we should retry
 			if !policy.ShouldRetry(ctx, nil, err, attempts) {
 				break

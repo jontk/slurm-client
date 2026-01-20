@@ -4,7 +4,7 @@
 package slurm
 
 import (
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 )
 
 // SlurmClient represents a version-agnostic Slurm REST API client

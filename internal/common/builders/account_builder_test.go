@@ -149,8 +149,8 @@ func TestAccountBuilder_GroupLimits(t *testing.T) {
 			WithGrpCPUs(1000).
 			WithGrpMemoryGB(2000).
 			WithGrpSubmitJobs(1000).
-			WithGrpWallTime(5040).  // 3.5 days
-			WithGrpCPUTime(10080).  // 7 days
+			WithGrpWallTime(5040). // 3.5 days
+			WithGrpCPUTime(10080). // 7 days
 			Build()
 
 		require.NoError(t, err)
@@ -184,20 +184,20 @@ func TestAccountBuilder_TRES(t *testing.T) {
 		assert.Equal(t, int64(1000), account.GrpTRES["cpu"])
 		assert.Equal(t, int64(2000*GB), account.GrpTRES["mem"])
 		assert.Equal(t, int64(10), account.GrpTRES["gpu"])
-		
+
 		require.NotNil(t, account.GrpTRESMins)
 		assert.Equal(t, int64(100000), account.GrpTRESMins["cpu"])
-		
+
 		require.NotNil(t, account.GrpTRESRunMins)
 		assert.Equal(t, int64(50000), account.GrpTRESRunMins["gpu"])
-		
+
 		require.NotNil(t, account.MaxTRES)
 		assert.Equal(t, int64(500), account.MaxTRES["cpu"])
 		assert.Equal(t, int64(1000*GB), account.MaxTRES["mem"])
-		
+
 		require.NotNil(t, account.MaxTRESPerNode)
 		assert.Equal(t, int64(4), account.MaxTRESPerNode["gpu"])
-		
+
 		require.NotNil(t, account.MinTRES)
 		assert.Equal(t, int64(1), account.MinTRES["cpu"])
 	})
@@ -454,8 +454,8 @@ func TestAccountBuilder_BuildForUpdate(t *testing.T) {
 		assert.Equal(t, int32(100), *update.Priority)
 
 		// Default values should not be included
-		assert.Nil(t, update.FairShare)  // Still default 1
-		assert.Nil(t, update.SharesRaw)  // Still default 1
+		assert.Nil(t, update.FairShare) // Still default 1
+		assert.Nil(t, update.SharesRaw) // Still default 1
 	})
 
 	t.Run("with collections and maps", func(t *testing.T) {

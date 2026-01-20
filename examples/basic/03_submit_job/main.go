@@ -77,7 +77,7 @@ func simpleJob(ctx context.Context, client slurm.SlurmClient) {
 func resourceJob(ctx context.Context, client slurm.SlurmClient) {
 	// Job with specific resource requirements
 	jobSpec := &slurm.JobSubmission{
-		Name:      "resource-test-job",
+		Name: "resource-test-job",
 		Script: `#!/bin/bash
 #SBATCH --job-name=resource-test
 #SBATCH --nodes=2
@@ -94,9 +94,9 @@ echo "CPUs per task: $SLURM_CPUS_PER_TASK"
 srun hostname`,
 		Partition: "compute",
 		Nodes:     2,
-		CPUs:      16, // 2 nodes * 4 tasks/node * 2 cpus/task
+		CPUs:      16,    // 2 nodes * 4 tasks/node * 2 cpus/task
 		Memory:    16384, // 16GB in MB
-		TimeLimit: 3600, // 1 hour in seconds
+		TimeLimit: 3600,  // 1 hour in seconds
 	}
 
 	response, err := client.Jobs().Submit(ctx, jobSpec)
@@ -113,7 +113,7 @@ func arrayJob(ctx context.Context, client slurm.SlurmClient) {
 	// Submit an array job
 	// Note: Array job syntax is typically handled in the script itself
 	jobSpec := &slurm.JobSubmission{
-		Name:      "array-test-job",
+		Name: "array-test-job",
 		Script: `#!/bin/bash
 #SBATCH --job-name=array-test
 #SBATCH --array=1-10

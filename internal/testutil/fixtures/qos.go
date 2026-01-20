@@ -4,8 +4,9 @@
 package fixtures
 
 import (
-	"github.com/jontk/slurm-client/internal/common/types"
 	"time"
+
+	"github.com/jontk/slurm-client/internal/common/types"
 )
 
 // QoSFixtures provides pre-configured QoS objects for testing
@@ -33,18 +34,18 @@ func (f *QoSFixtures) SimpleQoS(name string) *types.QoS {
 func (f *QoSFixtures) QoSWithLimits(name string) *types.QoS {
 	qos := f.SimpleQoS(name)
 	qos.Limits = &types.QoSLimits{
-		MaxCPUsPerUser:      intPtr(100),
-		MaxJobsPerUser:      intPtr(10),
-		MaxNodesPerUser:     intPtr(5),
+		MaxCPUsPerUser:       intPtr(100),
+		MaxJobsPerUser:       intPtr(10),
+		MaxNodesPerUser:      intPtr(5),
 		MaxSubmitJobsPerUser: intPtr(20),
-		MaxCPUsPerAccount:   intPtr(1000),
-		MaxJobsPerAccount:   intPtr(100),
-		MaxNodesPerAccount:  intPtr(50),
-		MaxCPUsPerJob:       intPtr(32),
-		MaxNodesPerJob:      intPtr(2),
-		MaxWallTimePerJob:   intPtr(1440), // 24 hours
-		MaxMemoryPerNode:    int64Ptr(64000), // 64GB
-		MaxMemoryPerCPU:     int64Ptr(4000),  // 4GB
+		MaxCPUsPerAccount:    intPtr(1000),
+		MaxJobsPerAccount:    intPtr(100),
+		MaxNodesPerAccount:   intPtr(50),
+		MaxCPUsPerJob:        intPtr(32),
+		MaxNodesPerJob:       intPtr(2),
+		MaxWallTimePerJob:    intPtr(1440),    // 24 hours
+		MaxMemoryPerNode:     int64Ptr(64000), // 64GB
+		MaxMemoryPerCPU:      int64Ptr(4000),  // 4GB
 	}
 	return qos
 }

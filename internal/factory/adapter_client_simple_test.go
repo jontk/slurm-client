@@ -16,15 +16,15 @@ import (
 
 // Mock adapter that implements common.VersionAdapter
 type testVersionAdapter struct {
-	version               string
-	jobAdapter           common.JobAdapter
-	nodeAdapter          common.NodeAdapter
-	partitionAdapter     common.PartitionAdapter
-	reservationAdapter   common.ReservationAdapter
-	accountAdapter       common.AccountAdapter
-	associationAdapter   common.AssociationAdapter
-	qosAdapter           common.QoSAdapter
-	userAdapter          common.UserAdapter
+	version            string
+	jobAdapter         common.JobAdapter
+	nodeAdapter        common.NodeAdapter
+	partitionAdapter   common.PartitionAdapter
+	reservationAdapter common.ReservationAdapter
+	accountAdapter     common.AccountAdapter
+	associationAdapter common.AssociationAdapter
+	qosAdapter         common.QoSAdapter
+	userAdapter        common.UserAdapter
 }
 
 func (t *testVersionAdapter) GetVersion() string {
@@ -295,7 +295,7 @@ func TestAdapterClient_AssociationOperations(t *testing.T) {
 		},
 		createFunc: func(ctx context.Context, assoc *types.AssociationCreate) (*types.AssociationCreateResponse, error) {
 			return &types.AssociationCreateResponse{
-				Status: "success",
+				Status:  "success",
 				Message: "Created association new-assoc-123",
 			}, nil
 		},
@@ -382,15 +382,15 @@ func TestAdapterClient_TypeConversions(t *testing.T) {
 
 	// Test association type conversion
 	association := types.Association{
-		ID:             "assoc-123",
-		UserName:       "testuser",
-		AccountName:    "testaccount",
-		Cluster:        "cluster1",
-		Partition:      "compute",
-		QoSList:        []string{"normal"},
-		Priority:       100,
-		MaxJobs:        10,
-		IsDefault:      true,
+		ID:          "assoc-123",
+		UserName:    "testuser",
+		AccountName: "testaccount",
+		Cluster:     "cluster1",
+		Partition:   "compute",
+		QoSList:     []string{"normal"},
+		Priority:    100,
+		MaxJobs:     10,
+		IsDefault:   true,
 	}
 
 	// Convert using the helper function

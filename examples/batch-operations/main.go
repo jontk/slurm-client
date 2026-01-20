@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -22,7 +22,7 @@ func main() {
 	// Create configuration
 	cfg := config.NewDefault()
 	cfg.BaseURL = "https://cluster.example.com:6820"
-	
+
 	// Create authentication
 	authProvider := auth.NewTokenAuth("your-jwt-token")
 
@@ -67,8 +67,8 @@ func submitBatchJobs(ctx context.Context, client slurm.SlurmClient, count int) [
 			defer wg.Done()
 
 			job := &interfaces.JobSubmission{
-				Name:             fmt.Sprintf("batch-job-%d", index),
-				Command:          fmt.Sprintf("python process.py --input data_%d.txt", index),
+				Name:       fmt.Sprintf("batch-job-%d", index),
+				Command:    fmt.Sprintf("python process.py --input data_%d.txt", index),
 				Partition:  "compute",
 				CPUs:       4,
 				Memory:     8192, // 8GB
@@ -216,7 +216,7 @@ func collectJobResults(ctx context.Context, client slurm.SlurmClient, jobIDs []s
 
 	// Generate summary report
 	fmt.Println("\n=== Job Results Summary ===")
-	fmt.Printf("%-15s %-12s %-10s %-15s %-12s\n", 
+	fmt.Printf("%-15s %-12s %-10s %-15s %-12s\n",
 		"Job ID", "State", "Exit Code", "Runtime", "CPU Time")
 	fmt.Println(strings.Repeat("-", 70))
 
@@ -246,7 +246,7 @@ func collectJobResults(ctx context.Context, client slurm.SlurmClient, jobIDs []s
 	}
 
 	fmt.Println(strings.Repeat("-", 70))
-	fmt.Printf("Success Rate: %d/%d (%.1f%%)\n", 
+	fmt.Printf("Success Rate: %d/%d (%.1f%%)\n",
 		successCount, len(results), float64(successCount)/float64(len(results))*100)
 	if totalRuntime > 0 {
 		fmt.Printf("Total Runtime: %s\n", totalRuntime.Round(time.Second))
@@ -260,7 +260,7 @@ func collectJobResults(ctx context.Context, client slurm.SlurmClient, jobIDs []s
 // cleanupJobs cancels any still-running jobs and performs cleanup
 func cleanupJobs(ctx context.Context, client slurm.SlurmClient, jobIDs []string) {
 	fmt.Println("Cleaning up jobs...")
-	
+
 	for _, jobID := range jobIDs {
 		job, err := client.Jobs().Get(ctx, jobID)
 		if err != nil {

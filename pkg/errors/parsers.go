@@ -57,18 +57,99 @@ func parseSlurmAPIError(statusCode int, body []byte, apiVersion string) *SlurmAP
 	if len(response.Errors) > 0 {
 		errors = response.Errors
 	} else {
-		// No structured errors, create one from status code
-		errors = []SlurmAPIErrorDetail{
-			{
-				ErrorNumber: statusCode,
-				ErrorCode:   fmt.Sprintf("HTTP_%d", statusCode),
-				Source:      "http",
-				Description: fmt.Sprintf("HTTP %d error", statusCode),
-			},
+		// Try to parse simple error format: {"error": "message", "details": {...}, "job_id": "123"}
+		errors = parseSimpleErrorFormat(statusCode, body)
+		if len(errors) == 0 {
+			// No errors found, create one from status code
+			errors = []SlurmAPIErrorDetail{
+				{
+					ErrorNumber: statusCode,
+					ErrorCode:   fmt.Sprintf("HTTP_%d", statusCode),
+					Source:      "http",
+					Description: fmt.Sprintf("HTTP %d error", statusCode),
+				},
+			}
 		}
 	}
 
 	return NewSlurmAPIError(statusCode, apiVersion, errors)
+}
+
+// parseSimpleErrorFormat handles simple JSON error responses like {"error": "message", "details": {...}}
+func parseSimpleErrorFormat(statusCode int, body []byte) []SlurmAPIErrorDetail {
+	// Try to parse as generic JSON map
+	var errorMap map[string]interface{}
+	if err := json.Unmarshal(body, &errorMap); err != nil {
+		return nil
+	}
+
+	// Extract error message from common fields
+	var errorMessage string
+	var errorCode string
+	var details string
+
+	// Check for "error" field
+	if errField, ok := errorMap["error"]; ok {
+		if errStr, ok := errField.(string); ok {
+			errorMessage = errStr
+		}
+	}
+
+	// Check for "code" field
+	if codeField, ok := errorMap["code"]; ok {
+		if codeStr, ok := codeField.(string); ok {
+			errorCode = codeStr
+		}
+	}
+
+	// Check for "details" field
+	if detailsField, ok := errorMap["details"]; ok {
+		if detailsMap, ok := detailsField.(map[string]interface{}); ok {
+			// Convert details map to string
+			if detailsJSON, err := json.Marshal(detailsMap); err == nil {
+				details = string(detailsJSON)
+			}
+		} else if detailsStr, ok := detailsField.(string); ok {
+			details = detailsStr
+		}
+	}
+
+	// If no error message found, return nil
+	if errorMessage == "" {
+		return nil
+	}
+
+	// Build description from available fields
+	description := errorMessage
+	if details != "" {
+		description = fmt.Sprintf("%s (details: %s)", errorMessage, details)
+	}
+
+	// Add any extra fields to description
+	extraFields := make([]string, 0)
+	for key, value := range errorMap {
+		if key != "error" && key != "code" && key != "details" {
+			if strVal, ok := value.(string); ok {
+				extraFields = append(extraFields, fmt.Sprintf("%s=%s", key, strVal))
+			}
+		}
+	}
+	if len(extraFields) > 0 {
+		description = fmt.Sprintf("%s [%s]", description, strings.Join(extraFields, ", "))
+	}
+
+	if errorCode == "" {
+		errorCode = fmt.Sprintf("HTTP_%d", statusCode)
+	}
+
+	return []SlurmAPIErrorDetail{
+		{
+			ErrorNumber: statusCode,
+			ErrorCode:   errorCode,
+			Source:      "json_response",
+			Description: description,
+		},
+	}
 }
 
 // parsePlainTextError handles non-JSON error responses

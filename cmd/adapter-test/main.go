@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/internal/factory"
-	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -24,7 +24,7 @@ func main() {
 	}
 
 	version := os.Args[1]
-	
+
 	// Get JWT token from environment
 	jwtToken := os.Getenv("SLURM_JWT")
 	if jwtToken == "" {
@@ -77,17 +77,17 @@ func main() {
 	// Test 2: Submit a test job
 	fmt.Println("\n=== Testing Job Submission ===")
 	testJob := &interfaces.JobSubmission{
-		Name:      fmt.Sprintf("adapter-test-%s-%d", version, time.Now().Unix()),
-		Partition: "normal",
-		Script:    "#!/bin/bash\necho 'Hello from adapter test'\nsleep 10\necho 'Done'",
-		TimeLimit: 1, // 1 minute
-		Nodes:     1,
-		CPUs:      1,
+		Name:       fmt.Sprintf("adapter-test-%s-%d", version, time.Now().Unix()),
+		Partition:  "normal",
+		Script:     "#!/bin/bash\necho 'Hello from adapter test'\nsleep 10\necho 'Done'",
+		TimeLimit:  1, // 1 minute
+		Nodes:      1,
+		CPUs:       1,
 		WorkingDir: "/tmp",
 		Environment: map[string]string{
-			"PATH": "/usr/bin:/bin",
-			"USER": "root",
-			"HOME": "/tmp",
+			"PATH":     "/usr/bin:/bin",
+			"USER":     "root",
+			"HOME":     "/tmp",
 			"TEST_VAR": "adapter_test",
 		},
 	}
@@ -131,7 +131,7 @@ func main() {
 	} else {
 		fmt.Printf("Found %d nodes (showing up to 5)\n", nodes.Total)
 		for i, node := range nodes.Nodes {
-			fmt.Printf("  [%d] Node %s: State=%s, CPUs=%d, Memory=%dMB\n", 
+			fmt.Printf("  [%d] Node %s: State=%s, CPUs=%d, Memory=%dMB\n",
 				i+1, node.Name, node.State, node.CPUs, node.Memory)
 		}
 	}
@@ -146,7 +146,7 @@ func main() {
 	} else {
 		fmt.Printf("Found %d partitions (showing up to 5)\n", partitions.Total)
 		for i, partition := range partitions.Partitions {
-			fmt.Printf("  [%d] Partition %s: State=%s, Nodes=%d total (%d available)\n", 
+			fmt.Printf("  [%d] Partition %s: State=%s, Nodes=%d total (%d available)\n",
 				i+1, partition.Name, partition.State, partition.TotalNodes, partition.TotalNodes)
 		}
 	}

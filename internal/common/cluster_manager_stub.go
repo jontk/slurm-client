@@ -6,7 +6,7 @@ package common
 import (
 	"context"
 
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 

@@ -61,9 +61,9 @@ type Partition struct {
 type PartitionState string
 
 const (
-	PartitionStateUp      PartitionState = "UP"
-	PartitionStateDown    PartitionState = "DOWN"
-	PartitionStateDrain   PartitionState = "DRAIN"
+	PartitionStateUp       PartitionState = "UP"
+	PartitionStateDown     PartitionState = "DOWN"
+	PartitionStateDrain    PartitionState = "DRAIN"
 	PartitionStateInactive PartitionState = "INACTIVE"
 )
 
@@ -176,16 +176,16 @@ type PartitionList struct {
 
 // PartitionStatistics represents partition usage statistics
 type PartitionStatistics struct {
-	Name             string    `json:"name"`
-	TotalNodes       int32     `json:"total_nodes"`
-	AllocatedNodes   int32     `json:"allocated_nodes"`
-	IdleNodes        int32     `json:"idle_nodes"`
-	DownNodes        int32     `json:"down_nodes"`
-	TotalCPUs        int32     `json:"total_cpus"`
-	AllocatedCPUs    int32     `json:"allocated_cpus"`
-	IdleCPUs         int32     `json:"idle_cpus"`
-	RunningJobs      int32     `json:"running_jobs"`
-	PendingJobs      int32     `json:"pending_jobs"`
-	SuspendedJobs    int32     `json:"suspended_jobs"`
-	LastUpdateTime   time.Time `json:"last_update_time"`
+	Name           string    `json:"name"`
+	TotalNodes     int32     `json:"total_nodes"`
+	AllocatedNodes int32     `json:"allocated_nodes"`
+	IdleNodes      int32     `json:"idle_nodes"`
+	DownNodes      int32     `json:"down_nodes"`
+	TotalCPUs      int32     `json:"total_cpus"`
+	AllocatedCPUs  int32     `json:"allocated_cpus"`
+	IdleCPUs       int32     `json:"idle_cpus"`
+	RunningJobs    int32     `json:"running_jobs"`
+	PendingJobs    int32     `json:"pending_jobs"`
+	SuspendedJobs  int32     `json:"suspended_jobs"`
+	LastUpdateTime time.Time `json:"last_update_time"`
 }

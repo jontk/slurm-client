@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -21,7 +21,7 @@ import (
 func main() {
 	// Create configuration
 	cfg := config.NewDefault()
-	
+
 	// Override with environment variables if needed
 	if url := os.Getenv("SLURM_REST_URL"); url != "" {
 		cfg.BaseURL = url
@@ -55,10 +55,10 @@ func main() {
 	watchOpts := &interfaces.WatchJobsOptions{
 		// Watch specific user's jobs (optional)
 		// UserID: "1000",
-		
+
 		// Watch specific states (optional)
 		// States: []string{"RUNNING", "PENDING"},
-		
+
 		// Watch specific job IDs (optional)
 		// JobIDs: []string{"12345", "12346"},
 	}
@@ -66,7 +66,7 @@ func main() {
 	// Start watching for job events
 	fmt.Println("Starting to watch for job events...")
 	fmt.Println("Press Ctrl+C to stop")
-	
+
 	watchCtx, cancelWatch := context.WithCancel(ctx)
 	defer cancelWatch()
 

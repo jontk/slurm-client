@@ -33,7 +33,7 @@ func (m *AccountBaseManager) ValidateAccountCreate(account *types.AccountCreate)
 		)
 	}
 
-	if err := m.ValidateResourceName(account.Name, "account.Name"); err != nil {
+	if err := m.ValidateResourceName(account.Name, "account name"); err != nil {
 		return err
 	}
 

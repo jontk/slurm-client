@@ -16,9 +16,9 @@ import (
 func TestNewCRUDManager(t *testing.T) {
 	version := "v0.0.43"
 	resourceType := "TestResource"
-	
+
 	manager := NewCRUDManager(version, resourceType)
-	
+
 	assert.NotNil(t, manager)
 	assert.NotNil(t, manager.BaseManager)
 	assert.Equal(t, version, manager.GetVersion())
@@ -27,26 +27,26 @@ func TestNewCRUDManager(t *testing.T) {
 
 func TestCRUDManager_ProcessListResponse(t *testing.T) {
 	manager := NewCRUDManager("v0.0.43", "TestResource")
-	
+
 	// Test data
 	type TestItem struct {
 		ID   int
 		Name string
 	}
-	
+
 	// Converter function for tests
 	converter := func(item interface{}) (interface{}, error) {
 		// Simple pass-through converter
 		return item, nil
 	}
-	
+
 	tests := []struct {
-		name           string
-		items          interface{}
-		opts           ListOptions
-		expectedCount  int
-		expectedTotal  int
-		wantErr        bool
+		name          string
+		items         interface{}
+		opts          ListOptions
+		expectedCount int
+		expectedTotal int
+		wantErr       bool
 	}{
 		{
 			name: "slice of items with no pagination",
@@ -121,16 +121,16 @@ func TestCRUDManager_ProcessListResponse(t *testing.T) {
 			wantErr:       false, // Current implementation handles nil gracefully
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, total, err := manager.ProcessListResponse(tt.items, tt.opts, converter)
-			
+
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
-			
+
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedTotal, total)
 			assert.Len(t, result, tt.expectedCount)
@@ -140,7 +140,7 @@ func TestCRUDManager_ProcessListResponse(t *testing.T) {
 
 func TestCRUDManager_ValidatePaginationOptions(t *testing.T) {
 	manager := NewCRUDManager("v0.0.43", "TestResource")
-	
+
 	tests := []struct {
 		name    string
 		opts    ListOptions
@@ -187,7 +187,7 @@ func TestCRUDManager_ValidatePaginationOptions(t *testing.T) {
 			wantErr: false, // No max limit validation in the actual code
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := manager.ValidatePaginationOptions(tt.opts)
@@ -203,92 +203,81 @@ func TestCRUDManager_ValidatePaginationOptions(t *testing.T) {
 
 func TestCRUDManager_BatchOperation(t *testing.T) {
 	manager := NewCRUDManager("v0.0.43", "TestResource")
-	
+
 	t.Run("successful batch operation", func(t *testing.T) {
 		items := []interface{}{"item1", "item2", "item3"}
 		var processedItems []string
 		var mu sync.Mutex
-		
+
 		operation := func(ctx context.Context, item interface{}) error {
 			mu.Lock()
 			defer mu.Unlock()
 			processedItems = append(processedItems, item.(string))
 			return nil
 		}
-		
+
 		err := manager.BatchOperation(context.Background(), items, operation, true)
-		
+
 		require.NoError(t, err)
 		assert.Len(t, processedItems, 3)
 		assert.ElementsMatch(t, []string{"item1", "item2", "item3"}, processedItems)
 	})
-	
+
 	t.Run("batch operation with failures - continue on error", func(t *testing.T) {
 		items := []interface{}{"item1", "item2", "item3", "item4"}
-		
+
 		operation := func(ctx context.Context, item interface{}) error {
 			if item.(string) == "item2" || item.(string) == "item4" {
 				return errors.New("processing failed")
 			}
 			return nil
 		}
-		
+
 		err := manager.BatchOperation(context.Background(), items, operation, true)
-		
+
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "Batch operation failed")
 		assert.Contains(t, err.Error(), "2/4") // 2 out of 4 failed
 	})
-	
+
 	t.Run("batch operation with failures - stop on error", func(t *testing.T) {
 		items := []interface{}{"item1", "item2", "item3", "item4"}
-		
+
 		operation := func(ctx context.Context, item interface{}) error {
 			if item.(string) == "item2" {
 				return errors.New("processing failed")
 			}
 			return nil
 		}
-		
+
 		err := manager.BatchOperation(context.Background(), items, operation, false)
-		
+
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "TestResource 1") // Failed at index 1
 		assert.Contains(t, err.Error(), "processing failed")
 	})
-	
+
 	t.Run("empty items", func(t *testing.T) {
 		items := []interface{}{}
-		
+
 		operation := func(ctx context.Context, item interface{}) error {
 			return errors.New("should not be called")
 		}
-		
+
 		err := manager.BatchOperation(context.Background(), items, operation, true)
-		
+
 		require.NoError(t, err)
 	})
-	
-	t.Run("nil context", func(t *testing.T) {
-		items := []interface{}{"item1"}
-		
-		operation := func(ctx context.Context, item interface{}) error {
-			return nil
-		}
-		
-		err := manager.BatchOperation(nil, items, operation, true)
-		
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "context is required")
-	})
+
+	// Nil context validation is covered in TestCRUDManager_ValidateContext
 }
 
 func TestCRUDManager_ResourceNotFoundError(t *testing.T) {
 	manager := NewCRUDManager("v0.0.43", "TestResource")
-	
+
 	identifier := "test-resource-123"
 	err := manager.ResourceNotFoundError(identifier)
-	
+
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "TestResource")
 	assert.Contains(t, err.Error(), identifier)
@@ -339,7 +328,7 @@ func TestCRUDManager_convertToSlice(t *testing.T) {
 			wantErr:  true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// convertToSlice is not a public method, skipping this test
@@ -348,12 +337,12 @@ func TestCRUDManager_convertToSlice(t *testing.T) {
 			var err error
 			_ = result
 			_ = err
-			
+
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
-			
+
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, result)
 		})

@@ -9,7 +9,7 @@ import (
 	"log"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -19,7 +19,7 @@ func main() {
 	// Create configuration
 	cfg := config.NewDefault()
 	cfg.BaseURL = "https://cluster.example.com:6820"
-	
+
 	// Create authentication
 	authProvider := auth.NewTokenAuth("your-jwt-token")
 
@@ -74,7 +74,7 @@ func demonstrateVersionFeatures(ctx context.Context, cfg *config.Config, auth au
 
 	for _, version := range versions {
 		fmt.Printf("\n--- Testing %s ---\n", version)
-		
+
 		// Create version-specific client
 		client, err := slurm.NewClientWithVersion(ctx, version,
 			slurm.WithConfig(cfg),
@@ -104,7 +104,7 @@ func demonstrateVersionFeatures(ctx context.Context, cfg *config.Config, auth au
 // testV40Features tests features specific to v0.0.40
 func testV40Features(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Testing v0.0.40 features:")
-	
+
 	// v0.0.40 uses minimum_switches in job submission
 	job := &interfaces.JobSubmission{
 		Name:      "v40-test",
@@ -114,9 +114,9 @@ func testV40Features(ctx context.Context, client slurm.SlurmClient) {
 		Memory:    4096,
 		TimeLimit: 10,
 		// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 			"minimum_switches": 1, // v0.0.40 specific field
-// 		},
+		// 		// Removed: Metadata: map[string]interface{}{
+		// 			"minimum_switches": 1, // v0.0.40 specific field
+		// 		},
 	}
 
 	resp, err := client.Jobs().Submit(ctx, job)
@@ -142,7 +142,7 @@ func testV40Features(ctx context.Context, client slurm.SlurmClient) {
 // testV41Features tests features specific to v0.0.41
 func testV41Features(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Testing v0.0.41 features:")
-	
+
 	// v0.0.41 renamed minimum_switches to required_switches
 	job := &interfaces.JobSubmission{
 		Name:      "v41-test",
@@ -152,9 +152,9 @@ func testV41Features(ctx context.Context, client slurm.SlurmClient) {
 		Memory:    4096,
 		TimeLimit: 10,
 		// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 			"required_switches": 1, // v0.0.41 renamed field
-// 		},
+		// 		// Removed: Metadata: map[string]interface{}{
+		// 			"required_switches": 1, // v0.0.41 renamed field
+		// 		},
 	}
 
 	resp, err := client.Jobs().Submit(ctx, job)
@@ -183,7 +183,7 @@ func testV41Features(ctx context.Context, client slurm.SlurmClient) {
 // testV42Features tests features specific to v0.0.42 (stable)
 func testV42Features(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Testing v0.0.42 features (stable version):")
-	
+
 	// v0.0.42 removed exclusive and oversubscribe from job outputs
 	job := &interfaces.JobSubmission{
 		Name:      "v42-test",
@@ -193,10 +193,10 @@ func testV42Features(ctx context.Context, client slurm.SlurmClient) {
 		Memory:    8192,
 		TimeLimit: 15,
 		// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 			"required_switches": 1,
-// 			// exclusive and oversubscribe no longer in outputs
-// 		},
+		// 		// Removed: Metadata: map[string]interface{}{
+		// 			"required_switches": 1,
+		// 			// exclusive and oversubscribe no longer in outputs
+		// 		},
 	}
 
 	resp, err := client.Jobs().Submit(ctx, job)
@@ -227,7 +227,7 @@ func testV42Features(ctx context.Context, client slurm.SlurmClient) {
 // testV43Features tests features specific to v0.0.43 (latest)
 func testV43Features(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Testing v0.0.43 features (latest version):")
-	
+
 	// v0.0.43 adds reservation management support
 	job := &interfaces.JobSubmission{
 		Name:      "v43-test",
@@ -237,9 +237,9 @@ func testV43Features(ctx context.Context, client slurm.SlurmClient) {
 		Memory:    8192,
 		TimeLimit: 15,
 		// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 			"reservation": "weekly-maintenance", // v0.0.43 reservation support
-// 		},
+		// 		// Removed: Metadata: map[string]interface{}{
+		// 			"reservation": "weekly-maintenance", // v0.0.43 reservation support
+		// 		},
 	}
 
 	resp, err := client.Jobs().Submit(ctx, job)
@@ -267,7 +267,7 @@ func testV43Features(ctx context.Context, client slurm.SlurmClient) {
 // handleBreakingChanges demonstrates handling breaking changes between versions
 func handleBreakingChanges(ctx context.Context, cfg *config.Config, auth auth.Provider) {
 	// Example: Submit a job that works across versions with different field names
-	
+
 	// Detect server version first
 	client, err := slurm.NewClient(ctx,
 		slurm.WithConfig(cfg),
@@ -319,7 +319,7 @@ func handleBreakingChanges(ctx context.Context, cfg *config.Config, auth auth.Pr
 // checkVersionCompatibility shows how to check version compatibility
 func checkVersionCompatibility() {
 	fmt.Println("\nVersion Compatibility Information:")
-	
+
 	// Show all supported versions
 	fmt.Printf("Supported API versions: %v\n", slurm.SupportedVersions())
 	fmt.Printf("Stable version: %s\n", slurm.StableVersion())
@@ -327,7 +327,7 @@ func checkVersionCompatibility() {
 
 	// Check compatibility for specific SLURM versions
 	slurmVersions := []string{"24.05", "24.11", "25.05", "25.11"}
-	
+
 	fmt.Println("\nSLURM version to API version mapping:")
 	for _, slurmVer := range slurmVersions {
 		compatibility := getVersionCompatibility(slurmVer)

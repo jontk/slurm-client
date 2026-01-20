@@ -13,7 +13,6 @@ import (
 	"github.com/jontk/slurm-client/pkg/middleware"
 	"github.com/jontk/slurm-client/pkg/pool"
 	"github.com/jontk/slurm-client/pkg/retry"
-	"log/slog"
 )
 
 // EnhancedOptions holds the new configuration options
@@ -21,32 +20,32 @@ type EnhancedOptions struct {
 	// Logging
 	Logger   logging.Logger
 	LogLevel string
-	
+
 	// Metrics
 	MetricsCollector metrics.Collector
-	
+
 	// Middleware
 	Middlewares []middleware.Middleware
-	
+
 	// Timeouts
 	DefaultTimeout time.Duration
 	TimeoutConfig  *slurmctx.TimeoutConfig
-	
+
 	// Connection pooling
 	ConnectionPool *pool.HTTPClientPool
 	PoolConfig     *pool.PoolConfig
-	
+
 	// Retry
 	RetryBackoff retry.Policy
 	MaxRetries   int
-	
+
 	// HTTP options
-	UserAgent       string
-	RequestIDGen    func() string
-	CircuitBreaker  *circuitBreakerConfig
-	Compression     *bool
-	KeepAlive       *bool
-	
+	UserAgent      string
+	RequestIDGen   func() string
+	CircuitBreaker *circuitBreakerConfig
+	Compression    *bool
+	KeepAlive      *bool
+
 	// Debug mode
 	Debug bool
 }
@@ -198,14 +197,14 @@ func (f *ClientFactory) WithDebug() error {
 func (f *ClientFactory) buildEnhancedHTTPClient() *http.Client {
 	// Start with base client or pooled client
 	var baseClient *http.Client
-	
+
 	// Use connection pool if configured
 	if f.enhanced != nil && f.enhanced.PoolConfig != nil {
 		logger := f.enhanced.Logger
 		if logger == nil {
 			logger = logging.NoOpLogger{}
 		}
-		
+
 		pool := pool.NewHTTPClientPool(f.enhanced.PoolConfig, logger)
 		f.enhanced.ConnectionPool = pool
 		baseClient = pool.GetClient(f.baseURL)
@@ -216,51 +215,51 @@ func (f *ClientFactory) buildEnhancedHTTPClient() *http.Client {
 			Timeout: 30 * time.Second,
 		}
 	}
-	
+
 	// Apply middleware if configured
 	if f.enhanced != nil && len(f.enhanced.Middlewares) > 0 {
 		transport := baseClient.Transport
 		if transport == nil {
 			transport = http.DefaultTransport
 		}
-		
+
 		// Build middleware chain
 		middlewares := f.buildMiddlewareChain()
-		
+
 		// Apply middleware
 		for i := len(middlewares) - 1; i >= 0; i-- {
 			transport = middlewares[i](transport)
 		}
-		
+
 		baseClient.Transport = transport
 	}
-	
+
 	return baseClient
 }
 
 // buildMiddlewareChain builds the complete middleware chain
 func (f *ClientFactory) buildMiddlewareChain() []middleware.Middleware {
 	var middlewares []middleware.Middleware
-	
+
 	if f.enhanced == nil {
 		return middlewares
 	}
-	
+
 	// Add timeout middleware
 	if f.enhanced.DefaultTimeout > 0 {
 		middlewares = append(middlewares, middleware.WithTimeout(f.enhanced.DefaultTimeout))
 	}
-	
+
 	// Add logging middleware
 	if f.enhanced.Logger != nil {
 		middlewares = append(middlewares, middleware.WithLogging(f.enhanced.Logger))
 	}
-	
+
 	// Add metrics middleware
 	if f.enhanced.MetricsCollector != nil {
 		middlewares = append(middlewares, middleware.WithMetrics(f.enhanced.MetricsCollector))
 	}
-	
+
 	// Add retry middleware
 	if f.enhanced.RetryBackoff != nil || f.enhanced.MaxRetries > 0 {
 		maxRetries := f.enhanced.MaxRetries
@@ -269,7 +268,7 @@ func (f *ClientFactory) buildMiddlewareChain() []middleware.Middleware {
 		}
 		middlewares = append(middlewares, middleware.WithRetry(maxRetries, middleware.DefaultShouldRetry))
 	}
-	
+
 	// Add circuit breaker
 	if f.enhanced.CircuitBreaker != nil {
 		middlewares = append(middlewares, middleware.WithCircuitBreaker(
@@ -277,64 +276,21 @@ func (f *ClientFactory) buildMiddlewareChain() []middleware.Middleware {
 			f.enhanced.CircuitBreaker.Timeout,
 		))
 	}
-	
+
 	// Add request ID
 	if f.enhanced.RequestIDGen != nil {
 		middlewares = append(middlewares, middleware.WithRequestID(f.enhanced.RequestIDGen))
 	}
-	
+
 	// Add user agent
 	if f.enhanced.UserAgent != "" {
 		middlewares = append(middlewares, middleware.WithUserAgent(f.enhanced.UserAgent))
 	}
-	
+
 	// Add user-provided middleware
 	middlewares = append(middlewares, f.enhanced.Middlewares...)
-	
+
 	return middlewares
-}
-
-// setupLogger configures the logger based on options
-func (f *ClientFactory) setupLogger() logging.Logger {
-	if f.enhanced == nil || f.enhanced.Logger == nil {
-		// Create default logger
-		config := logging.DefaultConfig()
-		
-		if f.enhanced != nil {
-			if f.enhanced.Debug {
-				config.Level = slog.LevelDebug
-			} else if f.enhanced.LogLevel != "" {
-				switch f.enhanced.LogLevel {
-				case "debug":
-					config.Level = slog.LevelDebug
-				case "info":
-					config.Level = slog.LevelInfo
-				case "warn":
-					config.Level = slog.LevelWarn
-				case "error":
-					config.Level = slog.LevelError
-				}
-			}
-		}
-		
-		return logging.NewLogger(config)
-	}
-	
-	return f.enhanced.Logger
-}
-
-// setupMetrics configures metrics collection
-func (f *ClientFactory) setupMetrics() metrics.Collector {
-	if f.enhanced != nil && f.enhanced.MetricsCollector != nil {
-		return f.enhanced.MetricsCollector
-	}
-	
-	// Return default in-memory collector if metrics are needed
-	if f.enhanced != nil && f.enhanced.Debug {
-		return metrics.NewInMemoryCollector()
-	}
-	
-	return metrics.NoOpCollector{}
 }
 
 // GetEnhancedOptions returns the enhanced options for use by implementations

@@ -7,7 +7,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/pkg/auth"
@@ -46,7 +48,7 @@ func main() {
 
 func demonstrateNoAuth(ctx context.Context) {
 	fmt.Println("Creating client with no authentication...")
-	
+
 	// Use none authentication for public endpoints
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://localhost:6820"),
@@ -87,7 +89,7 @@ func demonstrateTokenAuth(ctx context.Context) {
 
 	// Create token authentication provider
 	tokenAuth := auth.NewTokenAuth(token)
-	
+
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://localhost:6820"),
 		slurm.WithAuth(tokenAuth),
@@ -138,7 +140,7 @@ func demonstrateBasicAuth(ctx context.Context) {
 	// Get credentials from environment or use examples
 	username := os.Getenv("SLURM_USERNAME")
 	password := os.Getenv("SLURM_PASSWORD")
-	
+
 	if username == "" || password == "" {
 		username = "slurmuser"
 		password = "slurmpass"
@@ -147,7 +149,7 @@ func demonstrateBasicAuth(ctx context.Context) {
 
 	// Create basic authentication provider
 	basicAuth := auth.NewBasicAuth(username, password)
-	
+
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://localhost:6820"),
 		slurm.WithAuth(basicAuth),
@@ -248,7 +250,7 @@ func demonstrateConfigFileAuth(ctx context.Context) {
 	// Demonstrate loading from file
 	fmt.Printf("Demonstrating config file loading...\n")
 	configPath := "/tmp/slurm-config.json"
-	
+
 	err = cfg.SaveToFile(configPath)
 	if err != nil {
 		log.Printf("✗ Failed to save config file: %v", err)
@@ -269,7 +271,7 @@ func demonstrateConfigFileAuth(ctx context.Context) {
 	}
 
 	fmt.Printf("✓ Client created from config file: %s\n", configPath)
-	
+
 	err = testBasicConnection(ctx, fileClient)
 	if err != nil {
 		log.Printf("✗ File-based client failed: %v", err)
@@ -309,7 +311,7 @@ func demonstrateCustomAuth(ctx context.Context) {
 
 	// Demonstrate OAuth-like authentication
 	fmt.Printf("Demonstrating OAuth-like authentication...\n")
-	
+
 	oauthAuth := &OAuthAuth{
 		clientID:     "slurm-client-id",
 		clientSecret: "slurm-client-secret",
@@ -346,7 +348,7 @@ func demonstrateCustomAuth(ctx context.Context) {
 
 func testAuthenticatedOperations(ctx context.Context, client slurm.SlurmClient) error {
 	// Test operations that require authentication
-	
+
 	// 1. Get server info
 	_, err := client.GetInfo(ctx)
 	if err != nil {

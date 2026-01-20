@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/internal/factory"
-	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -24,7 +24,7 @@ func main() {
 	}
 
 	version := os.Args[1]
-	
+
 	// Get JWT token from environment
 	jwtToken := os.Getenv("SLURM_JWT")
 	if jwtToken == "" {
@@ -59,15 +59,15 @@ func main() {
 
 	// Test job submission
 	ctx := context.Background()
-	
+
 	fmt.Println("\n=== Testing Job Submission with Wrapper Client ===")
 	testJob := &interfaces.JobSubmission{
-		Name:      fmt.Sprintf("wrapper-test-%s-%d", version, time.Now().Unix()),
-		Partition: "normal",
-		Script:    "#!/bin/bash\necho 'Hello from wrapper test'\necho 'PATH=$PATH'\necho 'TEST_VAR=$TEST_VAR'\nsleep 10\necho 'Done'",
-		TimeLimit: 1, // 1 minute
-		Nodes:     1,
-		WorkingDir: "/tmp",  // Add working directory
+		Name:       fmt.Sprintf("wrapper-test-%s-%d", version, time.Now().Unix()),
+		Partition:  "normal",
+		Script:     "#!/bin/bash\necho 'Hello from wrapper test'\necho 'PATH=$PATH'\necho 'TEST_VAR=$TEST_VAR'\nsleep 10\necho 'Done'",
+		TimeLimit:  1, // 1 minute
+		Nodes:      1,
+		WorkingDir: "/tmp", // Add working directory
 		Environment: map[string]string{
 			"PATH":     "/usr/bin:/bin",
 			"USER":     "root",
@@ -80,7 +80,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to submit job: %v", err)
 	}
-	
+
 	fmt.Printf("Successfully submitted job with ID: %s\n", submitResp.JobID)
 
 	// Cancel the job

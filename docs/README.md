@@ -7,7 +7,6 @@ This directory contains comprehensive documentation for the SLURM REST API Clien
 ### Architecture and Design
 - [Architecture Documentation](./ARCHITECTURE.md) - Technical design and patterns
 - [Code Generation Guide](./CODE_GENERATION.md) - OpenAPI code generation process
-- [Product Requirements](./PRD.md) - Comprehensive requirements and specifications
 
 ### Configuration and Deployment
 - [Configuration Guide](./configuration.md) - All configuration options

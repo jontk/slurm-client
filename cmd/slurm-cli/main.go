@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	"github.com/spf13/cobra"
@@ -35,9 +35,9 @@ var (
 
 	// Root command
 	rootCmd = &cobra.Command{
-		Use:   "slurm-cli",
-		Short: "CLI tool for SLURM REST API",
-		Long:  `A command-line interface for interacting with SLURM clusters via the REST API.`,
+		Use:     "slurm-cli",
+		Short:   "CLI tool for SLURM REST API",
+		Long:    `A command-line interface for interacting with SLURM clusters via the REST API.`,
 		Version: Version,
 	}
 )
@@ -94,7 +94,7 @@ var versionCmd = &cobra.Command{
 func createClient() (slurm.SlurmClient, error) {
 	// Create configuration
 	cfg := config.NewDefault()
-	
+
 	// Override with flags or environment variables
 	if baseURL != "" {
 		cfg.BaseURL = baseURL
@@ -410,12 +410,12 @@ var partitionsListCmd = &cobra.Command{
 
 		// Output results
 		if outputFmt == "table" {
-			fmt.Printf("%-20s %-10s %-10s %-10s %-15s %-15s\n", 
+			fmt.Printf("%-20s %-10s %-10s %-10s %-15s %-15s\n",
 				"PARTITION", "STATE", "NODES", "CPUS", "MAX TIME", "DEFAULT TIME")
 			fmt.Println(strings.Repeat("-", 85))
 			for _, partition := range partitionList.Partitions {
 				fmt.Printf("%-20s %-10s %-10d %-10d %-15d %-15d\n",
-					partition.Name, partition.State, partition.TotalNodes, 
+					partition.Name, partition.State, partition.TotalNodes,
 					partition.TotalCPUs, partition.MaxTime, partition.DefaultTime)
 			}
 			fmt.Printf("\nTotal: %d partitions\n", partitionList.Total)

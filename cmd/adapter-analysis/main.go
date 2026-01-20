@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/internal/factory"
-	"github.com/jontk/slurm-client/internal/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -78,7 +78,7 @@ func main() {
 func testJobsManager(client interfaces.SlurmClient, version string) {
 	ctx := context.Background()
 	fmt.Println("\n=== Jobs Manager ===")
-	
+
 	fmt.Println("Methods to implement in adapter:")
 	fmt.Println("  - List(ctx, opts) (*JobList, error)")
 	fmt.Println("  - Get(ctx, jobID) (*Job, error)")
@@ -103,11 +103,11 @@ func testJobsManager(client interfaces.SlurmClient, version string) {
 	// Test Submit
 	fmt.Print("Testing Submit: ")
 	submitJob := &interfaces.JobSubmission{
-		Name:      fmt.Sprintf("adapter-analysis-%s-%d", version, time.Now().Unix()),
-		Partition: "normal",
-		Script:    "#!/bin/bash\necho 'Testing adapter analysis'\nsleep 5",
-		TimeLimit: 1,
-		Nodes:     1,
+		Name:       fmt.Sprintf("adapter-analysis-%s-%d", version, time.Now().Unix()),
+		Partition:  "normal",
+		Script:     "#!/bin/bash\necho 'Testing adapter analysis'\nsleep 5",
+		TimeLimit:  1,
+		Nodes:      1,
 		WorkingDir: "/tmp",
 		Environment: map[string]string{
 			"PATH": "/usr/bin:/bin",
@@ -120,7 +120,7 @@ func testJobsManager(client interfaces.SlurmClient, version string) {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
 		fmt.Printf("✅ Success: Job ID %s\n", submitResp.JobID)
-		
+
 		// Test Get
 		fmt.Print("Testing Get: ")
 		job, err := client.Jobs().Get(ctx, submitResp.JobID)
@@ -164,7 +164,7 @@ func testJobsManager(client interfaces.SlurmClient, version string) {
 func testNodesManager(client interfaces.SlurmClient, version string) {
 	ctx := context.Background()
 	fmt.Println("\n=== Nodes Manager ===")
-	
+
 	fmt.Println("Methods to implement in adapter:")
 	fmt.Println("  - List(ctx, opts) (*NodeList, error)")
 	fmt.Println("  - Get(ctx, nodeName) (*Node, error)")
@@ -186,7 +186,7 @@ func testNodesManager(client interfaces.SlurmClient, version string) {
 			}
 		}
 		fmt.Printf("✅ Success: Found %d nodes\n", nodeCount)
-		
+
 		if firstNodeName != "" {
 			// Test Get
 			fmt.Print("Testing Get: ")
@@ -223,7 +223,7 @@ func testNodesManager(client interfaces.SlurmClient, version string) {
 func testPartitionsManager(client interfaces.SlurmClient, version string) {
 	ctx := context.Background()
 	fmt.Println("\n=== Partitions Manager ===")
-	
+
 	fmt.Println("Methods to implement in adapter:")
 	fmt.Println("  - List(ctx, opts) (*PartitionList, error)")
 	fmt.Println("  - Get(ctx, partitionName) (*Partition, error)")
@@ -244,7 +244,7 @@ func testPartitionsManager(client interfaces.SlurmClient, version string) {
 			}
 		}
 		fmt.Printf("✅ Success: Found %d partitions\n", partitionCount)
-		
+
 		if firstPartitionName != "" {
 			// Test Get
 			fmt.Print("Testing Get: ")
@@ -272,7 +272,7 @@ func testPartitionsManager(client interfaces.SlurmClient, version string) {
 func testAccountsManager(client interfaces.SlurmClient, version string) {
 	ctx := context.Background()
 	fmt.Println("\n=== Accounts Manager ===")
-	
+
 	fmt.Println("Methods to implement in adapter:")
 	fmt.Println("  - List(ctx) ([]*Account, error)")
 	fmt.Println("  - Get(ctx, accountName) (*Account, error)")
@@ -304,7 +304,7 @@ func testAccountsManager(client interfaces.SlurmClient, version string) {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
 		fmt.Printf("✅ Success: Created %s\n", testAccount.Name)
-		
+
 		// Test Get
 		fmt.Print("Testing Get: ")
 		account, err := client.Accounts().Get(ctx, testAccount.Name)
@@ -340,7 +340,7 @@ func testAccountsManager(client interfaces.SlurmClient, version string) {
 func testUsersManager(client interfaces.SlurmClient, version string) {
 	ctx := context.Background()
 	fmt.Println("\n=== Users Manager ===")
-	
+
 	fmt.Println("Methods to implement in adapter:")
 	fmt.Println("  - List(ctx, opts) (*UserList, error)")
 	fmt.Println("  - Get(ctx, userName) (*User, error)")
@@ -363,7 +363,7 @@ func testUsersManager(client interfaces.SlurmClient, version string) {
 			}
 		}
 		fmt.Printf("✅ Success: Found %d users\n", userCount)
-		
+
 		if firstUserName != "" {
 			// Test Get
 			fmt.Print("Testing Get: ")
@@ -373,7 +373,7 @@ func testUsersManager(client interfaces.SlurmClient, version string) {
 			} else {
 				fmt.Printf("✅ Success: Got user %s\n", user.Name)
 			}
-			
+
 			// Test GetUserAccounts
 			fmt.Print("Testing GetUserAccounts: ")
 			accounts, err := client.Users().GetUserAccounts(ctx, firstUserName)
@@ -382,7 +382,7 @@ func testUsersManager(client interfaces.SlurmClient, version string) {
 			} else {
 				fmt.Printf("✅ Success: Got %d accounts\n", len(accounts))
 			}
-			
+
 			// Test GetUserQuotas
 			fmt.Print("Testing GetUserQuotas: ")
 			_, err = client.Users().GetUserQuotas(ctx, firstUserName)
@@ -391,7 +391,7 @@ func testUsersManager(client interfaces.SlurmClient, version string) {
 			} else {
 				fmt.Printf("✅ Success: Got quotas\n")
 			}
-			
+
 			// Test GetUserDefaultAccount
 			fmt.Print("Testing GetUserDefaultAccount: ")
 			_, err = client.Users().GetUserDefaultAccount(ctx, firstUserName)
@@ -407,7 +407,7 @@ func testUsersManager(client interfaces.SlurmClient, version string) {
 func testQoSManager(client interfaces.SlurmClient, version string) {
 	ctx := context.Background()
 	fmt.Println("\n=== QoS Manager ===")
-	
+
 	fmt.Println("Methods to implement in adapter:")
 	fmt.Println("  - List(ctx) ([]*QoS, error)")
 	fmt.Println("  - Get(ctx, qosName) (*QoS, error)")
@@ -430,7 +430,7 @@ func testQoSManager(client interfaces.SlurmClient, version string) {
 			}
 		}
 		fmt.Printf("✅ Success: Found %d QoS\n", qosCount)
-		
+
 		if firstQoSName != "" {
 			// Test Get
 			fmt.Print("Testing Get: ")
@@ -455,7 +455,7 @@ func testQoSManager(client interfaces.SlurmClient, version string) {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
 		fmt.Printf("✅ Success: Created %s\n", testQoS.Name)
-		
+
 		// Test Update
 		fmt.Print("Testing Update: ")
 		updateQoS := &interfaces.QoSUpdate{
@@ -482,7 +482,7 @@ func testQoSManager(client interfaces.SlurmClient, version string) {
 func testReservationsManager(client interfaces.SlurmClient, version string) {
 	ctx := context.Background()
 	fmt.Println("\n=== Reservations Manager ===")
-	
+
 	fmt.Println("Methods to implement in adapter:")
 	fmt.Println("  - List(ctx, opts) (*ReservationList, error)")
 	fmt.Println("  - Get(ctx, reservationName) (*Reservation, error)")
@@ -519,7 +519,7 @@ func testReservationsManager(client interfaces.SlurmClient, version string) {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
 		fmt.Printf("✅ Success: Created %s\n", testReservation.Name)
-		
+
 		// Test Get
 		fmt.Print("Testing Get: ")
 		reservation, err := client.Reservations().Get(ctx, testReservation.Name)
@@ -554,7 +554,7 @@ func testReservationsManager(client interfaces.SlurmClient, version string) {
 func testAssociationsManager(client interfaces.SlurmClient, version string) {
 	ctx := context.Background()
 	fmt.Println("\n=== Associations Manager ===")
-	
+
 	fmt.Println("Methods to implement in adapter:")
 	fmt.Println("  - List(ctx, opts) (*AssociationList, error)")
 	fmt.Println("  - Get(ctx, opts) (*Association, error)")
@@ -573,7 +573,7 @@ func testAssociationsManager(client interfaces.SlurmClient, version string) {
 			assocCount = len(associations.Associations)
 		}
 		fmt.Printf("✅ Success: Found %d associations\n", assocCount)
-		
+
 		if assocCount > 0 {
 			// Test Get
 			fmt.Print("Testing Get: ")

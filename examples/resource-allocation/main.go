@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/internal/interfaces"
+	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -20,7 +20,7 @@ func main() {
 	// Create configuration
 	cfg := config.NewDefault()
 	cfg.BaseURL = "https://cluster.example.com:6820"
-	
+
 	// Create authentication
 	authProvider := auth.NewTokenAuth("your-jwt-token")
 
@@ -108,16 +108,16 @@ srun python3 distributed_train.py \
     --master-port 29500
 `,
 		Partition: "gpu",
-		CPUs:      32, // 4 tasks * 8 CPUs
+		CPUs:      32,     // 4 tasks * 8 CPUs
 		Memory:    131072, // 128GB total
 		TimeLimit: 360,
 		Nodes:     1, // All GPUs on same node
 		// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 			"gres":       "gpu:4",
-// 			"constraint": "v100",
-// 			"ntasks":     4,
-// 		},
+		// 		// Removed: Metadata: map[string]interface{}{
+		// 			"gres":       "gpu:4",
+		// 			"constraint": "v100",
+		// 			"ntasks":     4,
+		// 		},
 	}
 
 	resp2, err := client.Jobs().Submit(ctx, multiGPUJob)
@@ -145,9 +145,9 @@ python3 inference.py --model large_model.pt --precision fp16
 		Memory:    65536,
 		TimeLimit: 60,
 		// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 			"gres": "gpu:a100:2",
-// 		},
+		// 		// Removed: Metadata: map[string]interface{}{
+		// 			"gres": "gpu:a100:2",
+		// 		},
 	}
 
 	resp3, err := client.Jobs().Submit(ctx, gpuTypeJob)
@@ -201,10 +201,10 @@ python3 process_large_dataset.py --input /data/huge_file.csv
 		Memory:    262144, // 256GB total (32GB per CPU)
 		TimeLimit: 120,
 		// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 			"mem-per-cpu": "32G",
-// 			"constraint":  "highmem",
-// 		},
+		// 		// Removed: Metadata: map[string]interface{}{
+		// 			"mem-per-cpu": "32G",
+		// 			"constraint":  "highmem",
+		// 		},
 	}
 
 	resp2, err := client.Jobs().Submit(ctx, highMemJob)
@@ -232,10 +232,10 @@ echo "Total node memory: $(free -h | grep Mem | awk '{print $2}')"
 		Memory:    0,  // All available
 		TimeLimit: 60,
 		// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 			"exclusive": true,
-// 			"mem":       "0",
-// 		},
+		// 		// Removed: Metadata: map[string]interface{}{
+		// 			"exclusive": true,
+		// 			"mem":       "0",
+		// 		},
 	}
 
 	resp3, err := client.Jobs().Submit(ctx, memReserveJob)
@@ -265,9 +265,9 @@ echo "Node: $SLURMD_NODENAME"
 		Memory:    32768,
 		TimeLimit: 45,
 		// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 			"constraint": "haswell|broadwell",
-// 		},
+		// 		// Removed: Metadata: map[string]interface{}{
+		// 			"constraint": "haswell|broadwell",
+		// 		},
 	}
 
 	resp1, err := client.Jobs().Submit(ctx, archJob)
@@ -296,11 +296,11 @@ mpirun -np $SLURM_NTASKS ./mpi_application
 		Nodes:     4,
 		TimeLimit: 180,
 		// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 			"constraint": "ib&rack3",
-// 			"switches":   1,
-// 			"ntasks":     64,
-// 		},
+		// 		// Removed: Metadata: map[string]interface{}{
+		// 			"constraint": "ib&rack3",
+		// 			"switches":   1,
+		// 			"ntasks":     64,
+		// 		},
 	}
 
 	resp2, err := client.Jobs().Submit(ctx, networkJob)
@@ -329,10 +329,10 @@ cat /etc/redhat-release      # Show OS version
 		Memory:    16384,
 		TimeLimit: 30,
 		// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 			"constraint": "ssd&gpu&centos7",
-// 			"gres":       "gpu:1",
-// 		},
+		// 		// Removed: Metadata: map[string]interface{}{
+		// 			"constraint": "ssd&gpu&centos7",
+		// 			"gres":       "gpu:1",
+		// 		},
 	}
 
 	resp3, err := client.Jobs().Submit(ctx, featureJob)
@@ -357,14 +357,14 @@ echo "No other jobs can run on these nodes"
 scontrol show node $SLURM_JOB_NODELIST
 `,
 		Partition: "compute",
-		CPUs:      96,  // 2 nodes * 48 CPUs
-		Memory:    0,   // All available
+		CPUs:      96, // 2 nodes * 48 CPUs
+		Memory:    0,  // All available
 		Nodes:     2,
 		TimeLimit: 60,
 		// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 			"exclusive": true,
-// 		},
+		// 		// Removed: Metadata: map[string]interface{}{
+		// 			"exclusive": true,
+		// 		},
 	}
 
 	resp1, err := client.Jobs().Submit(ctx, exclusiveJob)
@@ -391,9 +391,9 @@ echo "Allocated memory: ${SLURM_MEM_PER_NODE}MB"
 		Memory:    8192,
 		TimeLimit: 30,
 		// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 			"oversubscribe": true,
-// 		},
+		// 		// Removed: Metadata: map[string]interface{}{
+		// 			"oversubscribe": true,
+		// 		},
 	}
 
 	resp2, err := client.Jobs().Submit(ctx, sharedJob)
@@ -423,11 +423,11 @@ srun ./numa_optimized_app
 		Memory:    16384,
 		TimeLimit: 45,
 		// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 			"cpu-bind":       "cores",
-// 			"ntasks":         4,
-// 			"cpus-per-task":  2,
-// 		},
+		// 		// Removed: Metadata: map[string]interface{}{
+		// 			"cpu-bind":       "cores",
+		// 			"ntasks":         4,
+		// 			"cpus-per-task":  2,
+		// 		},
 	}
 
 	resp3, err := client.Jobs().Submit(ctx, coreBindJob)
@@ -465,7 +465,7 @@ func discoverAndAllocateResources(ctx context.Context, client slurm.SlurmClient)
 		return
 	}
 
-	fmt.Printf("Selected partition: %s (CPUs: %d, Nodes: %d)\n", 
+	fmt.Printf("Selected partition: %s (CPUs: %d, Nodes: %d)\n",
 		bestPartition.Name, bestPartition.TotalCPUs, bestPartition.TotalNodes)
 
 	// Get node information for the partition
@@ -481,7 +481,7 @@ func discoverAndAllocateResources(ctx context.Context, client slurm.SlurmClient)
 	// Find nodes with specific features
 	var gpuNodes []string
 	var highMemNodes []string
-	
+
 	for _, node := range nodes.Nodes {
 		// Check for GPU nodes
 		for _, feature := range node.Features {
@@ -490,7 +490,7 @@ func discoverAndAllocateResources(ctx context.Context, client slurm.SlurmClient)
 				break
 			}
 		}
-		
+
 		// Check for high memory nodes (>256GB)
 		if node.Memory > 262144 {
 			highMemNodes = append(highMemNodes, node.Name)
@@ -516,10 +516,10 @@ python3 gpu_workload.py
 			Memory:    32768,
 			TimeLimit: 60,
 			// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 				"gres":     "gpu:1",
-// 				"nodelist": gpuNodes[0],
-// 			},
+			// 		// Removed: Metadata: map[string]interface{}{
+			// 				"gres":     "gpu:1",
+			// 				"nodelist": gpuNodes[0],
+			// 			},
 		}
 
 		resp, err := client.Jobs().Submit(ctx, gpuJob)
@@ -546,9 +546,9 @@ python3 memory_analysis.py --use-all-memory
 			Memory:    262144, // 256GB
 			TimeLimit: 90,
 			// Metadata would be in SBATCH directives
-// 		// Removed: Metadata: map[string]interface{}{
-// 				"nodelist": highMemNodes[0],
-// 			},
+			// 		// Removed: Metadata: map[string]interface{}{
+			// 				"nodelist": highMemNodes[0],
+			// 			},
 		}
 
 		resp, err := client.Jobs().Submit(ctx, memJob)

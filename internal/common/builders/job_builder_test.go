@@ -49,13 +49,10 @@ sleep 10`
 	})
 
 	t.Run("both command and script fails", func(t *testing.T) {
-		_, err := NewJobBuilder("echo test").
-			WithName("test").
-			Build()
 		// Modify the job to have both command and script
 		builder := NewJobBuilder("echo test")
 		builder.job.Script = "#!/bin/bash\necho test"
-		_, err = builder.Build()
+		_, err := builder.Build()
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot specify both command and script")
 	})
@@ -82,12 +79,12 @@ func TestJobBuilder_Resources(t *testing.T) {
 		job, err := NewJobBuilder("./memory_intensive").
 			WithName("memory-job").
 			WithResourceRequests().
-				WithMemoryGB(32).
-				WithMemoryPerCPU(4 * GB).
-				WithTmpDisk(100 * GB).
-				WithCPUsPerTask(2).
-				WithTasksPerNode(4).
-				Done().
+			WithMemoryGB(32).
+			WithMemoryPerCPU(4 * GB).
+			WithTmpDisk(100 * GB).
+			WithCPUsPerTask(2).
+			WithTasksPerNode(4).
+			Done().
 			Build()
 
 		require.NoError(t, err)
@@ -110,10 +107,10 @@ func TestJobBuilder_Resources(t *testing.T) {
 func TestJobBuilder_Environment(t *testing.T) {
 	t.Run("environment variables", func(t *testing.T) {
 		env := map[string]string{
-			"OMP_NUM_THREADS": "8",
+			"OMP_NUM_THREADS":      "8",
 			"CUDA_VISIBLE_DEVICES": "0,1",
 		}
-		
+
 		job, err := NewJobBuilder("./parallel_app").
 			WithName("parallel-job").
 			WithEnvironment(env).
@@ -138,12 +135,12 @@ func TestJobBuilder_Dependencies(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Len(t, job.Dependencies, 2)
-		
+
 		dep1 := job.Dependencies[0]
 		assert.Equal(t, "afterok", dep1.Type)
 		assert.Equal(t, []int32{12345, 12346}, dep1.JobIDs)
 		assert.Equal(t, "", dep1.State)
-		
+
 		dep2 := job.Dependencies[1]
 		assert.Equal(t, "afternotok", dep2.Type)
 		assert.Equal(t, "FAILED", dep2.State)
@@ -159,10 +156,10 @@ func TestJobBuilder_Presets(t *testing.T) {
 			Build()
 
 		require.NoError(t, err)
-		assert.Equal(t, int32(60), job.TimeLimit)  // 1 hour
-		assert.Equal(t, int32(1), job.CPUs)        // Single CPU
-		assert.Equal(t, int32(1), job.Nodes)       // Single node
-		assert.Equal(t, "yes", job.Shared)         // Allow sharing
+		assert.Equal(t, int32(60), job.TimeLimit) // 1 hour
+		assert.Equal(t, int32(1), job.CPUs)       // Single CPU
+		assert.Equal(t, int32(1), job.Nodes)      // Single node
+		assert.Equal(t, "yes", job.Shared)        // Allow sharing
 	})
 
 	t.Run("batch preset", func(t *testing.T) {
@@ -240,8 +237,8 @@ func TestJobBuilder_BusinessRules(t *testing.T) {
 	t.Run("high memory requires feature", func(t *testing.T) {
 		_, err := NewJobBuilder("test").
 			WithResourceRequests().
-				WithMemoryGB(40). // More than 32GB
-				Done().
+			WithMemoryGB(40). // More than 32GB
+			Done().
 			Build()
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "jobs requiring > 32GB memory must use highmem feature")
@@ -399,15 +396,15 @@ func TestJobResourceRequestsBuilder(t *testing.T) {
 	t.Run("comprehensive resource requests", func(t *testing.T) {
 		job, err := NewJobBuilder("./app").
 			WithResourceRequests().
-				WithMemoryGB(16).
-				WithMemoryPerCPU(2 * GB).
-				WithMemoryPerGPU(8 * GB).
-				WithTmpDisk(50 * GB).
-				WithCPUsPerTask(4).
-				WithTasksPerNode(2).
-				WithTasksPerCore(1).
-				WithThreadsPerCore(2).
-				Done().
+			WithMemoryGB(16).
+			WithMemoryPerCPU(2 * GB).
+			WithMemoryPerGPU(8 * GB).
+			WithTmpDisk(50 * GB).
+			WithCPUsPerTask(4).
+			WithTasksPerNode(2).
+			WithTasksPerCore(1).
+			WithThreadsPerCore(2).
+			Done().
 			Build()
 
 		require.NoError(t, err)
@@ -425,8 +422,8 @@ func TestJobResourceRequestsBuilder(t *testing.T) {
 	t.Run("negative resource requests fail", func(t *testing.T) {
 		_, err := NewJobBuilder("test").
 			WithResourceRequests().
-				WithMemoryGB(-1).
-				Done().
+			WithMemoryGB(-1).
+			Done().
 			Build()
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "must be non-negative")
@@ -454,11 +451,11 @@ func TestJobBuilder_ComplexScenario(t *testing.T) {
 		WithEnvironmentVar("OMP_NUM_THREADS", "4").
 		WithEnvironmentVar("CUDA_VISIBLE_DEVICES", "0,1,2,3").
 		WithResourceRequests().
-			WithMemoryGB(128).
-			WithMemoryPerCPU(8 * GB).
-			WithTmpDisk(500 * GB).
-			WithCPUsPerTask(2).
-			Done().
+		WithMemoryGB(128).
+		WithMemoryPerCPU(8*GB).
+		WithTmpDisk(500*GB).
+		WithCPUsPerTask(2).
+		Done().
 		WithDependency("afterok", 12345).
 		WithComment("Complex multi-GPU job").
 		Build()

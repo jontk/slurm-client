@@ -22,7 +22,7 @@ func BenchmarkNewSlurmError(b *testing.B) {
 
 func BenchmarkWrapError(b *testing.B) {
 	originalErr := fmt.Errorf("connection timeout")
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = errors.WrapError(originalErr)
@@ -55,7 +55,7 @@ func BenchmarkErrorFormatting(b *testing.B) {
 
 func BenchmarkNestedErrorWrapping(b *testing.B) {
 	baseErr := fmt.Errorf("connection failed")
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		err1 := errors.WrapError(baseErr)

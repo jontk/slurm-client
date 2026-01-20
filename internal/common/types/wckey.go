@@ -7,15 +7,15 @@ import "time"
 
 // WCKey represents a Workload Characterization Key
 type WCKey struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	User        string                 `json:"user,omitempty"`
-	Cluster     string                 `json:"cluster"`
-	Description string                 `json:"description,omitempty"`
-	Active      bool                   `json:"active"`
-	CreatedTime *time.Time             `json:"created_time,omitempty"`
-	ModifiedTime *time.Time            `json:"modified_time,omitempty"`
-	Meta        map[string]interface{} `json:"meta,omitempty"`
+	ID           string                 `json:"id"`
+	Name         string                 `json:"name"`
+	User         string                 `json:"user,omitempty"`
+	Cluster      string                 `json:"cluster"`
+	Description  string                 `json:"description,omitempty"`
+	Active       bool                   `json:"active"`
+	CreatedTime  *time.Time             `json:"created_time,omitempty"`
+	ModifiedTime *time.Time             `json:"modified_time,omitempty"`
+	Meta         map[string]interface{} `json:"meta,omitempty"`
 }
 
 // WCKeyList represents a list of WCKeys

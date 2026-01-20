@@ -117,6 +117,29 @@ examples/**/*.csv
 examples/**/efficiency_report_*.json
 examples/**/job_*_analytics.json
 
+# Example compiled binaries (should be rebuilt, not committed)
+examples/account-management/account-management
+examples/adapter-integration/adapter-integration
+examples/array-jobs/array-jobs
+examples/batch-operations/batch-operations
+examples/builder-with-adapter/builder-with-adapter
+examples/efficiency-monitoring/efficiency-monitoring
+examples/enhanced-features/enhanced-features
+examples/error-recovery/error-recovery
+examples/fair-share-analysis/fair-share-analysis
+examples/job-analytics/job-analytics
+examples/job-dependencies/job-dependencies
+examples/multi-version/example
+examples/performance-optimization/performance-optimization
+examples/qos-management/qos-management
+examples/reservation-management/reservation-management
+examples/resource-allocation/resource-allocation
+examples/streaming-server/streaming-server
+examples/user-account-management/user-account-management
+examples/version-differences/version-differences
+examples/watch-jobs/watch-jobs
+examples/watch-nodes/watch-nodes
+
 # Temporary files
 dependencies.txt
 fix_v41_adapters.sh
@@ -133,4 +156,8 @@ adapter-test
 *_report.json
 commit_*.json
 commit_*.txt
+
+# Test output files
+test-*.txt
+test*.txt
 

@@ -28,12 +28,12 @@ func (m *QoSBaseManager) ValidateQoSNameUniqueness(name string, existingQoS []ty
 // ValidateQoSPreemptMode validates preemption mode values
 func (m *QoSBaseManager) ValidateQoSPreemptMode(modes []string) error {
 	validModes := map[string]bool{
-		"OFF":       true,
-		"CANCEL":    true,
+		"OFF":        true,
+		"CANCEL":     true,
 		"CHECKPOINT": true,
-		"GANG":      true,
-		"REQUEUE":   true,
-		"SUSPEND":   true,
+		"GANG":       true,
+		"REQUEUE":    true,
+		"SUSPEND":    true,
 	}
 
 	for _, mode := range modes {
@@ -52,17 +52,17 @@ func (m *QoSBaseManager) ValidateQoSPreemptMode(modes []string) error {
 // ValidateQoSFlags validates QoS flag values
 func (m *QoSBaseManager) ValidateQoSFlags(flags []string) error {
 	validFlags := map[string]bool{
-		"DENY_LIMIT":           true,
+		"DENY_LIMIT":              true,
 		"ENFORCE_USAGE_THRESHOLD": true,
-		"NO_DECAY":            true,
-		"NO_RESERVE":          true,
-		"OVER_PART_QOS":       true,
-		"PART_MAX_NODE":       true,
-		"PART_MIN_NODE":       true,
-		"PART_TIME_LIMIT":     true,
-		"RELATIVE_PRIORITY":   true,
-		"REQUIRES_RES":        true,
-		"USAGE_FACTOR_SAFE":   true,
+		"NO_DECAY":                true,
+		"NO_RESERVE":              true,
+		"OVER_PART_QOS":           true,
+		"PART_MAX_NODE":           true,
+		"PART_MIN_NODE":           true,
+		"PART_TIME_LIMIT":         true,
+		"RELATIVE_PRIORITY":       true,
+		"REQUIRES_RES":            true,
+		"USAGE_FACTOR_SAFE":       true,
 	}
 
 	for _, flag := range flags {
@@ -324,7 +324,7 @@ func (m *QoSBaseManager) ValidateQoSDeletionSafety(qosName string, associations 
 		if strings.EqualFold(assoc.DefaultQoS, qosName) {
 			return errors.NewValidationError(
 				errors.ErrorCodeConflict,
-				fmt.Sprintf("Cannot delete QoS '%s': it is used by association for user '%s' in account '%s'", 
+				fmt.Sprintf("Cannot delete QoS '%s': it is used by association for user '%s' in account '%s'",
 					qosName, assoc.UserName, assoc.AccountName),
 				"qos", qosName, nil,
 			)
@@ -356,7 +356,7 @@ func (m *QoSBaseManager) EnhanceQoSCreateWithDefaults(qos *types.QoSCreate) *typ
 		if qos.Priority == 0 {
 			qos.Priority = 1000000 // High priority
 		}
-		if qos.PreemptMode == nil || len(qos.PreemptMode) == 0 {
+		if len(qos.PreemptMode) == 0 {
 			qos.PreemptMode = []string{"REQUEUE"} // Allow preemption
 		}
 	}
@@ -366,7 +366,7 @@ func (m *QoSBaseManager) EnhanceQoSCreateWithDefaults(qos *types.QoSCreate) *typ
 		if qos.Priority == 0 {
 			qos.Priority = 1 // Low priority
 		}
-		if qos.PreemptMode == nil || len(qos.PreemptMode) == 0 {
+		if len(qos.PreemptMode) == 0 {
 			qos.PreemptMode = []string{"OFF"} // Can be preempted
 		}
 	}

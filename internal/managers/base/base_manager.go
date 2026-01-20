@@ -44,7 +44,7 @@ func (b *BaseManager) ValidateResourceName(name string, fieldName string) error 
 	if name == "" {
 		return errors.NewValidationError(
 			errors.ErrorCodeValidationFailed,
-			fmt.Sprintf("%s name is required", b.resourceType),
+			fmt.Sprintf("%s is required", fieldName),
 			fieldName, name, nil,
 		)
 	}

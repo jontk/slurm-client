@@ -6,8 +6,8 @@ package base
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/jontk/slurm-client/internal/common/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestQoSNameUniqueness(t *testing.T) {
