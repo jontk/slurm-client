@@ -83,11 +83,11 @@ jobs:
     - name: Build
       run: go build -v ./...
 
-  create-release:
-    name: Create Release
+  goreleaser:
+    name: Release with GoReleaser
     needs: [validate-tag, test-release]
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -100,61 +100,14 @@ jobs:
         go-version-file: 'go.mod'
         cache: true
 
-    - name: Generate changelog
-      id: changelog
-      run: |
-        VERSION="${{ needs.validate-tag.outputs.version }}"
-        PREVIOUS_TAG=$(git describe --tags --abbrev=0 "${VERSION}^" 2>/dev/null || echo "")
-        
-        if [ -z "$PREVIOUS_TAG" ]; then
-          echo "No previous tag found, including all commits"
-          RANGE=""
-        else
-          echo "Previous tag: $PREVIOUS_TAG"
-          RANGE="${PREVIOUS_TAG}..${VERSION}"
-        fi
-        
-        # Generate changelog
-        {
-          echo "## What's Changed"
-          echo ""
-          if [ -n "$RANGE" ]; then
-            git log --pretty=format:"* %s (%h) by @%an" $RANGE
-          else
-            git log --pretty=format:"* %s (%h) by @%an"
-          fi
-          echo ""
-          echo ""
-          echo "## Contributors"
-          echo ""
-          if [ -n "$RANGE" ]; then
-            git log --pretty=format:"* @%an" $RANGE | sort -u
-          else
-            git log --pretty=format:"* @%an" | sort -u
-          fi
-        } > CHANGELOG.md
-        
-        # Save changelog for release body
-        {
-          echo "changelog<<EOF"
-          cat CHANGELOG.md
-          echo "EOF"
-        } >> $GITHUB_OUTPUT
-
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@v5
       with:
-        tag_name: ${{ needs.validate-tag.outputs.version }}
-        name: Release ${{ needs.validate-tag.outputs.version }}
-        body: |
-          ${{ steps.changelog.outputs.changelog }}
-          
-          ---
-          
-          **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.changelog.outputs.previous_tag }}...${{ needs.validate-tag.outputs.version }}
-        draft: false
-        prerelease: ${{ needs.validate-tag.outputs.prerelease == 'true' }}
-        generate_release_notes: true
+        distribution: goreleaser
+        version: latest
+        args: release --clean
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # publish-pkg-go-dev:
   #   name: Publish to pkg.go.dev
@@ -181,7 +134,7 @@ jobs:
 
   update-documentation:
     name: Update Documentation
-    needs: [validate-tag, create-release]
+    needs: [validate-tag, goreleaser]
     runs-on: ubuntu-latest
     if: needs.validate-tag.outputs.prerelease == 'false'
     

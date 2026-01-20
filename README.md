@@ -1,5 +1,6 @@
 # Slurm REST API Go Client Library
 
+[![Release](https://img.shields.io/github/v/release/jontk/slurm-client)](https://github.com/jontk/slurm-client/releases/latest)
 [![CI](https://github.com/jontk/slurm-client/actions/workflows/ci.yml/badge.svg)](https://github.com/jontk/slurm-client/actions/workflows/ci.yml)
 [![Security](https://github.com/jontk/slurm-client/actions/workflows/security.yml/badge.svg)](https://github.com/jontk/slurm-client/actions/workflows/security.yml)
 [![codecov](https://codecov.io/gh/jontk/slurm-client/branch/main/graph/badge.svg)](https://codecov.io/gh/jontk/slurm-client)
@@ -261,11 +262,25 @@ For migration between versions, see [MIGRATION.md](MIGRATION.md) which includes:
 
 ### For Library Users
 
+Install the latest version:
+
 ```bash
-go get github.com/jontk/slurm-client
+go get github.com/jontk/slurm-client@latest
+```
+
+Or install a specific version:
+
+```bash
+# Install a specific release
+go get github.com/jontk/slurm-client@v0.1.0
+
+# Or use a version constraint in go.mod
+require github.com/jontk/slurm-client v0.1.0
 ```
 
 That's it! The library is ready to use in your applications.
+
+**Latest Release**: See [releases page](https://github.com/jontk/slurm-client/releases) for version details and changelog.
 
 ### For Contributors/Developers
 

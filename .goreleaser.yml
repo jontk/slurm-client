@@ -1,0 +1,132 @@
+# GoReleaser configuration for slurm-client
+# See https://goreleaser.com for documentation
+
+version: 2
+
+# Project metadata
+project_name: slurm-client
+
+# Build configuration
+builds:
+  - id: slurm-cli
+    main: ./cmd/slurm-cli
+    binary: slurm-cli
+    dir: .
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    goarm:
+      - "7"
+    ignore:
+      # Windows ARM builds are not well supported
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -X main.builtBy=goreleaser
+
+# Archive configuration
+archives:
+  - id: default
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+
+# Checksum configuration
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+# Snapshot configuration (for development builds)
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+# Changelog configuration
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"
+      - "Merge pull request"
+      - "Merge branch"
+  groups:
+    - title: "New Features"
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: "Bug Fixes"
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: "Performance Improvements"
+      regexp: '^.*?perf(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: "Security Updates"
+      regexp: '^.*?sec(\([[:word:]]+\))??!?:.+$'
+      order: 3
+    - title: "Other Changes"
+      order: 999
+
+# GitHub release configuration
+release:
+  github:
+    owner: jontk
+    name: slurm-client
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## Release {{ .Tag }} ({{ .Date }})
+
+    Welcome to this new release of slurm-client!
+
+    ### Installation
+
+    Download the appropriate binary for your platform below to get the CLI tool.
+
+    For library usage:
+
+    ```bash
+    go get github.com/jontk/slurm-client@{{ .Tag }}
+    ```
+  footer: |
+    ## Docker Images
+
+    Docker images are not yet available but planned for future releases.
+
+    ## Full Changelog
+
+    See [CHANGELOG.md](https://github.com/jontk/slurm-client/blob/main/CHANGELOG.md) for the complete changelog.
+
+    **Full Changelog**: https://github.com/jontk/slurm-client/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+# Announce configuration (disabled for now, can enable later)
+# announce:
+#   skip: true
