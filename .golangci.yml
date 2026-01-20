@@ -4,6 +4,8 @@
 # This file configures golangci-lint for the slurm-client project
 # Run with: golangci-lint run
 
+version: 2
+
 run:
   # Timeout for analysis
   timeout: 10m
@@ -48,9 +50,7 @@ linters:
     - intrange       # 128 errors - suggests integer range syntax, purely stylistic
     - copyloopvar    # 4 errors - Go 1.22+ removes need for loop var copies
 
-    # Disable formatting linters (use standard gofmt)
-    - gci            # 65 errors - import ordering, can auto-fix but not critical
-    - gofumpt        # 32 errors - stricter gofmt, standard gofmt is sufficient
+    # Note: gci and gofumpt are formatters and are automatically excluded in v2
 
     # Disable opinionated style linters
     - nonamedreturns # 3 errors - named returns improve readability in complex functions

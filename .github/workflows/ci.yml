@@ -16,9 +16,9 @@ permissions:
   pull-requests: write
 
 env:
-  GO_VERSION_STABLE: '1.22'
-  GO_VERSION_OLDSTABLE: '1.21'
-  GO_VERSION_MINIMUM: '1.21'
+  GO_VERSION_STABLE: '1.23'
+  GO_VERSION_OLDSTABLE: '1.22'
+  GO_VERSION_MINIMUM: '1.22'
 
 jobs:
   test:
@@ -27,17 +27,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go-version: ['1.21', '1.22']
+        go-version: ['1.22', '1.23']
         os: [ubuntu-latest, macos-latest, windows-latest]
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version: ${{ matrix.go-version }}
         cache: true
@@ -76,10 +76,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version: ${{ env.GO_VERSION_STABLE }}
         cache: true
@@ -94,7 +94,7 @@ jobs:
       run: go build ./tests/mocks/generated/...
 
     - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v6
+      uses: golangci/golangci-lint-action@v9
       with:
         version: latest
         args: --timeout=10m --max-issues-per-linter=0 --max-same-issues=0
@@ -108,10 +108,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version: ${{ env.GO_VERSION_STABLE }}
         cache: true
@@ -137,10 +137,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version: ${{ env.GO_VERSION_STABLE }}
         cache: true
@@ -169,7 +169,7 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Check SPDX headers
       run: |
@@ -198,10 +198,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version: ${{ env.GO_VERSION_STABLE }}
         cache: true
@@ -257,10 +257,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version: ${{ env.GO_VERSION_STABLE }}
         cache: true
@@ -287,10 +287,10 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version: ${{ env.GO_VERSION_STABLE }}
         cache: true
@@ -300,7 +300,7 @@ jobs:
         go test -bench=. -benchmem -run=^$ ./... | tee benchmark_results.txt
 
     - name: Upload benchmark results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: benchmark-results
         path: benchmark_results.txt
