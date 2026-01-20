@@ -9,9 +9,9 @@ project_name: slurm-client
 # Build configuration
 builds:
   - id: slurm-cli
-    main: ./cmd/slurm-cli
+    main: .
     binary: slurm-cli
-    dir: .
+    dir: ./cmd/slurm-cli
     env:
       - CGO_ENABLED=0
     goos:
