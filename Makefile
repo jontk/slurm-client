@@ -76,16 +76,19 @@ docs:
 	go doc -all > docs.txt
 	@echo "Documentation generated: docs.txt"
 
+# Install oapi-codegen (needed for code generation)
+install-oapi-codegen:
+	@command -v oapi-codegen >/dev/null 2>&1 || { \
+		echo "Installing oapi-codegen..."; \
+		go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest; \
+	}
+
 # Install development tools
-install-tools:
+install-tools: install-oapi-codegen
 	@echo "Installing development tools..."
 	@command -v golangci-lint >/dev/null 2>&1 || { \
 		echo "Installing golangci-lint..."; \
 		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
-	}
-	@command -v oapi-codegen >/dev/null 2>&1 || { \
-		echo "Installing oapi-codegen..."; \
-		go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest; \
 	}
 
 # Tidy up dependencies
@@ -165,7 +168,7 @@ download-specs:
 	@./tools/codegen/download-specs.sh
 
 # Generate API clients from OpenAPI specs
-generate: install-tools download-specs
+generate: install-oapi-codegen download-specs
 	@echo "Generating API clients..."
 	@for version in v0.0.40 v0.0.41 v0.0.42 v0.0.43 v0.0.44; do \
 		echo "Generating client for $$version..."; \
@@ -173,7 +176,7 @@ generate: install-tools download-specs
 	done
 
 # Generate mock builders from OpenAPI specs
-generate-mocks: install-tools
+generate-mocks: install-oapi-codegen
 	@echo "Generating mock builders..."
 	@for version in v0.0.40 v0.0.41 v0.0.42 v0.0.43 v0.0.44; do \
 		echo "Generating mock builders for $$version..."; \
