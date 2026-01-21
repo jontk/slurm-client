@@ -82,18 +82,18 @@ type Model struct {
 
 // Field represents a single field in a model
 type Field struct {
-	Name         string // Go field name (e.g., "Cpus")
-	JSONName     string // JSON field name (e.g., "cpus")
-	MethodName   string // Method name for With* (e.g., "Cpus")
-	GoType       string // Go type for the method parameter
-	Description  string
-	IsPointer    bool
-	IsNoVal      bool
-	NoValType    string // e.g., "V0040Uint32NoVal"
-	IsArray      bool
-	ElementType  string // For arrays, the element type (e.g., "string")
-	ArrayType    string // For enum arrays, the generated type name (e.g., "V0043JobInfoFlags")
-	IsSimple     bool   // Simple types like string, int32
+	Name        string // Go field name (e.g., "Cpus")
+	JSONName    string // JSON field name (e.g., "cpus")
+	MethodName  string // Method name for With* (e.g., "Cpus")
+	GoType      string // Go type for the method parameter
+	Description string
+	IsPointer   bool
+	IsNoVal     bool
+	NoValType   string // e.g., "V0040Uint32NoVal"
+	IsArray     bool
+	ElementType string // For arrays, the element type (e.g., "string")
+	ArrayType   string // For enum arrays, the generated type name (e.g., "V0043JobInfoFlags")
+	IsSimple    bool   // Simple types like string, int32
 }
 
 // DetectionContext provides all information needed for type detection
