@@ -4,14 +4,139 @@
 # This file configures golangci-lint for the slurm-client project
 # Run with: golangci-lint run
 
-version: 2
+version: "2"
 
 run:
   # Timeout for analysis
   timeout: 10m
 
+  # Exclude files and directories
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.gen\\.go$"
+    - "internal/api/.*/wrapper\\.go$"
+    - "internal/api/.*/client\\.go$"
+    - "internal/api/.*/managers\\.go$"
+
+  skip-dirs:
+    - vendor
+    - third_party
+    - testdata
+
 linters:
-  enable-all: true
+  presets:
+    - bugs
+    - comment
+    - complexity
+    - error
+    - format
+    - import
+    - metalinter
+    - module
+    - performance
+    - sql
+    - style
+    - test
+    - unused
+
+  exclusions:
+    rules:
+      # Exclude some linters from running on tests files
+      - path: _test\.go
+        linters:
+          - gocyclo
+          - errcheck
+          - dupl
+          - gosec
+          - goconst
+          - staticcheck
+          - bodyclose     # Error cases often have nil responses
+          - errchkjson    # JSON encoding in tests is for display/debugging
+
+      # Exclude test helper files
+      - path: test_helpers\.go
+        linters:
+          - unused
+          - deadcode
+
+      # Exclude known issues in generated files
+      - path: (wrapper|client|managers)\.go
+        linters:
+          - gocyclo
+          - gocognit
+          - lll
+          - funlen
+
+      # Exclude dupl for internal/api/* - similar API operations have intentional duplication
+      - path: ^internal/api/
+        linters:
+          - dupl
+
+      # Exclude dupl for internal/adapters/* - similar adapter operations have intentional duplication
+      - path: ^internal/adapters/
+        linters:
+          - dupl
+
+      # Exclude dupl for internal/factory/* - factory patterns have intentional duplication
+      - path: ^internal/factory/
+        linters:
+          - dupl
+
+      # Exclude dupl for internal/common/builders/* - builder patterns have intentional duplication
+      - path: ^internal/common/builders/
+        linters:
+          - dupl
+
+      # Exclude dupl for pkg/watch/* - polling patterns have intentional duplication
+      - path: ^pkg/watch/
+        linters:
+          - dupl
+
+      # Exclude dupl for tests/mocks/* - mock handlers have intentional duplication
+      - path: ^tests/mocks/
+        linters:
+          - dupl
+
+      # Exclude lll in long function declarations
+      - source: "^//go:generate "
+        linters:
+          - lll
+
+      # Exclude certain rules for example code
+      - path: ^examples/
+        linters:
+          - errcheck
+          - ineffassign
+          - staticcheck
+          - unused
+          - gosec
+
+      # Exclude certain rules for cmd/ binaries
+      - path: ^cmd/
+        linters:
+          - staticcheck
+          - unused
+          - errcheck
+          - dupl  # Similar operations have intentional code duplication
+
+      # Exclude certain rules for benchmark tests
+      - path: ^benchmarks/
+        linters:
+          - staticcheck
+          - bodyclose  # Benchmarks focus on performance, not cleanup
+          - errcheck
+
+      # Allow deprecated API usage in adapters (following upstream SLURM API)
+      - path: internal/adapters/
+        text: "deprecated"
+        linters:
+          - staticcheck
+
+      # Allow nil context in test files (common pattern for error path testing)
+      - path: _test\.go
+        text: "do not pass a nil Context"
+        linters:
+          - staticcheck
 
   disable:
     # Disable overly opinionated/noisy linters (891+ errors each)
@@ -76,7 +201,7 @@ linters:
     - thelper
     - exhaustruct
 
-linters-settings:
+settings:
   depguard:
     rules:
       main:
@@ -161,117 +286,6 @@ linters-settings:
     check-exported: false
 
 issues:
-  # Excluding configuration per-path, per-linter, per-text and per-source
-  exclude-files:
-    - ".*\\.pb\\.go$"
-    - ".*\\.gen\\.go$"
-    - "internal/api/.*/wrapper\\.go$"
-    - "internal/api/.*/client\\.go$"
-    - "internal/api/.*/managers\\.go$"
-
-  exclude-dirs:
-    - vendor
-    - third_party
-    - testdata
-
-  exclude-rules:
-    # Exclude some linters from running on tests files
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - errcheck
-        - dupl
-        - gosec
-        - goconst
-        - staticcheck
-        - bodyclose     # Error cases often have nil responses
-        - errchkjson    # JSON encoding in tests is for display/debugging
-
-    # Exclude test helper files
-    - path: test_helpers\.go
-      linters:
-        - unused
-        - deadcode
-
-    # Exclude known issues in generated files
-    - path: (wrapper|client|managers)\.go
-      linters:
-        - gocyclo
-        - gocognit
-        - lll
-        - funlen
-
-    # Exclude dupl for internal/api/* - similar API operations have intentional duplication
-    - path: ^internal/api/
-      linters:
-        - dupl
-
-    # Exclude dupl for internal/adapters/* - similar adapter operations have intentional duplication
-    - path: ^internal/adapters/
-      linters:
-        - dupl
-
-    # Exclude dupl for internal/factory/* - factory patterns have intentional duplication
-    - path: ^internal/factory/
-      linters:
-        - dupl
-
-    # Exclude dupl for internal/common/builders/* - builder patterns have intentional duplication
-    - path: ^internal/common/builders/
-      linters:
-        - dupl
-
-    # Exclude dupl for pkg/watch/* - polling patterns have intentional duplication
-    - path: ^pkg/watch/
-      linters:
-        - dupl
-
-    # Exclude dupl for tests/mocks/* - mock handlers have intentional duplication
-    - path: ^tests/mocks/
-      linters:
-        - dupl
-
-    # Exclude lll in long function declarations
-    - source: "^//go:generate "
-      linters:
-        - lll
-
-    # Exclude certain rules for example code
-    - path: ^examples/
-      linters:
-        - errcheck
-        - ineffassign
-        - staticcheck
-        - unused
-        - gosec
-
-    # Exclude certain rules for cmd/ binaries
-    - path: ^cmd/
-      linters:
-        - staticcheck
-        - unused
-        - errcheck
-        - dupl  # Similar operations have intentional code duplication
-
-    # Exclude certain rules for benchmark tests
-    - path: ^benchmarks/
-      linters:
-        - staticcheck
-        - bodyclose  # Benchmarks focus on performance, not cleanup
-        - errcheck
-
-    # Allow deprecated API usage in adapters (following upstream SLURM API)
-    - path: internal/adapters/
-      text: "deprecated"
-      linters:
-        - staticcheck
-
-    # Allow nil context in test files (common pattern for error path testing)
-    - path: _test\.go
-      text: "do not pass a nil Context"
-      linters:
-        - staticcheck
-
   # Maximum issues count per one linter
   max-issues-per-linter: 0
 
