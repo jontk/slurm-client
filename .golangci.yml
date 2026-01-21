@@ -168,6 +168,7 @@ linters:
           - lll
         source: '^//go:generate '
       - linters:
+          - dupl
           - errcheck
           - gosec
           - ineffassign

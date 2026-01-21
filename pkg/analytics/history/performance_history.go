@@ -415,7 +415,7 @@ func (pht *PerformanceHistoryTracker) calculateTrend(x, y []float64) interfaces.
 			direction = "decreasing"
 		}
 		// Calculate percentage change per hour
-		//nolint:gosec // G602 - y[0] is safe, length checked at function start (len(y) >= 2)
+		// Note: y[0] is safe, length checked at function start (len(y) >= 2)
 		if y[0] != 0 {
 			changeRate = (slope / y[0]) * 100
 		}
