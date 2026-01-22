@@ -4,6 +4,7 @@
 package common
 
 import (
+	stderrors "errors"
 	"testing"
 
 	"github.com/jontk/slurm-client/internal/testutil"
@@ -153,7 +154,8 @@ func TestCheckNilResponse(t *testing.T) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.operation)
 				// Check it's a SlurmError
-				_, ok := err.(*errors.SlurmError)
+				var slurmErr *errors.SlurmError
+				ok := stderrors.As(err, &slurmErr)
 				assert.True(t, ok, "Expected SlurmError type")
 			} else {
 				require.NoError(t, err)
@@ -192,7 +194,8 @@ func TestWrapAndEnhanceError(t *testing.T) {
 			} else {
 				assert.NotNil(t, result)
 				// Check that the API version was set
-				if slurmErr, ok := result.(*errors.SlurmError); ok {
+				var slurmErr *errors.SlurmError
+				if stderrors.As(result, &slurmErr) {
 					assert.Equal(t, tt.version, slurmErr.APIVersion)
 				}
 			}
@@ -239,12 +242,13 @@ func TestHandleConversionError(t *testing.T) {
 
 			require.Error(t, err)
 			// HandleConversionError creates a server error, not a client error
-			if slurmErr, ok := err.(*errors.SlurmError); ok {
+			var slurmErr *errors.SlurmError
+			if stderrors.As(err, &slurmErr) {
 				assert.Equal(t, errors.ErrorCodeServerInternal, slurmErr.Code)
 			}
 			assert.Contains(t, err.Error(), tt.resourceType)
 
-			if slurmErr, ok := err.(*errors.SlurmError); ok && tt.expectDetail {
+			if stderrors.As(err, &slurmErr) && tt.expectDetail {
 				assert.NotEmpty(t, slurmErr.Details)
 			}
 		})

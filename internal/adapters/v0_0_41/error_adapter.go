@@ -4,6 +4,7 @@
 package v0_0_41
 
 import (
+	stderrors "errors"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -154,7 +155,8 @@ func (e *ErrorAdapter) ParseSlurmError(err error) (string, string, int) {
 	errno := -1
 
 	// Try to extract more specific error information
-	if apiErr, ok := err.(*errors.SlurmAPIError); ok {
+	var apiErr *errors.SlurmAPIError
+	if stderrors.As(err, &apiErr) {
 		if len(apiErr.Errors) > 0 {
 			code = apiErr.Errors[0].ErrorCode
 			message = apiErr.Errors[0].Description
