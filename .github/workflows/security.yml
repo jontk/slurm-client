@@ -15,13 +15,15 @@ on:
 
 permissions:
   contents: read
-  security-events: write
   actions: read
 
 jobs:
   govulncheck:
     name: Go Vulnerability Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
     - name: Checkout code
@@ -72,6 +74,9 @@ jobs:
   gosec:
     name: Security Scan with Gosec
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
     - name: Checkout code
@@ -112,6 +117,9 @@ jobs:
   codeql:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
@@ -167,7 +175,10 @@ jobs:
   trivy:
     name: Trivy Security Scan
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: read
+      security-events: write
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -277,7 +288,11 @@ jobs:
     name: OpenSSF Scorecard
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write  # Required for Sigstore signing when publishing results
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -289,9 +304,7 @@ jobs:
       with:
         results_file: scorecard-results.sarif
         results_format: sarif
-        # publish_results requires no global write permissions in the workflow
-        # Results are still uploaded to GitHub Security tab via upload-sarif
-        publish_results: false
+        publish_results: true
 
     - name: Upload SARIF results
       uses: github/codeql-action/upload-sarif@v4
