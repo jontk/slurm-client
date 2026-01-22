@@ -328,7 +328,7 @@ func complexReservationScenarios(ctx context.Context, cfg *config.Config, auth a
 		} else {
 			fmt.Printf("  Created: %s for %s\n",
 				resp.ReservationName,
-				startTime.Format("2006-01-02"))
+				startTime.Format(time.DateOnly))
 		}
 	}
 

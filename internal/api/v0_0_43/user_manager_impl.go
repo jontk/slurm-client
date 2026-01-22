@@ -572,13 +572,13 @@ func (u *UserManagerImpl) CalculateJobPriority(ctx context.Context, userName str
 	priorityInfo.Factors = factors
 
 	// Calculate total priority (simplified calculation)
-	totalPriority := int(factors.Age) +
-		int(factors.FairShare) +
-		int(factors.JobSize) +
-		int(factors.Partition) +
-		int(factors.QoS) +
-		int(factors.TRES) -
-		int(factors.Nice)
+	totalPriority := factors.Age +
+		factors.FairShare +
+		factors.JobSize +
+		factors.Partition +
+		factors.QoS +
+		factors.TRES -
+		factors.Nice
 
 	priorityInfo.Priority = totalPriority
 

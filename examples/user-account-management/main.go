@@ -4,6 +4,7 @@
 package main
 
 import (
+	"time"
 	"context"
 	"flag"
 	"fmt"
@@ -456,8 +457,8 @@ func displayAccountUsage(usage *interfaces.AccountUsage) {
 	fmt.Printf("  Jobs Failed: %d\n", usage.JobsFailed)
 	fmt.Printf("  Total Jobs: %d\n", usage.JobCount)
 	fmt.Printf("  Period: %s to %s\n",
-		usage.StartTime.Format("2006-01-02"),
-		usage.EndTime.Format("2006-01-02"))
+		usage.StartTime.Format(time.DateOnly),
+		usage.EndTime.Format(time.DateOnly))
 }
 
 func displayUserFairShare(fairShare *interfaces.UserFairShare) {

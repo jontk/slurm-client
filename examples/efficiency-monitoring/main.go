@@ -820,7 +820,7 @@ func (em *EfficiencyMonitor) PrintEfficiencyReport(report *EfficiencyReport) {
 	fmt.Println("\n" + strings.Repeat("=", 80))
 	fmt.Println("📊 SLURM EFFICIENCY MONITORING REPORT")
 	fmt.Println(strings.Repeat("=", 80))
-	fmt.Printf("📅 Generated: %s\n", report.Timestamp.Format("2006-01-02 15:04:05"))
+	fmt.Printf("📅 Generated: %s\n", report.Timestamp.Format(time.DateTime))
 	fmt.Printf("🎯 Jobs Analyzed: %d\n", report.TotalJobsAnalyzed)
 	fmt.Printf("📈 Average Efficiency: %.1f%%\n", report.OverallSummary.AverageEfficiency)
 

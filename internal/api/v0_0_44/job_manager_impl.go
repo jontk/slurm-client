@@ -4,6 +4,7 @@
 package v0_0_44
 
 import (
+	"net/http"
 	"context"
 	"fmt"
 	"time"
@@ -48,7 +49,7 @@ func (m *JobManagerImpl) List(ctx context.Context, opts *interfaces.ListJobsOpti
 	}
 
 	// Handle response
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
@@ -85,12 +86,12 @@ func (m *JobManagerImpl) Get(ctx context.Context, jobID string) (*interfaces.Job
 		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.44")
 	}
 
-	if resp.HTTPResponse.StatusCode == 404 {
+	if resp.HTTPResponse.StatusCode == http.StatusNotFound {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Job %s not found", jobID))
 	}
 
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
@@ -155,7 +156,7 @@ func (m *JobManagerImpl) Submit(ctx context.Context, job *interfaces.JobSubmissi
 		for k, v := range job.Environment {
 			envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
 		}
-		jobDesc.Environment = (*V0044StringArray)(&envVars)
+		jobDesc.Environment = &envVars
 	}
 
 	submitReq := &V0044JobSubmitReq{
@@ -170,7 +171,7 @@ func (m *JobManagerImpl) Submit(ctx context.Context, job *interfaces.JobSubmissi
 		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.44")
 	}
 
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		if resp.JSONDefault != nil && resp.JSONDefault.Errors != nil && len(*resp.JSONDefault.Errors) > 0 {
 			errorMsg := fmt.Sprintf("Job submission failed: %v", (*resp.JSONDefault.Errors)[0])
 			return nil, errors.NewSlurmError(errors.ErrorCodeValidationFailed, errorMsg)
@@ -207,12 +208,12 @@ func (m *JobManagerImpl) Cancel(ctx context.Context, jobID string) error {
 		return errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.44")
 	}
 
-	if resp.HTTPResponse.StatusCode == 404 {
+	if resp.HTTPResponse.StatusCode == http.StatusNotFound {
 		return errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Job %s not found", jobID))
 	}
 
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
@@ -250,7 +251,7 @@ func (m *JobManagerImpl) Update(ctx context.Context, jobID string, update *inter
 		return errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.44")
 	}
 
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
@@ -272,12 +273,12 @@ func (m *JobManagerImpl) GetResourceLayout(ctx context.Context, jobID string) (i
 		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.44")
 	}
 
-	if resp.HTTPResponse.StatusCode == 404 {
+	if resp.HTTPResponse.StatusCode == http.StatusNotFound {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Job %s not found", jobID))
 	}
 
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}

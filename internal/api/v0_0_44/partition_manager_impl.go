@@ -4,6 +4,7 @@
 package v0_0_44
 
 import (
+	"net/http"
 	"context"
 	"fmt"
 	"strings"
@@ -46,7 +47,7 @@ func (m *PartitionManagerImpl) List(ctx context.Context, opts *interfaces.ListPa
 	}
 
 	// Handle response
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
@@ -83,12 +84,12 @@ func (m *PartitionManagerImpl) Get(ctx context.Context, partitionName string) (*
 		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.44")
 	}
 
-	if resp.HTTPResponse.StatusCode == 404 {
+	if resp.HTTPResponse.StatusCode == http.StatusNotFound {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Partition %s not found", partitionName))
 	}
 
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}

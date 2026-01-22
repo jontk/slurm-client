@@ -242,7 +242,7 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 
 	// Node count
 	if job.Nodes > 0 {
-		nodes := int32(job.Nodes)
+		nodes := job.Nodes
 		jobDesc.MinimumNodes = &nodes
 		jobDesc.MaximumNodes = &nodes
 	}
@@ -303,7 +303,7 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 
 	// Extract job ID
 	if resp.JSON200.JobId != nil {
-		submitResp.JobID = int32(*resp.JSON200.JobId)
+		submitResp.JobID = *resp.JSON200.JobId
 	}
 
 	// Extract warnings if any
@@ -454,7 +454,7 @@ func (a *JobAdapter) Hold(ctx context.Context, req *types.JobHoldRequest) error 
 	update := &types.JobUpdate{
 		Priority: func() *int32 {
 			if req.Priority != 0 {
-				priority := int32(req.Priority)
+				priority := req.Priority
 				return &priority
 			}
 			return nil

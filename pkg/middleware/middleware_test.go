@@ -54,7 +54,7 @@ func (m *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 
 	if len(m.responses) == 0 {
 		return &http.Response{
-			StatusCode: 200,
+			StatusCode: http.StatusOK,
 			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil
 	}
@@ -138,12 +138,12 @@ func TestRoundTripperFunc(t *testing.T) {
 	fn := RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		called = true
 		return &http.Response{
-			StatusCode: 200,
+			StatusCode: http.StatusOK,
 			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil
 	})
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	resp, err := fn.RoundTrip(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -175,7 +175,7 @@ func TestChain(t *testing.T) {
 	chained := Chain(middleware1, middleware2)
 	roundTripper := chained(mock)
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	resp, err := roundTripper.RoundTrip(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -196,7 +196,7 @@ func TestWithTimeout(t *testing.T) {
 		middleware := WithTimeout(1 * time.Second)
 		roundTripper := middleware(mock)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		resp, err := roundTripper.RoundTrip(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -220,7 +220,7 @@ func TestWithTimeout(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 
-		req := httptest.NewRequest("GET", "/test", nil).WithContext(ctx)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil).WithContext(ctx)
 		originalDeadline, _ := req.Context().Deadline()
 
 		resp, err := roundTripper.RoundTrip(req)
@@ -243,7 +243,7 @@ func TestWithTimeout(t *testing.T) {
 		middleware := WithTimeout(0)
 		roundTripper := middleware(mock)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		resp, err := roundTripper.RoundTrip(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -267,12 +267,12 @@ func TestWithLogging(t *testing.T) {
 
 	// Add a successful response
 	mock.addResponse(&http.Response{
-		StatusCode:    200,
+		StatusCode: http.StatusOK,
 		ContentLength: 100,
 		Body:          io.NopCloser(strings.NewReader("")),
 	}, nil)
 
-	req := httptest.NewRequest("GET", "/api/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/test", nil)
 	req.ContentLength = 50
 
 	resp, err := roundTripper.RoundTrip(req)
@@ -296,7 +296,7 @@ func TestWithLogging_Error(t *testing.T) {
 	expectedErr := errors.New("network error")
 	mock.addResponse(nil, expectedErr)
 
-	req := httptest.NewRequest("GET", "/api/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/test", nil)
 
 	resp, err := roundTripper.RoundTrip(req)
 
@@ -312,11 +312,11 @@ func TestWithRetry(t *testing.T) {
 		roundTripper := middleware(mock)
 
 		mock.addResponse(&http.Response{
-			StatusCode: 200,
+			StatusCode: http.StatusOK,
 			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		resp, err := roundTripper.RoundTrip(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -334,14 +334,14 @@ func TestWithRetry(t *testing.T) {
 		roundTripper := middleware(mock)
 
 		// First two attempts fail, third succeeds
-		mock.addResponse(&http.Response{StatusCode: 500, Body: io.NopCloser(strings.NewReader("error"))}, nil)
-		mock.addResponse(&http.Response{StatusCode: 500, Body: io.NopCloser(strings.NewReader("error"))}, nil)
+		mock.addResponse(&http.Response{StatusCode: http.StatusInternalServerError, Body: io.NopCloser(strings.NewReader("error"))}, nil)
+		mock.addResponse(&http.Response{StatusCode: http.StatusInternalServerError, Body: io.NopCloser(strings.NewReader("error"))}, nil)
 		mock.addResponse(&http.Response{
-			StatusCode: 200,
+			StatusCode: http.StatusOK,
 			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		resp, err := roundTripper.RoundTrip(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -363,7 +363,7 @@ func TestWithRetry(t *testing.T) {
 		mock.addResponse(nil, networkErr)
 		mock.addResponse(nil, networkErr)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		resp, err := roundTripper.RoundTrip(req)
 
 		assert.Nil(t, resp)
@@ -380,12 +380,12 @@ func TestWithRetry(t *testing.T) {
 		roundTripper := middleware(mock)
 
 		// First attempt fails
-		mock.addResponse(&http.Response{StatusCode: 500, Body: io.NopCloser(strings.NewReader("error"))}, nil)
+		mock.addResponse(&http.Response{StatusCode: http.StatusInternalServerError, Body: io.NopCloser(strings.NewReader("error"))}, nil)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel() // Cancel immediately
 
-		req := httptest.NewRequest("GET", "/test", nil).WithContext(ctx)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil).WithContext(ctx)
 		resp, err := roundTripper.RoundTrip(req)
 
 		assert.Nil(t, resp)
@@ -417,28 +417,28 @@ func TestDefaultShouldRetry(t *testing.T) {
 		},
 		{
 			name:     "500 error",
-			resp:     &http.Response{StatusCode: 500},
+			resp:     &http.Response{StatusCode: http.StatusInternalServerError},
 			err:      nil,
 			attempt:  0,
 			expected: true,
 		},
 		{
 			name:     "429 error",
-			resp:     &http.Response{StatusCode: 429},
+			resp:     &http.Response{StatusCode: http.StatusTooManyRequests},
 			err:      nil,
 			attempt:  0,
 			expected: true,
 		},
 		{
 			name:     "200 success",
-			resp:     &http.Response{StatusCode: 200},
+			resp:     &http.Response{StatusCode: http.StatusOK},
 			err:      nil,
 			attempt:  0,
 			expected: false,
 		},
 		{
 			name:     "400 error",
-			resp:     &http.Response{StatusCode: 400},
+			resp:     &http.Response{StatusCode: http.StatusBadRequest},
 			err:      nil,
 			attempt:  0,
 			expected: false,
@@ -482,7 +482,7 @@ func TestWithHeaders(t *testing.T) {
 	middleware := WithHeaders(headers)
 	roundTripper := middleware(mock)
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	resp, err := roundTripper.RoundTrip(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -501,7 +501,7 @@ func TestWithUserAgent(t *testing.T) {
 	middleware := WithUserAgent("test-agent/1.0")
 	roundTripper := middleware(mock)
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	resp, err := roundTripper.RoundTrip(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -526,7 +526,7 @@ func TestWithRequestID(t *testing.T) {
 	middleware := WithRequestID(generator)
 	roundTripper := middleware(mock)
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	resp, err := roundTripper.RoundTrip(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -551,11 +551,11 @@ func TestWithMetrics(t *testing.T) {
 		roundTripper := middleware(mock)
 
 		mock.addResponse(&http.Response{
-			StatusCode: 200,
+			StatusCode: http.StatusOK,
 			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil)
 
-		req := httptest.NewRequest("GET", "/api/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/test", nil)
 		resp, err := roundTripper.RoundTrip(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -582,7 +582,7 @@ func TestWithMetrics(t *testing.T) {
 		expectedErr := errors.New("network error")
 		mock.addResponse(nil, expectedErr)
 
-		req := httptest.NewRequest("POST", "/api/jobs", nil)
+		req := httptest.NewRequest(http.MethodPost, "/api/jobs", nil)
 		_, err := roundTripper.RoundTrip(req)
 
 		assert.Equal(t, expectedErr, err)
@@ -601,7 +601,7 @@ func TestWithMetrics(t *testing.T) {
 
 func TestCloneRequest(t *testing.T) {
 	t.Run("request without body", func(t *testing.T) {
-		original := httptest.NewRequest("GET", "/test", nil)
+		original := httptest.NewRequest(http.MethodGet, "/test", nil)
 		original.Header.Set("X-Original", "true")
 
 		cloned := cloneRequest(original)
@@ -615,7 +615,7 @@ func TestCloneRequest(t *testing.T) {
 
 	t.Run("request with body", func(t *testing.T) {
 		body := "test body content"
-		original := httptest.NewRequest("POST", "/test", strings.NewReader(body))
+		original := httptest.NewRequest(http.MethodPost, "/test", strings.NewReader(body))
 
 		cloned := cloneRequest(original)
 
@@ -637,11 +637,11 @@ func TestWithCircuitBreaker(t *testing.T) {
 		roundTripper := middleware(mock)
 
 		mock.addResponse(&http.Response{
-			StatusCode: 200,
+			StatusCode: http.StatusOK,
 			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		resp, err := roundTripper.RoundTrip(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -657,15 +657,15 @@ func TestWithCircuitBreaker(t *testing.T) {
 
 		// Add failing responses
 		mock.addResponse(&http.Response{
-			StatusCode: 500,
+			StatusCode: http.StatusInternalServerError,
 			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil)
 		mock.addResponse(&http.Response{
-			StatusCode: 500,
+			StatusCode: http.StatusInternalServerError,
 			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 
 		// First two should go through but fail
 		resp1, err1 := roundTripper.RoundTrip(req)
@@ -692,7 +692,7 @@ func TestWithCircuitBreaker(t *testing.T) {
 		middleware := WithCircuitBreaker(1, 1*time.Second)
 		roundTripper := middleware(mock)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 
 		// Network error should trigger circuit breaker
 		mock.addResponse(nil, errors.New("network error"))

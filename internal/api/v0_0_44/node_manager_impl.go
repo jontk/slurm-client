@@ -4,6 +4,7 @@
 package v0_0_44
 
 import (
+	"net/http"
 	"context"
 	"fmt"
 	"time"
@@ -46,7 +47,7 @@ func (m *NodeManagerImpl) List(ctx context.Context, opts *interfaces.ListNodesOp
 	}
 
 	// Handle response
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		if resp.JSONDefault != nil && resp.JSONDefault.Errors != nil && len(*resp.JSONDefault.Errors) > 0 {
 			errorMsg := fmt.Sprintf("API error: %v", (*resp.JSONDefault.Errors)[0])
 			return nil, errors.NewSlurmError(errors.ErrorCodeInvalidRequest, errorMsg)
@@ -102,12 +103,12 @@ func (m *NodeManagerImpl) Get(ctx context.Context, nodeName string) (*interfaces
 		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.44")
 	}
 
-	if resp.HTTPResponse.StatusCode == 404 {
+	if resp.HTTPResponse.StatusCode == http.StatusNotFound {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Node %s not found", nodeName))
 	}
 
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
@@ -151,7 +152,7 @@ func (m *NodeManagerImpl) CreateNode(ctx context.Context, nodeName string, cpus 
 		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.44")
 	}
 
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		if resp.JSONDefault != nil && resp.JSONDefault.Errors != nil && len(*resp.JSONDefault.Errors) > 0 {
 			errorMsg := fmt.Sprintf("Node creation failed: %v", (*resp.JSONDefault.Errors)[0])
 			return nil, errors.NewSlurmError(errors.ErrorCodeValidationFailed, errorMsg)
@@ -194,7 +195,7 @@ func (m *NodeManagerImpl) Update(ctx context.Context, nodeName string, update *i
 
 	if len(update.Features) > 0 {
 		// V0044CsvString is []string, so we can assign directly
-		featuresCSV := V0044CsvString(update.Features)
+		featuresCSV := update.Features
 		updateReq.Features = &featuresCSV
 	}
 
@@ -205,12 +206,12 @@ func (m *NodeManagerImpl) Update(ctx context.Context, nodeName string, update *i
 		return errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.44")
 	}
 
-	if resp.HTTPResponse.StatusCode == 404 {
+	if resp.HTTPResponse.StatusCode == http.StatusNotFound {
 		return errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Node %s not found", nodeName))
 	}
 
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
@@ -258,7 +259,7 @@ func (m *NodeManagerImpl) convertNodeToInterface(node *V0044Node) *interfaces.No
 	}
 
 	if node.Partitions != nil {
-		result.Partitions = []string(*node.Partitions)
+		result.Partitions = *node.Partitions
 	}
 
 	// Resource information
@@ -284,7 +285,7 @@ func (m *NodeManagerImpl) convertNodeToInterface(node *V0044Node) *interfaces.No
 
 	// Features - V0044CsvString is []string, not string
 	if node.Features != nil {
-		result.Features = []string(*node.Features)
+		result.Features = *node.Features
 	}
 
 	// Architecture information
@@ -335,12 +336,12 @@ func (m *NodeManagerImpl) Drain(ctx context.Context, nodeName string, reason str
 		return errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.44")
 	}
 
-	if resp.HTTPResponse.StatusCode == 404 {
+	if resp.HTTPResponse.StatusCode == http.StatusNotFound {
 		return errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Node %s not found", nodeName))
 	}
 
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
@@ -365,12 +366,12 @@ func (m *NodeManagerImpl) Resume(ctx context.Context, nodeName string) error {
 		return errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.44")
 	}
 
-	if resp.HTTPResponse.StatusCode == 404 {
+	if resp.HTTPResponse.StatusCode == http.StatusNotFound {
 		return errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Node %s not found", nodeName))
 	}
 
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}

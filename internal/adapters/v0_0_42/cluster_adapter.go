@@ -164,7 +164,7 @@ func (a *ClusterAdapter) Create(ctx context.Context, cluster *types.ClusterCreat
 	}
 
 	if len(cluster.Flags) > 0 {
-		flags := api.V0042ClusterRecFlags(cluster.Flags)
+		flags := cluster.Flags
 		apiCluster.Flags = &flags
 	}
 
@@ -258,7 +258,7 @@ func (a *ClusterAdapter) convertAPIClusterToCommon(apiCluster api.V0042ClusterRe
 	}
 
 	if apiCluster.Flags != nil {
-		cluster.Flags = []string(*apiCluster.Flags)
+		cluster.Flags = *apiCluster.Flags
 	}
 
 	// Convert TRES if available

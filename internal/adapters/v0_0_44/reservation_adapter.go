@@ -494,7 +494,7 @@ func (a *ReservationAdapter) convertAPIReservationInfoToDescMsg(info *api.V0044R
 
 	// Convert node count
 	if info.NodeCount != nil {
-		nodeCount := int32(*info.NodeCount)
+		nodeCount := *info.NodeCount
 		setTrue := true
 		descMsg.NodeCount = &api.V0044Uint32NoValStruct{
 			Set:    &setTrue,
@@ -507,7 +507,7 @@ func (a *ReservationAdapter) convertAPIReservationInfoToDescMsg(info *api.V0044R
 		// V0044HostlistString is []string
 		// Convert comma-separated string to slice
 		nodeList := strings.Split(*info.NodeList, ",")
-		hostList := api.V0044HostlistString(nodeList)
+		hostList := nodeList
 		descMsg.NodeList = &hostList
 	}
 
@@ -516,7 +516,7 @@ func (a *ReservationAdapter) convertAPIReservationInfoToDescMsg(info *api.V0044R
 		// V0044CsvString is []string
 		// Convert comma-separated string to slice
 		usersList := strings.Split(*info.Users, ",")
-		csvUsers := api.V0044CsvString(usersList)
+		csvUsers := usersList
 		descMsg.Users = &csvUsers
 	}
 
@@ -525,7 +525,7 @@ func (a *ReservationAdapter) convertAPIReservationInfoToDescMsg(info *api.V0044R
 		// V0044CsvString is []string
 		// Convert comma-separated string to slice
 		accountsList := strings.Split(*info.Accounts, ",")
-		csvAccounts := api.V0044CsvString(accountsList)
+		csvAccounts := accountsList
 		descMsg.Accounts = &csvAccounts
 	}
 
@@ -544,7 +544,7 @@ func (a *ReservationAdapter) convertAPIReservationInfoToDescMsg(info *api.V0044R
 		// V0044CsvString is []string
 		// Convert comma-separated string to slice
 		licensesList := strings.Split(*info.Licenses, ",")
-		csvLicenses := api.V0044CsvString(licensesList)
+		csvLicenses := licensesList
 		descMsg.Licenses = &csvLicenses
 	}
 
@@ -568,7 +568,7 @@ func (a *ReservationAdapter) convertAPIReservationInfoToDescMsg(info *api.V0044R
 
 	// Convert core count
 	if info.CoreCount != nil {
-		coreCount := int32(*info.CoreCount)
+		coreCount := *info.CoreCount
 		setTrue := true
 		descMsg.CoreCount = &api.V0044Uint32NoValStruct{
 			Set:    &setTrue,
@@ -581,13 +581,13 @@ func (a *ReservationAdapter) convertAPIReservationInfoToDescMsg(info *api.V0044R
 		// V0044CsvString is []string
 		// Convert comma-separated string to slice
 		groupsList := strings.Split(*info.Groups, ",")
-		csvGroups := api.V0044CsvString(groupsList)
+		csvGroups := groupsList
 		descMsg.Groups = &csvGroups
 	}
 
 	// Convert max start delay
 	if info.MaxStartDelay != nil {
-		maxDelay := int32(*info.MaxStartDelay)
+		maxDelay := *info.MaxStartDelay
 		setTrue := true
 		descMsg.MaxStartDelay = &api.V0044Uint32NoValStruct{
 			Set:    &setTrue,

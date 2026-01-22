@@ -4,6 +4,7 @@
 package v0_0_43
 
 import (
+	"net/http"
 	"context"
 	"fmt"
 	"time"
@@ -257,7 +258,7 @@ func (c *ClusterManagerImpl) Create(ctx context.Context, cluster *interfaces.Clu
 	}
 
 	// Check HTTP status
-	if resp.StatusCode() != 200 && resp.StatusCode() != 201 {
+	if resp.StatusCode() != 200 && resp.StatusCode() != http.StatusCreated {
 		var responseBody []byte
 		if resp.JSON200 != nil {
 			// Try to extract error details from response
@@ -347,7 +348,7 @@ func (c *ClusterManagerImpl) Update(ctx context.Context, clusterName string, upd
 		return errors.NewClientError(errors.ErrorCodeResourceNotFound, "cluster not found", clusterName)
 	}
 
-	if resp.StatusCode() != 200 && resp.StatusCode() != 201 {
+	if resp.StatusCode() != 200 && resp.StatusCode() != http.StatusCreated {
 		var responseBody []byte
 		if resp.JSON200 != nil {
 			// Try to extract error details from response

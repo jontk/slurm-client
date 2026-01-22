@@ -4,6 +4,7 @@
 package v0_0_43
 
 import (
+	"net/http"
 	"context"
 	"fmt"
 	"strings"
@@ -346,10 +347,10 @@ func (c *WrapperClient) GetDiagnostics(ctx context.Context) (*interfaces.Diagnos
 	// Extract diagnostics information from the response
 	// The resp.JSON200.Statistics field is of type V0043StatsMsg (not a pointer)
 	if resp.JSON200.Statistics.ReqTime != nil && resp.JSON200.Statistics.ReqTime.Number != nil {
-		diagnostics.ReqTime = int64(*resp.JSON200.Statistics.ReqTime.Number)
+		diagnostics.ReqTime = *resp.JSON200.Statistics.ReqTime.Number
 	}
 	if resp.JSON200.Statistics.ReqTimeStart != nil && resp.JSON200.Statistics.ReqTimeStart.Number != nil {
-		diagnostics.ReqTimeStart = int64(*resp.JSON200.Statistics.ReqTimeStart.Number)
+		diagnostics.ReqTimeStart = *resp.JSON200.Statistics.ReqTimeStart.Number
 	}
 	if resp.JSON200.Statistics.ServerThreadCount != nil {
 		diagnostics.ServerThreadCount = int(*resp.JSON200.Statistics.ServerThreadCount)
@@ -769,7 +770,7 @@ func (c *WrapperClient) CreateTRES(ctx context.Context, req *interfaces.CreateTR
 	}
 
 	// Check HTTP status
-	if resp.StatusCode() != 200 && resp.StatusCode() != 201 {
+	if resp.StatusCode() != 200 && resp.StatusCode() != http.StatusCreated {
 		return nil, errors.NewClientError(
 			errors.ErrorCodeServerInternal,
 			fmt.Sprintf("Operation failed with status %d", resp.StatusCode()))

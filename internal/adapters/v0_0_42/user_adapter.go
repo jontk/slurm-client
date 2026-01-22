@@ -331,7 +331,7 @@ func (a *UserAdapter) convertUserAssociationRequestToAPI(req *types.UserAssociat
 
 		// Set fairshare (note: field name is "Fairshare" in v0.0.42)
 		if req.Fairshare != 0 {
-			fairshareInt32 := int32(req.Fairshare)
+			fairshareInt32 := req.Fairshare
 			assocRec.Fairshare = &fairshareInt32
 		}
 

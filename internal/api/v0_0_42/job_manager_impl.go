@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -398,7 +399,7 @@ func (m *JobManagerImpl) Submit(ctx context.Context, job *interfaces.JobSubmissi
 	}
 
 	// Check HTTP status (200 and 201 for creation is success)
-	if resp.StatusCode() != 200 && resp.StatusCode() != 201 {
+	if resp.StatusCode() != 200 && resp.StatusCode() != http.StatusCreated {
 		if resp.JSON200 != nil {
 			// Try to extract error details from response
 			if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {

@@ -48,12 +48,9 @@ linters:
     - testpackage
     - thelper
     - tparallel
-    - unconvert
     - unparam
-    - usestdlibvars
     - usetesting
     - varnamelen
-    - wastedassign
     - wrapcheck
     - wsl                       # Whitespace linter (deprecated version)
     - wsl_v5                    # Whitespace linter (new version) - very opinionated
@@ -118,6 +115,13 @@ linters:
         - -QF1008   # Embedded field selector - intentional for clarity
     unparam:
       check-exported: false
+    usestdlibvars:
+      http-method: true
+      http-status-code: true
+      time-weekday: true
+      time-month: true
+      time-layout: true
+      crypto-hash: true
   exclusions:
     generated: lax
     presets:

@@ -163,7 +163,7 @@ func convertAPINodeToInterface(apiNode V0040Node) (*interfaces.Node, error) {
 	// Last busy time - V0040Uint64NoValStruct
 	if apiNode.LastBusy != nil && apiNode.LastBusy.Set != nil && *apiNode.LastBusy.Set &&
 		apiNode.LastBusy.Number != nil && *apiNode.LastBusy.Number > 0 {
-		lastBusy := time.Unix(int64(*apiNode.LastBusy.Number), 0)
+		lastBusy := time.Unix(*apiNode.LastBusy.Number, 0)
 		node.LastBusy = &lastBusy
 	}
 
@@ -190,7 +190,7 @@ func convertAPINodeToInterface(apiNode V0040Node) (*interfaces.Node, error) {
 	// Free Memory - V0040Uint64NoVal (in MB from API)
 	if apiNode.FreeMem != nil && apiNode.FreeMem.Set != nil && *apiNode.FreeMem.Set &&
 		apiNode.FreeMem.Number != nil {
-		node.FreeMemory = int64(*apiNode.FreeMem.Number)
+		node.FreeMemory = *apiNode.FreeMem.Number
 	}
 
 	// Initialize metadata
@@ -198,7 +198,7 @@ func convertAPINodeToInterface(apiNode V0040Node) (*interfaces.Node, error) {
 
 	// Add additional metadata from API response
 	if apiNode.BootTime != nil && apiNode.BootTime.Set != nil && *apiNode.BootTime.Set && apiNode.BootTime.Number != nil {
-		node.Metadata["boot_time"] = time.Unix(int64(*apiNode.BootTime.Number), 0)
+		node.Metadata["boot_time"] = time.Unix(*apiNode.BootTime.Number, 0)
 	}
 	if apiNode.Boards != nil {
 		node.Metadata["boards"] = int(*apiNode.Boards)
@@ -499,7 +499,7 @@ func convertNodeUpdateToAPI(update *interfaces.NodeUpdate) (*V0040UpdateNodeMsg,
 
 	// Set features if provided
 	if len(update.Features) > 0 {
-		features := V0040CsvString(update.Features)
+		features := update.Features
 		nodeUpdate.Features = &features
 	}
 
