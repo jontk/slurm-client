@@ -4,6 +4,7 @@
 package v0_0_43
 
 import (
+	"net/http"
 	"context"
 	"fmt"
 	"strings"
@@ -233,7 +234,7 @@ func (r *ReservationManagerImpl) Create(ctx context.Context, reservation *interf
 	}
 
 	// Check HTTP status (200 and 201 for creation is success)
-	if resp.StatusCode() != 200 && resp.StatusCode() != 201 {
+	if resp.StatusCode() != 200 && resp.StatusCode() != http.StatusCreated {
 		var responseBody []byte
 		if resp.JSON200 != nil {
 			// Try to extract error details from response
@@ -608,14 +609,14 @@ func convertReservationCreateToAPI(create *interfaces.ReservationCreate) (*V0043
 	apiRes.Name = &create.Name
 
 	// Time fields - use correct types
-	startTime := int64(create.StartTime.Unix())
+	startTime := create.StartTime.Unix()
 	apiRes.StartTime = &V0043Uint64NoValStruct{
 		Set:    &[]bool{true}[0],
 		Number: &startTime,
 	}
 
 	if !create.EndTime.IsZero() {
-		endTime := int64(create.EndTime.Unix())
+		endTime := create.EndTime.Unix()
 		apiRes.EndTime = &V0043Uint64NoValStruct{
 			Set:    &[]bool{true}[0],
 			Number: &endTime,
@@ -630,7 +631,7 @@ func convertReservationCreateToAPI(create *interfaces.ReservationCreate) (*V0043
 
 	// Node specifications - use correct field names
 	if len(create.Nodes) > 0 {
-		nodeList := V0043HostlistString(create.Nodes)
+		nodeList := create.Nodes
 		apiRes.NodeList = &nodeList
 	}
 
@@ -652,12 +653,12 @@ func convertReservationCreateToAPI(create *interfaces.ReservationCreate) (*V0043
 
 	// Users and accounts - use V0043CsvString type
 	if len(create.Users) > 0 {
-		users := V0043CsvString(create.Users)
+		users := create.Users
 		apiRes.Users = &users
 	}
 
 	if len(create.Accounts) > 0 {
-		accounts := V0043CsvString(create.Accounts)
+		accounts := create.Accounts
 		apiRes.Accounts = &accounts
 	}
 
@@ -688,7 +689,7 @@ func convertReservationCreateToAPI(create *interfaces.ReservationCreate) (*V0043
 		for name, count := range create.Licenses {
 			licenseStrs = append(licenseStrs, fmt.Sprintf("%s:%d", name, count))
 		}
-		licenses := V0043CsvString(licenseStrs)
+		licenses := licenseStrs
 		apiRes.Licenses = &licenses
 	}
 
@@ -701,7 +702,7 @@ func convertReservationUpdateToAPI(update *interfaces.ReservationUpdate) (*V0043
 
 	// Time fields (only if specified in update) - use correct types
 	if update.StartTime != nil && !update.StartTime.IsZero() {
-		startTime := int64(update.StartTime.Unix())
+		startTime := update.StartTime.Unix()
 		apiRes.StartTime = &V0043Uint64NoValStruct{
 			Set:    &[]bool{true}[0],
 			Number: &startTime,
@@ -709,7 +710,7 @@ func convertReservationUpdateToAPI(update *interfaces.ReservationUpdate) (*V0043
 	}
 
 	if update.EndTime != nil && !update.EndTime.IsZero() {
-		endTime := int64(update.EndTime.Unix())
+		endTime := update.EndTime.Unix()
 		apiRes.EndTime = &V0043Uint64NoValStruct{
 			Set:    &[]bool{true}[0],
 			Number: &endTime,
@@ -726,7 +727,7 @@ func convertReservationUpdateToAPI(update *interfaces.ReservationUpdate) (*V0043
 
 	// Node specifications - use correct field names and types
 	if update.Nodes != nil {
-		nodeList := V0043HostlistString(update.Nodes)
+		nodeList := update.Nodes
 		apiRes.NodeList = &nodeList
 	}
 
@@ -742,12 +743,12 @@ func convertReservationUpdateToAPI(update *interfaces.ReservationUpdate) (*V0043
 
 	// Users and accounts - use V0043CsvString type
 	if update.Users != nil {
-		users := V0043CsvString(update.Users)
+		users := update.Users
 		apiRes.Users = &users
 	}
 
 	if update.Accounts != nil {
-		accounts := V0043CsvString(update.Accounts)
+		accounts := update.Accounts
 		apiRes.Accounts = &accounts
 	}
 

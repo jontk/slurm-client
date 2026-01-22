@@ -18,7 +18,7 @@ func TestTokenAuth(t *testing.T) {
 	helpers.AssertEqual(t, "token", auth.Type())
 
 	// Test Authenticate method
-	req, err := http.NewRequest("GET", "http://example.com", nil)
+	req, err := http.NewRequest(http.MethodGet, "http://example.com", nil)
 	helpers.RequireNoError(t, err)
 
 	ctx := helpers.TestContext(t)
@@ -38,7 +38,7 @@ func TestBasicAuth(t *testing.T) {
 	helpers.AssertEqual(t, "basic", auth.Type())
 
 	// Test Authenticate method
-	req, err := http.NewRequest("GET", "http://example.com", nil)
+	req, err := http.NewRequest(http.MethodGet, "http://example.com", nil)
 	helpers.RequireNoError(t, err)
 
 	ctx := helpers.TestContext(t)
@@ -59,7 +59,7 @@ func TestNoAuth(t *testing.T) {
 	helpers.AssertEqual(t, "none", auth.Type())
 
 	// Test Authenticate method
-	req, err := http.NewRequest("GET", "http://example.com", nil)
+	req, err := http.NewRequest(http.MethodGet, "http://example.com", nil)
 	helpers.RequireNoError(t, err)
 
 	// Store original headers
@@ -101,7 +101,7 @@ func TestAuthProviderInterface(t *testing.T) {
 		helpers.AssertNotNil(t, authType)
 
 		// Each provider should be able to authenticate
-		req, err := http.NewRequest("GET", "http://example.com", nil)
+		req, err := http.NewRequest(http.MethodGet, "http://example.com", nil)
 		helpers.RequireNoError(t, err)
 
 		ctx := helpers.TestContext(t)
@@ -113,7 +113,7 @@ func TestAuthProviderInterface(t *testing.T) {
 func TestTokenAuthWithEmptyToken(t *testing.T) {
 	auth := NewTokenAuth("")
 
-	req, err := http.NewRequest("GET", "http://example.com", nil)
+	req, err := http.NewRequest(http.MethodGet, "http://example.com", nil)
 	helpers.RequireNoError(t, err)
 
 	ctx := helpers.TestContext(t)
@@ -151,7 +151,7 @@ func TestBasicAuthWithEmptyCredentials(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			auth := NewBasicAuth(tt.username, tt.password)
 
-			req, err := http.NewRequest("GET", "http://example.com", nil)
+			req, err := http.NewRequest(http.MethodGet, "http://example.com", nil)
 			helpers.RequireNoError(t, err)
 
 			ctx := helpers.TestContext(t)
@@ -171,7 +171,7 @@ func TestAuthenticateMultipleTimes(t *testing.T) {
 	// Test that authentication can be called multiple times
 	auth := NewTokenAuth("test-token")
 
-	req, err := http.NewRequest("GET", "http://example.com", nil)
+	req, err := http.NewRequest(http.MethodGet, "http://example.com", nil)
 	helpers.RequireNoError(t, err)
 
 	ctx := helpers.TestContext(t)

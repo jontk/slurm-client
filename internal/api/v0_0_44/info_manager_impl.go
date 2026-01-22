@@ -4,6 +4,7 @@
 package v0_0_44
 
 import (
+	"net/http"
 	"context"
 	"fmt"
 
@@ -34,7 +35,7 @@ func (m *InfoManagerImpl) Get(ctx context.Context) (*interfaces.ClusterInfo, err
 		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.44")
 	}
 
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}
@@ -69,7 +70,7 @@ func (m *InfoManagerImpl) Ping(ctx context.Context) error {
 		return errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.44")
 	}
 
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return errors.NewSlurmError(errors.ErrorCodeConnectionRefused,
 			fmt.Sprintf("Ping failed with HTTP %d", resp.HTTPResponse.StatusCode))
 	}
@@ -91,7 +92,7 @@ func (m *InfoManagerImpl) Stats(ctx context.Context) (*interfaces.ClusterStats, 
 		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.44")
 	}
 
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return nil, errors.NewSlurmError(errors.ErrorCodeServerInternal,
 			fmt.Sprintf("HTTP %d", resp.HTTPResponse.StatusCode))
 	}

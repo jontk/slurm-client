@@ -79,7 +79,7 @@ func (a *AccountAdapter) convertCommonAccountCreateToAPI(create *types.AccountCr
 				Name: coord,
 			}
 		}
-		apiCoordList := api.V0043CoordList(coordinators)
+		apiCoordList := coordinators
 		apiAccount.Coordinators = &apiCoordList
 	}
 
@@ -124,7 +124,7 @@ func (a *AccountAdapter) convertCommonAccountUpdateToAPI(existing *types.Account
 				Name: coord,
 			}
 		}
-		apiCoordList := api.V0043CoordList(apiCoordinators)
+		apiCoordList := apiCoordinators
 		apiAccount.Coordinators = &apiCoordList
 	}
 

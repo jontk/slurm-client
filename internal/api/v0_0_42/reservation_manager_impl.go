@@ -312,11 +312,11 @@ func convertAPIReservationToInterface(apiRes V0042ReservationInfo) (*interfaces.
 
 	// Time fields
 	if apiRes.StartTime != nil && apiRes.StartTime.Set != nil && *apiRes.StartTime.Set && apiRes.StartTime.Number != nil {
-		reservation.StartTime = time.Unix(int64(*apiRes.StartTime.Number), 0)
+		reservation.StartTime = time.Unix(*apiRes.StartTime.Number, 0)
 	}
 
 	if apiRes.EndTime != nil && apiRes.EndTime.Set != nil && *apiRes.EndTime.Set && apiRes.EndTime.Number != nil {
-		reservation.EndTime = time.Unix(int64(*apiRes.EndTime.Number), 0)
+		reservation.EndTime = time.Unix(*apiRes.EndTime.Number, 0)
 	}
 
 	// v0.0.42 doesn't have Duration field - calculate from start/end if available

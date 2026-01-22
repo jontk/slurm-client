@@ -4,6 +4,7 @@
 package v0_0_43
 
 import (
+	"net/http"
 	"context"
 	"fmt"
 
@@ -221,7 +222,7 @@ func (m *WCKeyManagerImpl) Create(ctx context.Context, wckey *interfaces.WCKeyCr
 	}
 
 	// Check HTTP status (200 and 201 for creation is success)
-	if resp.StatusCode() != 200 && resp.StatusCode() != 201 {
+	if resp.StatusCode() != 200 && resp.StatusCode() != http.StatusCreated {
 		var responseBody []byte
 		// Handle error response similar to other methods
 		httpErr := errors.WrapHTTPError(resp.StatusCode(), responseBody, "v0.0.43")

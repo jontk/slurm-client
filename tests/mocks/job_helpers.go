@@ -17,7 +17,7 @@ func extractCPUs(jobInterface interface{}) int64 {
 	switch job := jobInterface.(type) {
 	case *v0_0_40.V0040JobInfo:
 		if job.Cpus != nil && job.Cpus.Number != nil {
-			return int64(*job.Cpus.Number)
+			return *job.Cpus.Number
 		}
 	case *v0_0_42.V0042JobInfo:
 		if job.Cpus != nil && job.Cpus.Number != nil {
@@ -43,19 +43,19 @@ func extractMemory(jobInterface interface{}) int64 {
 	switch job := jobInterface.(type) {
 	case *v0_0_40.V0040JobInfo:
 		if job.MemoryPerNode != nil && job.MemoryPerNode.Number != nil {
-			return int64(*job.MemoryPerNode.Number)
+			return *job.MemoryPerNode.Number
 		}
 	case *v0_0_42.V0042JobInfo:
 		if job.MemoryPerNode != nil && job.MemoryPerNode.Number != nil {
-			return int64(*job.MemoryPerNode.Number)
+			return *job.MemoryPerNode.Number
 		}
 	case *v0_0_43.V0043JobInfo:
 		if job.MemoryPerNode != nil && job.MemoryPerNode.Number != nil {
-			return int64(*job.MemoryPerNode.Number)
+			return *job.MemoryPerNode.Number
 		}
 	case *v0_0_44.V0044JobInfo:
 		if job.MemoryPerNode != nil && job.MemoryPerNode.Number != nil {
-			return int64(*job.MemoryPerNode.Number)
+			return *job.MemoryPerNode.Number
 		}
 	}
 
@@ -69,11 +69,11 @@ func extractJobState(jobInterface interface{}) string {
 	switch job := jobInterface.(type) {
 	case *v0_0_40.V0040JobInfo:
 		if job.JobState != nil && len(*job.JobState) > 0 {
-			return string((*job.JobState)[0])
+			return (*job.JobState)[0]
 		}
 	case *v0_0_42.V0042JobInfo:
 		if job.JobState != nil && len(*job.JobState) > 0 {
-			return string((*job.JobState)[0])
+			return (*job.JobState)[0]
 		}
 	case *v0_0_43.V0043JobInfo:
 		if job.JobState != nil && len(*job.JobState) > 0 {

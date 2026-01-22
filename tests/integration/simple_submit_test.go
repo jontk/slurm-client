@@ -97,7 +97,7 @@ func TestSimpleJobSubmit(t *testing.T) {
 			require.NoError(t, err)
 
 			url := "http://rocky9:6820/slurm/v0.0.43/job/submit"
-			req, err := http.NewRequestWithContext(context.Background(), "POST", url, bytes.NewReader(jsonData))
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, bytes.NewReader(jsonData))
 			require.NoError(t, err)
 
 			req.Header.Set("X-SLURM-USER-TOKEN", token)
@@ -128,7 +128,7 @@ func TestSimpleJobSubmit(t *testing.T) {
 			}
 
 			// Don't fail the test, just log results
-			if resp.StatusCode != 200 && resp.StatusCode != 201 {
+			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 				t.Logf("Request failed with status %d", resp.StatusCode)
 			}
 

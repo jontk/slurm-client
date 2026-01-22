@@ -191,7 +191,7 @@ func getArrayTaskDetails(ctx context.Context, client slurm.SlurmClient, arrayJob
 		fmt.Printf("  Memory:     %d MB\n", job.Memory)
 
 		if job.StartTime != nil {
-			fmt.Printf("  Start Time: %s\n", job.StartTime.Format("15:04:05"))
+			fmt.Printf("  Start Time: %s\n", job.StartTime.Format(time.TimeOnly))
 		}
 		if job.EndTime != nil && job.StartTime != nil {
 			runtime := job.EndTime.Sub(*job.StartTime)

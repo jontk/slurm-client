@@ -5328,7 +5328,7 @@ func NewSlurmV0040GetDiagRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -5366,7 +5366,7 @@ func NewSlurmV0040PostJobSubmitRequestWithBody(server string, contentType string
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -5440,7 +5440,7 @@ func NewSlurmV0040DeleteJobRequest(server string, jobId string, params *SlurmV00
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -5512,7 +5512,7 @@ func NewSlurmV0040GetJobRequest(server string, jobId string, params *SlurmV0040G
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -5557,7 +5557,7 @@ func NewSlurmV0040PostJobRequestWithBody(server string, jobId string, contentTyp
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -5597,7 +5597,7 @@ func NewSlurmV0040DeleteJobsRequestWithBody(server string, contentType string, b
 		return nil, err
 	}
 
-	req, err := http.NewRequest("DELETE", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -5664,7 +5664,7 @@ func NewSlurmV0040GetJobsRequest(server string, params *SlurmV0040GetJobsParams)
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -5713,7 +5713,7 @@ func NewSlurmV0040GetJobsStateRequest(server string, params *SlurmV0040GetJobsSt
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -5740,7 +5740,7 @@ func NewSlurmV0040GetLicensesRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -5774,7 +5774,7 @@ func NewSlurmV0040DeleteNodeRequest(server string, nodeName string) (*http.Reque
 		return nil, err
 	}
 
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -5846,7 +5846,7 @@ func NewSlurmV0040GetNodeRequest(server string, nodeName string, params *SlurmV0
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -5891,7 +5891,7 @@ func NewSlurmV0040PostNodeRequestWithBody(server string, nodeName string, conten
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -5958,7 +5958,7 @@ func NewSlurmV0040GetNodesRequest(server string, params *SlurmV0040GetNodesParam
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -5996,7 +5996,7 @@ func NewSlurmV0040PostNodesRequestWithBody(server string, contentType string, bo
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -6070,7 +6070,7 @@ func NewSlurmV0040GetPartitionRequest(server string, partitionName string, param
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -6135,7 +6135,7 @@ func NewSlurmV0040GetPartitionsRequest(server string, params *SlurmV0040GetParti
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -6162,7 +6162,7 @@ func NewSlurmV0040GetPingRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -6189,7 +6189,7 @@ func NewSlurmV0040GetReconfigureRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -6223,7 +6223,7 @@ func NewSlurmV0040DeleteReservationRequest(server string, reservationName string
 		return nil, err
 	}
 
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -6279,7 +6279,7 @@ func NewSlurmV0040GetReservationRequest(server string, reservationName string, p
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -6328,7 +6328,7 @@ func NewSlurmV0040GetReservationsRequest(server string, params *SlurmV0040GetRes
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -6393,7 +6393,7 @@ func NewSlurmV0040GetSharesRequest(server string, params *SlurmV0040GetSharesPar
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -6427,7 +6427,7 @@ func NewSlurmdbV0040DeleteAccountRequest(server string, accountName string) (*ht
 		return nil, err
 	}
 
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -6515,7 +6515,7 @@ func NewSlurmdbV0040GetAccountRequest(server string, accountName string, params 
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -6612,7 +6612,7 @@ func NewSlurmdbV0040GetAccountsRequest(server string, params *SlurmdbV0040GetAcc
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -6650,7 +6650,7 @@ func NewSlurmdbV0040PostAccountsRequestWithBody(server string, contentType strin
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -6690,7 +6690,7 @@ func NewSlurmdbV0040PostAccountsAssociationRequestWithBody(server string, conten
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -7013,7 +7013,7 @@ func NewSlurmdbV0040DeleteAssociationRequest(server string, params *SlurmdbV0040
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -7334,7 +7334,7 @@ func NewSlurmdbV0040GetAssociationRequest(server string, params *SlurmdbV0040Get
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -7655,7 +7655,7 @@ func NewSlurmdbV0040DeleteAssociationsRequest(server string, params *SlurmdbV004
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -7976,7 +7976,7 @@ func NewSlurmdbV0040GetAssociationsRequest(server string, params *SlurmdbV0040Ge
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -8014,7 +8014,7 @@ func NewSlurmdbV0040PostAssociationsRequestWithBody(server string, contentType s
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -8216,7 +8216,7 @@ func NewSlurmdbV0040DeleteClusterRequest(server string, clusterName string, para
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -8416,7 +8416,7 @@ func NewSlurmdbV0040GetClusterRequest(server string, clusterName string, params 
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -8465,7 +8465,7 @@ func NewSlurmdbV0040GetClustersRequest(server string, params *SlurmdbV0040GetClu
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -8525,7 +8525,7 @@ func NewSlurmdbV0040PostClustersRequestWithBody(server string, params *SlurmdbV0
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -8554,7 +8554,7 @@ func NewSlurmdbV0040GetConfigRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -8592,7 +8592,7 @@ func NewSlurmdbV0040PostConfigRequestWithBody(server string, contentType string,
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -8621,7 +8621,7 @@ func NewSlurmdbV0040GetDiagRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -8782,7 +8782,7 @@ func NewSlurmdbV0040GetInstanceRequest(server string, params *SlurmdbV0040GetIns
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -8943,7 +8943,7 @@ func NewSlurmdbV0040GetInstancesRequest(server string, params *SlurmdbV0040GetIn
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -8977,7 +8977,7 @@ func NewSlurmdbV0040GetJobRequest(server string, jobId string) (*http.Request, e
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -9666,7 +9666,7 @@ func NewSlurmdbV0040GetJobsRequest(server string, params *SlurmdbV0040GetJobsPar
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -9795,7 +9795,7 @@ func NewSlurmdbV0040GetQosRequest(server string, params *SlurmdbV0040GetQosParam
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -9935,7 +9935,7 @@ func NewSlurmdbV0040PostQosRequestWithBody(server string, params *SlurmdbV0040Po
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -9971,7 +9971,7 @@ func NewSlurmdbV0040DeleteSingleQosRequest(server string, qos string) (*http.Req
 		return nil, err
 	}
 
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -10027,7 +10027,7 @@ func NewSlurmdbV0040GetSingleQosRequest(server string, qos string, params *Slurm
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -10054,7 +10054,7 @@ func NewSlurmdbV0040GetTresRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -10092,7 +10092,7 @@ func NewSlurmdbV0040PostTresRequestWithBody(server string, contentType string, b
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -10128,7 +10128,7 @@ func NewSlurmdbV0040DeleteUserRequest(server string, name string) (*http.Request
 		return nil, err
 	}
 
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -10232,7 +10232,7 @@ func NewSlurmdbV0040GetUserRequest(server string, name string, params *SlurmdbV0
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -10393,7 +10393,7 @@ func NewSlurmdbV0040GetUsersRequest(server string, params *SlurmdbV0040GetUsersP
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -10431,7 +10431,7 @@ func NewSlurmdbV0040PostUsersRequestWithBody(server string, contentType string, 
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -10509,7 +10509,7 @@ func NewSlurmdbV0040PostUsersAssociationRequestWithBody(server string, params *S
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -10545,7 +10545,7 @@ func NewSlurmdbV0040DeleteWckeyRequest(server string, id string) (*http.Request,
 		return nil, err
 	}
 
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -10579,7 +10579,7 @@ func NewSlurmdbV0040GetWckeyRequest(server string, id string) (*http.Request, er
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -10772,7 +10772,7 @@ func NewSlurmdbV0040GetWckeysRequest(server string, params *SlurmdbV0040GetWckey
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -10976,7 +10976,7 @@ func NewSlurmdbV0040PostWckeysRequestWithBody(server string, params *SlurmdbV004
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -13224,7 +13224,7 @@ func ParseSlurmV0040GetDiagResponse(rsp *http.Response) (*SlurmV0040GetDiagRespo
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiDiagResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13257,7 +13257,7 @@ func ParseSlurmV0040PostJobSubmitResponse(rsp *http.Response) (*SlurmV0040PostJo
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiJobSubmitResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13290,7 +13290,7 @@ func ParseSlurmV0040DeleteJobResponse(rsp *http.Response) (*SlurmV0040DeleteJobR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13323,7 +13323,7 @@ func ParseSlurmV0040GetJobResponse(rsp *http.Response) (*SlurmV0040GetJobRespons
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiJobInfoResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13356,7 +13356,7 @@ func ParseSlurmV0040PostJobResponse(rsp *http.Response) (*SlurmV0040PostJobRespo
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiJobPostResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13389,7 +13389,7 @@ func ParseSlurmV0040DeleteJobsResponse(rsp *http.Response) (*SlurmV0040DeleteJob
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiKillJobsResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13422,7 +13422,7 @@ func ParseSlurmV0040GetJobsResponse(rsp *http.Response) (*SlurmV0040GetJobsRespo
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiJobInfoResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13455,7 +13455,7 @@ func ParseSlurmV0040GetJobsStateResponse(rsp *http.Response) (*SlurmV0040GetJobs
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiJobInfoResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13488,7 +13488,7 @@ func ParseSlurmV0040GetLicensesResponse(rsp *http.Response) (*SlurmV0040GetLicen
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiLicensesResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13521,7 +13521,7 @@ func ParseSlurmV0040DeleteNodeResponse(rsp *http.Response) (*SlurmV0040DeleteNod
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13554,7 +13554,7 @@ func ParseSlurmV0040GetNodeResponse(rsp *http.Response) (*SlurmV0040GetNodeRespo
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiNodesResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13587,7 +13587,7 @@ func ParseSlurmV0040PostNodeResponse(rsp *http.Response) (*SlurmV0040PostNodeRes
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13620,7 +13620,7 @@ func ParseSlurmV0040GetNodesResponse(rsp *http.Response) (*SlurmV0040GetNodesRes
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiNodesResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13653,7 +13653,7 @@ func ParseSlurmV0040PostNodesResponse(rsp *http.Response) (*SlurmV0040PostNodesR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13686,7 +13686,7 @@ func ParseSlurmV0040GetPartitionResponse(rsp *http.Response) (*SlurmV0040GetPart
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiPartitionResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13719,7 +13719,7 @@ func ParseSlurmV0040GetPartitionsResponse(rsp *http.Response) (*SlurmV0040GetPar
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiPartitionResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13752,7 +13752,7 @@ func ParseSlurmV0040GetPingResponse(rsp *http.Response) (*SlurmV0040GetPingRespo
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiPingArrayResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13785,7 +13785,7 @@ func ParseSlurmV0040GetReconfigureResponse(rsp *http.Response) (*SlurmV0040GetRe
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13818,7 +13818,7 @@ func ParseSlurmV0040DeleteReservationResponse(rsp *http.Response) (*SlurmV0040De
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13851,7 +13851,7 @@ func ParseSlurmV0040GetReservationResponse(rsp *http.Response) (*SlurmV0040GetRe
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiReservationResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13884,7 +13884,7 @@ func ParseSlurmV0040GetReservationsResponse(rsp *http.Response) (*SlurmV0040GetR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiReservationResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13917,7 +13917,7 @@ func ParseSlurmV0040GetSharesResponse(rsp *http.Response) (*SlurmV0040GetSharesR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiSharesResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13950,7 +13950,7 @@ func ParseSlurmdbV0040DeleteAccountResponse(rsp *http.Response) (*SlurmdbV0040De
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiAccountsRemovedResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -13983,7 +13983,7 @@ func ParseSlurmdbV0040GetAccountResponse(rsp *http.Response) (*SlurmdbV0040GetAc
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiAccountsResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14016,7 +14016,7 @@ func ParseSlurmdbV0040GetAccountsResponse(rsp *http.Response) (*SlurmdbV0040GetA
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiAccountsResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14049,7 +14049,7 @@ func ParseSlurmdbV0040PostAccountsResponse(rsp *http.Response) (*SlurmdbV0040Pos
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14082,7 +14082,7 @@ func ParseSlurmdbV0040PostAccountsAssociationResponse(rsp *http.Response) (*Slur
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiAccountsAddCondRespStr
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14115,7 +14115,7 @@ func ParseSlurmdbV0040DeleteAssociationResponse(rsp *http.Response) (*SlurmdbV00
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiAssocsRemovedResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14148,7 +14148,7 @@ func ParseSlurmdbV0040GetAssociationResponse(rsp *http.Response) (*SlurmdbV0040G
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiAssocsResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14181,7 +14181,7 @@ func ParseSlurmdbV0040DeleteAssociationsResponse(rsp *http.Response) (*SlurmdbV0
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiAssocsRemovedResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14214,7 +14214,7 @@ func ParseSlurmdbV0040GetAssociationsResponse(rsp *http.Response) (*SlurmdbV0040
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiAssocsResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14247,7 +14247,7 @@ func ParseSlurmdbV0040PostAssociationsResponse(rsp *http.Response) (*SlurmdbV004
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14280,7 +14280,7 @@ func ParseSlurmdbV0040DeleteClusterResponse(rsp *http.Response) (*SlurmdbV0040De
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiClustersRemovedResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14313,7 +14313,7 @@ func ParseSlurmdbV0040GetClusterResponse(rsp *http.Response) (*SlurmdbV0040GetCl
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiClustersResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14346,7 +14346,7 @@ func ParseSlurmdbV0040GetClustersResponse(rsp *http.Response) (*SlurmdbV0040GetC
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiClustersResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14379,7 +14379,7 @@ func ParseSlurmdbV0040PostClustersResponse(rsp *http.Response) (*SlurmdbV0040Pos
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14412,7 +14412,7 @@ func ParseSlurmdbV0040GetConfigResponse(rsp *http.Response) (*SlurmdbV0040GetCon
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiSlurmdbdConfigResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14445,7 +14445,7 @@ func ParseSlurmdbV0040PostConfigResponse(rsp *http.Response) (*SlurmdbV0040PostC
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14478,7 +14478,7 @@ func ParseSlurmdbV0040GetDiagResponse(rsp *http.Response) (*SlurmdbV0040GetDiagR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiSlurmdbdStatsResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14511,7 +14511,7 @@ func ParseSlurmdbV0040GetInstanceResponse(rsp *http.Response) (*SlurmdbV0040GetI
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiInstancesResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14544,7 +14544,7 @@ func ParseSlurmdbV0040GetInstancesResponse(rsp *http.Response) (*SlurmdbV0040Get
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiInstancesResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14577,7 +14577,7 @@ func ParseSlurmdbV0040GetJobResponse(rsp *http.Response) (*SlurmdbV0040GetJobRes
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiSlurmdbdJobsResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14610,7 +14610,7 @@ func ParseSlurmdbV0040GetJobsResponse(rsp *http.Response) (*SlurmdbV0040GetJobsR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiSlurmdbdJobsResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14643,7 +14643,7 @@ func ParseSlurmdbV0040GetQosResponse(rsp *http.Response) (*SlurmdbV0040GetQosRes
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiSlurmdbdQosResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14676,7 +14676,7 @@ func ParseSlurmdbV0040PostQosResponse(rsp *http.Response) (*SlurmdbV0040PostQosR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14709,7 +14709,7 @@ func ParseSlurmdbV0040DeleteSingleQosResponse(rsp *http.Response) (*SlurmdbV0040
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiSlurmdbdQosRemovedResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14742,7 +14742,7 @@ func ParseSlurmdbV0040GetSingleQosResponse(rsp *http.Response) (*SlurmdbV0040Get
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiSlurmdbdQosResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14775,7 +14775,7 @@ func ParseSlurmdbV0040GetTresResponse(rsp *http.Response) (*SlurmdbV0040GetTresR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiTresResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14808,7 +14808,7 @@ func ParseSlurmdbV0040PostTresResponse(rsp *http.Response) (*SlurmdbV0040PostTre
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14841,7 +14841,7 @@ func ParseSlurmdbV0040DeleteUserResponse(rsp *http.Response) (*SlurmdbV0040Delet
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14874,7 +14874,7 @@ func ParseSlurmdbV0040GetUserResponse(rsp *http.Response) (*SlurmdbV0040GetUserR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiUsersResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14907,7 +14907,7 @@ func ParseSlurmdbV0040GetUsersResponse(rsp *http.Response) (*SlurmdbV0040GetUser
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiUsersResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14940,7 +14940,7 @@ func ParseSlurmdbV0040PostUsersResponse(rsp *http.Response) (*SlurmdbV0040PostUs
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -14973,7 +14973,7 @@ func ParseSlurmdbV0040PostUsersAssociationResponse(rsp *http.Response) (*Slurmdb
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiUsersAddCondRespStr
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -15006,7 +15006,7 @@ func ParseSlurmdbV0040DeleteWckeyResponse(rsp *http.Response) (*SlurmdbV0040Dele
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiWckeyRemovedResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -15039,7 +15039,7 @@ func ParseSlurmdbV0040GetWckeyResponse(rsp *http.Response) (*SlurmdbV0040GetWcke
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiWckeyResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -15072,7 +15072,7 @@ func ParseSlurmdbV0040GetWckeysResponse(rsp *http.Response) (*SlurmdbV0040GetWck
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiWckeyResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -15105,7 +15105,7 @@ func ParseSlurmdbV0040PostWckeysResponse(rsp *http.Response) (*SlurmdbV0040PostW
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == http.StatusOK:
 		var dest V0040OpenapiResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err

@@ -100,12 +100,12 @@ func (a *NodeAdapter) convertCommonNodeUpdateToAPI(nodeName string, update *type
 
 	// Features - V0040CsvString is []string
 	if len(update.Features) > 0 {
-		features := api.V0040CsvString(update.Features)
+		features := update.Features
 		apiNode.Features = &features
 	}
 
 	if len(update.ActiveFeatures) > 0 {
-		activeFeatures := api.V0040CsvString(update.ActiveFeatures)
+		activeFeatures := update.ActiveFeatures
 		apiNode.FeaturesAct = &activeFeatures
 	}
 

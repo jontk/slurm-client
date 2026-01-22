@@ -263,12 +263,12 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0042Node) (*types.Node
 
 	// CPU information
 	if apiNode.Cpus != nil {
-		node.CPUs = int32(*apiNode.Cpus)
+		node.CPUs = *apiNode.Cpus
 	}
 
 	// Memory information
 	if apiNode.RealMemory != nil {
-		node.RealMemory = int64(*apiNode.RealMemory)
+		node.RealMemory = *apiNode.RealMemory
 	}
 
 	// Partition information

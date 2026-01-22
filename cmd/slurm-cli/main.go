@@ -234,10 +234,10 @@ var jobsGetCmd = &cobra.Command{
 			fmt.Printf("Memory:      %d MB\n", job.Memory)
 			fmt.Printf("Time Limit:  %d minutes\n", job.TimeLimit)
 			if !job.SubmitTime.IsZero() {
-				fmt.Printf("Submit Time: %s\n", job.SubmitTime.Format("2006-01-02 15:04:05"))
+				fmt.Printf("Submit Time: %s\n", job.SubmitTime.Format(time.DateTime))
 			}
 			if job.StartTime != nil {
-				fmt.Printf("Start Time:  %s\n", job.StartTime.Format("2006-01-02 15:04:05"))
+				fmt.Printf("Start Time:  %s\n", job.StartTime.Format(time.DateTime))
 			}
 		} else {
 			printOutput(job)
