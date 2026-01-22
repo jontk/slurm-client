@@ -85,7 +85,7 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0040JobInfo) (*types.Job,
 
 	// Job specification
 	if apiJob.Command != nil && len(*apiJob.Command) > 0 {
-		job.Command = string(*apiJob.Command)
+		job.Command = *apiJob.Command
 	}
 	// Note: WorkingDirectory not available in V0040JobInfo but exists in V0040JobDesc
 	// Skip for now as this conversion is from JobInfo (API response), not JobDesc (API request)
@@ -118,9 +118,7 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0040JobInfo) (*types.Job,
 	// Mail settings
 	if apiJob.MailType != nil && len(*apiJob.MailType) > 0 {
 		mailTypes := make([]string, len(*apiJob.MailType))
-		for i, mt := range *apiJob.MailType {
-			mailTypes[i] = string(mt)
-		}
+		copy(mailTypes, *apiJob.MailType)
 		job.MailType = mailTypes
 	}
 	if apiJob.MailUser != nil {
@@ -129,7 +127,7 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0040JobInfo) (*types.Job,
 
 	// Additional fields
 	if apiJob.ExcludedNodes != nil && len(*apiJob.ExcludedNodes) > 0 {
-		job.ExcludeNodes = string(*apiJob.ExcludedNodes)
+		job.ExcludeNodes = *apiJob.ExcludedNodes
 	}
 	if apiJob.Nice != nil {
 		job.Nice = *apiJob.Nice
@@ -140,7 +138,7 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0040JobInfo) (*types.Job,
 
 	// Features and GRES
 	if apiJob.Features != nil && len(*apiJob.Features) > 0 {
-		job.Features = []string{string(*apiJob.Features)}
+		job.Features = []string{*apiJob.Features}
 	}
 	if apiJob.GresDetail != nil && len(*apiJob.GresDetail) > 0 {
 		job.Gres = strings.Join(*apiJob.GresDetail, ",")

@@ -241,7 +241,7 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 
 	// Handle time limit
 	if job.TimeLimit > 0 {
-		timeLimit := int32(job.TimeLimit)
+		timeLimit := job.TimeLimit
 		setTrue := true
 		reqBody.TimeLimit = &api.V0044Uint32NoValStruct{
 			Set:    &setTrue,
@@ -251,7 +251,7 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 
 	// Handle node count
 	if job.Nodes > 0 {
-		nodeMin := int32(job.Nodes)
+		nodeMin := job.Nodes
 		reqBody.MinimumNodes = &nodeMin
 		reqBody.MaximumNodes = &nodeMin
 	}
@@ -899,7 +899,7 @@ func (a *JobAdapter) convertCommonJobCreateToAPI(create *types.JobCreate) (*api.
 
 	// Set priority if provided
 	if create.Priority != nil && *create.Priority > 0 {
-		priority := int32(*create.Priority)
+		priority := *create.Priority
 		setTrue := true
 		apiJob.Priority = &api.V0044Uint32NoValStruct{
 			Set:    &setTrue,

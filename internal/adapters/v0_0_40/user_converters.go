@@ -90,7 +90,7 @@ func (a *UserAdapter) convertCommonUserCreateToAPI(user *types.UserCreate) (*api
 
 	// Admin level
 	if user.AdminLevel != "" {
-		adminLevel := api.V0040AdminLvl([]string{string(user.AdminLevel)})
+		adminLevel := []string{string(user.AdminLevel)}
 		apiUser.AdministratorLevel = &adminLevel
 	}
 
@@ -117,7 +117,7 @@ func (a *UserAdapter) convertCommonUserUpdateToAPI(existingUser *types.User, upd
 
 	// Admin level
 	if update.AdminLevel != nil {
-		adminLevel := api.V0040AdminLvl([]string{string(*update.AdminLevel)})
+		adminLevel := []string{string(*update.AdminLevel)}
 		apiUser.AdministratorLevel = &adminLevel
 	}
 

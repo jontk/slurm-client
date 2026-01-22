@@ -215,7 +215,7 @@ func (a *ReservationAdapter) convertAPIReservationToCommon(apiReservation api.V0
 	}
 
 	if apiReservation.NodeCount != nil {
-		reservation.NodeCount = int32(*apiReservation.NodeCount)
+		reservation.NodeCount = *apiReservation.NodeCount
 	}
 
 	if apiReservation.Users != nil {

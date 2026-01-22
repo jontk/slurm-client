@@ -275,7 +275,7 @@ func TestAuthenticationHeaders(t *testing.T) {
 			t.Log(tc.description)
 
 			// Create a mock HTTP request to test header setting
-			req, err := http.NewRequest("GET", "http://example.com", nil)
+			req, err := http.NewRequest(http.MethodGet, "http://example.com", nil)
 			require.NoError(t, err)
 
 			// Apply authentication

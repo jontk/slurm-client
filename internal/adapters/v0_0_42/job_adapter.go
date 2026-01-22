@@ -311,7 +311,7 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 
 	// Handle time limit
 	if job.TimeLimit > 0 {
-		timeLimitNumber := int32(job.TimeLimit)
+		timeLimitNumber := job.TimeLimit
 		apiJobSubmission.TimeLimit = &api.V0042Uint32NoValStruct{
 			Number: &timeLimitNumber,
 			Set:    &[]bool{true}[0],
@@ -597,7 +597,7 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0042JobInfo) (*types.Job,
 
 	// Set basic fields
 	if apiJob.JobId != nil {
-		job.JobID = int32(*apiJob.JobId)
+		job.JobID = *apiJob.JobId
 	}
 
 	if apiJob.Name != nil {
@@ -613,11 +613,11 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0042JobInfo) (*types.Job,
 	}
 
 	if apiJob.UserId != nil {
-		job.UserID = int32(*apiJob.UserId)
+		job.UserID = *apiJob.UserId
 	}
 
 	if apiJob.GroupId != nil {
-		job.GroupID = int32(*apiJob.GroupId)
+		job.GroupID = *apiJob.GroupId
 	}
 
 	if apiJob.UserName != nil {

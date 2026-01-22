@@ -1577,7 +1577,7 @@ func (m *adapterAssociationManager) Get(ctx context.Context, opts *interfaces.Ge
 	}
 
 	// Create a composite ID or use the first matching association
-	associationID := ""
+	var associationID string
 	if opts.User != "" && opts.Account != "" {
 		associationID = fmt.Sprintf("%s:%s", opts.User, opts.Account)
 	} else if opts.User != "" {
@@ -1674,7 +1674,7 @@ func (m *adapterAssociationManager) Update(ctx context.Context, associations []*
 
 	// Process first association
 	assoc := associations[0]
-	associationID := ""
+	var associationID string
 	if assoc.User != "" && assoc.Account != "" {
 		associationID = fmt.Sprintf("%s:%s", assoc.User, assoc.Account)
 	} else if assoc.User != "" {
@@ -1751,7 +1751,7 @@ func (m *adapterAssociationManager) Delete(ctx context.Context, opts *interfaces
 	}
 
 	// Build association ID from options
-	associationID := ""
+	var associationID string
 	if opts.User != "" && opts.Account != "" {
 		associationID = fmt.Sprintf("%s:%s", opts.User, opts.Account)
 	} else if opts.User != "" {

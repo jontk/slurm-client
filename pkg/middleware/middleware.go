@@ -171,7 +171,7 @@ func DefaultShouldRetry(resp *http.Response, err error, attempt int) bool {
 	}
 
 	// Retry on 429 (Too Many Requests)
-	if resp != nil && resp.StatusCode == 429 {
+	if resp != nil && resp.StatusCode == http.StatusTooManyRequests {
 		return true
 	}
 

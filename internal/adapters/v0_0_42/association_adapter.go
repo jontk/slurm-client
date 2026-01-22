@@ -299,16 +299,16 @@ func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssoc api.V0042Ass
 
 	// Priority is nested
 	if apiAssoc.Priority != nil && apiAssoc.Priority.Set != nil && *apiAssoc.Priority.Set && apiAssoc.Priority.Number != nil {
-		assoc.Priority = int32(*apiAssoc.Priority.Number)
+		assoc.Priority = *apiAssoc.Priority.Number
 	}
 
 	// Max jobs are nested in Max.Jobs structure
 	if apiAssoc.Max != nil && apiAssoc.Max.Jobs != nil {
 		if apiAssoc.Max.Jobs.Active != nil && apiAssoc.Max.Jobs.Active.Set != nil && *apiAssoc.Max.Jobs.Active.Set && apiAssoc.Max.Jobs.Active.Number != nil {
-			assoc.MaxJobs = int32(*apiAssoc.Max.Jobs.Active.Number)
+			assoc.MaxJobs = *apiAssoc.Max.Jobs.Active.Number
 		}
 		if apiAssoc.Max.Jobs.Total != nil && apiAssoc.Max.Jobs.Total.Set != nil && *apiAssoc.Max.Jobs.Total.Set && apiAssoc.Max.Jobs.Total.Number != nil {
-			assoc.MaxSubmitJobs = int32(*apiAssoc.Max.Jobs.Total.Number)
+			assoc.MaxSubmitJobs = *apiAssoc.Max.Jobs.Total.Number
 		}
 	}
 
@@ -319,7 +319,7 @@ func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssoc api.V0042Ass
 			for _, tres := range *apiAssoc.Max.Tres.Total {
 				if tres.Count != nil {
 					// V0042Tres has Type as string, not pointer
-					assoc.MaxTRES[tres.Type] = int64(*tres.Count)
+					assoc.MaxTRES[tres.Type] = *tres.Count
 				}
 			}
 		}

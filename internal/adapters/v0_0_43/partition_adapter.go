@@ -286,36 +286,36 @@ func (a *PartitionAdapter) convertAPIPartitionToCommon(apiPartition api.V0043Par
 			partition.Nodes = *apiPartition.Nodes.Configured
 		}
 		if apiPartition.Nodes.Total != nil {
-			partition.TotalNodes = int32(*apiPartition.Nodes.Total)
+			partition.TotalNodes = *apiPartition.Nodes.Total
 		}
 	}
 
 	// Limits and timeouts
 	if apiPartition.Maximums != nil {
 		if apiPartition.Maximums.Nodes != nil && apiPartition.Maximums.Nodes.Number != nil {
-			partition.MaxNodes = int32(*apiPartition.Maximums.Nodes.Number)
+			partition.MaxNodes = *apiPartition.Maximums.Nodes.Number
 		}
 		if apiPartition.Maximums.Time != nil && apiPartition.Maximums.Time.Number != nil {
-			partition.MaxTime = int32(*apiPartition.Maximums.Time.Number)
+			partition.MaxTime = *apiPartition.Maximums.Time.Number
 		}
 	}
 
 	if apiPartition.Minimums != nil {
 		if apiPartition.Minimums.Nodes != nil {
-			partition.MinNodes = int32(*apiPartition.Minimums.Nodes)
+			partition.MinNodes = *apiPartition.Minimums.Nodes
 		}
 	}
 
 	if apiPartition.Defaults != nil {
 		if apiPartition.Defaults.Time != nil && apiPartition.Defaults.Time.Number != nil {
-			partition.DefaultTime = int32(*apiPartition.Defaults.Time.Number)
+			partition.DefaultTime = *apiPartition.Defaults.Time.Number
 		}
 	}
 
 	// Priority
 	if apiPartition.Priority != nil {
 		if apiPartition.Priority.JobFactor != nil {
-			partition.Priority = int32(*apiPartition.Priority.JobFactor)
+			partition.Priority = *apiPartition.Priority.JobFactor
 		}
 	}
 

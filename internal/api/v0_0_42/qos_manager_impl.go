@@ -6,6 +6,7 @@ package v0_0_42
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/jontk/slurm-client/interfaces"
@@ -237,7 +238,7 @@ func (q *QoSManagerImpl) Create(ctx context.Context, qos *interfaces.QoSCreate) 
 	}
 
 	// Check HTTP status (200 and 201 for creation is success)
-	if resp.StatusCode() != 200 && resp.StatusCode() != 201 {
+	if resp.StatusCode() != 200 && resp.StatusCode() != http.StatusCreated {
 		var responseBody []byte
 		if resp.JSON200 != nil {
 			// Try to extract error details from response
@@ -678,7 +679,7 @@ func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0042Qos, error) {
 
 	// Flags
 	if len(create.Flags) > 0 {
-		flags := V0042QosFlags(create.Flags)
+		flags := create.Flags
 		apiQos.Flags = &flags
 	}
 
@@ -733,7 +734,7 @@ func convertQoSUpdateToAPI(update *interfaces.QoSUpdate) (*V0042Qos, error) {
 
 	// Flags
 	if update.Flags != nil {
-		flags := V0042QosFlags(update.Flags)
+		flags := update.Flags
 		apiQos.Flags = &flags
 	}
 

@@ -419,7 +419,7 @@ func (a *StandaloneAdapter) GetTRES(ctx context.Context) (*types.TRESList, error
 			tres.Name = *apiTres.Name
 		}
 		if apiTres.Count != nil {
-			tres.Count = int64(*apiTres.Count)
+			tres.Count = *apiTres.Count
 		}
 
 		tresList = append(tresList, tres)
@@ -450,7 +450,7 @@ func (a *StandaloneAdapter) CreateTRES(ctx context.Context, req *types.CreateTRE
 	}
 
 	if req.Count > 0 {
-		count := int64(req.Count)
+		count := req.Count
 		requestTres.Count = &count
 	}
 
@@ -487,7 +487,7 @@ func (a *StandaloneAdapter) CreateTRES(ctx context.Context, req *types.CreateTRE
 	}
 
 	if req.Count > 0 {
-		tres.Count = int64(req.Count)
+		tres.Count = req.Count
 	}
 
 	return tres, nil

@@ -675,7 +675,7 @@ func GenerateUtilizationReport(analytics *JobAnalyticsData) string {
 
 		live := analytics.LiveMetrics
 		timestamp := time.Unix(live.Timestamp, 0)
-		report.WriteString(fmt.Sprintf("Snapshot Time: %s\n", timestamp.Format("2006-01-02 15:04:05")))
+		report.WriteString(fmt.Sprintf("Snapshot Time: %s\n", timestamp.Format(time.DateTime)))
 
 		report.WriteString("Current Usage:\n")
 		report.WriteString(fmt.Sprintf("  • CPU: %.1f%% (avg: %.1f%%, peak: %.1f%%)\n",

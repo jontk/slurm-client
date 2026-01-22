@@ -4,6 +4,7 @@
 package v0_0_43
 
 import (
+	"net/http"
 	"context"
 	"fmt"
 	"math"
@@ -415,7 +416,7 @@ func (m *JobManagerImpl) Submit(ctx context.Context, job *interfaces.JobSubmissi
 	}
 
 	// Check HTTP status (200 and 201 for creation is success)
-	if resp.StatusCode() != 200 && resp.StatusCode() != 201 {
+	if resp.StatusCode() != 200 && resp.StatusCode() != http.StatusCreated {
 		var responseBody []byte
 		if resp.JSON200 != nil {
 			// Try to extract error details from response
@@ -510,7 +511,7 @@ func (m *JobManagerImpl) Allocate(ctx context.Context, req *interfaces.JobAlloca
 	}
 
 	// Check HTTP status (200 and 201 for creation is success)
-	if resp.StatusCode() != 200 && resp.StatusCode() != 201 {
+	if resp.StatusCode() != 200 && resp.StatusCode() != http.StatusCreated {
 		var responseBody []byte
 		if resp.JSON200 != nil {
 			// Try to extract error details from response
@@ -4020,7 +4021,7 @@ func (m *JobManagerImpl) GetJobMemoryAnalytics(ctx context.Context, jobID string
 		NUMANodes: []interfaces.NUMANodeMetrics{
 			{
 				NodeID:           0,
-				CPUCores:         int(job.CPUs) / 2,
+				CPUCores:         job.CPUs / 2,
 				MemoryTotal:      int64(job.Memory) / 2,
 				MemoryUsed:       int64(float64(job.Memory) * 0.36),
 				MemoryFree:       int64(float64(job.Memory) * 0.14),
@@ -4032,7 +4033,7 @@ func (m *JobManagerImpl) GetJobMemoryAnalytics(ctx context.Context, jobID string
 			},
 			{
 				NodeID:           1,
-				CPUCores:         int(job.CPUs) / 2,
+				CPUCores:         job.CPUs / 2,
 				MemoryTotal:      int64(job.Memory) / 2,
 				MemoryUsed:       int64(float64(job.Memory) * 0.36),
 				MemoryFree:       int64(float64(job.Memory) * 0.14),
@@ -4252,7 +4253,7 @@ func (m *JobManagerImpl) AnalyzeBatchJobs(ctx context.Context, jobIDs []string, 
 			JobName:           "batch_job_" + jobID,
 			Status:            "completed",
 			Efficiency:        efficiency.Efficiency,
-			Runtime:           time.Duration(1 * time.Hour),
+			Runtime:           1 * time.Hour,
 			CPUUtilization:    cpuUtil,
 			MemoryUtilization: 85.0,
 		}

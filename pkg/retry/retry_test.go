@@ -67,35 +67,35 @@ func TestHTTPExponentialBackoff_ShouldRetry(t *testing.T) {
 		},
 		{
 			name:        "500 status should retry",
-			resp:        &http.Response{StatusCode: 500},
+			resp:        &http.Response{StatusCode: http.StatusInternalServerError},
 			err:         nil,
 			attempt:     1,
 			shouldRetry: true,
 		},
 		{
 			name:        "503 status should retry",
-			resp:        &http.Response{StatusCode: 503},
+			resp:        &http.Response{StatusCode: http.StatusServiceUnavailable},
 			err:         nil,
 			attempt:     1,
 			shouldRetry: true,
 		},
 		{
 			name:        "429 status should retry",
-			resp:        &http.Response{StatusCode: 429},
+			resp:        &http.Response{StatusCode: http.StatusTooManyRequests},
 			err:         nil,
 			attempt:     1,
 			shouldRetry: true,
 		},
 		{
 			name:        "200 status should not retry",
-			resp:        &http.Response{StatusCode: 200},
+			resp:        &http.Response{StatusCode: http.StatusOK},
 			err:         nil,
 			attempt:     1,
 			shouldRetry: false,
 		},
 		{
 			name:        "404 status should not retry",
-			resp:        &http.Response{StatusCode: 404},
+			resp:        &http.Response{StatusCode: http.StatusNotFound},
 			err:         nil,
 			attempt:     1,
 			shouldRetry: false,
@@ -215,9 +215,9 @@ func TestFixedDelay(t *testing.T) {
 
 	// Test retry logic
 	helpers.AssertEqual(t, true, policy.ShouldRetry(ctx, nil, errors.New("error"), 1))
-	helpers.AssertEqual(t, true, policy.ShouldRetry(ctx, &http.Response{StatusCode: 500}, nil, 2))
+	helpers.AssertEqual(t, true, policy.ShouldRetry(ctx, &http.Response{StatusCode: http.StatusInternalServerError}, nil, 2))
 	helpers.AssertEqual(t, false, policy.ShouldRetry(ctx, nil, errors.New("error"), 3)) // Max retries exceeded
-	helpers.AssertEqual(t, false, policy.ShouldRetry(ctx, &http.Response{StatusCode: 200}, nil, 1))
+	helpers.AssertEqual(t, false, policy.ShouldRetry(ctx, &http.Response{StatusCode: http.StatusOK}, nil, 1))
 }
 
 func TestFixedDelay_ShouldRetryWithCancelledContext(t *testing.T) {
@@ -241,7 +241,7 @@ func TestNoRetry(t *testing.T) {
 
 	// Should never retry
 	helpers.AssertEqual(t, false, policy.ShouldRetry(ctx, nil, errors.New("error"), 0))
-	helpers.AssertEqual(t, false, policy.ShouldRetry(ctx, &http.Response{StatusCode: 500}, nil, 0))
+	helpers.AssertEqual(t, false, policy.ShouldRetry(ctx, &http.Response{StatusCode: http.StatusInternalServerError}, nil, 0))
 	helpers.AssertEqual(t, false, policy.ShouldRetry(ctx, nil, errors.New("error"), 1))
 }
 

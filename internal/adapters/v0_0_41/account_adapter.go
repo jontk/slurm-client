@@ -4,6 +4,7 @@
 package v0_0_41
 
 import (
+	"net/http"
 	"context"
 	"fmt"
 	"strings"
@@ -71,7 +72,7 @@ func (a *AccountAdapter) List(ctx context.Context, opts *types.AccountListOption
 	}
 
 	// Handle response
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP %d: failed to list accounts", resp.HTTPResponse.StatusCode)
 	}
 
@@ -122,7 +123,7 @@ func (a *AccountAdapter) Get(ctx context.Context, name string) (*types.Account, 
 	}
 
 	// Handle response
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP %d: failed to get account %s", resp.HTTPResponse.StatusCode, name)
 	}
 
@@ -248,7 +249,7 @@ func (a *AccountAdapter) Delete(ctx context.Context, name string) error {
 	}
 
 	// Handle response
-	if resp.HTTPResponse.StatusCode != 200 {
+	if resp.HTTPResponse.StatusCode != http.StatusOK {
 		return fmt.Errorf("HTTP %d: request failed", resp.HTTPResponse.StatusCode)
 	}
 
