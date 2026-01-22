@@ -6,6 +6,7 @@ package logging
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -242,17 +243,23 @@ func getErrorType(err error) string {
 		return ""
 	}
 
-	switch err.(type) {
-	case *os.PathError:
+	var pathErr *os.PathError
+	if errors.As(err, &pathErr) {
 		return "PathError"
-	case *os.LinkError:
-		return "LinkError"
-	case *os.SyscallError:
-		return "SyscallError"
-	default:
-		// Use reflection to get the actual type
-		return fmt.Sprintf("%T", err)
 	}
+
+	var linkErr *os.LinkError
+	if errors.As(err, &linkErr) {
+		return "LinkError"
+	}
+
+	var syscallErr *os.SyscallError
+	if errors.As(err, &syscallErr) {
+		return "SyscallError"
+	}
+
+	// Use reflection to get the actual type
+	return fmt.Sprintf("%T", err)
 }
 
 // NoOpLogger is a logger that discards all log messages

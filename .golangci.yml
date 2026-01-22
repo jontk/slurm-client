@@ -10,7 +10,6 @@ linters:
     - dupword
     - embeddedstructfieldcheck  # Embedded struct formatting is stylistic
     - err113
-    - errorlint
     - exhaustive
     - exhaustruct
     - forbidigo
@@ -34,7 +33,6 @@ linters:
     - mnd
     - modernize                 # Modernization suggestions (v2.8+ only) - not always appropriate
     - nestif
-    - nilerr
     - noinlineerr               # Inline error handling is idiomatic Go
     - nlreturn
     - noctx
@@ -68,6 +66,10 @@ linters:
     errcheck:
       check-type-assertions: false
       check-blank: false
+    errorlint:
+      errorf: true      # Check for error wrapping with %w
+      asserts: true     # Check for error type assertions
+      comparison: true  # Check for error comparisons
     gocritic:
       disabled-checks:
         - dupImport
@@ -135,6 +137,7 @@ linters:
           - dupl
           - errcheck
           - errchkjson
+          - errorlint
           - goconst
           - gocyclo
           - gosec
@@ -174,6 +177,7 @@ linters:
       - linters:
           - dupl
           - errcheck
+          - errorlint
           - gosec
           - ineffassign
           - staticcheck
@@ -182,6 +186,7 @@ linters:
       - linters:
           - dupl
           - errcheck
+          - errorlint
           - staticcheck
           - unused
         path: ^cmd/

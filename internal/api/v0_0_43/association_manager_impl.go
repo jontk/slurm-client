@@ -5,6 +5,7 @@ package v0_0_43
 
 import (
 	"context"
+	stderrors "errors"
 	"fmt"
 	"strings"
 	"time"
@@ -517,7 +518,8 @@ func (a *AssociationManagerImpl) ValidateAssociation(ctx context.Context, user, 
 	assoc, err := a.Get(ctx, opts)
 	if err != nil {
 		// If association not found, it's not valid
-		if clientErr, ok := err.(*errors.SlurmError); ok && clientErr.Code == errors.ErrorCodeResourceNotFound {
+		var clientErr *errors.SlurmError
+		if stderrors.As(err, &clientErr) && clientErr.Code == errors.ErrorCodeResourceNotFound {
 			return false, nil
 		}
 		return false, err

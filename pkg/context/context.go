@@ -6,6 +6,7 @@ package context
 
 import (
 	"context"
+	"errors"
 	"time"
 )
 
@@ -115,7 +116,7 @@ func IsContextError(err error) bool {
 	if err == nil {
 		return false
 	}
-	return err == context.Canceled || err == context.DeadlineExceeded
+	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
 }
 
 // ContextError wraps context errors with more descriptive messages
@@ -126,10 +127,10 @@ type ContextError struct {
 }
 
 func (e *ContextError) Error() string {
-	if e.Err == context.DeadlineExceeded {
+	if errors.Is(e.Err, context.DeadlineExceeded) {
 		return "operation '" + e.Operation + "' timed out after " + e.Timeout.String()
 	}
-	if e.Err == context.Canceled {
+	if errors.Is(e.Err, context.Canceled) {
 		return "operation '" + e.Operation + "' was canceled"
 	}
 	return "context error in operation '" + e.Operation + "': " + e.Err.Error()

@@ -1825,7 +1825,7 @@ func (m *adapterAssociationManager) ValidateAssociation(ctx context.Context, use
 	_, err := m.Get(ctx, opts)
 	if err != nil {
 		// Association doesn't exist or error occurred
-		return false, nil
+		return false, err
 	}
 
 	// Association exists

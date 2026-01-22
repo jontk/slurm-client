@@ -21,15 +21,16 @@ func WrapError(err error) *SlurmError {
 	}
 
 	// If already a SlurmError, return as-is
-	if slurmErr, ok := err.(*SlurmError); ok {
+	var slurmErr *SlurmError
+	if stderrors.As(err, &slurmErr) {
 		return slurmErr
 	}
 
 	// Check for context errors first
-	if err == context.Canceled {
+	if stderrors.Is(err, context.Canceled) {
 		return NewSlurmErrorWithCause(ErrorCodeContextCanceled, "Operation was canceled", err)
 	}
-	if err == context.DeadlineExceeded {
+	if stderrors.Is(err, context.DeadlineExceeded) {
 		return NewSlurmErrorWithCause(ErrorCodeDeadlineExceeded, "Operation timed out", err)
 	}
 
@@ -39,7 +40,8 @@ func WrapError(err error) *SlurmError {
 	}
 
 	// Check for URL errors
-	if urlErr, ok := err.(*url.Error); ok {
+	var urlErr *url.Error
+	if stderrors.As(err, &urlErr) {
 		return classifyURLError(urlErr)
 	}
 
@@ -88,7 +90,8 @@ func classifyNetworkError(err error) *SlurmError {
 	errStr := err.Error()
 
 	// Check for specific network error types
-	if netErr, ok := err.(net.Error); ok {
+	var netErr net.Error
+	if stderrors.As(err, &netErr) {
 		if netErr.Timeout() {
 			return NewSlurmErrorWithCause(ErrorCodeNetworkTimeout, "Network operation timed out", err)
 		}
@@ -118,11 +121,14 @@ func classifyNetworkError(err error) *SlurmError {
 	}
 
 	// Check for syscall errors
-	if opErr, ok := err.(*net.OpError); ok {
-		if syscallErr, ok := opErr.Err.(*net.DNSError); ok {
-			return NewSlurmErrorWithCause(ErrorCodeDNSResolution, "DNS lookup failed", syscallErr)
+	var opErr *net.OpError
+	if stderrors.As(err, &opErr) {
+		var dnsErr *net.DNSError
+		if stderrors.As(opErr.Err, &dnsErr) {
+			return NewSlurmErrorWithCause(ErrorCodeDNSResolution, "DNS lookup failed", dnsErr)
 		}
-		if syscallErr, ok := opErr.Err.(syscall.Errno); ok {
+		var syscallErr syscall.Errno
+		if stderrors.As(opErr.Err, &syscallErr) {
 			switch syscallErr {
 			case syscall.ECONNREFUSED:
 				return NewSlurmErrorWithCause(ErrorCodeConnectionRefused, "Connection refused", err)
@@ -150,10 +156,10 @@ func classifyURLError(urlErr *url.Error) *SlurmError {
 	}
 
 	// Check for context errors first (before network classification)
-	if urlErr.Err == context.Canceled {
+	if stderrors.Is(urlErr.Err, context.Canceled) {
 		return NewSlurmErrorWithCause(ErrorCodeContextCanceled, "Operation was canceled", urlErr)
 	}
-	if urlErr.Err == context.DeadlineExceeded {
+	if stderrors.Is(urlErr.Err, context.DeadlineExceeded) {
 		return NewSlurmErrorWithCause(ErrorCodeDeadlineExceeded, "Operation deadline exceeded", urlErr)
 	}
 
@@ -295,7 +301,8 @@ func NewPartitionError(partitionName, operation string, cause error) *SlurmError
 
 // IsRetryableError checks if an error is retryable
 func IsRetryableError(err error) bool {
-	if slurmErr, ok := err.(*SlurmError); ok {
+	var slurmErr *SlurmError
+	if stderrors.As(err, &slurmErr) {
 		return slurmErr.IsRetryable()
 	}
 
@@ -317,14 +324,16 @@ func IsTemporaryError(err error) bool {
 		return false
 	}
 
-	if slurmErr, ok := err.(*SlurmError); ok {
+	var slurmErr *SlurmError
+	if stderrors.As(err, &slurmErr) {
 		return slurmErr.IsTemporary()
 	}
 
 	// Check for net.Error interface
 	// Note: netErr.Temporary() is deprecated since Go 1.18
 	// We classify common temporary errors by timeout or error string patterns
-	if netErr, ok := err.(net.Error); ok {
+	var netErr net.Error
+	if stderrors.As(err, &netErr) {
 		if netErr.Timeout() {
 			return true
 		}
@@ -344,7 +353,8 @@ func IsTemporaryError(err error) bool {
 
 // GetErrorCode extracts the error code from any error
 func GetErrorCode(err error) ErrorCode {
-	if slurmErr, ok := err.(*SlurmError); ok {
+	var slurmErr *SlurmError
+	if stderrors.As(err, &slurmErr) {
 		return slurmErr.Code
 	}
 	return ErrorCodeUnknown
@@ -352,7 +362,8 @@ func GetErrorCode(err error) ErrorCode {
 
 // GetErrorCategory extracts the error category from any error
 func GetErrorCategory(err error) ErrorCategory {
-	if slurmErr, ok := err.(*SlurmError); ok {
+	var slurmErr *SlurmError
+	if stderrors.As(err, &slurmErr) {
 		return slurmErr.Category
 	}
 	return CategoryUnknown
@@ -365,17 +376,20 @@ func IsNetworkError(err error) bool {
 	}
 
 	// Check if it's a SlurmError with network category
-	if slurmErr, ok := err.(*SlurmError); ok {
+	var slurmErr *SlurmError
+	if stderrors.As(err, &slurmErr) {
 		return slurmErr.Category == CategoryNetwork
 	}
 
 	// Check if it's a direct network error
-	if _, ok := err.(net.Error); ok {
+	var netErr net.Error
+	if stderrors.As(err, &netErr) {
 		return true
 	}
 
 	// Check for URL errors
-	if _, ok := err.(*url.Error); ok {
+	var urlErr *url.Error
+	if stderrors.As(err, &urlErr) {
 		return true
 	}
 
@@ -407,7 +421,8 @@ func IsAuthenticationError(err error) bool {
 	}
 
 	// Check if it's a SlurmError with authentication category
-	if slurmErr, ok := err.(*SlurmError); ok {
+	var slurmErr *SlurmError
+	if stderrors.As(err, &slurmErr) {
 		return slurmErr.Category == CategoryAuthentication
 	}
 
@@ -442,7 +457,8 @@ func NewNotImplementedError(operation, version string) *SlurmError {
 
 // IsNotImplementedError checks if an error is a not implemented error
 func IsNotImplementedError(err error) bool {
-	if slurmErr, ok := err.(*SlurmError); ok {
+	var slurmErr *SlurmError
+	if stderrors.As(err, &slurmErr) {
 		return slurmErr.Code == ErrorCodeUnsupportedOperation
 	}
 	return false
@@ -451,7 +467,8 @@ func IsNotImplementedError(err error) bool {
 // IsClientError checks if an error is a client-side error
 func IsClientError(err error) bool {
 	// Check if it's a SlurmError with client category
-	if slurmErr, ok := err.(*SlurmError); ok {
+	var slurmErr *SlurmError
+	if stderrors.As(err, &slurmErr) {
 		return slurmErr.Category == CategoryClient
 	}
 	return false
@@ -460,11 +477,13 @@ func IsClientError(err error) bool {
 // IsValidationError checks if an error is a validation error
 func IsValidationError(err error) bool {
 	// Check if it's directly a ValidationError
-	if _, ok := err.(*ValidationError); ok {
+	var valErr *ValidationError
+	if stderrors.As(err, &valErr) {
 		return true
 	}
 	// Check if it's a SlurmError with validation category
-	if slurmErr, ok := err.(*SlurmError); ok {
+	var slurmErr *SlurmError
+	if stderrors.As(err, &slurmErr) {
 		return slurmErr.Category == CategoryValidation
 	}
 	return false

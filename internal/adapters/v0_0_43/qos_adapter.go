@@ -317,10 +317,8 @@ func (a *QoSAdapter) Update(ctx context.Context, qosName string, update *types.Q
 		return err
 	}
 
-	// Validate update safety
-	if err := a.ValidateQoSUpdateSafety(existingQoS, update); err != nil {
-		return nil // Log warning but allow update
-	}
+	// Validate update safety (non-blocking - warnings only)
+	_ = a.ValidateQoSUpdateSafety(existingQoS, update) // Allow update even if validation fails
 
 	// Validate preempt mode if updating
 	if update.PreemptMode != nil && len(*update.PreemptMode) > 0 {

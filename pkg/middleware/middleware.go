@@ -7,6 +7,7 @@ package middleware
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -156,7 +157,7 @@ type ShouldRetryFunc func(resp *http.Response, err error, attempt int) bool
 // DefaultShouldRetry is the default retry logic
 func DefaultShouldRetry(resp *http.Response, err error, attempt int) bool {
 	// Don't retry if context is canceled
-	if err != nil && err == context.Canceled {
+	if err != nil && errors.Is(err, context.Canceled) {
 		return false
 	}
 
