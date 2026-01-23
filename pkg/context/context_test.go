@@ -322,17 +322,17 @@ func TestWrapContextError(t *testing.T) {
 		wrappedErr := WrapContextError(nil, operation, timeout)
 
 		// Should return nil unchanged
-		assert.Nil(t, wrappedErr)
+		assert.NoError(t, wrappedErr)
 	})
 }
 
 func TestOperationType(t *testing.T) {
 	// Test that the operation types have expected values
-	assert.Equal(t, OperationType(0), OpRead)
-	assert.Equal(t, OperationType(1), OpWrite)
-	assert.Equal(t, OperationType(2), OpList)
-	assert.Equal(t, OperationType(3), OpWatch)
-	assert.Equal(t, OperationType(4), OpDefault)
+	assert.Equal(t, OpRead, OperationType(0))
+	assert.Equal(t, OpWrite, OperationType(1))
+	assert.Equal(t, OpList, OperationType(2))
+	assert.Equal(t, OpWatch, OperationType(3))
+	assert.Equal(t, OpDefault, OperationType(4))
 }
 
 func TestConstants(t *testing.T) {

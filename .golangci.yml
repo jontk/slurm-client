@@ -38,9 +38,7 @@ linters:
     - paralleltest
     - revive
     - tagliatelle
-    - testifylint
     - testpackage
-    - thelper
     - tparallel
     - unparam
     - usetesting
@@ -152,6 +150,8 @@ linters:
           - gosec
           - prealloc
           - staticcheck
+          - testifylint
+          - thelper
         path: _test\.go
       - linters:
           - deadcode
@@ -242,10 +242,14 @@ linters:
           - gocritic
           - perfsprint
           - staticcheck
+          - testifylint
+          - thelper
         path: ^benchmarks/
       - linters:
           - goconst
           - gocritic
+          - testifylint
+          - thelper
         path: ^tests/
       - linters:
           - goconst
@@ -285,6 +289,10 @@ linters:
           - gocritic
         path: ^pkg/performance/cache\.go$
         text: emptyStringTest  # False positive - checking length before indexing, not string comparison
+      - linters:
+          - testifylint
+        path: ^pkg/
+        text: require-error|float-compare|error-nil|error-is-as  # Manual judgment needed for assert vs require and epsilon values
       - linters:
           - staticcheck
         path: internal/adapters/

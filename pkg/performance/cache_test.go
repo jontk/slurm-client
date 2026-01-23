@@ -354,8 +354,8 @@ func TestResponseCache_GetDetailedStats(t *testing.T) {
 	assert.Contains(t, item.Key, "jobs.get:")
 	assert.Equal(t, int64(9), item.Size) // "test data" = 9 bytes
 	assert.Equal(t, int64(1), item.HitCount)
-	assert.True(t, item.TTL > 0)
-	assert.True(t, item.Age >= 0)
+	assert.Positive(t, item.TTL)
+	assert.GreaterOrEqual(t, item.Age, time.Duration(0))
 }
 
 func TestMatchesPattern(t *testing.T) {

@@ -407,7 +407,7 @@ func TestGenerateOptimizationRecommendations(t *testing.T) {
 	// 5. Small I/O pattern
 	// 6. Overall efficiency review
 
-	require.True(t, len(recommendations) >= 5)
+	require.GreaterOrEqual(t, len(recommendations), 5)
 
 	// Check for specific recommendations
 	foundCPUReduction := false
