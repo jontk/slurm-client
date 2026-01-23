@@ -284,10 +284,12 @@ jobs:
     name: Benchmarks
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # Need full history to compare with base branch
 
     - name: Set up Go
       uses: actions/setup-go@v6
@@ -295,15 +297,87 @@ jobs:
         go-version: ${{ env.GO_VERSION_STABLE }}
         cache: true
 
-    - name: Run benchmarks
-      run: |
-        go test -bench=. -benchmem -run=^$ ./... | tee benchmark_results.txt
+    - name: Install benchstat
+      run: go install golang.org/x/perf/cmd/benchstat@latest
 
-    - name: Upload benchmark results
+    - name: Install oapi-codegen
+      run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+
+    - name: Generate mock builders
+      run: make generate-mocks
+
+    - name: Run benchmarks on PR branch
+      run: |
+        echo "Running benchmarks on PR branch..."
+        go test -bench=. -benchmem -benchtime=3s -count=5 -run=^$ ./... > new.txt 2>&1 || true
+        echo "PR branch benchmarks completed"
+
+    - name: Run benchmarks on base branch
+      run: |
+        echo "Checking out base branch (${{ github.base_ref }})..."
+        git fetch origin ${{ github.base_ref }}
+        git checkout origin/${{ github.base_ref }}
+
+        echo "Installing dependencies for base branch..."
+        go mod download
+
+        echo "Generating mocks for base branch..."
+        make generate-mocks || true
+
+        echo "Running benchmarks on base branch..."
+        go test -bench=. -benchmem -benchtime=3s -count=5 -run=^$ ./... > old.txt 2>&1 || true
+        echo "Base branch benchmarks completed"
+
+        # Return to PR branch
+        git checkout -
+
+    - name: Compare benchmarks
+      id: benchstat
+      run: |
+        echo "Comparing benchmarks with benchstat..."
+        benchstat old.txt new.txt > comparison.txt || true
+
+        # Check if there are any significant regressions
+        if grep -q "~" comparison.txt; then
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+        fi
+
+        echo "## Benchmark Comparison" > summary.md
+        echo "" >> summary.md
+        echo "Comparison of benchmarks between base branch (\`${{ github.base_ref }}\`) and PR branch:" >> summary.md
+        echo "" >> summary.md
+        echo '```' >> summary.md
+        cat comparison.txt >> summary.md
+        echo '```' >> summary.md
+
+        cat summary.md
+
+    - name: Upload benchmark comparison
       uses: actions/upload-artifact@v5
       with:
-        name: benchmark-results
-        path: benchmark_results.txt
+        name: benchmark-comparison
+        path: |
+          old.txt
+          new.txt
+          comparison.txt
+          summary.md
+
+    - name: Comment PR with benchmark results
+      if: steps.benchstat.outputs.has_changes == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const summary = fs.readFileSync('summary.md', 'utf8');
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: summary
+          });
 
   all-checks-passed:
     name: All Checks Passed
