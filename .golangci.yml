@@ -121,6 +121,7 @@ linters:
       time-month: true
       time-layout: true
       crypto-hash: true
+<<<<<<< HEAD
     perfsprint:
       # Enable performance optimizations for sprintf
       int-conversion: true      # Use strconv instead of fmt.Sprintf for integers
