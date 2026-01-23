@@ -283,7 +283,7 @@ func (a *ClusterAdapter) convertAPIClusterToCommon(apiCluster api.V0044ClusterRe
 
 	// Convert TRES if available
 	if apiCluster.Tres != nil {
-		tres := make([]types.TRES, 0)
+		tres := make([]types.TRES, 0, len(*apiCluster.Tres))
 		for _, apiTres := range *apiCluster.Tres {
 			t := types.TRES{
 				Type: apiTres.Type,
