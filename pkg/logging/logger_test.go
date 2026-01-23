@@ -304,8 +304,8 @@ func TestSetDefaultLogger(t *testing.T) {
 
 func TestFormat(t *testing.T) {
 	// Test that format constants have expected values
-	assert.Equal(t, Format("text"), FormatText)
-	assert.Equal(t, Format("json"), FormatJSON)
+	assert.Equal(t, FormatText, Format("text"))
+	assert.Equal(t, FormatJSON, Format("json"))
 }
 
 func TestLoggerInterface(t *testing.T) {
