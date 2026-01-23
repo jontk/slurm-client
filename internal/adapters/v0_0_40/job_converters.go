@@ -84,7 +84,7 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0040JobInfo) (*types.Job,
 	}
 
 	// Job specification
-	if apiJob.Command != nil && len(*apiJob.Command) > 0 {
+	if apiJob.Command != nil && *apiJob.Command != "" {
 		job.Command = *apiJob.Command
 	}
 	// Note: WorkingDirectory not available in V0040JobInfo but exists in V0040JobDesc
@@ -126,7 +126,7 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0040JobInfo) (*types.Job,
 	}
 
 	// Additional fields
-	if apiJob.ExcludedNodes != nil && len(*apiJob.ExcludedNodes) > 0 {
+	if apiJob.ExcludedNodes != nil && *apiJob.ExcludedNodes != "" {
 		job.ExcludeNodes = *apiJob.ExcludedNodes
 	}
 	if apiJob.Nice != nil {
@@ -137,7 +137,7 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0040JobInfo) (*types.Job,
 	}
 
 	// Features and GRES
-	if apiJob.Features != nil && len(*apiJob.Features) > 0 {
+	if apiJob.Features != nil && *apiJob.Features != "" {
 		job.Features = []string{*apiJob.Features}
 	}
 	if apiJob.GresDetail != nil && len(*apiJob.GresDetail) > 0 {

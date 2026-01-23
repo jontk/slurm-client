@@ -143,7 +143,7 @@ func TestRoundTripperFunc(t *testing.T) {
 		}, nil
 	})
 
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 	resp, err := fn.RoundTrip(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -175,7 +175,7 @@ func TestChain(t *testing.T) {
 	chained := Chain(middleware1, middleware2)
 	roundTripper := chained(mock)
 
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 	resp, err := roundTripper.RoundTrip(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -196,7 +196,7 @@ func TestWithTimeout(t *testing.T) {
 		middleware := WithTimeout(1 * time.Second)
 		roundTripper := middleware(mock)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 		resp, err := roundTripper.RoundTrip(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -220,7 +220,7 @@ func TestWithTimeout(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil).WithContext(ctx)
+		req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody).WithContext(ctx)
 		originalDeadline, _ := req.Context().Deadline()
 
 		resp, err := roundTripper.RoundTrip(req)
@@ -243,7 +243,7 @@ func TestWithTimeout(t *testing.T) {
 		middleware := WithTimeout(0)
 		roundTripper := middleware(mock)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 		resp, err := roundTripper.RoundTrip(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -272,7 +272,7 @@ func TestWithLogging(t *testing.T) {
 		Body:          io.NopCloser(strings.NewReader("")),
 	}, nil)
 
-	req := httptest.NewRequest(http.MethodGet, "/api/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/test", http.NoBody)
 	req.ContentLength = 50
 
 	resp, err := roundTripper.RoundTrip(req)
@@ -296,7 +296,7 @@ func TestWithLogging_Error(t *testing.T) {
 	expectedErr := errors.New("network error")
 	mock.addResponse(nil, expectedErr)
 
-	req := httptest.NewRequest(http.MethodGet, "/api/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/test", http.NoBody)
 
 	resp, err := roundTripper.RoundTrip(req)
 
@@ -316,7 +316,7 @@ func TestWithRetry(t *testing.T) {
 			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 		resp, err := roundTripper.RoundTrip(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -341,7 +341,7 @@ func TestWithRetry(t *testing.T) {
 			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 		resp, err := roundTripper.RoundTrip(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -363,7 +363,7 @@ func TestWithRetry(t *testing.T) {
 		mock.addResponse(nil, networkErr)
 		mock.addResponse(nil, networkErr)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 		resp, err := roundTripper.RoundTrip(req)
 
 		assert.Nil(t, resp)
@@ -385,7 +385,7 @@ func TestWithRetry(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel() // Cancel immediately
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil).WithContext(ctx)
+		req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody).WithContext(ctx)
 		resp, err := roundTripper.RoundTrip(req)
 
 		assert.Nil(t, resp)
@@ -482,7 +482,7 @@ func TestWithHeaders(t *testing.T) {
 	middleware := WithHeaders(headers)
 	roundTripper := middleware(mock)
 
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 	resp, err := roundTripper.RoundTrip(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -501,7 +501,7 @@ func TestWithUserAgent(t *testing.T) {
 	middleware := WithUserAgent("test-agent/1.0")
 	roundTripper := middleware(mock)
 
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 	resp, err := roundTripper.RoundTrip(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -526,7 +526,7 @@ func TestWithRequestID(t *testing.T) {
 	middleware := WithRequestID(generator)
 	roundTripper := middleware(mock)
 
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 	resp, err := roundTripper.RoundTrip(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -555,7 +555,7 @@ func TestWithMetrics(t *testing.T) {
 			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil)
 
-		req := httptest.NewRequest(http.MethodGet, "/api/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/test", http.NoBody)
 		resp, err := roundTripper.RoundTrip(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -582,7 +582,7 @@ func TestWithMetrics(t *testing.T) {
 		expectedErr := errors.New("network error")
 		mock.addResponse(nil, expectedErr)
 
-		req := httptest.NewRequest(http.MethodPost, "/api/jobs", nil)
+		req := httptest.NewRequest(http.MethodPost, "/api/jobs", http.NoBody)
 		_, err := roundTripper.RoundTrip(req)
 
 		assert.Equal(t, expectedErr, err)
@@ -601,7 +601,7 @@ func TestWithMetrics(t *testing.T) {
 
 func TestCloneRequest(t *testing.T) {
 	t.Run("request without body", func(t *testing.T) {
-		original := httptest.NewRequest(http.MethodGet, "/test", nil)
+		original := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 		original.Header.Set("X-Original", "true")
 
 		cloned := cloneRequest(original)
@@ -641,7 +641,7 @@ func TestWithCircuitBreaker(t *testing.T) {
 			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 		resp, err := roundTripper.RoundTrip(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -665,7 +665,7 @@ func TestWithCircuitBreaker(t *testing.T) {
 			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 
 		// First two should go through but fail
 		resp1, err1 := roundTripper.RoundTrip(req)
@@ -692,7 +692,7 @@ func TestWithCircuitBreaker(t *testing.T) {
 		middleware := WithCircuitBreaker(1, 1*time.Second)
 		roundTripper := middleware(mock)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 
 		// Network error should trigger circuit breaker
 		mock.addResponse(nil, errors.New("network error"))

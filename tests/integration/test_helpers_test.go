@@ -298,7 +298,7 @@ func getEnvBool(key string, defaultValue bool) bool {
 	if value == "" {
 		return defaultValue
 	}
-	return strings.ToLower(value) == "true" || value == "1"
+	return strings.EqualFold(value, "true") || value == "1"
 }
 
 // fetchJWTTokenViaSSH fetches a JWT token from the server via SSH
