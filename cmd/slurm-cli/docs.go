@@ -49,7 +49,7 @@ Examples:
 	Hidden: true, // Hide from regular help to avoid confusion
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Create output directory if it doesn't exist
-		if err := os.MkdirAll(docsOutputDir, 0755); err != nil {
+		if err := os.MkdirAll(docsOutputDir, 0750); err != nil {
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}
 
