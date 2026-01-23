@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
+# SPDX-License-Identifier: Apache-2.0
+
+# Codecov Configuration for slurm-client
+# Learn more: https://docs.codecov.com/docs/codecov-yaml
+
+# Coverage status checks
+coverage:
+  status:
+    # Project coverage - overall codebase coverage
+    project:
+      default:
+        target: 70%           # Minimum required coverage
+        threshold: 2%         # Allow 2% decrease before failing
+        informational: false  # Fail CI if not met
+    
+    # Patch coverage - new code in PR must have high coverage
+    patch:
+      default:
+        target: 80%           # New code requires 80% coverage
+        informational: false  # Fail CI if not met
+
+  # Precision for coverage display
+  precision: 2
+  round: down
+
+# Comment configuration for PRs
+comment:
+  layout: "diff, flags, files"
+  behavior: default
+  require_changes: false    # Comment even if coverage unchanged
+  require_base: false       # Comment even without base report
+  require_head: true        # Only comment if head report exists
+
+# Ignore paths that shouldn't affect coverage
+ignore:
+  - "**/*_test.go"          # Test files
+  - "**/mock*.go"           # Mock implementations
+  - "**/generated/**"       # Generated code
+  - "examples/**"           # Example code
+  - "cmd/**"                # Command-line tools
+  - "tools/**"              # Development tools
+  - "benchmarks/**"         # Benchmark code
+  - "tests/mocks/**"        # Test mocks
+  - "tests/helpers/**"      # Test helpers
+
+# Flags for different components (optional, for detailed tracking)
+flags:
+  pkg:
+    paths:
+      - pkg/
+    carryforward: true
+
+  internal:
+    paths:
+      - internal/
+    carryforward: true
