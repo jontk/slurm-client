@@ -98,6 +98,50 @@ go generate ./...
 git status
 ```
 
+### Pre-commit Hooks
+
+We use pre-commit hooks to ensure code quality before commits. These hooks automatically run formatters and linters on your code.
+
+#### Installing Pre-commit Hooks
+```bash
+# Install pre-commit hooks (one-time setup)
+make install-hooks
+
+# Or manually:
+pip install pre-commit  # or: brew install pre-commit
+pre-commit install
+```
+
+#### What the Hooks Do
+The pre-commit hooks will automatically:
+- Format Go code with `gofmt` and `goimports`
+- Run `golangci-lint` with auto-fix enabled
+- Tidy `go.mod` dependencies
+- Remove trailing whitespace
+- Fix end-of-file issues
+- Check YAML syntax
+- Detect merge conflicts
+
+#### Running Hooks Manually
+```bash
+# Run on all files
+pre-commit run --all-files
+
+# Run on staged files only
+pre-commit run
+
+# Skip hooks for a specific commit (use sparingly)
+git commit --no-verify -m "message"
+```
+
+#### Uninstalling Hooks
+```bash
+make uninstall-hooks
+# or: pre-commit uninstall
+```
+
+**Note:** Pre-commit hooks are optional but highly recommended. They catch issues early and ensure consistent code quality.
+
 ## Code Style Guidelines
 
 ### Go Code
