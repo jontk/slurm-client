@@ -257,7 +257,7 @@ done:
 	cancel()
 
 	// Verify we only got events for job 1 and 2
-	assert.Equal(t, 2, len(events))
+	assert.Len(t, events, 2)
 	jobIDs := map[string]bool{}
 	for _, event := range events {
 		jobIDs[event.JobID] = true
@@ -601,7 +601,7 @@ func TestNodePoller_WatchWithFilteredNodes(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Verify we got API calls
-	assert.Greater(t, atomic.LoadInt32(&callCount), int32(0))
+	assert.Positive(t, atomic.LoadInt32(&callCount))
 
 	cancel()
 }
@@ -655,7 +655,7 @@ func TestPartitionPoller_WatchWithFilteredPartitions(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Verify we got API calls
-	assert.Greater(t, atomic.LoadInt32(&callCount), int32(0))
+	assert.Positive(t, atomic.LoadInt32(&callCount))
 
 	cancel()
 }

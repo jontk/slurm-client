@@ -439,9 +439,9 @@ func TestConnectionPoolConfigCompleteness(t *testing.T) {
 	for i, config := range configs {
 		t.Run([]string{"default", "high_perf", "conservative"}[i], func(t *testing.T) {
 			// Verify all fields are set to non-zero values
-			assert.Greater(t, config.MaxIdleConns, 0)
-			assert.Greater(t, config.MaxIdleConnsPerHost, 0)
-			assert.Greater(t, config.MaxConnsPerHost, 0)
+			assert.Positive(t, config.MaxIdleConns)
+			assert.Positive(t, config.MaxIdleConnsPerHost)
+			assert.Positive(t, config.MaxConnsPerHost)
 			assert.Greater(t, config.IdleConnTimeout, time.Duration(0))
 			assert.Greater(t, config.TLSHandshakeTimeout, time.Duration(0))
 			assert.Greater(t, config.ExpectContinueTimeout, time.Duration(0))

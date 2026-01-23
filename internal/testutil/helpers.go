@@ -22,12 +22,14 @@ func TestContext(t *testing.T) context.Context {
 
 // RequireErrorContains asserts that an error occurred and contains the expected message
 func RequireErrorContains(t *testing.T, err error, contains string) {
+	t.Helper()
 	require.Error(t, err)
 	require.Contains(t, err.Error(), contains)
 }
 
 // AssertNoError asserts that no error occurred with a helpful message
 func AssertNoError(t *testing.T, err error, msgAndArgs ...interface{}) {
+	t.Helper()
 	if err != nil {
 		if len(msgAndArgs) > 0 {
 			require.NoError(t, err, msgAndArgs...)

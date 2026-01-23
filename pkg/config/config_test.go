@@ -25,7 +25,7 @@ func TestNewDefault(t *testing.T) {
 
 	// Verify defaults are reasonable
 	assert.Greater(t, config.Timeout, time.Duration(0))
-	assert.Greater(t, config.MaxRetries, 0)
+	assert.Positive(t, config.MaxRetries)
 	assert.Greater(t, config.RetryWaitMin, time.Duration(0))
 	assert.Greater(t, config.RetryWaitMax, time.Duration(0))
 }

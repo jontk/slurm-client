@@ -565,7 +565,7 @@ func TestWithMetrics(t *testing.T) {
 		collector.mu.Lock()
 		assert.Len(t, collector.requests, 1)
 		assert.Len(t, collector.responses, 1)
-		assert.Len(t, collector.errors, 0)
+		assert.Empty(t, collector.errors)
 
 		assert.Equal(t, "GET", collector.requests[0].method)
 		assert.Equal(t, "/api/test", collector.requests[0].path)
@@ -589,7 +589,7 @@ func TestWithMetrics(t *testing.T) {
 
 		collector.mu.Lock()
 		assert.Len(t, collector.requests, 1)
-		assert.Len(t, collector.responses, 0)
+		assert.Empty(t, collector.responses)
 		assert.Len(t, collector.errors, 1)
 
 		assert.Equal(t, "POST", collector.errors[0].method)

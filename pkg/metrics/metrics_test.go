@@ -135,11 +135,11 @@ func TestInMemoryCollector_Reset(t *testing.T) {
 
 	// Verify data exists
 	stats := collector.GetStats()
-	assert.Greater(t, stats.TotalRequests, int64(0))
-	assert.Greater(t, stats.TotalResponses, int64(0))
-	assert.Greater(t, stats.TotalErrors, int64(0))
-	assert.Greater(t, stats.CacheHits, int64(0))
-	assert.Greater(t, stats.CacheMisses, int64(0))
+	assert.Positive(t, stats.TotalRequests)
+	assert.Positive(t, stats.TotalResponses)
+	assert.Positive(t, stats.TotalErrors)
+	assert.Positive(t, stats.CacheHits)
+	assert.Positive(t, stats.CacheMisses)
 
 	// Reset
 	collector.Reset()
