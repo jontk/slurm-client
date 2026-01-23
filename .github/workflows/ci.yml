@@ -284,7 +284,7 @@ jobs:
     name: Benchmarks
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -294,6 +294,12 @@ jobs:
       with:
         go-version: ${{ env.GO_VERSION_STABLE }}
         cache: true
+
+    - name: Install oapi-codegen
+      run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+
+    - name: Generate mock builders
+      run: make generate-mocks
 
     - name: Run benchmarks
       run: |
