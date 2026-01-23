@@ -1,6 +1,6 @@
 # Makefile for slurm-client
 
-.PHONY: build test check-mocks lint fmt vet clean docs help install-tools generate download-specs generate-mocks
+.PHONY: build test check-mocks lint fmt vet clean docs help install-tools install-hooks generate download-specs generate-mocks
 
 # Variables
 BINARY_NAME=slurm-client
@@ -90,6 +90,34 @@ install-tools: install-oapi-codegen
 		echo "Installing golangci-lint..."; \
 		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
 	}
+
+# Install pre-commit hooks
+install-hooks:
+	@echo "Installing pre-commit hooks..."
+	@command -v pre-commit >/dev/null 2>&1 || { \
+		echo "pre-commit not found. Installing..."; \
+		if command -v pip3 >/dev/null 2>&1; then \
+			pip3 install --user pre-commit; \
+		elif command -v pip >/dev/null 2>&1; then \
+			pip install --user pre-commit; \
+		elif command -v brew >/dev/null 2>&1; then \
+			brew install pre-commit; \
+		else \
+			echo "Error: Could not install pre-commit. Please install manually:"; \
+			echo "  pip install pre-commit"; \
+			echo "  or: brew install pre-commit"; \
+			exit 1; \
+		fi; \
+	}
+	@pre-commit install
+	@echo "✅ Pre-commit hooks installed successfully"
+	@echo "Run 'pre-commit run --all-files' to check all files"
+
+# Uninstall pre-commit hooks
+uninstall-hooks:
+	@echo "Uninstalling pre-commit hooks..."
+	@pre-commit uninstall || true
+	@echo "✅ Pre-commit hooks uninstalled"
 
 # Tidy up dependencies
 tidy:
@@ -210,6 +238,8 @@ help:
 	@echo "  clean           - Clean build artifacts"
 	@echo "  docs            - Generate documentation"
 	@echo "  install-tools   - Install development tools"
+	@echo "  install-hooks   - Install pre-commit hooks"
+	@echo "  uninstall-hooks - Uninstall pre-commit hooks"
 	@echo "  build-slurm     - Build SLURM with REST API v0.0.44 support"
 	@echo "  download-specs  - Download OpenAPI specifications"
 	@echo "  generate        - Generate all API clients from specs"
