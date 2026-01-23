@@ -98,6 +98,58 @@ go generate ./...
 git status
 ```
 
+### Performance Testing
+
+#### Running Benchmarks
+```bash
+# Run all benchmarks
+go test -bench=. -benchmem ./...
+
+# Run specific package benchmarks
+go test -bench=. -benchmem ./pkg/streaming/...
+
+# Run with more iterations for accuracy
+go test -bench=. -benchmem -benchtime=5s -count=10 ./...
+```
+
+#### Comparing Performance Locally
+To detect performance regressions, compare benchmarks between branches:
+
+```bash
+# Install benchstat (if not already installed)
+go install golang.org/x/perf/cmd/benchstat@latest
+
+# Run benchmarks on current branch
+go test -bench=. -benchmem -benchtime=3s -count=5 ./... > new.txt
+
+# Switch to base branch
+git checkout main
+
+# Run benchmarks on base branch
+go test -bench=. -benchmem -benchtime=3s -count=5 ./... > old.txt
+
+# Compare results
+benchstat old.txt new.txt
+```
+
+**Note:** Benchmark results can vary based on system load. For reliable comparisons:
+- Close unnecessary applications
+- Run multiple iterations (count=5 or higher)
+- Use consistent benchtime values
+- Consider running on a dedicated/idle machine
+
+Example benchstat output:
+```
+name                     old time/op    new time/op    delta
+ParseNumberField-8         45.2ns ± 2%    46.1ns ± 1%   +2.00%  (p=0.043 n=5+5)
+FormatDurationForSlurm-8    156ns ± 1%     158ns ± 2%     ~     (p=0.222 n=5+5)
+```
+
+Interpret results:
+- `~` means no significant difference
+- Percentages show the performance change
+- `p` values indicate statistical significance (p<0.05 is significant)
+
 ### Pre-commit Hooks
 
 We use pre-commit hooks to ensure code quality before commits. These hooks automatically run formatters and linters on your code.
