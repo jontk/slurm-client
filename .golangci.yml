@@ -19,7 +19,6 @@ linters:
     - gochecknoglobals
     - gochecknoinits
     - gocognit
-    - gocritic
     - godoclint                 # Doc comment style (v2.8+ only)
     - godot
     - godox
@@ -70,8 +69,11 @@ linters:
     gocritic:
       disabled-checks:
         - dupImport
+        - hugeParam           # API design uses value types intentionally
         - ifElseChain
         - octalLiteral
+        - paramTypeCombine    # Style preference - no benefit to combining
+        - rangeValCopy        # Performance impact negligible, pointers reduce clarity
         - whyNoLint
         - wrapperFunc
       enabled-tags:
@@ -146,6 +148,7 @@ linters:
           - errorlint
           - goconst
           - gocyclo
+          - gocritic
           - gosec
           - prealloc
           - staticcheck
@@ -214,6 +217,7 @@ linters:
           - errcheck
           - errorlint
           - goconst
+          - gocritic
           - gosec
           - ineffassign
           - perfsprint
@@ -226,6 +230,7 @@ linters:
           - errcheck
           - errorlint
           - goconst
+          - gocritic
           - perfsprint
           - staticcheck
           - unused
@@ -234,15 +239,17 @@ linters:
           - bodyclose
           - errcheck
           - goconst
+          - gocritic
           - perfsprint
           - staticcheck
         path: ^benchmarks/
       - linters:
           - goconst
+          - gocritic
         path: ^tests/
       - linters:
           - goconst
-        path: ^pkg/errors/version_mapping\.go  # Version strings are intentional
+        path: ^pkg/errors/  # Error messages are intentionally repeated for clarity
       - linters:
           - goconst
         path: internal/adapters/.*_adapter\.go
@@ -250,6 +257,34 @@ linters:
       - linters:
           - goconst
         path: internal/api/.*/.*_manager_impl\.go  # Complex business logic, repeated strings are expected
+      - linters:
+          - gocritic
+        path: ^internal/factory/
+        text: importShadow  # Factory pattern - config/auth/pool variable shadowing is idiomatic
+      - linters:
+          - gocritic
+        path: ^internal/adapters/
+        text: importShadow|unnamedResult|typeAssertChain|singleCaseSwitch|nestingReduce  # Adapter layer - minor style issues
+      - linters:
+          - gocritic
+        path: ^internal/api/
+        text: importShadow|unnamedResult|emptyStringTest|nestingReduce  # Business logic layer - minor style issues
+      - linters:
+          - gocritic
+        path: ^internal/managers/
+        text: unnamedResult  # Base managers - generic return types
+      - linters:
+          - gocritic
+        path: ^client\.go$
+        text: importShadow  # WithAuth function parameter name matches package name (idiomatic)
+      - linters:
+          - gocritic
+        path: ^pkg/errors/
+        text: appendCombine|typeAssertChain  # Minor style issues - sequential logic is clearer
+      - linters:
+          - gocritic
+        path: ^pkg/performance/cache\.go$
+        text: emptyStringTest  # False positive - checking length before indexing, not string comparison
       - linters:
           - staticcheck
         path: internal/adapters/

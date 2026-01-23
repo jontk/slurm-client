@@ -1428,7 +1428,7 @@ func deriveBasicStepCommandLine(jobCommand string, stepID int) string {
 func calculateBasicStepIOBytes(cpus int, stepID int, ioType string) int64 {
 	base := int64(cpus) * 512 * 1024 * 1024 // 512MB per CPU base (lower than newer versions)
 	if ioType == "write" {
-		base = base / 2 // Write is half of read
+		base /= 2 // Write is half of read
 	}
 	return base
 }
@@ -1436,7 +1436,7 @@ func calculateBasicStepIOBytes(cpus int, stepID int, ioType string) int64 {
 func calculateBasicStepIOOps(cpus int, stepID int, ioType string) int64 {
 	base := int64(cpus) * 5000 // 5K ops per CPU base (lower than newer versions)
 	if ioType == "write" {
-		base = base / 2
+		base /= 2
 	}
 	return base
 }

@@ -99,7 +99,7 @@ func TestPingWithRealServer(t *testing.T) {
 
 	t.Run("Check OpenAPI Spec", func(t *testing.T) {
 		// Make a raw HTTP request for the OpenAPI spec
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, serverURL+"/openapi/v3", nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, serverURL+"/openapi/v3", http.NoBody)
 		require.NoError(t, err)
 
 		resp, err := httpClient.Do(req)

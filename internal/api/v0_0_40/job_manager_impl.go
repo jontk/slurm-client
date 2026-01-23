@@ -1465,7 +1465,7 @@ func deriveMinimalStepCommand(jobCommand string) string {
 func calculateMinimalStepIOBytes(cpus int, ioType string) int64 {
 	base := int64(cpus) * 256 * 1024 * 1024 // 256MB per CPU base (very low)
 	if ioType == "write" {
-		base = base / 3 // Write is third of read
+		base /= 3 // Write is third of read
 	}
 	return base
 }
@@ -1473,7 +1473,7 @@ func calculateMinimalStepIOBytes(cpus int, ioType string) int64 {
 func calculateMinimalStepIOOps(cpus int, ioType string) int64 {
 	base := int64(cpus) * 2000 // 2K ops per CPU base (very low)
 	if ioType == "write" {
-		base = base / 3
+		base /= 3
 	}
 	return base
 }
