@@ -156,7 +156,7 @@ func (a *UserAdapter) Get(ctx context.Context, name string) (*types.User, error)
 	}
 	resp, err := a.client.SlurmdbV0041GetUserWithResponse(ctx, name, params)
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to get user %s", name))
+		return nil, a.WrapError(err, "failed to get user "+name)
 	}
 
 	// Handle response
@@ -165,13 +165,13 @@ func (a *UserAdapter) Get(ctx context.Context, name string) (*types.User, error)
 	}
 
 	if resp.JSON200 == nil || len(resp.JSON200.Users) == 0 {
-		return nil, a.HandleNotFound(fmt.Sprintf("user %s", name))
+		return nil, a.HandleNotFound("user " + name)
 	}
 
 	// Convert the first user in the response
 	user, err := a.convertAPIUserToCommon(resp.JSON200.Users[0])
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to convert user %s", name))
+		return nil, a.WrapError(err, "failed to convert user "+name)
 	}
 
 	return user, nil
@@ -211,7 +211,7 @@ func (a *UserAdapter) Create(ctx context.Context, req *types.UserCreate) (*types
 	// Make the API call
 	resp, err := a.client.SlurmdbV0041PostUsersWithResponse(ctx, *createReq)
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to create user %s", req.Name))
+		return nil, a.WrapError(err, "failed to create user "+req.Name)
 	}
 
 	// Handle response
@@ -267,7 +267,7 @@ func (a *UserAdapter) Update(ctx context.Context, name string, update *types.Use
 	// Make the API call
 	resp, err := a.client.SlurmdbV0041PostUsersWithResponse(ctx, *updateReq)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to update user %s", name))
+		return a.WrapError(err, "failed to update user "+name)
 	}
 
 	// Handle response
@@ -298,7 +298,7 @@ func (a *UserAdapter) Delete(ctx context.Context, name string) error {
 	// Make the API call
 	resp, err := a.client.SlurmdbV0041DeleteUserWithResponse(ctx, name)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to delete user %s", name))
+		return a.WrapError(err, "failed to delete user "+name)
 	}
 
 	// Handle response

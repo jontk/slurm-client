@@ -6,6 +6,7 @@ package v0_0_43
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
@@ -113,7 +114,7 @@ func (a *WCKeyAdapter) Get(ctx context.Context, wcKeyID string) (*types.WCKey, e
 	// Call the API
 	resp, err := a.client.SlurmdbV0043GetWckeyWithResponse(ctx, wcKeyID)
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to get WCKey %s", wcKeyID))
+		return nil, a.WrapError(err, "failed to get WCKey "+wcKeyID)
 	}
 
 	// Handle API response with enhanced error handling
@@ -201,7 +202,7 @@ func (a *WCKeyAdapter) Delete(ctx context.Context, wcKeyID string) error {
 	// Call the API
 	resp, err := a.client.SlurmdbV0043DeleteWckeyWithResponse(ctx, wcKeyID)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to delete WCKey %s", wcKeyID))
+		return a.WrapError(err, "failed to delete WCKey "+wcKeyID)
 	}
 
 	// Handle API response with enhanced error handling
@@ -233,7 +234,7 @@ func (a *WCKeyAdapter) convertAPIWCKeyToCommon(apiWCKey api.V0043Wckey) types.WC
 	}
 
 	if apiWCKey.Id != nil {
-		wckey.ID = fmt.Sprintf("%d", *apiWCKey.Id)
+		wckey.ID = strconv.Itoa(int(*apiWCKey.Id))
 	}
 	// Name, User, and Cluster are required string fields, not pointers
 	wckey.Name = apiWCKey.Name

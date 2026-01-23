@@ -4,9 +4,9 @@
 package v0_0_44
 
 import (
-	"net/http"
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"

@@ -6,6 +6,7 @@ package v0_0_44
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
@@ -387,7 +388,7 @@ func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0
 		association.Partition = *apiAssociation.Partition
 	}
 	if apiAssociation.Id != nil {
-		association.ID = fmt.Sprintf("%d", *apiAssociation.Id)
+		association.ID = strconv.Itoa(int(*apiAssociation.Id))
 	}
 	// TODO: Add more field conversions as needed
 	return association, nil

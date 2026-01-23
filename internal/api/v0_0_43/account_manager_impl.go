@@ -94,7 +94,7 @@ func (a *AccountManagerImpl) List(ctx context.Context, opts *interfaces.ListAcco
 		if err != nil {
 			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert account data")
 			conversionErr.Cause = err
-			conversionErr.Details = fmt.Sprintf("Error converting account %s", apiAccount.Name)
+			conversionErr.Details = "Error converting account " + apiAccount.Name
 			return nil, conversionErr
 		}
 		accounts = append(accounts, *account)
@@ -185,7 +185,7 @@ func (a *AccountManagerImpl) Get(ctx context.Context, accountName string) (*inte
 	if err != nil {
 		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert account data")
 		conversionErr.Cause = err
-		conversionErr.Details = fmt.Sprintf("Error converting account %s", accountName)
+		conversionErr.Details = "Error converting account " + accountName
 		return nil, conversionErr
 	}
 
@@ -880,7 +880,7 @@ func (a *AccountManagerImpl) GetAccountUsersWithPermissions(ctx context.Context,
 			}
 		}
 		if !isValid {
-			return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, fmt.Sprintf("invalid permission: %s", perm), "permissions", perm, nil)
+			return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "invalid permission: "+perm, "permissions", perm, nil)
 		}
 	}
 

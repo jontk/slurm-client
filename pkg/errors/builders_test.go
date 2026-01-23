@@ -457,7 +457,7 @@ func TestNewJobError(t *testing.T) {
 				t.Errorf("Expected details to contain job ID %d", tt.jobID)
 			}
 
-			if !strings.Contains(result.Details, fmt.Sprintf("Operation: %s", tt.operation)) {
+			if !strings.Contains(result.Details, "Operation: "+tt.operation) {
 				t.Errorf("Expected details to contain operation %s", tt.operation)
 			}
 

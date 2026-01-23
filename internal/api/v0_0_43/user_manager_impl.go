@@ -6,6 +6,7 @@ package v0_0_43
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -899,7 +900,7 @@ func (u *UserManagerImpl) GetBulkUserAccounts(ctx context.Context, userNames []s
 	// Validate all user names
 	for i, userName := range userNames {
 		if userName == "" {
-			return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, fmt.Sprintf("user name at index %d is empty", i), "userNames["+fmt.Sprintf("%d", i)+"]", userName, nil)
+			return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, fmt.Sprintf("user name at index %d is empty", i), "userNames["+strconv.Itoa(i)+"]", userName, nil)
 		}
 		if err := validateUserName(userName); err != nil {
 			return nil, err
@@ -1014,7 +1015,7 @@ func (u *UserManagerImpl) GetBulkAccountUsers(ctx context.Context, accountNames 
 	// Validate all account names
 	for i, accountName := range accountNames {
 		if accountName == "" {
-			return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, fmt.Sprintf("account name at index %d is empty", i), "accountNames["+fmt.Sprintf("%d", i)+"]", accountName, nil)
+			return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, fmt.Sprintf("account name at index %d is empty", i), "accountNames["+strconv.Itoa(i)+"]", accountName, nil)
 		}
 		if err := validateAccountContext(accountName); err != nil {
 			return nil, err

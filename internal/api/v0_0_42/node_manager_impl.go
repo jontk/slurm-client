@@ -392,7 +392,7 @@ func (m *NodeManagerImpl) Get(ctx context.Context, nodeName string) (*interfaces
 	if err != nil {
 		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert node data")
 		conversionErr.Cause = err
-		conversionErr.Details = fmt.Sprintf("Error converting node %s", nodeName)
+		conversionErr.Details = "Error converting node " + nodeName
 		return nil, conversionErr
 	}
 

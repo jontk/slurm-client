@@ -221,7 +221,7 @@ func NewSlurmAPIError(statusCode int, apiVersion string, details []SlurmAPIError
 
 		// Build details string from error source and additional errors
 		if primary.Source != "" {
-			detailsStr = fmt.Sprintf("Source: %s", primary.Source)
+			detailsStr = "Source: " + primary.Source
 		}
 
 		// Add additional errors if present
@@ -233,7 +233,7 @@ func NewSlurmAPIError(statusCode int, apiVersion string, details []SlurmAPIError
 			if detailsStr != "" {
 				detailsStr += "; "
 			}
-			detailsStr += fmt.Sprintf("Additional errors: %s", strings.Join(additionalErrors, "; "))
+			detailsStr += "Additional errors: " + strings.Join(additionalErrors, "; ")
 		}
 	} else {
 		code = mapHTTPStatusToErrorCode(statusCode)

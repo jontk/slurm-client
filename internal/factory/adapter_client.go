@@ -296,7 +296,7 @@ func (m *adapterJobManager) Submit(ctx context.Context, job *interfaces.JobSubmi
 	}
 
 	return &interfaces.JobSubmitResponse{
-		JobID: fmt.Sprintf("%d", resp.JobID), // Convert int32 to string
+		JobID: strconv.Itoa(int(resp.JobID)), // Convert int32 to string
 	}, nil
 }
 
@@ -567,10 +567,10 @@ func convertJobToInterface(job types.Job) interfaces.Job {
 	}
 
 	return interfaces.Job{
-		ID:          fmt.Sprintf("%d", job.JobID),
+		ID:          strconv.Itoa(int(job.JobID)),
 		Name:        job.Name,
-		UserID:      fmt.Sprintf("%d", job.UserID),
-		GroupID:     fmt.Sprintf("%d", job.GroupID),
+		UserID:      strconv.Itoa(int(job.UserID)),
+		GroupID:     strconv.Itoa(int(job.GroupID)),
 		State:       string(job.State),
 		Partition:   job.Partition,
 		Priority:    int(job.Priority),
@@ -596,7 +596,7 @@ func (m *adapterJobManager) Allocate(ctx context.Context, req *interfaces.JobAll
 		Name:      req.Name,
 		Account:   req.Account,
 		Partition: req.Partition,
-		Nodes:     fmt.Sprintf("%d", req.Nodes),
+		Nodes:     strconv.Itoa(req.Nodes),
 		CPUs:      int32(req.CPUs),
 		TimeLimit: int32(req.TimeLimit), // Time limit in minutes
 		QoS:       req.QoS,
@@ -610,7 +610,7 @@ func (m *adapterJobManager) Allocate(ctx context.Context, req *interfaces.JobAll
 
 	// Convert types.JobAllocateResponse to interfaces.JobAllocateResponse
 	return &interfaces.JobAllocateResponse{
-		JobID: fmt.Sprintf("%d", result.JobID),
+		JobID: strconv.Itoa(int(result.JobID)),
 	}, nil
 }
 

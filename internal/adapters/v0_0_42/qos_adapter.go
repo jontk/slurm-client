@@ -110,7 +110,7 @@ func (a *QoSAdapter) Get(ctx context.Context, name string) (*types.QoS, error) {
 	// Call the API
 	resp, err := a.client.SlurmdbV0042GetQosWithResponse(ctx, params)
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to get QoS %s", name))
+		return nil, a.WrapError(err, "failed to get QoS "+name)
 	}
 
 	// Check response status

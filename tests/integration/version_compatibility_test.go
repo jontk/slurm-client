@@ -545,17 +545,19 @@ func (suite *VersionCompatibilityTestSuite) generateCompatibilityReport() {
 	for feature, versionSupport := range suite.compatibility.Features {
 		line := fmt.Sprintf("%-20s", feature)
 
+		var lineSb548 strings.Builder
 		for _, version := range []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43"} {
 			if support, exists := versionSupport[version]; exists {
 				if support.Supported {
-					line += "\t✓"
+					lineSb548.WriteString("\t✓")
 				} else {
-					line += "\t✗"
+					lineSb548.WriteString("\t✗")
 				}
 			} else {
-				line += "\t-"
+				lineSb548.WriteString("\t-")
 			}
 		}
+		line += lineSb548.String()
 
 		suite.T().Log(line)
 	}

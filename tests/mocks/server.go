@@ -5,7 +5,6 @@ package mocks
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -267,7 +266,7 @@ func (m *MockSlurmServer) GetJob(jobID string) *MockJob {
 func (m *MockSlurmServer) AddJob(job *MockJob) {
 	m.storage.mu.Lock()
 	defer m.storage.mu.Unlock()
-	m.storage.Jobs[fmt.Sprintf("%d", job.JobID)] = job
+	m.storage.Jobs[strconv.Itoa(int(job.JobID))] = job
 }
 
 // UpdateJobState updates a job's state

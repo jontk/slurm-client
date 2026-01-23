@@ -19,7 +19,6 @@ linters:
     - gochecknoglobals
     - gochecknoinits
     - gocognit
-    - goconst
     - gocritic
     - godoclint                 # Doc comment style (v2.8+ only)
     - godot
@@ -38,7 +37,6 @@ linters:
     - noctx
     - nonamedreturns
     - paralleltest
-    - perfsprint
     - revive
     - tagliatelle
     - testifylint
@@ -123,6 +121,16 @@ linters:
       time-month: true
       time-layout: true
       crypto-hash: true
+    perfsprint:
+      # Enable performance optimizations for sprintf
+      int-conversion: true      # Use strconv instead of fmt.Sprintf for integers
+      err-error: false          # Disable fmt.Errorf -> errors.New (conflicts with custom errors package)
+      errorf: false             # Disable fmt.Errorf -> errors.New (conflicts with custom errors package)
+      sprintf1: true            # Use string concatenation for simple cases
+    goconst:
+      min-len: 3                # Minimum string length to check
+      min-occurrences: 3        # Minimum number of occurrences
+      ignore-tests: true        # Don't check test files (we excluded them anyway)
   exclusions:
     generated: lax
     presets:
@@ -206,8 +214,10 @@ linters:
           - dupl
           - errcheck
           - errorlint
+          - goconst
           - gosec
           - ineffassign
+          - perfsprint
           - prealloc
           - staticcheck
           - unused
@@ -216,14 +226,31 @@ linters:
           - dupl
           - errcheck
           - errorlint
+          - goconst
+          - perfsprint
           - staticcheck
           - unused
         path: ^cmd/
       - linters:
           - bodyclose
           - errcheck
+          - goconst
+          - perfsprint
           - staticcheck
         path: ^benchmarks/
+      - linters:
+          - goconst
+        path: ^tests/
+      - linters:
+          - goconst
+        path: ^pkg/errors/version_mapping\.go  # Version strings are intentional
+      - linters:
+          - goconst
+        path: internal/adapters/.*_adapter\.go
+        text: "`true`|`error`|`cpu`|`yes`|`state_change`"  # Simple API parameter strings
+      - linters:
+          - goconst
+        path: internal/api/.*/.*_manager_impl\.go  # Complex business logic, repeated strings are expected
       - linters:
           - staticcheck
         path: internal/adapters/

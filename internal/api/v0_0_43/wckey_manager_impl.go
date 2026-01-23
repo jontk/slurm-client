@@ -4,9 +4,10 @@
 package v0_0_43
 
 import (
-	"net/http"
 	"context"
 	"fmt"
+	"net/http"
+	"strings"
 
 	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/errors"
@@ -306,8 +307,10 @@ func joinStringSlice(slice []string, sep string) string {
 	}
 
 	result := slice[0]
+	var resultSb309 strings.Builder
 	for i := 1; i < len(slice); i++ {
-		result += sep + slice[i]
+		resultSb309.WriteString(sep + slice[i])
 	}
+	result += resultSb309.String()
 	return result
 }

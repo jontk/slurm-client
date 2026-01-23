@@ -4,8 +4,8 @@
 package v0_0_41
 
 import (
-	stderrors "errors"
 	"encoding/json"
+	stderrors "errors"
 	"fmt"
 	"net/http"
 
@@ -94,7 +94,7 @@ func (e *ErrorAdapter) HandleAPIResponse(statusCode int, body []byte, operation 
 	// Create a structured error using the error package
 	if len(details) > 0 {
 		apiErr := errors.NewSlurmAPIError(statusCode, "v0.0.41", details)
-		apiErr.SlurmError.Details = fmt.Sprintf("Operation: %s", operation)
+		apiErr.SlurmError.Details = "Operation: " + operation
 		return apiErr
 	}
 
@@ -117,25 +117,25 @@ func (e *ErrorAdapter) HandleAPIResponse(statusCode int, body []byte, operation 
 			fmt.Errorf("HTTP 403: %s", string(body)),
 		)
 	case http.StatusNotFound:
-		err := errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("%s: resource not found", operation))
+		err := errors.NewSlurmError(errors.ErrorCodeResourceNotFound, operation+": resource not found")
 		err.StatusCode = statusCode
 		err.Details = string(body)
 		return err
 	case http.StatusConflict:
-		err := errors.NewSlurmError(errors.ErrorCodeConflict, fmt.Sprintf("%s: resource conflict", operation))
+		err := errors.NewSlurmError(errors.ErrorCodeConflict, operation+": resource conflict")
 		err.StatusCode = statusCode
 		err.Details = string(body)
 		return err
 	case http.StatusUnprocessableEntity:
 		return errors.NewValidationError(
 			errors.ErrorCodeValidationFailed,
-			fmt.Sprintf("%s: validation failed", operation),
+			operation+": validation failed",
 			"",
 			nil,
 			fmt.Errorf("HTTP 422: %s", string(body)),
 		)
 	case http.StatusInternalServerError, http.StatusBadGateway, http.StatusServiceUnavailable:
-		err := errors.NewSlurmError(errors.ErrorCodeServerInternal, fmt.Sprintf("%s: server error", operation))
+		err := errors.NewSlurmError(errors.ErrorCodeServerInternal, operation+": server error")
 		err.StatusCode = statusCode
 		err.Details = string(body)
 		return err

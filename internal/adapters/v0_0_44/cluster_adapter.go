@@ -107,7 +107,7 @@ func (a *ClusterAdapter) Get(ctx context.Context, clusterName string) (*types.Cl
 	// Call the API
 	resp, err := a.client.SlurmdbV0044GetClusterWithResponse(ctx, clusterName, params)
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to get cluster %s", clusterName))
+		return nil, a.WrapError(err, "failed to get cluster "+clusterName)
 	}
 
 	// Check response status
@@ -228,7 +228,7 @@ func (a *ClusterAdapter) Delete(ctx context.Context, clusterName string) error {
 	// Call the API
 	resp, err := a.client.SlurmdbV0044DeleteClusterWithResponse(ctx, clusterName, params)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to delete cluster %s", clusterName))
+		return a.WrapError(err, "failed to delete cluster "+clusterName)
 	}
 
 	// Check response status

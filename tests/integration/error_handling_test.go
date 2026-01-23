@@ -5,7 +5,6 @@ package integration
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -170,7 +169,7 @@ func TestStructuredErrorHandling(t *testing.T) {
 			assert.Equal(t, scenario.expectedCode, errors.GetErrorCode(err), "GetErrorCode should match")
 
 			// Clear the error for the next test
-			mockServer.ClearError(fmt.Sprintf("GET /slurm/v0.0.42/%s", scenario.name))
+			mockServer.ClearError("GET /slurm/v0.0.42/" + scenario.name)
 
 			t.Logf("Validated structured error handling for %s", scenario.name)
 		})

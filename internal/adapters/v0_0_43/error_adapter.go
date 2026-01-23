@@ -4,8 +4,8 @@
 package v0_0_43
 
 import (
-	stderrors "errors"
 	"encoding/json"
+	stderrors "errors"
 	"fmt"
 	"net/http"
 
@@ -66,7 +66,7 @@ func (e *ErrorAdapter) HandleAPIResponse(statusCode int, body []byte, operation 
 	// Create a structured error using the error package
 	if len(details) > 0 {
 		apiErr := errors.NewSlurmAPIError(statusCode, "v0.0.43", details)
-		apiErr.SlurmError.Details = fmt.Sprintf("Operation: %s", operation)
+		apiErr.SlurmError.Details = "Operation: " + operation
 		return apiErr
 	}
 
@@ -101,7 +101,7 @@ func (e *ErrorAdapter) HandleAPIResponse(statusCode int, body []byte, operation 
 	case http.StatusUnprocessableEntity:
 		return errors.NewValidationError(
 			errors.ErrorCodeValidationFailed,
-			fmt.Sprintf("%s: validation failed", operation),
+			operation+": validation failed",
 			"",
 			nil,
 			fmt.Errorf("HTTP 422: %s", string(body)),

@@ -4,9 +4,8 @@
 package v0_0_43
 
 import (
-	"net/http"
 	"context"
-	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/jontk/slurm-client/interfaces"
@@ -96,7 +95,7 @@ func (c *ClusterManagerImpl) List(ctx context.Context, opts *interfaces.ListClus
 			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert cluster data")
 			conversionErr.Cause = err
 			if apiCluster.Name != nil {
-				conversionErr.Details = fmt.Sprintf("Error converting cluster %s", *apiCluster.Name)
+				conversionErr.Details = "Error converting cluster " + *apiCluster.Name
 			}
 			return nil, conversionErr
 		}
@@ -213,7 +212,7 @@ func (c *ClusterManagerImpl) Get(ctx context.Context, clusterName string) (*inte
 	if err != nil {
 		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert cluster data")
 		conversionErr.Cause = err
-		conversionErr.Details = fmt.Sprintf("Error converting cluster %s", clusterName)
+		conversionErr.Details = "Error converting cluster " + clusterName
 		return nil, conversionErr
 	}
 

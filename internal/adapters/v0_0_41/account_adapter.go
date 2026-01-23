@@ -4,9 +4,9 @@
 package v0_0_41
 
 import (
-	"net/http"
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	api "github.com/jontk/slurm-client/internal/api/v0_0_41"

@@ -312,7 +312,7 @@ func (a *AccountAdapter) convertAccountAssociationResponseToCommon(apiResp *api.
 
 	// Extract added accounts info
 	if apiResp.AddedAccounts != "" {
-		resp.Message = fmt.Sprintf("Successfully created associations for accounts: %s", apiResp.AddedAccounts)
+		resp.Message = "Successfully created associations for accounts: " + apiResp.AddedAccounts
 		resp.Meta["added_accounts"] = apiResp.AddedAccounts
 	} else {
 		resp.Message = "Account associations created successfully"

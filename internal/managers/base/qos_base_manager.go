@@ -4,7 +4,6 @@
 package base
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/jontk/slurm-client/internal/common/types"
@@ -271,7 +270,7 @@ func (m *QoSBaseManager) validateOptionalNonNegative(value *int, fieldName strin
 	if value != nil && *value < 0 {
 		return errors.NewValidationError(
 			errors.ErrorCodeValidationFailed,
-			fmt.Sprintf("%s must be non-negative", fieldName),
+			fieldName+" must be non-negative",
 			fieldName, *value, nil,
 		)
 	}

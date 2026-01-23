@@ -72,7 +72,7 @@ func BenchmarkMockServerAnalyticsMemoryUsage(b *testing.B) {
 	}
 
 	for name, endpoint := range endpoints {
-		b.Run(fmt.Sprintf("Memory_%s", name), func(b *testing.B) {
+		b.Run("Memory_"+name, func(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -124,7 +124,7 @@ func BenchmarkMockServerAnalyticsVersionComparison(b *testing.B) {
 	versions := []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43"}
 
 	for _, version := range versions {
-		b.Run(fmt.Sprintf("Version_%s", version), func(b *testing.B) {
+		b.Run("Version_"+version, func(b *testing.B) {
 			mockServer := mocks.NewMockSlurmServerForVersion(version)
 			defer mockServer.Close()
 
@@ -215,7 +215,7 @@ func TestMockServerAnalyticsOverheadCompliance(t *testing.T) {
 	}
 
 	for opName, endpoint := range analyticsOperations {
-		t.Run(fmt.Sprintf("Overhead_%s", opName), func(t *testing.T) {
+		t.Run("Overhead_"+opName, func(t *testing.T) {
 			analyticsTime := measureOperationTime(t, func() error {
 				resp, err := http.Get(endpoint)
 				if err != nil {
@@ -294,7 +294,7 @@ func TestAnalyticsScalabilityRequirements(t *testing.T) {
 	defer mockServer.Close()
 
 	baseURL := mockServer.URL()
-	endpoint := fmt.Sprintf("%s/slurm/v0.0.42/job/1001/utilization", baseURL)
+	endpoint := baseURL + "/slurm/v0.0.42/job/1001/utilization"
 
 	// Test performance requirements under different loads
 	testCases := []struct {

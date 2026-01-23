@@ -4,11 +4,11 @@
 package v0_0_43
 
 import (
-	"net/http"
 	"context"
 	"fmt"
 	"math"
 	"math/rand"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -367,7 +367,7 @@ func (m *JobManagerImpl) Get(ctx context.Context, jobID string) (*interfaces.Job
 	if err != nil {
 		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert job data")
 		conversionErr.Cause = err
-		conversionErr.Details = fmt.Sprintf("Error converting job ID %s", jobID)
+		conversionErr.Details = "Error converting job ID " + jobID
 		return nil, conversionErr
 	}
 
@@ -1699,7 +1699,7 @@ func checkPerformanceAlerts(metrics *interfaces.JobLiveMetrics) []interfaces.Per
 			alerts = append(alerts, interfaces.PerformanceAlert{
 				Type:              "critical",
 				Category:          "cpu",
-				Message:           fmt.Sprintf("High CPU temperature on node %s", nodeName),
+				Message:           "High CPU temperature on node " + nodeName,
 				Severity:          "critical",
 				Timestamp:         time.Now(),
 				NodeName:          nodeName,
@@ -1715,7 +1715,7 @@ func checkPerformanceAlerts(metrics *interfaces.JobLiveMetrics) []interfaces.Per
 			alerts = append(alerts, interfaces.PerformanceAlert{
 				Type:              "warning",
 				Category:          "cpu",
-				Message:           fmt.Sprintf("High load average on node %s", nodeName),
+				Message:           "High load average on node " + nodeName,
 				Severity:          "medium",
 				Timestamp:         time.Now(),
 				NodeName:          nodeName,
@@ -2422,7 +2422,7 @@ func detectAnomalies(resource string, series *interfaces.ResourceTimeSeries, tim
 				Value:         value,
 				ExpectedValue: series.Average,
 				Deviation:     (value - series.Average) / series.Average * 100,
-				Description:   fmt.Sprintf("%s usage spike detected", resource),
+				Description:   resource + " usage spike detected",
 			})
 		} else if value < lowerBound && lowerBound > 0 {
 			anomalies = append(anomalies, interfaces.ResourceAnomaly{
@@ -2433,7 +2433,7 @@ func detectAnomalies(resource string, series *interfaces.ResourceTimeSeries, tim
 				Value:         value,
 				ExpectedValue: series.Average,
 				Deviation:     (series.Average - value) / series.Average * 100,
-				Description:   fmt.Sprintf("%s usage drop detected", resource),
+				Description:   resource + " usage drop detected",
 			})
 		}
 	}
@@ -2577,7 +2577,7 @@ func (m *JobManagerImpl) GetJobStepDetails(ctx context.Context, jobID string, st
 	// Simulate step details
 	stepDetails := &interfaces.JobStepDetails{
 		StepID:    stepID,
-		StepName:  fmt.Sprintf("step_%s", stepID),
+		StepName:  "step_" + stepID,
 		JobID:     jobID,
 		JobName:   job.Name,
 		State:     deriveStepState(job.State, stepIDInt),
@@ -4413,7 +4413,7 @@ func (m *JobManagerImpl) Notify(ctx context.Context, jobID string, message strin
 
 	// Check for non-success status codes
 	if resp.StatusCode() < 200 || resp.StatusCode() >= 300 {
-		return errors.NewSlurmError(errors.ErrorCodeServerInternal, fmt.Sprintf("failed to notify job %s", jobID))
+		return errors.NewSlurmError(errors.ErrorCodeServerInternal, "failed to notify job "+jobID)
 	}
 
 	return nil

@@ -206,7 +206,7 @@ func (m *JobBaseManager) ValidateJobDependencies(deps []types.JobDependency) err
 		if _, ok := validTypes[strings.ToLower(dep.Type)]; !ok {
 			return errors.NewValidationError(
 				errors.ErrorCodeValidationFailed,
-				fmt.Sprintf("Invalid dependency type: %s", dep.Type),
+				"Invalid dependency type: "+dep.Type,
 				"dependency.Type", dep.Type, nil,
 			)
 		}
@@ -247,7 +247,7 @@ func (m *JobBaseManager) ValidateMailTypes(mailTypes []string) error {
 		if _, ok := validTypes[strings.ToUpper(mailType)]; !ok {
 			return errors.NewValidationError(
 				errors.ErrorCodeValidationFailed,
-				fmt.Sprintf("Invalid mail type: %s", mailType),
+				"Invalid mail type: "+mailType,
 				"mailType", mailType, nil,
 			)
 		}

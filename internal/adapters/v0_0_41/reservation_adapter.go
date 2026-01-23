@@ -6,6 +6,7 @@ package v0_0_41
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
 	"github.com/jontk/slurm-client/internal/common/types"
@@ -46,7 +47,7 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 	// Apply filters from options
 	if opts != nil {
 		if opts.UpdateTime != nil {
-			updateTimeStr := fmt.Sprintf("%d", opts.UpdateTime.Unix())
+			updateTimeStr := strconv.FormatInt(opts.UpdateTime.Unix(), 10)
 			params.UpdateTime = &updateTimeStr
 		}
 	}
@@ -119,7 +120,7 @@ func (a *ReservationAdapter) Get(ctx context.Context, name string) (*types.Reser
 	params := &api.SlurmV0041GetReservationParams{}
 	resp, err := a.client.SlurmV0041GetReservationWithResponse(ctx, name, params)
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to get reservation %s", name))
+		return nil, a.WrapError(err, "failed to get reservation "+name)
 	}
 
 	// Handle response
@@ -128,13 +129,13 @@ func (a *ReservationAdapter) Get(ctx context.Context, name string) (*types.Reser
 	}
 
 	if resp.JSON200 == nil || len(resp.JSON200.Reservations) == 0 {
-		return nil, a.HandleNotFound(fmt.Sprintf("reservation %s", name))
+		return nil, a.HandleNotFound("reservation " + name)
 	}
 
 	// Convert the first reservation in the response
 	res, err := a.convertAPIReservationToCommon(resp.JSON200.Reservations[0])
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to convert reservation %s", name))
+		return nil, a.WrapError(err, "failed to convert reservation "+name)
 	}
 
 	return res, nil

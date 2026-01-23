@@ -143,7 +143,7 @@ func (a *AssociationAdapter) Get(ctx context.Context, id string) (*types.Associa
 		}
 	}
 
-	return nil, a.HandleNotFound(fmt.Sprintf("association with ID %s", id))
+	return nil, a.HandleNotFound("association with ID " + id)
 }
 
 // Create creates a new association
@@ -243,7 +243,7 @@ func (a *AssociationAdapter) Update(ctx context.Context, id string, update *type
 	// Make the API call
 	resp, err := a.client.SlurmdbV0041PostAssociationsWithResponse(ctx, *updateReq)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to update association %s", id))
+		return a.WrapError(err, "failed to update association "+id)
 	}
 
 	// Handle response
@@ -294,7 +294,7 @@ func (a *AssociationAdapter) Delete(ctx context.Context, id string) error {
 
 	resp, err := a.client.SlurmdbV0041DeleteAssociationsWithResponse(ctx, params)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to delete association %s", id))
+		return a.WrapError(err, "failed to delete association "+id)
 	}
 
 	// Handle response

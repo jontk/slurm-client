@@ -293,15 +293,15 @@ func EnhanceErrorWithVersion(err *SlurmError, apiVersion string) *SlurmError {
 	switch err.Code {
 	case ErrorCodeUnsupportedOperation:
 		if !IsFeatureSupportedInVersion("frontend_mode", apiVersion) {
-			err.Details = fmt.Sprintf("FrontEnd mode not supported in API %s", apiVersion)
+			err.Details = "FrontEnd mode not supported in API " + apiVersion
 		}
 		if !IsFeatureSupportedInVersion("reservation_support", apiVersion) {
-			err.Details = fmt.Sprintf("Reservation management not supported in API %s", apiVersion)
+			err.Details = "Reservation management not supported in API " + apiVersion
 		}
 
 	case ErrorCodeValidationFailed:
 		if apiVersion == "v0.0.42" || apiVersion == "v0.0.43" {
-			err.Details = fmt.Sprintf("Strict validation enforced in API %s", apiVersion)
+			err.Details = "Strict validation enforced in API " + apiVersion
 		}
 
 	case ErrorCodeVersionMismatch:

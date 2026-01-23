@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/interfaces"

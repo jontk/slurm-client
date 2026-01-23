@@ -162,7 +162,7 @@ func (suite *E2EWorkflowTestSuite) TestFullJobLifecycle() {
 
 	// Step 6: Submit a test job
 	suite.T().Log("Step 6: Submitting test job...")
-	jobName := fmt.Sprintf("%s-workflow", suite.testPrefix)
+	jobName := suite.testPrefix + "-workflow"
 	submission := &interfaces.JobSubmission{
 		Name:      jobName,
 		Script:    fmt.Sprintf("#!/bin/bash\n# E2E Test Job\necho 'Job %s started at:'\ndate\nhostname\necho 'Running workflow test...'\nsleep 60\necho 'Job completed at:'\ndate", jobName),
@@ -380,7 +380,7 @@ func (suite *E2EWorkflowTestSuite) TestResourceRelationshipWorkflow() {
 		partition := partitions.Partitions[0]
 		// qos := qosList.QoS[0] // QoS field removed from JobSubmission interface
 
-		jobName := fmt.Sprintf("%s-constrained", suite.testPrefix)
+		jobName := suite.testPrefix + "-constrained"
 		submission := &interfaces.JobSubmission{
 			Name:      jobName,
 			Script:    "#!/bin/bash\necho 'Testing resource constraints'\nhostname\necho 'Node info:'\nuname -a\necho 'CPU info:'\nlscpu | head -10\nsleep 30",
@@ -414,7 +414,7 @@ func (suite *E2EWorkflowTestSuite) TestErrorRecoveryWorkflow() {
 	// Test 1: Invalid partition
 	suite.T().Log("Test 1: Testing invalid partition handling...")
 	submission := &interfaces.JobSubmission{
-		Name:      fmt.Sprintf("%s-invalid-partition", suite.testPrefix),
+		Name:      suite.testPrefix + "-invalid-partition",
 		Script:    "#!/bin/bash\necho 'This should fail'",
 		Partition: "nonexistent-partition-12345",
 		Nodes:     1,
@@ -435,7 +435,7 @@ func (suite *E2EWorkflowTestSuite) TestErrorRecoveryWorkflow() {
 	if len(partitions.Partitions) > 0 {
 		suite.T().Log("Test 2: Testing invalid QoS handling...")
 		submission := &interfaces.JobSubmission{
-			Name:      fmt.Sprintf("%s-invalid-qos", suite.testPrefix),
+			Name:      suite.testPrefix + "-invalid-qos",
 			Script:    "#!/bin/bash\necho 'This should fail'",
 			Partition: partitions.Partitions[0].Name,
 			// QoS field removed from JobSubmission interface
@@ -453,7 +453,7 @@ func (suite *E2EWorkflowTestSuite) TestErrorRecoveryWorkflow() {
 	if len(partitions.Partitions) > 0 {
 		suite.T().Log("Test 3: Testing excessive resource request...")
 		submission := &interfaces.JobSubmission{
-			Name:      fmt.Sprintf("%s-excessive-resources", suite.testPrefix),
+			Name:      suite.testPrefix + "-excessive-resources",
 			Script:    "#!/bin/bash\necho 'This might fail'",
 			Partition: partitions.Partitions[0].Name,
 			Nodes:     999999, // Excessive nodes

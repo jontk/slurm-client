@@ -6,6 +6,7 @@ package v0_0_42
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	api "github.com/jontk/slurm-client/internal/api/v0_0_42"
@@ -334,7 +335,7 @@ func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssoc api.V0042Ass
 
 	// Set other fields if available
 	if apiAssoc.Id != nil {
-		assoc.ID = fmt.Sprintf("%d", *apiAssoc.Id)
+		assoc.ID = strconv.Itoa(int(*apiAssoc.Id))
 	}
 
 	if apiAssoc.Comment != nil {

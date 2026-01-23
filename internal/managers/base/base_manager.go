@@ -44,7 +44,7 @@ func (b *BaseManager) ValidateResourceName(name string, fieldName string) error 
 	if name == "" {
 		return errors.NewValidationError(
 			errors.ErrorCodeValidationFailed,
-			fmt.Sprintf("%s is required", fieldName),
+			fieldName+" is required",
 			fieldName, name, nil,
 		)
 	}
@@ -56,7 +56,7 @@ func (b *BaseManager) ValidateResourceID(id interface{}, fieldName string) error
 	if id == nil {
 		return errors.NewValidationError(
 			errors.ErrorCodeValidationFailed,
-			fmt.Sprintf("%s ID is required", b.resourceType),
+			b.resourceType+" ID is required",
 			fieldName, id, nil,
 		)
 	}
@@ -67,7 +67,7 @@ func (b *BaseManager) ValidateResourceID(id interface{}, fieldName string) error
 		if v.IsNil() {
 			return errors.NewValidationError(
 				errors.ErrorCodeValidationFailed,
-				fmt.Sprintf("%s ID is required", b.resourceType),
+				b.resourceType+" ID is required",
 				fieldName, id, nil,
 			)
 		}
@@ -79,7 +79,7 @@ func (b *BaseManager) ValidateResourceID(id interface{}, fieldName string) error
 		if v.Int() == 0 {
 			return errors.NewValidationError(
 				errors.ErrorCodeValidationFailed,
-				fmt.Sprintf("%s ID must be greater than 0", b.resourceType),
+				b.resourceType+" ID must be greater than 0",
 				fieldName, id, nil,
 			)
 		}
@@ -87,7 +87,7 @@ func (b *BaseManager) ValidateResourceID(id interface{}, fieldName string) error
 		if v.String() == "" {
 			return errors.NewValidationError(
 				errors.ErrorCodeValidationFailed,
-				fmt.Sprintf("%s ID cannot be empty", b.resourceType),
+				b.resourceType+" ID cannot be empty",
 				fieldName, id, nil,
 			)
 		}
@@ -101,7 +101,7 @@ func (b *BaseManager) ValidateNonNegative(value int, fieldName string) error {
 	if value < 0 {
 		return errors.NewValidationError(
 			errors.ErrorCodeValidationFailed,
-			fmt.Sprintf("%s must be non-negative", fieldName),
+			fieldName+" must be non-negative",
 			fieldName, value, nil,
 		)
 	}

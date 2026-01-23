@@ -4,9 +4,9 @@
 package v0_0_44
 
 import (
-	"net/http"
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/jontk/slurm-client/interfaces"
@@ -131,7 +131,7 @@ func (m *NodeManagerImpl) CreateNode(ctx context.Context, nodeName string, cpus 
 
 	// Create node configuration string
 	// Format: NodeName=name CPUs=n RealMemory=m
-	nodeConf := fmt.Sprintf("NodeName=%s", nodeName)
+	nodeConf := "NodeName=" + nodeName
 	if cpus > 0 {
 		nodeConf += fmt.Sprintf(" CPUs=%d", cpus)
 	}

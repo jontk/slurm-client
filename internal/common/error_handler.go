@@ -6,6 +6,7 @@ package common
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"github.com/jontk/slurm-client/pkg/errors"
 )
@@ -159,7 +160,7 @@ func formatResourceID(id interface{}) string {
 	switch v := id.(type) {
 	case *int32:
 		if v != nil {
-			return fmt.Sprintf("%d", *v)
+			return strconv.Itoa(int(*v))
 		}
 	case *string:
 		if v != nil {
@@ -168,9 +169,9 @@ func formatResourceID(id interface{}) string {
 	case string:
 		return v
 	case int32:
-		return fmt.Sprintf("%d", v)
+		return strconv.Itoa(int(v))
 	case int:
-		return fmt.Sprintf("%d", v)
+		return strconv.Itoa(v)
 	}
 
 	return fmt.Sprintf("%v", id)
@@ -191,7 +192,7 @@ func CheckClientInitialized(client interface{}) error {
 func NewResourceNotFoundError(resourceType string, identifier interface{}) error {
 	return errors.NewClientError(
 		errors.ErrorCodeResourceNotFound,
-		fmt.Sprintf("%s not found", resourceType),
+		resourceType+" not found",
 		fmt.Sprintf("%s '%v' was not found", resourceType, identifier),
 	)
 }

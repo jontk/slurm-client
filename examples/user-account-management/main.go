@@ -4,7 +4,6 @@
 package main
 
 import (
-	"time"
 	"context"
 	"flag"
 	"fmt"
@@ -12,6 +11,7 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/interfaces"

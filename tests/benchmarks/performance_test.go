@@ -536,7 +536,7 @@ func benchmarkUserAccountQuery(b *testing.B, operation string, useCache bool) {
 			// Benchmark GetUserAccounts
 			userName := fmt.Sprintf("user%d", i%100)
 			if useCache {
-				key := fmt.Sprintf("user_accounts:%s", userName)
+				key := "user_accounts:" + userName
 				if cached, found := cache.Get(key, nil); found {
 					_ = cached
 					continue
@@ -544,7 +544,7 @@ func benchmarkUserAccountQuery(b *testing.B, operation string, useCache bool) {
 			}
 			_, err := userManager.GetUserAccounts(ctx, userName)
 			if err == nil && useCache {
-				key := fmt.Sprintf("user_accounts:%s", userName)
+				key := "user_accounts:" + userName
 				cache.Set(key, nil, []byte(`{"accounts":[]}`))
 			}
 
@@ -552,7 +552,7 @@ func benchmarkUserAccountQuery(b *testing.B, operation string, useCache bool) {
 			// Benchmark GetAccountUsers
 			accountName := fmt.Sprintf("account%d", i%50)
 			if useCache {
-				key := fmt.Sprintf("account_users:%s", accountName)
+				key := "account_users:" + accountName
 				if cached, found := cache.Get(key, nil); found {
 					_ = cached
 					continue
@@ -560,7 +560,7 @@ func benchmarkUserAccountQuery(b *testing.B, operation string, useCache bool) {
 			}
 			_, err := accountManager.GetAccountUsers(ctx, accountName, nil)
 			if err == nil && useCache {
-				key := fmt.Sprintf("account_users:%s", accountName)
+				key := "account_users:" + accountName
 				cache.Set(key, nil, []byte(`{"users":[]}`))
 			}
 
@@ -568,7 +568,7 @@ func benchmarkUserAccountQuery(b *testing.B, operation string, useCache bool) {
 			// Benchmark GetUserQuotas
 			userName := fmt.Sprintf("user%d", i%100)
 			if useCache {
-				key := fmt.Sprintf("user_quotas:%s", userName)
+				key := "user_quotas:" + userName
 				if cached, found := cache.Get(key, nil); found {
 					_ = cached
 					continue
@@ -576,7 +576,7 @@ func benchmarkUserAccountQuery(b *testing.B, operation string, useCache bool) {
 			}
 			_, err := userManager.GetUserQuotas(ctx, userName)
 			if err == nil && useCache {
-				key := fmt.Sprintf("user_quotas:%s", userName)
+				key := "user_quotas:" + userName
 				cache.Set(key, nil, []byte(`{"quotas":{}}`))
 			}
 
@@ -584,7 +584,7 @@ func benchmarkUserAccountQuery(b *testing.B, operation string, useCache bool) {
 			// Benchmark GetAccountQuotas
 			accountName := fmt.Sprintf("account%d", i%50)
 			if useCache {
-				key := fmt.Sprintf("account_quotas:%s", accountName)
+				key := "account_quotas:" + accountName
 				if cached, found := cache.Get(key, nil); found {
 					_ = cached
 					continue
@@ -592,7 +592,7 @@ func benchmarkUserAccountQuery(b *testing.B, operation string, useCache bool) {
 			}
 			_, err := accountManager.GetAccountQuotas(ctx, accountName)
 			if err == nil && useCache {
-				key := fmt.Sprintf("account_quotas:%s", accountName)
+				key := "account_quotas:" + accountName
 				cache.Set(key, nil, []byte(`{"quotas":{}}`))
 			}
 

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	api "github.com/jontk/slurm-client/internal/api/v0_0_42"
 	"github.com/jontk/slurm-client/internal/common/types"
@@ -46,33 +47,39 @@ func (a *WCKeyAdapter) List(ctx context.Context, opts *types.WCKeyListOptions) (
 	if opts != nil {
 		if len(opts.Users) > 0 {
 			// API expects CSV string
-			usersStr := fmt.Sprintf("%v", opts.Users[0])
+			usersStr := opts.Users[0]
 			if len(opts.Users) > 1 {
+				var usersStrSb51 strings.Builder
 				for _, user := range opts.Users[1:] {
-					usersStr += "," + user
+					usersStrSb51.WriteString("," + user)
 				}
+				usersStr += usersStrSb51.String()
 			}
 			params.User = &usersStr
 		}
 
 		if len(opts.Clusters) > 0 {
 			// API expects CSV string
-			clustersStr := fmt.Sprintf("%v", opts.Clusters[0])
+			clustersStr := opts.Clusters[0]
 			if len(opts.Clusters) > 1 {
+				var clustersStrSb62 strings.Builder
 				for _, cluster := range opts.Clusters[1:] {
-					clustersStr += "," + cluster
+					clustersStrSb62.WriteString("," + cluster)
 				}
+				clustersStr += clustersStrSb62.String()
 			}
 			params.Cluster = &clustersStr
 		}
 
 		if len(opts.Names) > 0 {
 			// API expects CSV string
-			namesStr := fmt.Sprintf("%v", opts.Names[0])
+			namesStr := opts.Names[0]
 			if len(opts.Names) > 1 {
+				var namesStrSb73 strings.Builder
 				for _, name := range opts.Names[1:] {
-					namesStr += "," + name
+					namesStrSb73.WriteString("," + name)
 				}
+				namesStr += namesStrSb73.String()
 			}
 			params.Name = &namesStr
 		}
@@ -139,7 +146,7 @@ func (a *WCKeyAdapter) Get(ctx context.Context, wcKeyID string) (*types.WCKey, e
 	// Call the API
 	resp, err := a.client.SlurmdbV0042GetWckeyWithResponse(ctx, wcKeyID)
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to get WCKey %s", wcKeyID))
+		return nil, a.WrapError(err, "failed to get WCKey "+wcKeyID)
 	}
 
 	// Check response status
@@ -220,7 +227,7 @@ func (a *WCKeyAdapter) Delete(ctx context.Context, wcKeyID string) error {
 	// Call the API
 	resp, err := a.client.SlurmdbV0042DeleteWckeyWithResponse(ctx, wcKeyID)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to delete WCKey %s", wcKeyID))
+		return a.WrapError(err, "failed to delete WCKey "+wcKeyID)
 	}
 
 	// Check response status

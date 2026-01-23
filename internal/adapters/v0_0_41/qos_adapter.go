@@ -130,7 +130,7 @@ func (a *QoSAdapter) Get(ctx context.Context, name string) (*types.QoS, error) {
 	params := &api.SlurmdbV0041GetSingleQosParams{}
 	resp, err := a.client.SlurmdbV0041GetSingleQosWithResponse(ctx, name, params)
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to get QoS %s", name))
+		return nil, a.WrapError(err, "failed to get QoS "+name)
 	}
 
 	// Handle response
@@ -139,13 +139,13 @@ func (a *QoSAdapter) Get(ctx context.Context, name string) (*types.QoS, error) {
 	}
 
 	if resp.JSON200 == nil || len(resp.JSON200.Qos) == 0 {
-		return nil, a.HandleNotFound(fmt.Sprintf("QoS %s", name))
+		return nil, a.HandleNotFound("QoS " + name)
 	}
 
 	// Convert the first QoS in the response
 	qos, err := a.convertAPIQoSToCommon(resp.JSON200.Qos[0])
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to convert QoS %s", name))
+		return nil, a.WrapError(err, "failed to convert QoS "+name)
 	}
 
 	return qos, nil
@@ -238,7 +238,7 @@ func (a *QoSAdapter) Update(ctx context.Context, name string, update *types.QoSU
 	params := &api.SlurmdbV0041PostQosParams{}
 	resp, err := a.client.SlurmdbV0041PostQosWithResponse(ctx, params, *updateReq)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to update QoS %s", name))
+		return a.WrapError(err, "failed to update QoS "+name)
 	}
 
 	// Handle response
@@ -269,7 +269,7 @@ func (a *QoSAdapter) Delete(ctx context.Context, name string) error {
 	// Make the API call
 	resp, err := a.client.SlurmdbV0041DeleteSingleQosWithResponse(ctx, name)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to delete QoS %s", name))
+		return a.WrapError(err, "failed to delete QoS "+name)
 	}
 
 	// Handle response

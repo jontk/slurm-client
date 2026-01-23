@@ -363,7 +363,7 @@ func (m *JobManagerImpl) Get(ctx context.Context, jobID string) (*interfaces.Job
 	if err != nil {
 		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert job data")
 		conversionErr.Cause = err
-		conversionErr.Details = fmt.Sprintf("Error converting job ID %s", jobID)
+		conversionErr.Details = "Error converting job ID " + jobID
 		return nil, conversionErr
 	}
 
@@ -2036,7 +2036,7 @@ func (m *JobManagerImpl) GetJobStepDetails(ctx context.Context, jobID string, st
 	// Simulate step details with enhanced metrics
 	stepDetails := &interfaces.JobStepDetails{
 		StepID:    stepID,
-		StepName:  fmt.Sprintf("step_%s", stepID),
+		StepName:  "step_" + stepID,
 		JobID:     jobID,
 		JobName:   job.Name,
 		State:     deriveStepState(job.State, stepIDInt),
@@ -3676,7 +3676,7 @@ func (m *JobManagerImpl) Notify(ctx context.Context, jobID string, message strin
 
 	// Check for non-success status codes
 	if resp.StatusCode() < 200 || resp.StatusCode() >= 300 {
-		return errors.NewSlurmError(errors.ErrorCodeServerInternal, fmt.Sprintf("failed to notify job %s", jobID))
+		return errors.NewSlurmError(errors.ErrorCodeServerInternal, "failed to notify job "+jobID)
 	}
 
 	return nil

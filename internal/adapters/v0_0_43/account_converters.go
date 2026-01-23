@@ -4,8 +4,6 @@
 package v0_0_43
 
 import (
-	"fmt"
-
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 	"github.com/jontk/slurm-client/internal/common/types"
 )
@@ -60,7 +58,7 @@ func (a *AccountAdapter) convertCommonAccountCreateToAPI(create *types.AccountCr
 		apiAccount.Description = create.Description
 	} else {
 		// Provide default description if empty
-		apiAccount.Description = fmt.Sprintf("Account %s", create.Name)
+		apiAccount.Description = "Account " + create.Name
 	}
 
 	// Ensure Organization is not empty (required field)

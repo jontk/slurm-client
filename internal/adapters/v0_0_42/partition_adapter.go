@@ -88,7 +88,7 @@ func (a *PartitionAdapter) Get(ctx context.Context, name string) (*types.Partiti
 	// Call the API
 	resp, err := a.client.SlurmV0042GetPartitionWithResponse(ctx, name, &api.SlurmV0042GetPartitionParams{})
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to get partition %s", name))
+		return nil, a.WrapError(err, "failed to get partition "+name)
 	}
 
 	// Check response status

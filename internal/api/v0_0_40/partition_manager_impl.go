@@ -350,7 +350,7 @@ func (m *PartitionManagerImpl) Get(ctx context.Context, partitionName string) (*
 	if err != nil {
 		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert partition data")
 		conversionErr.Cause = err
-		conversionErr.Details = fmt.Sprintf("Error converting partition %s", partitionName)
+		conversionErr.Details = "Error converting partition " + partitionName
 		return nil, conversionErr
 	}
 

@@ -6,6 +6,7 @@ package v0_0_44
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -49,7 +50,7 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 	// Apply filters from options
 	if opts != nil {
 		if opts.UpdateTime != nil {
-			updateTimeStr := fmt.Sprintf("%d", opts.UpdateTime.Unix())
+			updateTimeStr := strconv.FormatInt(opts.UpdateTime.Unix(), 10)
 			params.UpdateTime = &updateTimeStr
 		}
 	}

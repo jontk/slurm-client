@@ -5,7 +5,7 @@ package v0_0_40
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 	"github.com/jontk/slurm-client/internal/common"
@@ -50,7 +50,7 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 		// v0.0.40 doesn't support reservation name filtering in params
 		// We'll need to filter client-side
 		if opts.UpdateTime != nil {
-			updateTimeStr := fmt.Sprintf("%d", opts.UpdateTime.Unix())
+			updateTimeStr := strconv.FormatInt(opts.UpdateTime.Unix(), 10)
 			params.UpdateTime = &updateTimeStr
 		}
 	}

@@ -131,7 +131,7 @@ func (a *UserAdapter) Get(ctx context.Context, name string) (*types.User, error)
 	// Call the API
 	resp, err := a.client.SlurmdbV0042GetUserWithResponse(ctx, name, params)
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to get user %s", name))
+		return nil, a.WrapError(err, "failed to get user "+name)
 	}
 
 	// Check response status
@@ -225,7 +225,7 @@ func (a *UserAdapter) Delete(ctx context.Context, name string) error {
 	// Call the API
 	resp, err := a.client.SlurmdbV0042DeleteUserWithResponse(ctx, name)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to delete user %s", name))
+		return a.WrapError(err, "failed to delete user "+name)
 	}
 
 	// Check response status
@@ -372,7 +372,7 @@ func (a *UserAdapter) convertUserAssociationResponseToCommon(apiResp *api.V0042O
 
 	// Extract added users info
 	if apiResp.AddedUsers != "" {
-		resp.Message = fmt.Sprintf("Successfully created associations for users: %s", apiResp.AddedUsers)
+		resp.Message = "Successfully created associations for users: " + apiResp.AddedUsers
 		resp.Meta["added_users"] = apiResp.AddedUsers
 	} else {
 		resp.Message = "User associations created successfully"

@@ -1170,7 +1170,7 @@ func (m *JobManagerImpl) GetJobStepDetails(ctx context.Context, jobID string, st
 	// v0.0.41 has basic step tracking with limited metrics
 	stepDetails := &interfaces.JobStepDetails{
 		StepID:    stepID,
-		StepName:  fmt.Sprintf("step_%s", stepID),
+		StepName:  "step_" + stepID,
 		JobID:     jobID,
 		JobName:   job.Name,
 		State:     deriveBasicStepState(job.State, stepIDInt),
@@ -1418,11 +1418,11 @@ func deriveBasicStepCommand(jobCommand string, stepID int) string {
 	if jobCommand == "" {
 		return "srun /bin/bash" // Basic command
 	}
-	return fmt.Sprintf("srun %s", jobCommand)
+	return "srun " + jobCommand
 }
 
 func deriveBasicStepCommandLine(jobCommand string, stepID int) string {
-	return fmt.Sprintf("srun %s", jobCommand)
+	return "srun " + jobCommand
 }
 
 func calculateBasicStepIOBytes(cpus int, stepID int, ioType string) int64 {

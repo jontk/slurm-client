@@ -6,6 +6,7 @@ package v0_0_40
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
 	"github.com/jontk/slurm-client/internal/common"
@@ -49,7 +50,7 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 		// v0.0.40 API doesn't support NodeName or States parameters in the API call
 		// We'll handle these filters client-side in filterNodeList
 		if opts.UpdateTime != nil {
-			updateTimeStr := fmt.Sprintf("%d", opts.UpdateTime.Unix())
+			updateTimeStr := strconv.FormatInt(opts.UpdateTime.Unix(), 10)
 			params.UpdateTime = &updateTimeStr
 		}
 	}

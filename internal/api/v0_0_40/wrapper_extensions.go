@@ -102,7 +102,7 @@ func (c *WrapperClient) HandleErrorResponse(statusCode int, body []byte) error {
 func (c *WrapperClient) handleHTTPError(statusCode int, body []byte) error {
 	switch statusCode {
 	case 400:
-		return errors.NewClientError(errors.ErrorCodeInvalidRequest, fmt.Sprintf("Bad Request: %s", string(body)))
+		return errors.NewClientError(errors.ErrorCodeInvalidRequest, "Bad Request: "+string(body))
 	case 401:
 		return errors.NewAuthError("HTTP", "Bearer", fmt.Errorf("authentication failed"))
 	case 403:
@@ -110,7 +110,7 @@ func (c *WrapperClient) handleHTTPError(statusCode int, body []byte) error {
 	case 404:
 		return errors.NewClientError(errors.ErrorCodeResourceNotFound, "Resource not found")
 	case 500:
-		return errors.NewClientError(errors.ErrorCodeServerInternal, fmt.Sprintf("Internal Server Error: %s", string(body)))
+		return errors.NewClientError(errors.ErrorCodeServerInternal, "Internal Server Error: "+string(body))
 	default:
 		return errors.NewClientError(errors.ErrorCodeServerInternal, fmt.Sprintf("HTTP %d: %s", statusCode, string(body)))
 	}

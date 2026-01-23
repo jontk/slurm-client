@@ -150,7 +150,7 @@ func (a *NodeAdapter) Get(ctx context.Context, name string) (*types.Node, error)
 	params := &api.SlurmV0041GetNodeParams{}
 	resp, err := a.client.SlurmV0041GetNodeWithResponse(ctx, name, params)
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to get node %s", name))
+		return nil, a.WrapError(err, "failed to get node "+name)
 	}
 
 	// Handle response
@@ -159,13 +159,13 @@ func (a *NodeAdapter) Get(ctx context.Context, name string) (*types.Node, error)
 	}
 
 	if resp.JSON200 == nil || len(resp.JSON200.Nodes) == 0 {
-		return nil, a.HandleNotFound(fmt.Sprintf("node %s", name))
+		return nil, a.HandleNotFound("node " + name)
 	}
 
 	// Convert the first node in the response
 	node, err := a.convertAPINodeToCommon(resp.JSON200.Nodes[0])
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to convert node %s", name))
+		return nil, a.WrapError(err, "failed to convert node "+name)
 	}
 
 	return node, nil
@@ -202,7 +202,7 @@ func (a *NodeAdapter) Update(ctx context.Context, name string, update *types.Nod
 	// Make the API call
 	resp, err := a.client.SlurmV0041PostNodeWithResponse(ctx, name, *updateReq)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to update node %s", name))
+		return a.WrapError(err, "failed to update node "+name)
 	}
 
 	// Handle response
@@ -267,7 +267,7 @@ func (a *NodeAdapter) Delete(ctx context.Context, name string) error {
 	// Make the API call
 	resp, err := a.client.SlurmV0041DeleteNodeWithResponse(ctx, name)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to delete node %s", name))
+		return a.WrapError(err, "failed to delete node "+name)
 	}
 
 	// Handle response

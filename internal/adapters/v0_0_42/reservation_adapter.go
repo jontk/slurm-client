@@ -116,7 +116,7 @@ func (a *ReservationAdapter) Get(ctx context.Context, name string) (*types.Reser
 	// Call the API
 	resp, err := a.client.SlurmV0042GetReservationWithResponse(ctx, name, params)
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to get reservation %s", name))
+		return nil, a.WrapError(err, "failed to get reservation "+name)
 	}
 
 	// Check response status
@@ -182,7 +182,7 @@ func (a *ReservationAdapter) Delete(ctx context.Context, name string) error {
 	// Call the API
 	resp, err := a.client.SlurmV0042DeleteReservationWithResponse(ctx, name)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to delete reservation %s", name))
+		return a.WrapError(err, "failed to delete reservation "+name)
 	}
 
 	// Check response status

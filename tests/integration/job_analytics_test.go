@@ -487,7 +487,7 @@ func TestJobAnalyticsErrorHandling(t *testing.T) {
 
 		// Test an endpoint that might not be supported in v0.0.40
 		if !oldMockServer.GetConfig().SupportedOperations["jobs.live_metrics"] {
-			url := fmt.Sprintf("%s/slurm/v0.0.40/job/1001/live_metrics", oldBaseURL)
+			url := oldBaseURL + "/slurm/v0.0.40/job/1001/live_metrics"
 			resp, err := http.Get(url)
 			require.NoError(t, err)
 			defer resp.Body.Close()

@@ -6,7 +6,7 @@ package v0_0_43
 import (
 	"context"
 	stderrors "errors"
-	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -697,7 +697,7 @@ func convertAPIAssociationToInterface(apiAssoc *V0043Assoc) (*interfaces.Associa
 	if apiAssoc.Max != nil && apiAssoc.Max.Tres != nil && apiAssoc.Max.Tres.Total != nil {
 		for _, tres := range *apiAssoc.Max.Tres.Total {
 			if tres.Type != "" && tres.Count != nil {
-				assoc.MaxTRESPerJob[tres.Type] = fmt.Sprintf("%d", *tres.Count)
+				assoc.MaxTRESPerJob[tres.Type] = strconv.FormatInt(*tres.Count, 10)
 			}
 		}
 	}

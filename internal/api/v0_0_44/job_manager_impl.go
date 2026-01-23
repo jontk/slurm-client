@@ -4,9 +4,10 @@
 package v0_0_44
 
 import (
-	"net/http"
 	"context"
 	"fmt"
+	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/jontk/slurm-client/interfaces"
@@ -142,7 +143,7 @@ func (m *JobManagerImpl) Submit(ctx context.Context, job *interfaces.JobSubmissi
 	}
 
 	if job.Nodes > 0 {
-		nodeSpec := fmt.Sprintf("%d", job.Nodes)
+		nodeSpec := strconv.Itoa(job.Nodes)
 		jobDesc.Nodes = &nodeSpec
 	}
 
@@ -187,7 +188,7 @@ func (m *JobManagerImpl) Submit(ctx context.Context, job *interfaces.JobSubmissi
 	// Extract job ID from response
 	var jobID string
 	if resp.JSON200.JobId != nil {
-		jobID = fmt.Sprintf("%d", *resp.JSON200.JobId)
+		jobID = strconv.Itoa(int(*resp.JSON200.JobId))
 	}
 
 	return &interfaces.JobSubmitResponse{
@@ -332,7 +333,7 @@ func (m *JobManagerImpl) convertJobToInterface(job *V0044JobInfo) *interfaces.Jo
 
 	// Basic job information
 	if job.JobId != nil {
-		result.ID = fmt.Sprintf("%d", *job.JobId)
+		result.ID = strconv.Itoa(int(*job.JobId))
 	}
 
 	if job.Name != nil {
@@ -340,7 +341,7 @@ func (m *JobManagerImpl) convertJobToInterface(job *V0044JobInfo) *interfaces.Jo
 	}
 
 	if job.UserId != nil {
-		result.UserID = fmt.Sprintf("%d", *job.UserId)
+		result.UserID = strconv.Itoa(int(*job.UserId))
 	}
 
 	if job.JobState != nil && len(*job.JobState) > 0 {

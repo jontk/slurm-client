@@ -124,7 +124,7 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 			if len(opts.Users) > 0 {
 				found := false
 				for _, user := range opts.Users {
-					if job.UserName == user || fmt.Sprintf("%d", job.UserID) == user {
+					if job.UserName == user || strconv.Itoa(int(job.UserID)) == user {
 						found = true
 						break
 					}
@@ -320,7 +320,7 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 
 	// Handle node count
 	if job.Nodes > 0 {
-		nodesStr := fmt.Sprintf("%d", job.Nodes)
+		nodesStr := strconv.Itoa(int(job.Nodes))
 		apiJobSubmission.Nodes = &nodesStr
 	}
 
@@ -457,7 +457,7 @@ func (a *JobAdapter) Requeue(ctx context.Context, jobID int32) error {
 	params.Flags = &requeueFlag
 
 	// Call the generated OpenAPI client
-	resp, err := a.client.SlurmV0042DeleteJobWithResponse(ctx, fmt.Sprintf("%d", jobID), params)
+	resp, err := a.client.SlurmV0042DeleteJobWithResponse(ctx, strconv.Itoa(int(jobID)), params)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}

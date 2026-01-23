@@ -5,9 +5,9 @@ package integration
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -73,7 +73,7 @@ func TestJobsWithRealServer(t *testing.T) {
 
 				jobID := "unknown"
 				if job.JobId != nil {
-					jobID = fmt.Sprintf("%d", *job.JobId)
+					jobID = strconv.Itoa(int(*job.JobId))
 				}
 
 				jobName := "unknown"

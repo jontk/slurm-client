@@ -159,7 +159,7 @@ func (a *NodeAdapter) Get(ctx context.Context, name string) (*types.Node, error)
 	// Call the API
 	resp, err := a.client.SlurmV0042GetNodeWithResponse(ctx, name, params)
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to get node %s", name))
+		return nil, a.WrapError(err, "failed to get node "+name)
 	}
 
 	// Check response status
@@ -198,7 +198,7 @@ func (a *NodeAdapter) Update(ctx context.Context, name string, updates *types.No
 	// Call the API
 	resp, err := a.client.SlurmV0042PostNodeWithResponse(ctx, name, *apiNodeUpdate)
 	if err != nil {
-		return a.WrapError(err, fmt.Sprintf("failed to update node %s", name))
+		return a.WrapError(err, "failed to update node "+name)
 	}
 
 	// Check response status

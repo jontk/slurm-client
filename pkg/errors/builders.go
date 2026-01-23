@@ -177,7 +177,7 @@ func classifyURLError(urlErr *url.Error) *SlurmError {
 	}
 
 	// Default URL error handling
-	return NewSlurmErrorWithCause(ErrorCodeNetworkTimeout, fmt.Sprintf("URL error: %s", urlErr.Op), urlErr)
+	return NewSlurmErrorWithCause(ErrorCodeNetworkTimeout, "URL error: "+urlErr.Op, urlErr)
 }
 
 // NewClientError creates errors for client-side issues
@@ -451,7 +451,7 @@ func IsAuthenticationError(err error) bool {
 func NewNotImplementedError(operation, version string) *SlurmError {
 	message := fmt.Sprintf("Operation '%s' not implemented in version %s", operation, version)
 	err := NewSlurmError(ErrorCodeUnsupportedOperation, message)
-	err.Details = fmt.Sprintf("Version: %s", version)
+	err.Details = "Version: " + version
 	return err
 }
 

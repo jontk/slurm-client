@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/jontk/slurm-client/pkg/errors"
 )
@@ -117,12 +118,14 @@ func (c *CRUDManager) BatchOperation(
 	if len(errs) > 0 {
 		// Create a composite error message
 		errMsg := fmt.Sprintf("Batch operation failed for %d/%d %ss: ", len(errs), len(items), c.resourceType)
+		var errMsgSb120 strings.Builder
 		for i, err := range errs {
 			if i > 0 {
-				errMsg += "; "
+				errMsgSb120.WriteString("; ")
 			}
-			errMsg += err.Error()
+			errMsgSb120.WriteString(err.Error())
 		}
+		errMsg += errMsgSb120.String()
 		return errors.NewClientError(
 			errors.ErrorCodeServerInternal,
 			"Batch operation failed",
@@ -137,7 +140,7 @@ func (c *CRUDManager) BatchOperation(
 func (c *CRUDManager) ResourceNotFoundError(identifier interface{}) error {
 	return errors.NewClientError(
 		errors.ErrorCodeResourceNotFound,
-		fmt.Sprintf("%s not found", c.resourceType),
+		c.resourceType+" not found",
 		fmt.Sprintf("%s '%v' not found", c.resourceType, identifier),
 	)
 }

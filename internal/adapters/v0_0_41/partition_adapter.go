@@ -120,7 +120,7 @@ func (a *PartitionAdapter) Get(ctx context.Context, name string) (*types.Partiti
 	params := &api.SlurmV0041GetPartitionParams{}
 	resp, err := a.client.SlurmV0041GetPartitionWithResponse(ctx, name, params)
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to get partition %s", name))
+		return nil, a.WrapError(err, "failed to get partition "+name)
 	}
 
 	// Handle response
@@ -129,13 +129,13 @@ func (a *PartitionAdapter) Get(ctx context.Context, name string) (*types.Partiti
 	}
 
 	if resp.JSON200 == nil || len(resp.JSON200.Partitions) == 0 {
-		return nil, a.HandleNotFound(fmt.Sprintf("partition %s", name))
+		return nil, a.HandleNotFound("partition " + name)
 	}
 
 	// Convert the first partition in the response
 	partition, err := a.convertAPIPartitionToCommon(resp.JSON200.Partitions[0])
 	if err != nil {
-		return nil, a.WrapError(err, fmt.Sprintf("failed to convert partition %s", name))
+		return nil, a.WrapError(err, "failed to convert partition "+name)
 	}
 
 	return partition, nil

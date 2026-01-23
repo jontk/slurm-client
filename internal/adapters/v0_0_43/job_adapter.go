@@ -53,7 +53,7 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 		// Note: SlurmV0043GetJobsParams has limited filtering capabilities
 		// Most filtering will need to be done post-query
 		if opts.StartTime != nil {
-			updateTime := fmt.Sprintf("%d", opts.StartTime.Unix())
+			updateTime := strconv.FormatInt(opts.StartTime.Unix(), 10)
 			params.UpdateTime = &updateTime
 		}
 		// Other filters (accounts, users, states, etc.) need to be applied after getting results
@@ -963,7 +963,7 @@ func (a *JobAdapter) applyClientSideFilters(jobs []types.Job, opts *types.JobLis
 		if len(opts.Users) > 0 {
 			found := false
 			for _, user := range opts.Users {
-				if job.UserName == user || fmt.Sprintf("%d", job.UserID) == user {
+				if job.UserName == user || strconv.Itoa(int(job.UserID)) == user {
 					found = true
 					break
 				}

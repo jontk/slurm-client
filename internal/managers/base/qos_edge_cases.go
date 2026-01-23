@@ -70,7 +70,7 @@ func (m *QoSBaseManager) ValidateQoSFlags(flags []string) error {
 		if !validFlags[upperFlag] {
 			return errors.NewValidationError(
 				errors.ErrorCodeValidationFailed,
-				fmt.Sprintf("Invalid QoS flag: %s", flag),
+				"Invalid QoS flag: "+flag,
 				"flag", flag, nil,
 			)
 		}

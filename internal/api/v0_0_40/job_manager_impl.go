@@ -364,7 +364,7 @@ func (m *JobManagerImpl) Get(ctx context.Context, jobID string) (*interfaces.Job
 	if err != nil {
 		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert job data")
 		conversionErr.Cause = err
-		conversionErr.Details = fmt.Sprintf("Error converting job ID %s", jobID)
+		conversionErr.Details = "Error converting job ID " + jobID
 		return nil, conversionErr
 	}
 
@@ -1235,7 +1235,7 @@ func (m *JobManagerImpl) GetJobStepDetails(ctx context.Context, jobID string, st
 	// v0.0.40 has very minimal step tracking
 	stepDetails := &interfaces.JobStepDetails{
 		StepID:    stepID,
-		StepName:  fmt.Sprintf("step_%s", stepID),
+		StepName:  "step_" + stepID,
 		JobID:     jobID,
 		JobName:   job.Name,
 		State:     deriveMinimalStepState(job.State),

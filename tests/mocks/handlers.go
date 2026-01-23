@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -237,7 +238,7 @@ func (m *MockSlurmServer) handleJobsSubmit(w http.ResponseWriter, r *http.Reques
 	}
 
 	m.storage.mu.Lock()
-	m.storage.Jobs[fmt.Sprintf("%d", jobID)] = job
+	m.storage.Jobs[strconv.Itoa(int(jobID))] = job
 	m.storage.mu.Unlock()
 
 	// SLURM API response format matches OpenAPI spec

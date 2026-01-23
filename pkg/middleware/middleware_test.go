@@ -267,7 +267,7 @@ func TestWithLogging(t *testing.T) {
 
 	// Add a successful response
 	mock.addResponse(&http.Response{
-		StatusCode: http.StatusOK,
+		StatusCode:    http.StatusOK,
 		ContentLength: 100,
 		Body:          io.NopCloser(strings.NewReader("")),
 	}, nil)
