@@ -130,7 +130,6 @@ linters:
     goconst:
       min-len: 3                # Minimum string length to check
       min-occurrences: 3        # Minimum number of occurrences
-      ignore-tests: true        # Don't check test files (we excluded them anyway)
   exclusions:
     generated: lax
     presets:
