@@ -13,7 +13,7 @@ import (
 
 func BenchmarkTokenAuth(b *testing.B) {
 	ta := auth.NewTokenAuth("test-jwt-token-with-reasonable-length")
-	req, _ := http.NewRequest(http.MethodGet, "https://example.com", nil)
+	req, _ := http.NewRequest(http.MethodGet, "https://example.com", http.NoBody)
 	ctx := context.Background()
 
 	b.ResetTimer()
@@ -24,7 +24,7 @@ func BenchmarkTokenAuth(b *testing.B) {
 
 func BenchmarkBasicAuth(b *testing.B) {
 	ba := auth.NewBasicAuth("username", "password")
-	req, _ := http.NewRequest(http.MethodGet, "https://example.com", nil)
+	req, _ := http.NewRequest(http.MethodGet, "https://example.com", http.NoBody)
 	ctx := context.Background()
 
 	b.ResetTimer()
@@ -35,7 +35,7 @@ func BenchmarkBasicAuth(b *testing.B) {
 
 func BenchmarkNoAuth(b *testing.B) {
 	na := auth.NewNoAuth()
-	req, _ := http.NewRequest(http.MethodGet, "https://example.com", nil)
+	req, _ := http.NewRequest(http.MethodGet, "https://example.com", http.NoBody)
 	ctx := context.Background()
 
 	b.ResetTimer()

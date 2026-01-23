@@ -184,7 +184,7 @@ func (f *ClientFactory) detectVersion(ctx context.Context) (*versioning.APIVersi
 	}
 
 	// Try to get OpenAPI spec to detect version
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, f.baseURL+"/openapi/v3", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, f.baseURL+"/openapi/v3", http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create version detection request: %w", err)
 	}
