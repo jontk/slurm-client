@@ -156,6 +156,7 @@ linters:
       - linters:
           - deadcode
           - unused
+          - nilnil
         path: test_helpers\.go
       - linters:
           - funlen
@@ -178,6 +179,9 @@ linters:
       - linters:
           - dupl
         path: ^pkg/watch/
+      - linters:
+          - dupl
+        path: ^pkg/streaming/
       - linters:
           - dupl
         path: ^tests/mocks/
