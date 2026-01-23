@@ -77,17 +77,15 @@ func TestHandleSSE_JobsStream(t *testing.T) {
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
 			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
-				// Send events in a goroutine
-				go func() {
-					eventChan <- interfaces.JobEvent{
-						Type:      "state_change",
-						JobID:     "123",
-						OldState:  "PENDING",
-						NewState:  "RUNNING",
-						Timestamp: time.Now(),
-					}
-					close(eventChan)
-				}()
+				// Send events synchronously before returning
+				eventChan <- interfaces.JobEvent{
+					Type:      "state_change",
+					JobID:     "123",
+					OldState:  "PENDING",
+					NewState:  "RUNNING",
+					Timestamp: time.Now(),
+				}
+				close(eventChan)
 				return eventChan, nil
 			},
 		},
@@ -153,16 +151,15 @@ func TestHandleSSE_NodesStream(t *testing.T) {
 	client := &mockSlurmClient{
 		nodes: &mockNodeManager{
 			watchFunc: func(ctx context.Context, opts *interfaces.WatchNodesOptions) (<-chan interfaces.NodeEvent, error) {
-				go func() {
-					eventChan <- interfaces.NodeEvent{
-						Type:      "state_change",
-						NodeName:  "node01",
-						OldState:  "IDLE",
-						NewState:  "ALLOCATED",
-						Timestamp: time.Now(),
-					}
-					close(eventChan)
-				}()
+				// Send events synchronously before returning
+				eventChan <- interfaces.NodeEvent{
+					Type:      "state_change",
+					NodeName:  "node01",
+					OldState:  "IDLE",
+					NewState:  "ALLOCATED",
+					Timestamp: time.Now(),
+				}
+				close(eventChan)
 				return eventChan, nil
 			},
 		},
@@ -172,14 +169,12 @@ func TestHandleSSE_NodesStream(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/sse?stream=nodes&partition=gpu", nil)
 	w := httptest.NewRecorder()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 	req = req.WithContext(ctx)
 
-	go server.HandleSSE(w, req)
-
-	time.Sleep(500 * time.Millisecond)
-	cancel()
+	// HandleSSE blocks until context is done
+	server.HandleSSE(w, req)
 
 	resp := w.Result()
 	defer resp.Body.Close()
@@ -200,16 +195,15 @@ func TestHandleSSE_PartitionsStream(t *testing.T) {
 	client := &mockSlurmClient{
 		partitions: &mockPartitionManager{
 			watchFunc: func(ctx context.Context, opts *interfaces.WatchPartitionsOptions) (<-chan interfaces.PartitionEvent, error) {
-				go func() {
-					eventChan <- interfaces.PartitionEvent{
-						Type:          "state_change",
-						PartitionName: "gpu",
-						OldState:      "UP",
-						NewState:      "DOWN",
-						Timestamp:     time.Now(),
-					}
-					close(eventChan)
-				}()
+				// Send events synchronously before returning
+				eventChan <- interfaces.PartitionEvent{
+					Type:          "state_change",
+					PartitionName: "gpu",
+					OldState:      "UP",
+					NewState:      "DOWN",
+					Timestamp:     time.Now(),
+				}
+				close(eventChan)
 				return eventChan, nil
 			},
 		},
@@ -219,14 +213,12 @@ func TestHandleSSE_PartitionsStream(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/sse?stream=partitions", nil)
 	w := httptest.NewRecorder()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 	req = req.WithContext(ctx)
 
-	go server.HandleSSE(w, req)
-
-	time.Sleep(500 * time.Millisecond)
-	cancel()
+	// HandleSSE blocks until context is done
+	server.HandleSSE(w, req)
 
 	resp := w.Result()
 	defer resp.Body.Close()
@@ -295,13 +287,12 @@ func TestHandleSSE_StreamClosedEvent(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/sse?stream=jobs", nil)
 	w := httptest.NewRecorder()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 	req = req.WithContext(ctx)
 
-	go server.HandleSSE(w, req)
-
-	time.Sleep(500 * time.Millisecond)
+	// HandleSSE blocks until context is done or channel closes
+	server.HandleSSE(w, req)
 
 	resp := w.Result()
 	defer resp.Body.Close()
