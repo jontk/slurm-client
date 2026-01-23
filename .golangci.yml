@@ -39,7 +39,6 @@ linters:
     - nonamedreturns
     - paralleltest
     - perfsprint
-    - prealloc
     - revive
     - tagliatelle
     - testifylint
@@ -62,7 +61,7 @@ linters:
     dogsled:
       max-blank-identifiers: 2
     dupl:
-      threshold: 100
+      threshold: 75
     errcheck:
       check-type-assertions: false
       check-blank: false
@@ -84,7 +83,7 @@ linters:
         - performance
         - style
     gocyclo:
-      min-complexity: 75
+      min-complexity: 50
     gosec:
       excludes:
         - G104  # Duplicated errcheck
@@ -141,6 +140,7 @@ linters:
           - goconst
           - gocyclo
           - gosec
+          - prealloc
           - staticcheck
         path: _test\.go
       - linters:
@@ -172,6 +172,34 @@ linters:
           - dupl
         path: ^tests/mocks/
       - linters:
+          - dupl
+        path: ^internal/interfaces/
+      - linters:
+          - dupl
+        path: ^interfaces/
+      - linters:
+          - dupl
+        path: ^internal/common/types/
+      - linters:
+          - dupl
+        path: ^internal/managers/base/
+      - linters:
+          - dupl
+        path: ^pkg/retry/
+      - linters:
+          - dupl
+        path: ^pkg/analytics/
+      - linters:
+          - dupl
+          - gocyclo
+        path: client\.go$
+      - linters:
+          - gocyclo
+        path: _converters\.go$
+      - linters:
+          - gocyclo
+        path: manager_impl\.go$
+      - linters:
           - lll
         source: '^//go:generate '
       - linters:
@@ -180,6 +208,7 @@ linters:
           - errorlint
           - gosec
           - ineffassign
+          - prealloc
           - staticcheck
           - unused
         path: ^examples/

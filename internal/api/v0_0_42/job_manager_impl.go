@@ -3321,7 +3321,9 @@ func calculateEnhancedIOBandwidth(totalBytes int64, duration time.Duration) floa
 }
 
 func combineRecommendationsV42(cpu *interfaces.CPUAnalytics, memory *interfaces.MemoryAnalytics, io *interfaces.IOAnalytics) []interfaces.OptimizationRecommendation {
-	recommendations := []interfaces.OptimizationRecommendation{}
+	// Preallocate with known capacity
+	capacity := len(cpu.Recommendations) + len(memory.Recommendations) + len(io.Recommendations) + 1
+	recommendations := make([]interfaces.OptimizationRecommendation, 0, capacity)
 
 	// Add all recommendations from components
 	recommendations = append(recommendations, cpu.Recommendations...)
@@ -3348,7 +3350,9 @@ func combineRecommendationsV42(cpu *interfaces.CPUAnalytics, memory *interfaces.
 }
 
 func combineBottlenecksV42(cpu *interfaces.CPUAnalytics, memory *interfaces.MemoryAnalytics, io *interfaces.IOAnalytics) []interfaces.PerformanceBottleneck {
-	bottlenecks := []interfaces.PerformanceBottleneck{}
+	// Preallocate with known capacity
+	capacity := len(cpu.Bottlenecks) + len(memory.Bottlenecks) + len(io.Bottlenecks) + 1
+	bottlenecks := make([]interfaces.PerformanceBottleneck, 0, capacity)
 
 	// Add all bottlenecks from components
 	bottlenecks = append(bottlenecks, cpu.Bottlenecks...)

@@ -261,12 +261,11 @@ func (pht *PerformanceHistoryTracker) createSnapshot(
 func (pht *PerformanceHistoryTracker) calculatePerformanceStatistics(
 	samples []interfaces.JobComprehensiveAnalytics,
 ) interfaces.PerformanceStatistics {
-	var (
-		cpuValues []float64
-		memValues []float64
-		ioValues  []float64
-		effValues []float64
-	)
+	// Preallocate slices with known capacity
+	cpuValues := make([]float64, 0, len(samples))
+	memValues := make([]float64, 0, len(samples))
+	ioValues := make([]float64, 0, len(samples))
+	effValues := make([]float64, 0, len(samples))
 
 	for _, sample := range samples {
 		if sample.CPUAnalytics != nil {
