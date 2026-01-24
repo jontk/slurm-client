@@ -97,29 +97,8 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 		assocList.Associations = append(assocList.Associations, *assoc)
 	}
 
-	// Extract warning messages if any
-	if resp.JSON200.Warnings != nil {
-		warnings := make([]string, 0, len(*resp.JSON200.Warnings))
-		for _, warning := range *resp.JSON200.Warnings {
-			if warning.Description != nil {
-				warnings = append(warnings, *warning.Description)
-			}
-		}
-		// Note: AssociationList doesn't have a Meta field in common types
-		// Warnings are being ignored for now
-	}
-
-	// Extract error messages if any
-	if resp.JSON200.Errors != nil {
-		errors := make([]string, 0, len(*resp.JSON200.Errors))
-		for _, error := range *resp.JSON200.Errors {
-			if error.Description != nil {
-				errors = append(errors, *error.Description)
-			}
-		}
-		// AssociationList doesn't have a Meta field in common types
-		// Log errors but continue
-	}
+	// Note: AssociationList doesn't have a Meta field in common types
+	// Warnings and errors from the response are being ignored for now
 
 	return assocList, nil
 }
