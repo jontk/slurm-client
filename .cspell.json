@@ -102,6 +102,7 @@
     "prealloc",
     "gocyclo",
     "dupl",
+    "duplint",
     "nilerr",
     "errorlint",
     "unconvert",

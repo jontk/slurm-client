@@ -104,6 +104,10 @@ This document explains why certain golangci-lint linters are permanently disable
 **Status**: Disabled
 **Reason**: Flags loop variable copies. Fixed in Go 1.22+ with improved loop variable scoping. No longer needed for modern Go versions.
 
+#### `dupl`
+**Status**: Disabled
+**Reason**: Detects duplicate code blocks. While useful for refactoring, it's too strict for adapter implementations where boilerplate patterns and interface implementations are intentionally similar across versions. The 95+ issues are mostly in legitimate adapter patterns for handling multiple SLURM API versions.
+
 #### `canonicalheader`
 **Status**: Disabled
 **Reason**: HTTP header canonicalization enforcement. Not applicable to our SLURM client architecture.
