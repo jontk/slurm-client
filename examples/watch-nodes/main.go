@@ -67,12 +67,18 @@ func main() {
 	fmt.Println("Starting to watch for node events...")
 	fmt.Println("Press Ctrl+C to stop")
 
+	if err := watchNodes(ctx, nodeManager, watchOpts); err != nil {
+		log.Fatalf("Failed to watch nodes: %v", err)
+	}
+}
+
+func watchNodes(ctx context.Context, nodeManager interfaces.NodeManager, watchOpts *interfaces.WatchNodesOptions) error {
 	watchCtx, cancelWatch := context.WithCancel(ctx)
 	defer cancelWatch()
 
 	eventChan, err := nodeManager.Watch(watchCtx, watchOpts)
 	if err != nil {
-		log.Fatalf("Failed to start watching nodes: %v", err)
+		return err
 	}
 
 	// Handle interrupt signal
@@ -85,7 +91,7 @@ func main() {
 		case event, ok := <-eventChan:
 			if !ok {
 				fmt.Println("Event channel closed")
-				return
+				return nil
 			}
 
 			// Handle different event types
@@ -132,7 +138,7 @@ func main() {
 			cancelWatch()
 			// Give a moment for cleanup
 			time.Sleep(100 * time.Millisecond)
-			return
+			return nil
 		}
 	}
 }

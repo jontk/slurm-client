@@ -40,7 +40,7 @@ func main() {
 
 	// Example 3: Circuit breaker pattern
 	fmt.Println("\n=== Circuit Breaker Pattern ===")
-	demonstrateCircuitBreaker(ctx, cfg, authProvider)
+	demonstrateCircuitBreaker()
 
 	// Example 4: Graceful degradation
 	fmt.Println("\n=== Graceful Degradation ===")
@@ -253,7 +253,7 @@ func demonstrateRetryStrategies(ctx context.Context, cfg *config.Config, auth au
 }
 
 // demonstrateCircuitBreaker shows circuit breaker pattern
-func demonstrateCircuitBreaker(ctx context.Context, cfg *config.Config, auth auth.Provider) {
+func demonstrateCircuitBreaker() {
 	// Create circuit breaker
 	breaker := &circuitBreaker{
 		failureThreshold: 3,
@@ -417,8 +417,8 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 			switch slurmErr.Code {
 			case errors.ErrorCodeResourceExhausted:
 				// Reduce requirements
-				job.CPUs = job.CPUs / 2
-				job.Memory = job.Memory / 2
+				job.CPUs /= 2
+				job.Memory /= 2
 				fmt.Printf("  Adapting: Reduced to CPUs=%d, Memory=%dGB\n",
 					job.CPUs, job.Memory/(1024*1024))
 

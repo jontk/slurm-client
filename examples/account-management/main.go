@@ -152,27 +152,28 @@ func listAccounts(ctx context.Context, cfg *config.Config, auth auth.Provider) {
 // displayAccountHierarchy recursively displays account hierarchy
 func displayAccountHierarchy(accounts []interfaces.Account, parent, indent string) {
 	for _, account := range accounts {
-		if account.ParentAccount == parent {
-			fmt.Printf("%s%s", indent, account.Name)
-			if account.Description != "" {
-				fmt.Printf(" - %s", account.Description)
-			}
-			fmt.Println()
-
-			// Display account details
-			if account.Organization != "" {
-				fmt.Printf("%s  Organization: %s\n", indent, account.Organization)
-			}
-			if account.MaxJobs > 0 {
-				fmt.Printf("%s  Max Jobs: %d\n", indent, account.MaxJobs)
-			}
-			if len(account.AllowedPartitions) > 0 {
-				fmt.Printf("%s  Partitions: %v\n", indent, account.AllowedPartitions)
-			}
-
-			// Recurse for child accounts
-			displayAccountHierarchy(accounts, account.Name, indent+"  ")
+		if account.ParentAccount != parent {
+			continue
 		}
+		fmt.Printf("%s%s", indent, account.Name)
+		if account.Description != "" {
+			fmt.Printf(" - %s", account.Description)
+		}
+		fmt.Println()
+
+		// Display account details
+		if account.Organization != "" {
+			fmt.Printf("%s  Organization: %s\n", indent, account.Organization)
+		}
+		if account.MaxJobs > 0 {
+			fmt.Printf("%s  Max Jobs: %d\n", indent, account.MaxJobs)
+		}
+		if len(account.AllowedPartitions) > 0 {
+			fmt.Printf("%s  Partitions: %v\n", indent, account.AllowedPartitions)
+		}
+
+		// Recurse for child accounts
+		displayAccountHierarchy(accounts, account.Name, indent+"  ")
 	}
 }
 

@@ -63,7 +63,7 @@ func handleConnectionErrors(ctx context.Context) {
 		}
 		return
 	}
-	defer client.Close()
+	client.Close()
 }
 
 func handleAuthErrors(ctx context.Context) {

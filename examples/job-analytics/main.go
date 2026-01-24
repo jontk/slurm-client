@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -404,40 +405,42 @@ func (ac *AnalyticsCollector) getJobEfficiency(ctx context.Context, jobID string
 	// Parse recommendations
 	if recsData, ok := efficiencyMap["optimization_recommendations"].([]interface{}); ok {
 		for _, recData := range recsData {
-			if rec, ok := recData.(map[string]interface{}); ok {
-				var recType, recResource, recReason string
-				var current, recommended float64
-				var confidence float64
-
-				if v, ok := rec["type"].(string); ok {
-					recType = v
-				}
-				if v, ok := rec["resource"].(string); ok {
-					recResource = v
-				}
-				if v, ok := rec["current"].(float64); ok {
-					current = v
-				}
-				if v, ok := rec["recommended"].(float64); ok {
-					recommended = v
-				}
-				if v, ok := rec["reason"].(string); ok {
-					recReason = v
-				}
-				if v, ok := rec["confidence"].(float64); ok {
-					confidence = v
-				}
-
-				recommendation := OptimizationRecommendation{
-					Type:        recType,
-					Resource:    recResource,
-					Current:     int(current),
-					Recommended: int(recommended),
-					Reason:      recReason,
-					Confidence:  confidence,
-				}
-				efficiency.Recommendations = append(efficiency.Recommendations, recommendation)
+			rec, ok := recData.(map[string]interface{})
+			if !ok {
+				continue
 			}
+			var recType, recResource, recReason string
+			var current, recommended float64
+			var confidence float64
+
+			if v, ok := rec["type"].(string); ok {
+				recType = v
+			}
+			if v, ok := rec["resource"].(string); ok {
+				recResource = v
+			}
+			if v, ok := rec["current"].(float64); ok {
+				current = v
+			}
+			if v, ok := rec["recommended"].(float64); ok {
+				recommended = v
+			}
+			if v, ok := rec["reason"].(string); ok {
+				recReason = v
+			}
+			if v, ok := rec["confidence"].(float64); ok {
+				confidence = v
+			}
+
+			recommendation := OptimizationRecommendation{
+				Type:        recType,
+				Resource:    recResource,
+				Current:     int(current),
+				Recommended: int(recommended),
+				Reason:      recReason,
+				Confidence:  confidence,
+			}
+			efficiency.Recommendations = append(efficiency.Recommendations, recommendation)
 		}
 	}
 
@@ -1037,8 +1040,16 @@ func main() {
 	fmt.Println("Setting up mock SLURM server for demonstration...")
 
 	mockServer := mocks.NewMockSlurmServerForVersion("v0.0.42")
-	defer mockServer.Close()
 
+	if err := run(mockServer); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		mockServer.Close()
+		os.Exit(1)
+	}
+	mockServer.Close()
+}
+
+func run(mockServer *mocks.MockSlurmServer) error {
 	baseURL := mockServer.URL()
 	fmt.Printf("Mock server running at: %s\n\n", baseURL)
 
@@ -1063,7 +1074,7 @@ func main() {
 	}
 
 	if len(jobAnalytics) == 0 {
-		log.Fatal("Failed to collect analytics for any jobs")
+		return errors.New("failed to collect analytics for any jobs")
 	}
 
 	fmt.Println("\n" + strings.Repeat("=", 80))
@@ -1132,4 +1143,5 @@ func main() {
 	fmt.Println("Analytics collection and reporting completed successfully!")
 	fmt.Println("Use --export flag to save analytics data to JSON files")
 	fmt.Println(strings.Repeat("=", 80))
+	return nil
 }
