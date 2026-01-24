@@ -302,5 +302,5 @@ go test ./...
 ## See Also
 
 - [Architecture Overview](./ARCHITECTURE.md)
-- [Contributing Guide](development/CONTRIBUTING.md)
+- [Contributing Guide](../development/CONTRIBUTING.md)
 - [OpenAPI Specification](https://www.openapis.org/)

@@ -150,6 +150,6 @@ config.RequestConfig = &interfaces.RequestConfig{
 
 ## See Also
 
-- [Examples](../../examples)
+- [Examples](../../examples/README.md)
 - [Configuration Guide](../configuration.md)
 - [Troubleshooting](../troubleshooting.md)

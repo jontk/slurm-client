@@ -370,4 +370,4 @@ if err != nil {
 
 - [API Overview](./README.md)
 - [Node Management API](./nodes.md)
-- [Examples](../../examples/reservation-management)
+- [Examples](../../examples/reservation-management/main.go)

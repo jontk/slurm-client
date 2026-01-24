@@ -63,6 +63,7 @@ func init() {
 	rootCmd.AddCommand(infoCmd)
 	rootCmd.AddCommand(submitCmd)
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(docsCmd)
 }
 
 // Version command with detailed info

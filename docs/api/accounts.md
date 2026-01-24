@@ -336,4 +336,4 @@ if err != nil {
 - [API Overview](./README.md)
 - [QoS Management API](./qos.md)
 - [Job Management API](./jobs.md)
-- [Examples](../../examples/account-management)
+- [Examples](../../examples/account-management/main.go)

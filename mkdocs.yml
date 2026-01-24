@@ -1,0 +1,173 @@
+# SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
+# SPDX-License-Identifier: Apache-2.0
+
+site_name: SLURM REST API Client Library
+site_description: Go client library for interacting with the SLURM REST API
+site_author: Jon Thor Kristinsson
+site_url: https://jontk.github.io/slurm-client/
+
+repo_name: jontk/slurm-client
+repo_url: https://github.com/jontk/slurm-client
+edit_uri: edit/main/docs/
+
+copyright: Copyright &copy; 2025 Jon Thor Kristinsson
+
+theme:
+  name: material
+  language: en
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+  features:
+    - navigation.instant      # Instant loading
+    - navigation.tracking     # URL tracking
+    - navigation.tabs         # Top-level tabs
+    - navigation.tabs.sticky  # Sticky tabs
+    - navigation.sections     # Navigation sections
+    - navigation.expand       # Expand navigation by default
+    - navigation.indexes      # Section index pages
+    - navigation.top          # Back to top button
+    - search.suggest          # Search suggestions
+    - search.highlight        # Highlight search results
+    - search.share            # Share search link
+    - content.code.copy       # Copy code button
+    - content.code.annotate   # Code annotations
+    - content.tabs.link       # Link content tabs
+
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/api
+
+extra:
+  version:
+    provider: mike
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/jontk/slurm-client
+      name: GitHub Repository
+    - icon: fontawesome/brands/golang
+      link: https://pkg.go.dev/github.com/jontk/slurm-client
+      name: Go Package Documentation
+
+  analytics:
+    provider: google
+    property: !ENV GOOGLE_ANALYTICS_KEY
+
+markdown_extensions:
+  # Python Markdown
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+
+  # Python Markdown Extensions
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+plugins:
+  - search:
+      lang: en
+      separator: '[\s\-\.]+'
+  - minify:
+      minify_html: true
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: timeago
+
+nav:
+  - Home: index.md
+
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quick-start.md
+    - Configuration: configuration.md
+
+  - API Reference:
+    - Overview: api/README.md
+    - Jobs: api/jobs.md
+    - Nodes: api/nodes.md
+    - Partitions: api/partitions.md
+    - Reservations: api/reservations.md
+    - Accounts: api/accounts.md
+    - QoS: api/qos.md
+
+  - CLI Reference:
+    - Overview: cli/README.md
+
+  - Examples:
+    - Overview: examples/README.md
+
+  - Guides:
+    - Architecture: guides/ARCHITECTURE.md
+    - Code Generation: guides/CODE_GENERATION.md
+    - Deployment: guides/deployment.md
+    - Troubleshooting: guides/troubleshooting.md
+    - Advanced Wrapper: guides/wrapper-advanced.md
+
+  - Development:
+    - Contributing: development/CONTRIBUTING.md
+    - Migration Guide: development/MIGRATION.md
+    - Changelog: development/CHANGELOG.md
+    - Release Process: development/RELEASE.md
+
+  - About:
+    - Security: about/SECURITY.md
+    - Code of Conduct: about/CODE_OF_CONDUCT.md
+    - Third Party Licenses: about/THIRD_PARTY_LICENSES.md
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/extra.js

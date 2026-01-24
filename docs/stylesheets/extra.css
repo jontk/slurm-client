@@ -1,0 +1,41 @@
+/* SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* Custom styles for SLURM REST API Client Library documentation */
+
+:root {
+  --md-primary-fg-color: #2563eb;
+  --md-accent-fg-color: #60a5fa;
+}
+
+/* Code block improvements */
+.highlight pre {
+  border-radius: 0.5rem;
+}
+
+/* Admonition customization */
+.admonition {
+  border-radius: 0.5rem;
+}
+
+/* Table improvements */
+table {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+/* API reference styling */
+.api-signature {
+  background-color: var(--md-code-bg-color);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+/* CLI command styling */
+.cli-command {
+  font-family: var(--md-code-font-family);
+  background-color: var(--md-code-bg-color);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}

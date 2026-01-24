@@ -45,6 +45,7 @@ coverage.txt
 
 # Documentation
 docs.txt
+site/
 
 # Temporary files
 *.tmp
