@@ -2389,14 +2389,18 @@ func analyzeTrend(values []float64) (string, float64) {
 
 	if math.Abs(relativeSlope) < 1 {
 		return "stable", slope
-	} else if relativeSlope > 5 {
-		return "increasing", slope
-	} else if relativeSlope < -5 {
-		return "decreasing", slope
-	} else {
-		// Check variability
-		return "fluctuating", slope
 	}
+
+	if relativeSlope > 5 {
+		return "increasing", slope
+	}
+
+	if relativeSlope < -5 {
+		return "decreasing", slope
+	}
+
+	// Check variability
+	return "fluctuating", slope
 }
 
 // Helper function to detect anomalies

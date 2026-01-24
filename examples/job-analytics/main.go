@@ -932,11 +932,13 @@ func analyzeTrend(dataPoints []TrendPoint) string {
 
 	if change > 10 {
 		return fmt.Sprintf("Increasing trend (+%.1f%%)", change)
-	} else if change < -10 {
-		return fmt.Sprintf("Decreasing trend (%.1f%%)", change)
-	} else {
-		return fmt.Sprintf("Stable (%.1f%% change)", change)
 	}
+
+	if change < -10 {
+		return fmt.Sprintf("Decreasing trend (%.1f%%)", change)
+	}
+
+	return fmt.Sprintf("Stable (%.1f%% change)", change)
 }
 
 func calculateOverallScore(analytics *JobAnalyticsData) float64 {
