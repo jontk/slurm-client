@@ -2,42 +2,41 @@ version: "2"
 linters:
   default: all
   disable:
-    - canonicalheader
-    - containedctx
-    - copyloopvar
-    - cyclop
+    - canonicalheader           # HTTP header canonicalization - not applicable to SLURM client
+    - containedctx              # Embedded context fields have legitimate use cases in our middleware
+    - copyloopvar               # Fixed in Go 1.22+ with improved loop variable scoping
+    - cyclop                    # Cyclomatic complexity too strict for domain-specific business logic
     - embeddedstructfieldcheck  # Embedded struct formatting is stylistic
-    - err113
-    - exhaustruct
-    - forbidigo
-    - funcorder                 # Function ordering is developer's choice
-    - funlen
-    - gochecknoglobals
-    - gochecknoinits
-    - gocognit
-    - godoclint                 # Doc comment style (v2.8+ only)
-    - godot
-    - godox
+    - err113                    # Inline fmt.Errorf is idiomatic Go pattern
+    - exhaustruct               # Allows zero-value fields for optional configuration
+    - forbidigo                 # No specific patterns need to be forbidden for this project
+    - funcorder                 # Function ordering is a developer's choice
+    - funlen                    # Some functions legitimately need greater length for clarity
+    - gochecknoglobals          # Limited global usage for test helpers and initialization is justified
+    - gochecknoinits            # Init functions have legitimate use cases in our architecture
+    - gocognit                  # Cognitive complexity too strict for API layer business logic
+    - godoclint                 # Doc comment style (v2.8+ only) - we prefer flexible documentation
+    - godot                     # Punctuation in comments is optional
+    - godox                     # TODO/FIXME comments are useful for development tracking
     - gosmopolitan              # I18n linter - not needed for this project
-    - interfacebloat
-    - intrange
-    - ireturn
-    - lll
-    - maintidx
-    - mnd
+    - interfacebloat            # Our manager interfaces intentionally provide comprehensive APIs
+    - intrange                  # Candidate for future enablement (P2)
+    - ireturn                   # Returning interfaces is intentional for flexibility and mocking
+    - lll                       # Long lines improve readability over unnecessary breaking
+    - maintidx                  # Maintainability index too strict for this domain
+    - mnd                       # Constants like 1024 are clear without always being named
     - modernize                 # Modernization suggestions (v2.8+ only) - not always appropriate
-    - nestif
+    - nestif                    # Nested if statements are sometimes clearer than alternatives
     - noinlineerr               # Inline error handling is idiomatic Go
-    - nlreturn
-    - nonamedreturns
-    - paralleltest
-    - revive
-    - tagliatelle
-    - testpackage
-    - tparallel
-    - unparam
-    - varnamelen
-    - wrapcheck
+    - nlreturn                  # Blank lines before returns are stylistic
+    - nonamedreturns            # Named returns improve clarity in appropriate contexts
+    - paralleltest              # Not all tests can run in parallel (e.g., integration tests)
+    - revive                    # Candidate for future enablement (P2)
+    - tagliatelle               # Struct tags follow SLURM API conventions which may differ
+    - testpackage               # Internal test packages used to access unexported functions
+    - tparallel                 # Over-aggressive for our test suite structure
+    - varnamelen                # Short, meaningful names like i, v, id are idiomatic Go
+    - wrapcheck                 # Error wrapping is good practice but linter is too strict
     - wsl                       # Whitespace linter (deprecated version)
     - wsl_v5                    # Whitespace linter (new version) - very opinionated
   settings:
@@ -152,6 +151,7 @@ linters:
           - staticcheck
           - testifylint
           - thelper
+          - unparam
         path: _test\.go
       - linters:
           - deadcode
@@ -230,6 +230,7 @@ linters:
           - perfsprint
           - prealloc
           - staticcheck
+          - unparam
           - unused
         path: ^examples/
       - linters:
@@ -240,6 +241,7 @@ linters:
           - gocritic
           - perfsprint
           - staticcheck
+          - unparam
           - unused
         path: ^cmd/
       - linters:
@@ -252,6 +254,7 @@ linters:
           - staticcheck
           - testifylint
           - thelper
+          - unparam
         path: ^benchmarks/
       - linters:
           - goconst
@@ -259,6 +262,7 @@ linters:
           - noctx
           - testifylint
           - thelper
+          - unparam
         path: ^tests/
       - linters:
           - exhaustive
@@ -322,6 +326,17 @@ linters:
           - staticcheck
         path: _test\.go
         text: do not pass a nil Context
+      - linters:
+          - unparam
+        path: ^internal/adapters/v0_0_4[0-4]/
+        # TODO: Fix 19 unparam issues in adapter converters
+        # Error returns that are always nil need to be removed from converter function signatures
+      - linters:
+          - unparam
+        path: ^internal/api/.*/.*_manager_impl\.go$
+        # TODO: Fix 100+ unparam issues across API layer manager converters
+        # Error returns that are always nil need to be removed from converter functions
+        # This affects converters in all versions (v0_0_40 through v0_0_44)
     paths:
       - .*\.pb\.go$
       - .*\.gen\.go$
