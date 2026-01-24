@@ -4,6 +4,7 @@
 package integration
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -76,7 +77,11 @@ func testBasicAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID string
 	// Test job utilization endpoint
 	t.Run("JobUtilization", func(t *testing.T) {
 		url := fmt.Sprintf("%s/slurm/%s/job/%s/utilization", baseURL, apiVersion, jobID)
-		resp, err := http.Get(url)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -89,20 +94,23 @@ func testBasicAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID string
 
 		// Verify response structure - mock server nests data under "utilization"
 		assert.Contains(t, utilization, "utilization")
-		utilizationData := utilization["utilization"].(map[string]interface{})
+		utilizationData, ok := utilization["utilization"].(map[string]interface{})
+	require.True(t, ok, "expected utilization data to be map[string]interface{}")
 
 		assert.Equal(t, jobID, utilizationData["job_id"])
 		assert.Contains(t, utilizationData, "cpu_utilization")
 		assert.Contains(t, utilizationData, "memory_utilization")
 
 		// Check CPU utilization structure
-		cpuUtil := utilizationData["cpu_utilization"].(map[string]interface{})
+		cpuUtil, ok := utilizationData["cpu_utilization"].(map[string]interface{})
+	require.True(t, ok, "expected cpu_utilization to be map[string]interface{}")
 		assert.Contains(t, cpuUtil, "allocated_cores")
 		assert.Contains(t, cpuUtil, "used_cores")
 		assert.Contains(t, cpuUtil, "utilization_percent")
 
 		// Check Memory utilization structure
-		memUtil := utilizationData["memory_utilization"].(map[string]interface{})
+		memUtil, ok := utilizationData["memory_utilization"].(map[string]interface{})
+	require.True(t, ok, "expected memory_utilization to be map[string]interface{}")
 		assert.Contains(t, memUtil, "allocated_bytes")
 		assert.Contains(t, memUtil, "used_bytes")
 		assert.Contains(t, memUtil, "utilization_percent")
@@ -113,7 +121,11 @@ func testBasicAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID string
 	// Test job efficiency endpoint
 	t.Run("JobEfficiency", func(t *testing.T) {
 		url := fmt.Sprintf("%s/slurm/%s/job/%s/efficiency", baseURL, apiVersion, jobID)
-		resp, err := http.Get(url)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -125,7 +137,8 @@ func testBasicAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID string
 
 		// Verify response structure - mock server nests data under "efficiency"
 		assert.Contains(t, efficiency, "efficiency")
-		efficiencyData := efficiency["efficiency"].(map[string]interface{})
+		efficiencyData, ok := efficiency["efficiency"].(map[string]interface{})
+	require.True(t, ok, "expected efficiency data to be map[string]interface{}")
 
 		assert.Equal(t, jobID, efficiencyData["job_id"])
 		assert.Contains(t, efficiencyData, "overall_efficiency_score")
@@ -140,7 +153,11 @@ func testBasicAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID string
 	// Test job performance endpoint
 	t.Run("JobPerformance", func(t *testing.T) {
 		url := fmt.Sprintf("%s/slurm/%s/job/%s/performance", baseURL, apiVersion, jobID)
-		resp, err := http.Get(url)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -152,7 +169,8 @@ func testBasicAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID string
 
 		// Verify response structure - mock server nests data under "performance"
 		assert.Contains(t, performance, "performance")
-		performanceData := performance["performance"].(map[string]interface{})
+		performanceData, ok := performance["performance"].(map[string]interface{})
+	require.True(t, ok, "expected performance data to be map[string]interface{}")
 
 		assert.Equal(t, jobID, performanceData["job_id"])
 		assert.Contains(t, performanceData, "cpu_analytics")
@@ -167,7 +185,11 @@ func testAdvancedAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID, st
 	// Test live metrics endpoint
 	t.Run("LiveMetrics", func(t *testing.T) {
 		url := fmt.Sprintf("%s/slurm/%s/job/%s/live_metrics", baseURL, apiVersion, jobID)
-		resp, err := http.Get(url)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -179,7 +201,8 @@ func testAdvancedAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID, st
 
 		// Verify response structure - mock server wraps data under "live_metrics"
 		assert.Contains(t, response, "live_metrics")
-		liveMetrics := response["live_metrics"].(map[string]interface{})
+		liveMetrics, ok := response["live_metrics"].(map[string]interface{})
+	require.True(t, ok, "expected live_metrics to be map[string]interface{}")
 
 		assert.Equal(t, jobID, liveMetrics["job_id"])
 		assert.Contains(t, liveMetrics, "timestamp")
@@ -192,7 +215,11 @@ func testAdvancedAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID, st
 	// Test resource trends endpoint
 	t.Run("ResourceTrends", func(t *testing.T) {
 		url := fmt.Sprintf("%s/slurm/%s/job/%s/resource_trends?time_window=1h&interval=5m", baseURL, apiVersion, jobID)
-		resp, err := http.Get(url)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -208,7 +235,8 @@ func testAdvancedAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID, st
 		assert.Contains(t, response, "analysis")
 
 		// Verify analysis contains trend information
-		analysis := response["analysis"].(map[string]interface{})
+		analysis, ok := response["analysis"].(map[string]interface{})
+	require.True(t, ok, "expected analysis to be map[string]interface{}")
 		assert.Contains(t, analysis, "cpu_trend")
 		assert.Contains(t, analysis, "memory_trend")
 
@@ -218,7 +246,11 @@ func testAdvancedAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID, st
 	// Test step utilization endpoint
 	t.Run("StepUtilization", func(t *testing.T) {
 		url := fmt.Sprintf("%s/slurm/%s/job/%s/step/%s/utilization", baseURL, apiVersion, jobID, stepID)
-		resp, err := http.Get(url)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -230,7 +262,8 @@ func testAdvancedAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID, st
 
 		// Verify response structure - mock server wraps data under "step_utilization"
 		assert.Contains(t, response, "step_utilization")
-		stepUtil := response["step_utilization"].(map[string]interface{})
+		stepUtil, ok := response["step_utilization"].(map[string]interface{})
+	require.True(t, ok, "expected step_utilization to be map[string]interface{}")
 
 		assert.Equal(t, jobID, stepUtil["job_id"])
 		assert.Equal(t, stepID, stepUtil["step_id"])
@@ -245,7 +278,11 @@ func testHistoricalAnalyticsEndpoints(t *testing.T, baseURL, apiVersion string) 
 	// Test performance history endpoint
 	t.Run("PerformanceHistory", func(t *testing.T) {
 		url := fmt.Sprintf("%s/slurm/%s/jobs/performance/history?job_id=1001&limit=10", baseURL, apiVersion)
-		resp, err := http.Get(url)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -257,7 +294,8 @@ func testHistoricalAnalyticsEndpoints(t *testing.T, baseURL, apiVersion string) 
 
 		// Verify response structure - mock server nests data under "performance_history"
 		assert.Contains(t, history, "performance_history")
-		historyData := history["performance_history"].(map[string]interface{})
+		historyData, ok := history["performance_history"].(map[string]interface{})
+	require.True(t, ok, "expected performance_history to be map[string]interface{}")
 		assert.Contains(t, historyData, "job_id")
 		assert.Contains(t, historyData, "start_time")
 		assert.Contains(t, historyData, "time_series_data")
@@ -268,7 +306,11 @@ func testHistoricalAnalyticsEndpoints(t *testing.T, baseURL, apiVersion string) 
 	// Test performance trends endpoint
 	t.Run("PerformanceTrends", func(t *testing.T) {
 		url := fmt.Sprintf("%s/slurm/%s/jobs/performance/trends?time_window=7d&partition=compute", baseURL, apiVersion)
-		resp, err := http.Get(url)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -280,7 +322,8 @@ func testHistoricalAnalyticsEndpoints(t *testing.T, baseURL, apiVersion string) 
 
 		// Verify response structure - mock server wraps data under "performance_trends"
 		assert.Contains(t, response, "performance_trends")
-		trends := response["performance_trends"].(map[string]interface{})
+		trends, ok := response["performance_trends"].(map[string]interface{})
+	require.True(t, ok, "expected performance_trends to be map[string]interface{}")
 
 		assert.Contains(t, trends, "cluster_performance")
 		assert.Contains(t, trends, "resource_trends")
@@ -292,7 +335,11 @@ func testHistoricalAnalyticsEndpoints(t *testing.T, baseURL, apiVersion string) 
 	// Test user efficiency trends endpoint
 	t.Run("UserEfficiencyTrends", func(t *testing.T) {
 		url := fmt.Sprintf("%s/slurm/%s/jobs/efficiency/trends?user_id=testuser&time_window=30d", baseURL, apiVersion)
-		resp, err := http.Get(url)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -304,7 +351,8 @@ func testHistoricalAnalyticsEndpoints(t *testing.T, baseURL, apiVersion string) 
 
 		// Verify response structure - mock server wraps data under "user_efficiency_trends"
 		assert.Contains(t, response, "user_efficiency_trends")
-		userTrends := response["user_efficiency_trends"].(map[string]interface{})
+		userTrends, ok := response["user_efficiency_trends"].(map[string]interface{})
+	require.True(t, ok, "expected user_efficiency_trends to be map[string]interface{}")
 
 		assert.Contains(t, userTrends, "user_id")
 		assert.Contains(t, userTrends, "efficiency_trends")
@@ -320,12 +368,21 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 		url := fmt.Sprintf("%s/slurm/%s/jobs/performance/compare", baseURL, apiVersion)
 		payload := `{"job_ids": ["1001", "1002"]}`
 
-		resp, err := http.Post(url, "application/json",
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url,
 			strings.NewReader(fmt.Sprintf(`{"job_ids": ["%s", "1002"]}`, jobID)))
+		if err != nil {
+			t.Fatalf("failed to create POST request: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			// Fallback to GET request if POST is not handled
 			getUrl := fmt.Sprintf("%s?job_ids=%s,1002", url, jobID)
-			resp, err = http.Get(getUrl)
+			getReq, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, getUrl, nil)
+			if reqErr != nil {
+				t.Fatalf("failed to create GET request: %v", reqErr)
+			}
+			resp, err = http.DefaultClient.Do(getReq)
 		}
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -338,7 +395,8 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 
 		// Verify response structure - mock server nests data under "performance_comparison"
 		assert.Contains(t, comparison, "performance_comparison")
-		comparisonData := comparison["performance_comparison"].(map[string]interface{})
+		comparisonData, ok := comparison["performance_comparison"].(map[string]interface{})
+	require.True(t, ok, "expected performance_comparison to be map[string]interface{}")
 		assert.Contains(t, comparisonData, "metrics")
 
 		t.Logf("Job performance comparison response received successfully, payload: %s", payload)
@@ -347,7 +405,11 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 	// Test similar jobs performance endpoint
 	t.Run("SimilarJobsPerformance", func(t *testing.T) {
 		url := fmt.Sprintf("%s/slurm/%s/jobs/performance/similar?reference_job_id=%s&criteria=cpus,memory&limit=5", baseURL, apiVersion, jobID)
-		resp, err := http.Get(url)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -359,7 +421,8 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 
 		// Verify response structure - mock server nests data under "similar_jobs_performance"
 		assert.Contains(t, similar, "similar_jobs_performance")
-		similarData := similar["similar_jobs_performance"].(map[string]interface{})
+		similarData, ok := similar["similar_jobs_performance"].(map[string]interface{})
+	require.True(t, ok, "expected similar_jobs_performance to be map[string]interface{}")
 		assert.Contains(t, similarData, "reference_job_id")
 		assert.Contains(t, similarData, "similar_jobs")
 
@@ -371,12 +434,21 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 		url := fmt.Sprintf("%s/slurm/%s/jobs/performance/analyze_batch", baseURL, apiVersion)
 		payload := fmt.Sprintf(`{"job_ids": ["%s", "1002"]}`, jobID)
 
-		resp, err := http.Post(url, "application/json",
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url,
 			strings.NewReader(fmt.Sprintf(`{"job_ids": ["%s", "1002"]}`, jobID)))
+		if err != nil {
+			t.Fatalf("failed to create POST request: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			// Fallback to GET request if POST is not handled
 			getUrl := fmt.Sprintf("%s?job_ids=%s,1002", url, jobID)
-			resp, err = http.Get(getUrl)
+			getReq, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, getUrl, nil)
+			if reqErr != nil {
+				t.Fatalf("failed to create GET request: %v", reqErr)
+			}
+			resp, err = http.DefaultClient.Do(getReq)
 		}
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -389,7 +461,8 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 
 		// Verify response structure - mock server nests data under "batch_analysis"
 		assert.Contains(t, batchAnalysis, "batch_analysis")
-		batchData := batchAnalysis["batch_analysis"].(map[string]interface{})
+		batchData, ok := batchAnalysis["batch_analysis"].(map[string]interface{})
+	require.True(t, ok, "expected batch_analysis to be map[string]interface{}")
 		assert.Contains(t, batchData, "job_analyses")
 		assert.Contains(t, batchData, "analysis_summary")
 
@@ -399,7 +472,11 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 	// Test workflow performance endpoint
 	t.Run("WorkflowPerformance", func(t *testing.T) {
 		url := fmt.Sprintf("%s/slurm/%s/jobs/workflow/performance?workflow_id=test-workflow-1&user_id=testuser", baseURL, apiVersion)
-		resp, err := http.Get(url)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -411,7 +488,8 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 
 		// Verify response structure - mock server nests data under "workflow_performance"
 		assert.Contains(t, workflow, "workflow_performance")
-		workflowData := workflow["workflow_performance"].(map[string]interface{})
+		workflowData, ok := workflow["workflow_performance"].(map[string]interface{})
+	require.True(t, ok, "expected workflow_performance to be map[string]interface{}")
 		assert.Contains(t, workflowData, "workflow_id")
 		assert.Contains(t, workflowData, "job_performance")
 		assert.Contains(t, workflowData, "performance_summary")
@@ -422,7 +500,11 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 	// Test efficiency report generation endpoint
 	t.Run("GenerateEfficiencyReport", func(t *testing.T) {
 		url := fmt.Sprintf("%s/slurm/%s/jobs/efficiency/report?user_id=testuser&time_window=7d&format=detailed", baseURL, apiVersion)
-		resp, err := http.Get(url)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -434,7 +516,8 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 
 		// Verify response structure - mock server nests data under "efficiency_report"
 		assert.Contains(t, report, "efficiency_report")
-		reportData := report["efficiency_report"].(map[string]interface{})
+		reportData, ok := report["efficiency_report"].(map[string]interface{})
+	require.True(t, ok, "expected efficiency_report to be map[string]interface{}")
 		assert.Contains(t, reportData, "report_metadata")
 		assert.Contains(t, reportData, "executive_summary")
 		assert.Contains(t, reportData, "detailed_metrics")
@@ -461,7 +544,11 @@ func TestJobAnalyticsErrorHandling(t *testing.T) {
 
 		for _, endpoint := range endpoints {
 			url := baseURL + endpoint
-			resp, err := http.Get(url)
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 			require.NoError(t, err)
 			defer resp.Body.Close()
 
@@ -488,7 +575,11 @@ func TestJobAnalyticsErrorHandling(t *testing.T) {
 		// Test an endpoint that might not be supported in v0.0.40
 		if !oldMockServer.GetConfig().SupportedOperations["jobs.live_metrics"] {
 			url := oldBaseURL + "/slurm/v0.0.40/job/1001/live_metrics"
-			resp, err := http.Get(url)
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 			require.NoError(t, err)
 			defer resp.Body.Close()
 
@@ -521,7 +612,11 @@ func TestJobAnalyticsPerformance(t *testing.T) {
 		for _, endpoint := range endpoints {
 			start := time.Now()
 			url := baseURL + endpoint
-			resp, err := http.Get(url)
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 			responseTime := time.Since(start)
 
 			require.NoError(t, err)
@@ -546,8 +641,13 @@ func TestJobAnalyticsPerformance(t *testing.T) {
 		for i := range numRequests {
 			go func(requestID int) {
 				url := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/utilization", baseURL, jobID)
-				resp, err := http.Get(url)
-
+				req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+				assert.NoError(t, err)
+				if err != nil {
+					done <- false
+					return
+				}
+				resp, err := http.DefaultClient.Do(req)
 				assert.NoError(t, err)
 				if resp != nil {
 					assert.Equal(t, http.StatusOK, resp.StatusCode)

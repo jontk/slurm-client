@@ -6,6 +6,7 @@ package base
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 
@@ -212,7 +213,11 @@ func TestCRUDManager_BatchOperation(t *testing.T) {
 		operation := func(ctx context.Context, item interface{}) error {
 			mu.Lock()
 			defer mu.Unlock()
-			processedItems = append(processedItems, item.(string))
+			str, ok := item.(string)
+			if !ok {
+				return fmt.Errorf("expected string, got %T", item)
+			}
+			processedItems = append(processedItems, str)
 			return nil
 		}
 
@@ -227,7 +232,11 @@ func TestCRUDManager_BatchOperation(t *testing.T) {
 		items := []interface{}{"item1", "item2", "item3", "item4"}
 
 		operation := func(ctx context.Context, item interface{}) error {
-			if item.(string) == "item2" || item.(string) == "item4" {
+			str, ok := item.(string)
+			if !ok {
+				return fmt.Errorf("expected string, got %T", item)
+			}
+			if str == "item2" || str == "item4" {
 				return errors.New("processing failed")
 			}
 			return nil
@@ -244,7 +253,11 @@ func TestCRUDManager_BatchOperation(t *testing.T) {
 		items := []interface{}{"item1", "item2", "item3", "item4"}
 
 		operation := func(ctx context.Context, item interface{}) error {
-			if item.(string) == "item2" {
+			str, ok := item.(string)
+			if !ok {
+				return fmt.Errorf("expected string, got %T", item)
+			}
+			if str == "item2" {
 				return errors.New("processing failed")
 			}
 			return nil

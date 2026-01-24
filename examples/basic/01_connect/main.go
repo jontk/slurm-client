@@ -114,7 +114,7 @@ func advancedExample(ctx context.Context) {
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
 					MinVersion: tls.VersionTLS12,
-					// Only for development/testing
+					// #nosec G402 - codeql[go/insecure-default-tls]: Only for development/testing examples
 					InsecureSkipVerify: true,
 				},
 			},

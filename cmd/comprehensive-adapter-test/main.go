@@ -143,7 +143,7 @@ func testJobEndpoints(client interfaces.SlurmClient, version string) {
 	if err == nil && submitResp != nil {
 		jobID = submitResp.JobID
 	}
-	recordResult(version, "Jobs", "Submit", err, fmt.Sprintf("Submitted job ID: %s", jobID))
+	recordResult(version, "Jobs", "Submit", err, "Submitted job ID: "+jobID)
 
 	// Test Get Job
 	if jobID != "" {
@@ -201,7 +201,7 @@ func testNodeEndpoints(client interfaces.SlurmClient, version string) {
 	if nodes != nil && len(nodes.Nodes) > 0 && nodes.Nodes[0].Name != "" {
 		fmt.Println("Testing: Get Node")
 		node, err := client.Nodes().Get(ctx, nodes.Nodes[0].Name)
-		recordResult(version, "Nodes", "Get", err, fmt.Sprintf("Retrieved node: %s", nodes.Nodes[0].Name))
+		recordResult(version, "Nodes", "Get", err, "Retrieved node: "+nodes.Nodes[0].Name)
 
 		// Test Update Node
 		fmt.Println("Testing: Update Node")
@@ -246,7 +246,7 @@ func testPartitionEndpoints(client interfaces.SlurmClient, version string) {
 	if partitions != nil && len(partitions.Partitions) > 0 && partitions.Partitions[0].Name != "" {
 		fmt.Println("Testing: Get Partition")
 		partition, err := client.Partitions().Get(ctx, partitions.Partitions[0].Name)
-		recordResult(version, "Partitions", "Get", err, fmt.Sprintf("Retrieved partition: %s", partitions.Partitions[0].Name))
+		recordResult(version, "Partitions", "Get", err, "Retrieved partition: "+partitions.Partitions[0].Name)
 
 		// Test Update Partition
 		fmt.Println("Testing: Update Partition")
@@ -284,7 +284,7 @@ func testAccountEndpoints(client interfaces.SlurmClient, version string) {
 		Description: "Test account for adapter testing",
 	}
 	createResp, err := client.Accounts().Create(ctx, createReq)
-	recordResult(version, "Accounts", "Create", err, fmt.Sprintf("Created account: %s", createReq.Name))
+	recordResult(version, "Accounts", "Create", err, "Created account: "+createReq.Name)
 
 	// Test Get Account
 	if err == nil && createResp != nil {
@@ -327,7 +327,7 @@ func testUserEndpoints(client interfaces.SlurmClient, version string) {
 	if users != nil && len(users.Users) > 0 && users.Users[0].Name != "" {
 		fmt.Println("Testing: Get User")
 		user, err := client.Users().Get(ctx, users.Users[0].Name)
-		recordResult(version, "Users", "Get", err, fmt.Sprintf("Retrieved user: %s", users.Users[0].Name))
+		recordResult(version, "Users", "Get", err, "Retrieved user: "+users.Users[0].Name)
 		_ = user
 	}
 
@@ -355,7 +355,7 @@ func testQoSEndpoints(client interfaces.SlurmClient, version string) {
 	if qosList != nil && len(qosList.QoS) > 0 && qosList.QoS[0].Name != "" {
 		fmt.Println("Testing: Get QoS")
 		qos, err := client.QoS().Get(ctx, qosList.QoS[0].Name)
-		recordResult(version, "QoS", "Get", err, fmt.Sprintf("Retrieved QoS: %s", qosList.QoS[0].Name))
+		recordResult(version, "QoS", "Get", err, "Retrieved QoS: "+qosList.QoS[0].Name)
 		_ = qos
 	}
 
@@ -367,7 +367,7 @@ func testQoSEndpoints(client interfaces.SlurmClient, version string) {
 		Priority:    10,
 	}
 	createResp, err := client.QoS().Create(ctx, createReq)
-	recordResult(version, "QoS", "Create", err, fmt.Sprintf("Created QoS: %s", createReq.Name))
+	recordResult(version, "QoS", "Create", err, "Created QoS: "+createReq.Name)
 
 	// Test Update and Delete if created
 	if err == nil && createResp != nil {
@@ -415,7 +415,7 @@ func testReservationEndpoints(client interfaces.SlurmClient, version string) {
 		Users:     []string{"root"},
 	}
 	createResp, err := client.Reservations().Create(ctx, createReq)
-	recordResult(version, "Reservations", "Create", err, fmt.Sprintf("Created reservation: %s", createReq.Name))
+	recordResult(version, "Reservations", "Create", err, "Created reservation: "+createReq.Name)
 
 	// Test Get, Update and Delete if created
 	if err == nil && createResp != nil {

@@ -64,6 +64,12 @@ func main() {
 	}
 
 	// Start watching for job events
+	if err := watchJobs(ctx, jobManager, watchOpts); err != nil {
+		log.Fatalf("Failed to watch jobs: %v", err)
+	}
+}
+
+func watchJobs(ctx context.Context, jobManager interfaces.JobManager, watchOpts *interfaces.WatchJobsOptions) error {
 	fmt.Println("Starting to watch for job events...")
 	fmt.Println("Press Ctrl+C to stop")
 
@@ -72,7 +78,7 @@ func main() {
 
 	eventChan, err := jobManager.Watch(watchCtx, watchOpts)
 	if err != nil {
-		log.Fatalf("Failed to start watching jobs: %v", err)
+		return err
 	}
 
 	// Handle interrupt signal
@@ -85,7 +91,7 @@ func main() {
 		case event, ok := <-eventChan:
 			if !ok {
 				fmt.Println("Event channel closed")
-				return
+				return nil
 			}
 
 			// Handle different event types
@@ -131,7 +137,7 @@ func main() {
 			cancelWatch()
 			// Give a moment for cleanup
 			time.Sleep(100 * time.Millisecond)
-			return
+			return nil
 		}
 	}
 }

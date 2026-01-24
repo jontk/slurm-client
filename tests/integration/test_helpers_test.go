@@ -315,7 +315,7 @@ func fetchJWTTokenViaSSH() (string, error) {
 	// Command to get JWT token
 	// #nosec G204 -- This is test infrastructure code; SSH host/user are from controlled test environment variables
 	sshTarget := sshUser + "@" + sshHost // #nosec G204
-	cmd := exec.Command("ssh",
+	cmd := exec.CommandContext(context.Background(), "ssh",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
 		sshTarget,

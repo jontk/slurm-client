@@ -4,6 +4,7 @@
 package mocks
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -23,7 +24,11 @@ func TestVersionedHandlers_V0040(t *testing.T) {
 	defer server.Close()
 
 	// Test jobs list endpoint
-	resp, err := http.Get(server.URL() + "/slurm/v0.0.40/jobs")
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, server.URL()+"/slurm/v0.0.40/jobs", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to get jobs: %v", err)
 	}
@@ -60,7 +65,11 @@ func TestVersionedHandlers_V0042(t *testing.T) {
 	defer server.Close()
 
 	// Test jobs list endpoint
-	resp, err := http.Get(server.URL() + "/slurm/v0.0.42/jobs")
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, server.URL()+"/slurm/v0.0.42/jobs", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to get jobs: %v", err)
 	}
@@ -97,7 +106,11 @@ func TestVersionedHandlers_V0043(t *testing.T) {
 	defer server.Close()
 
 	// Test jobs list endpoint
-	resp, err := http.Get(server.URL() + "/slurm/v0.0.43/jobs")
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, server.URL()+"/slurm/v0.0.43/jobs", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to get jobs: %v", err)
 	}
@@ -134,7 +147,11 @@ func TestVersionedHandlers_V0044(t *testing.T) {
 	defer server.Close()
 
 	// Test jobs list endpoint
-	resp, err := http.Get(server.URL() + "/slurm/v0.0.44/jobs")
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, server.URL()+"/slurm/v0.0.44/jobs", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to get jobs: %v", err)
 	}
@@ -183,7 +200,11 @@ func TestVersionedHandlers_JobGet(t *testing.T) {
 			defer server.Close()
 
 			// Get specific job
-			resp, err := http.Get(server.URL() + "/slurm/" + v.version + "/job/1001")
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, server.URL()+"/slurm/"+v.version+"/job/1001", nil)
+			if err != nil {
+				t.Fatalf("Failed to create request: %v", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
 				t.Fatalf("Failed to get job: %v", err)
 			}

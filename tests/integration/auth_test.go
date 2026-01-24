@@ -275,11 +275,12 @@ func TestAuthenticationHeaders(t *testing.T) {
 			t.Log(tc.description)
 
 			// Create a mock HTTP request to test header setting
-			req, err := http.NewRequest(http.MethodGet, "http://example.com", http.NoBody)
+			ctx := context.Background()
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://example.com", http.NoBody)
 			require.NoError(t, err)
 
 			// Apply authentication
-			err = tc.authProvider.Authenticate(context.Background(), req)
+			err = tc.authProvider.Authenticate(ctx, req)
 			require.NoError(t, err)
 
 			// Check the appropriate header based on auth type

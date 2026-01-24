@@ -298,7 +298,8 @@ func TestWrapContextError(t *testing.T) {
 		wrappedErr := WrapContextError(context.DeadlineExceeded, operation, timeout)
 
 		require.IsType(t, &ContextError{}, wrappedErr)
-		contextErr := wrappedErr.(*ContextError)
+		contextErr, ok := wrappedErr.(*ContextError)
+		require.True(t, ok, "expected *ContextError type")
 		assert.Equal(t, operation, contextErr.Operation)
 		assert.Equal(t, timeout, contextErr.Timeout)
 		assert.Equal(t, context.DeadlineExceeded, contextErr.Err)

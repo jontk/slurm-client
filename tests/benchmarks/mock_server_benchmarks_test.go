@@ -4,6 +4,7 @@
 package benchmarks
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -26,7 +27,11 @@ func BenchmarkMockServerAnalyticsOverhead(b *testing.B) {
 		endpoint := fmt.Sprintf("%s/slurm/v0.0.42/job/%s", baseURL, jobID)
 		b.ResetTimer()
 		for range b.N {
-			resp, err := http.Get(endpoint)
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, endpoint, nil)
+			if err != nil {
+				b.Fatal(err)
+			}
+			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -47,7 +52,11 @@ func BenchmarkMockServerAnalyticsOverhead(b *testing.B) {
 		b.Run(name, func(b *testing.B) {
 			b.ResetTimer()
 			for range b.N {
-				resp, err := http.Get(endpoint)
+				req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, endpoint, nil)
+				if err != nil {
+					b.Fatal(err)
+				}
+				resp, err := http.DefaultClient.Do(req)
 				if err != nil {
 					b.Fatal(err)
 				}
@@ -76,7 +85,11 @@ func BenchmarkMockServerAnalyticsMemoryUsage(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
 			for range b.N {
-				resp, err := http.Get(endpoint)
+				req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, endpoint, nil)
+				if err != nil {
+					b.Fatal(err)
+				}
+				resp, err := http.DefaultClient.Do(req)
 				if err != nil {
 					b.Fatal(err)
 				}
@@ -108,7 +121,11 @@ func BenchmarkAnalyticsConcurrency(b *testing.B) {
 
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					resp, err := http.Get(endpoint)
+					req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, endpoint, nil)
+					if err != nil {
+						b.Fatal(err)
+					}
+					resp, err := http.DefaultClient.Do(req)
 					if err != nil {
 						b.Fatal(err)
 					}
@@ -134,7 +151,11 @@ func BenchmarkMockServerAnalyticsVersionComparison(b *testing.B) {
 
 			b.ResetTimer()
 			for range b.N {
-				resp, err := http.Get(endpoint)
+				req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, endpoint, nil)
+				if err != nil {
+					b.Fatal(err)
+				}
+				resp, err := http.DefaultClient.Do(req)
 				if err != nil {
 					b.Fatal(err)
 				}
@@ -161,9 +182,13 @@ func BenchmarkMockServerAnalyticsLatencyDistribution(b *testing.B) {
 	b.ResetTimer()
 	for i := range b.N {
 		start := time.Now()
-		resp, err := http.Get(endpoint)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, endpoint, nil)
 		latencies[i] = time.Since(start)
 
+		if err != nil {
+			b.Fatal(err)
+		}
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -197,7 +222,11 @@ func TestMockServerAnalyticsOverheadCompliance(t *testing.T) {
 	// Measure baseline performance (basic job endpoint)
 	baselineEndpoint := fmt.Sprintf("%s/slurm/v0.0.42/job/%s", baseURL, jobID)
 	baselineTime := measureOperationTime(t, func() error {
-		resp, err := http.Get(baselineEndpoint)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, baselineEndpoint, nil)
+		if err != nil {
+			return err
+		}
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			return err
 		}
@@ -217,7 +246,11 @@ func TestMockServerAnalyticsOverheadCompliance(t *testing.T) {
 	for opName, endpoint := range analyticsOperations {
 		t.Run("Overhead_"+opName, func(t *testing.T) {
 			analyticsTime := measureOperationTime(t, func() error {
-				resp, err := http.Get(endpoint)
+				req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, endpoint, nil)
+				if err != nil {
+					return err
+				}
+				resp, err := http.DefaultClient.Do(req)
 				if err != nil {
 					return err
 				}
@@ -252,7 +285,11 @@ func TestMockServerAnalyticsOverheadCompliance(t *testing.T) {
 	t.Run("Combined_Analytics_Overhead", func(t *testing.T) {
 		combinedAnalyticsTime := measureOperationTime(t, func() error {
 			for _, endpoint := range analyticsOperations {
-				resp, err := http.Get(endpoint)
+				req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, endpoint, nil)
+				if err != nil {
+					return err
+				}
+				resp, err := http.DefaultClient.Do(req)
 				if err != nil {
 					return err
 				}
@@ -316,7 +353,12 @@ func TestAnalyticsScalabilityRequirements(t *testing.T) {
 			failed := 0
 
 			for range tc.requestCount {
-				resp, err := http.Get(endpoint)
+				req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, endpoint, nil)
+				if err != nil {
+					failed++
+					continue
+				}
+				resp, err := http.DefaultClient.Do(req)
 				if err != nil {
 					failed++
 					continue
@@ -394,7 +436,11 @@ func TestAnalyticsResourceUsage(t *testing.T) {
 			// Measure resource usage
 			start := time.Now()
 			for range iterations {
-				resp, err := http.Get(endpoint)
+				req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, endpoint, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				resp, err := http.DefaultClient.Do(req)
 				if err != nil {
 					t.Fatal(err)
 				}

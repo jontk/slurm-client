@@ -40,7 +40,7 @@ func main() {
 
 	// Create version-specific client
 	apiClient, err := apiV0043.NewClientWithResponses(
-		fmt.Sprintf("http://%s", host),
+		"http://"+host,
 		apiV0043.WithHTTPClient(httpClient),
 	)
 	if err != nil {
@@ -324,7 +324,7 @@ func cloneAndModifyQoS(ctx context.Context, adapter common.VersionAdapter) error
 
 		// Update the name
 		newBuilder := builders.NewQoSBuilder(variant.name).
-			WithDescription(fmt.Sprintf("GPU QoS variant: %s", variant.name)).
+			WithDescription("GPU QoS variant: "+variant.name).
 			WithPriority(builtQoS.Priority). // Preserve modified priority
 			WithFlags(builtQoS.Flags...)     // Preserve all flags
 

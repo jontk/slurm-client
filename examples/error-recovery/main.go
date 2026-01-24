@@ -4,6 +4,7 @@
 package main
 
 import (
+	stderrors "errors"
 	"context"
 	"fmt"
 	"log"
@@ -39,7 +40,7 @@ func main() {
 
 	// Example 3: Circuit breaker pattern
 	fmt.Println("\n=== Circuit Breaker Pattern ===")
-	demonstrateCircuitBreaker(ctx, cfg, authProvider)
+	demonstrateCircuitBreaker()
 
 	// Example 4: Graceful degradation
 	fmt.Println("\n=== Graceful Degradation ===")
@@ -84,7 +85,8 @@ func demonstrateStructuredErrorHandling(ctx context.Context, cfg *config.Config,
 // handleJobSubmissionError demonstrates comprehensive error handling
 func handleJobSubmissionError(err error, job *interfaces.JobSubmission) {
 	// Check if it's a SLURM error
-	if slurmErr, ok := err.(*errors.SlurmError); ok {
+	var slurmErr *errors.SlurmError
+	if stderrors.As(err, &slurmErr) {
 		fmt.Printf("SLURM Error Details:\n")
 		fmt.Printf("  Code: %s\n", slurmErr.Code)
 		fmt.Printf("  Category: %s\n", slurmErr.Category)
@@ -139,6 +141,8 @@ func handleJobSubmissionError(err error, job *interfaces.JobSubmission) {
 			fmt.Println("\nServer-side error - may be temporary")
 		case errors.CategoryNetwork:
 			fmt.Println("\nNetwork error - check connectivity")
+		default:
+			fmt.Printf("\nOther error category: %s\n", slurmErr.Category)
 		}
 
 		return
@@ -220,7 +224,8 @@ func demonstrateRetryStrategies(ctx context.Context, cfg *config.Config, auth au
 		maxRetries: 3,
 		shouldRetry: func(err error, attempt int) bool {
 			// Only retry specific errors
-			if slurmErr, ok := err.(*errors.SlurmError); ok {
+			var slurmErr *errors.SlurmError
+			if stderrors.As(err, &slurmErr) {
 				// Retry server errors and rate limits
 				if slurmErr.Category == errors.CategoryServer ||
 					slurmErr.Code == errors.ErrorCodeRateLimited {
@@ -248,7 +253,7 @@ func demonstrateRetryStrategies(ctx context.Context, cfg *config.Config, auth au
 }
 
 // demonstrateCircuitBreaker shows circuit breaker pattern
-func demonstrateCircuitBreaker(ctx context.Context, cfg *config.Config, auth auth.Provider) {
+func demonstrateCircuitBreaker() {
 	// Create circuit breaker
 	breaker := &circuitBreaker{
 		failureThreshold: 3,
@@ -288,7 +293,7 @@ func demonstrateCircuitBreaker(ctx context.Context, cfg *config.Config, auth aut
 	fmt.Println("\nWaiting for circuit recovery...")
 	time.Sleep(2 * time.Second)
 
-	if breaker.state == "half-open" {
+	if breaker.state == circuitStateHalfOpen {
 		fmt.Println("Circuit is HALF-OPEN - testing with single request")
 		err := simulateOperation(false) // Success
 		if err == nil {
@@ -404,15 +409,16 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 		}
 
 		// Analyze error and adapt
-		if slurmErr, ok := err.(*errors.SlurmError); ok {
+		var slurmErr *errors.SlurmError
+		if stderrors.As(err, &slurmErr) {
 			fmt.Printf("  Failed: %s - %s\n", slurmErr.Code, slurmErr.Message)
 
 			// Adapt based on error
 			switch slurmErr.Code {
 			case errors.ErrorCodeResourceExhausted:
 				// Reduce requirements
-				job.CPUs = job.CPUs / 2
-				job.Memory = job.Memory / 2
+				job.CPUs /= 2
+				job.Memory /= 2
 				fmt.Printf("  Adapting: Reduced to CPUs=%d, Memory=%dGB\n",
 					job.CPUs, job.Memory/(1024*1024))
 
@@ -449,12 +455,8 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 		fmt.Println("\nAll attempts failed - initiating fallback workflow")
 
 		// Fallback: Submit to local queue for later processing
-		err := submitToLocalQueue(job)
-		if err != nil {
-			log.Printf("Local queue submission failed: %v", err)
-		} else {
-			fmt.Println("Job queued locally for later submission")
-		}
+		submitToLocalQueue(job)
+		fmt.Println("Job queued locally for later submission")
 		return
 	}
 
@@ -499,6 +501,12 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 
 // Helper types and functions
 
+const (
+	circuitStateClosed   = "closed"
+	circuitStateOpen     = "open"
+	circuitStateHalfOpen = "half-open"
+)
+
 type customRetryPolicy struct {
 	maxRetries  int
 	shouldRetry func(error, int) bool
@@ -531,7 +539,7 @@ func (cb *circuitBreaker) isOpen() bool {
 	if cb.state == "open" {
 		// Check if recovery timeout has passed
 		if time.Since(cb.lastFailureTime) > cb.recoveryTimeout {
-			cb.state = "half-open"
+			cb.state = circuitStateHalfOpen
 			cb.failures = 0
 			return false
 		}
@@ -550,7 +558,7 @@ func (cb *circuitBreaker) recordFailure() {
 }
 
 func (cb *circuitBreaker) recordSuccess() {
-	if cb.state == "half-open" {
+	if cb.state == circuitStateHalfOpen {
 		cb.state = "closed"
 	}
 	cb.failures = 0
@@ -593,10 +601,9 @@ func simulateOperation(shouldFail bool) error {
 	return nil
 }
 
-func submitToLocalQueue(job *interfaces.JobSubmission) error {
+func submitToLocalQueue(job *interfaces.JobSubmission) {
 	// Simulate local queue submission
 	fmt.Printf("Queuing job '%s' locally\n", job.Name)
-	return nil
 }
 
 func shouldResubmit(exitCode int) bool {

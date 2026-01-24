@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -15,7 +16,7 @@ import (
 	"github.com/jontk/slurm-client/internal/factory"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
-	"github.com/jontk/slurm-client/pkg/errors"
+	pkgerrors "github.com/jontk/slurm-client/pkg/errors"
 )
 
 func main() {
@@ -242,8 +243,11 @@ func analyzeError(err error) {
 	fmt.Printf("  Error Type: %T\n", err)
 	fmt.Printf("  Error String: %v\n", err)
 
-	// Check if it's a SLURM error
-	if slurmErr, ok := err.(*errors.SlurmError); ok {
+	// Check if it's a SLURM error using errors.As
+	var slurmErr *pkgerrors.SlurmError
+	var apiErr *pkgerrors.SlurmAPIError
+
+	if errors.As(err, &slurmErr) {
 		fmt.Printf("\n✅ Enhanced SLURM Error Details:\n")
 		fmt.Printf("  Code: %s\n", slurmErr.Code)
 		fmt.Printf("  Category: %s\n", slurmErr.Category)
@@ -259,7 +263,7 @@ func analyzeError(err error) {
 		}
 		fmt.Printf("  Retryable: %v\n", slurmErr.Retryable)
 		fmt.Printf("  Timestamp: %s\n", slurmErr.Timestamp.Format(time.RFC3339))
-	} else if apiErr, ok := err.(*errors.SlurmAPIError); ok {
+	} else if errors.As(err, &apiErr) {
 		fmt.Printf("\n✅ Enhanced SLURM API Error Details:\n")
 		fmt.Printf("  Code: %s\n", apiErr.Code)
 		fmt.Printf("  Category: %s\n", apiErr.Category)

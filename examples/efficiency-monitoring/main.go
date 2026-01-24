@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -271,7 +272,7 @@ func NewEfficiencyMonitor() *EfficiencyMonitor {
 }
 
 // StartMonitoring initializes the mock server and begins monitoring
-func (em *EfficiencyMonitor) StartMonitoring() error {
+func (em *EfficiencyMonitor) StartMonitoring() {
 	fmt.Println("🔄 Starting SLURM Efficiency Monitoring System...")
 
 	// Start mock SLURM server
@@ -279,7 +280,6 @@ func (em *EfficiencyMonitor) StartMonitoring() error {
 	em.baseURL = em.mockServer.URL()
 
 	fmt.Printf("✅ Mock SLURM server started at: %s\n", em.baseURL)
-	return nil
 }
 
 // StopMonitoring shuts down the monitoring system
@@ -330,7 +330,12 @@ func (em *EfficiencyMonitor) CollectJobEfficiencyData(jobID string) (*JobEfficie
 
 // fetchAndParseJSON performs HTTP request and JSON parsing
 func (em *EfficiencyMonitor) fetchAndParseJSON(url string, target interface{}) error {
-	resp, err := em.httpClient.Get(url)
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return err
+	}
+	resp, err := em.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -544,7 +549,7 @@ func (em *EfficiencyMonitor) generateOptimizationOpportunities(data *JobEfficien
 }
 
 // GenerateEfficiencyReport creates comprehensive efficiency report
-func (em *EfficiencyMonitor) GenerateEfficiencyReport(jobIDs []string) (*EfficiencyReport, error) {
+func (em *EfficiencyMonitor) GenerateEfficiencyReport(jobIDs []string) *EfficiencyReport {
 	fmt.Printf("📈 Generating efficiency report for %d jobs...\n", len(jobIDs))
 
 	report := &EfficiencyReport{
@@ -628,7 +633,7 @@ func (em *EfficiencyMonitor) GenerateEfficiencyReport(jobIDs []string) (*Efficie
 	report.TrendAnalysis = em.generateTrendAnalysis(report)
 
 	fmt.Printf("✅ Efficiency report generated successfully\n")
-	return report, nil
+	return report
 }
 
 // calculatePotentialSavings estimates system-wide savings potential
@@ -674,7 +679,7 @@ func (em *EfficiencyMonitor) identifyTopSystemIssues(jobAnalyses []JobEfficiency
 		issue string
 		count int
 	}
-	var issues []issueCount
+	issues := make([]issueCount, 0, len(issueFrequency))
 	for issue, count := range issueFrequency {
 		issues = append(issues, issueCount{issue, count})
 	}
@@ -914,7 +919,7 @@ func (em *EfficiencyMonitor) ExportReportToJSON(report *EfficiencyReport, filena
 		return fmt.Errorf("failed to marshal report: %w", err)
 	}
 
-	if err := os.WriteFile(filename, data, 0644); err != nil {
+	if err := os.WriteFile(filename, data, 0600); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 
@@ -930,19 +935,14 @@ func main() {
 	monitor := NewEfficiencyMonitor()
 
 	// Start monitoring
-	if err := monitor.StartMonitoring(); err != nil {
-		log.Fatalf("Failed to start monitoring: %v", err)
-	}
+	monitor.StartMonitoring()
 	defer monitor.StopMonitoring()
 
 	// Sample job IDs for demonstration
 	jobIDs := []string{"1001", "1002", "1003", "1004", "1005"}
 
 	// Generate comprehensive efficiency report
-	report, err := monitor.GenerateEfficiencyReport(jobIDs)
-	if err != nil {
-		log.Fatalf("Failed to generate efficiency report: %v", err)
-	}
+	report := monitor.GenerateEfficiencyReport(jobIDs)
 
 	// Print the efficiency report
 	monitor.PrintEfficiencyReport(report)

@@ -435,7 +435,7 @@ func demonstratePerformanceProfiling(ctx context.Context, cfg *config.Config, au
 		}
 
 		// Run benchmark
-		metrics := runBenchmark(ctx, client, p.name)
+		metrics := runBenchmark(ctx, client)
 
 		// Display metrics
 		fmt.Printf("  Requests: %d\n", metrics.requests)
@@ -480,7 +480,7 @@ type metrics struct {
 	errors            int
 }
 
-func runBenchmark(ctx context.Context, client slurm.SlurmClient, profileName string) metrics {
+func runBenchmark(ctx context.Context, client slurm.SlurmClient) metrics {
 	numRequests := 50
 	latencies := make([]time.Duration, 0, numRequests)
 	errors := 0

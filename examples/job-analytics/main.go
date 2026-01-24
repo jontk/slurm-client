@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -166,6 +167,27 @@ type TrendPoint struct {
 	Value     float64 `json:"value"`
 }
 
+// Helper functions for safe type assertions
+func getFloat64(data map[string]interface{}, key string) (float64, bool) {
+	v, ok := data[key].(float64)
+	return v, ok
+}
+
+func getString(data map[string]interface{}, key string) (string, bool) {
+	v, ok := data[key].(string)
+	return v, ok
+}
+
+func getMap(data map[string]interface{}, key string) (map[string]interface{}, bool) {
+	v, ok := data[key].(map[string]interface{})
+	return v, ok
+}
+
+func getSlice(data map[string]interface{}, key string) ([]interface{}, bool) {
+	v, ok := data[key].([]interface{})
+	return v, ok
+}
+
 // AnalyticsCollector collects and analyzes job analytics data
 type AnalyticsCollector struct {
 	baseURL    string
@@ -183,7 +205,7 @@ func NewAnalyticsCollector(baseURL string) *AnalyticsCollector {
 }
 
 // CollectJobAnalytics collects comprehensive analytics data for a job
-func (ac *AnalyticsCollector) CollectJobAnalytics(ctx context.Context, jobID string) (*JobAnalyticsData, error) {
+func (ac *AnalyticsCollector) CollectJobAnalytics(ctx context.Context, jobID string) *JobAnalyticsData {
 	analytics := &JobAnalyticsData{
 		JobID: jobID,
 	}
@@ -228,12 +250,16 @@ func (ac *AnalyticsCollector) CollectJobAnalytics(ctx context.Context, jobID str
 		analytics.Trends = trends
 	}
 
-	return analytics, nil
+	return analytics
 }
 
 func (ac *AnalyticsCollector) getJobUtilization(ctx context.Context, jobID string) (*UtilizationData, error) {
 	url := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/utilization", ac.baseURL, jobID)
-	resp, err := ac.httpClient.Get(url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := ac.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -257,35 +283,61 @@ func (ac *AnalyticsCollector) getJobUtilization(ctx context.Context, jobID strin
 	utilization := &UtilizationData{}
 
 	if cpuData, ok := utilizationMap["cpu_utilization"].(map[string]interface{}); ok {
-		utilization.CPU = CPUUtilization{
-			AllocatedCores:     int(cpuData["allocated_cores"].(float64)),
-			UsedCores:          cpuData["used_cores"].(float64),
-			UtilizationPercent: cpuData["utilization_percent"].(float64),
-			EfficiencyPercent:  cpuData["efficiency_percent"].(float64),
+		if allocCores, ok := cpuData["allocated_cores"].(float64); ok {
+			if usedCores, ok := cpuData["used_cores"].(float64); ok {
+				if utilPct, ok := cpuData["utilization_percent"].(float64); ok {
+					if effPct, ok := cpuData["efficiency_percent"].(float64); ok {
+						utilization.CPU = CPUUtilization{
+							AllocatedCores:     int(allocCores),
+							UsedCores:          usedCores,
+							UtilizationPercent: utilPct,
+							EfficiencyPercent:  effPct,
+						}
+					}
+				}
+			}
 		}
 	}
 
 	if memData, ok := utilizationMap["memory_utilization"].(map[string]interface{}); ok {
-		utilization.Memory = MemoryUtilization{
-			AllocatedBytes:     int64(memData["allocated_bytes"].(float64)),
-			UsedBytes:          int64(memData["used_bytes"].(float64)),
-			UtilizationPercent: memData["utilization_percent"].(float64),
-			EfficiencyPercent:  memData["efficiency_percent"].(float64),
+		if allocBytes, ok := memData["allocated_bytes"].(float64); ok {
+			if usedBytes, ok := memData["used_bytes"].(float64); ok {
+				if utilPct, ok := memData["utilization_percent"].(float64); ok {
+					if effPct, ok := memData["efficiency_percent"].(float64); ok {
+						utilization.Memory = MemoryUtilization{
+							AllocatedBytes:     int64(allocBytes),
+							UsedBytes:          int64(usedBytes),
+							UtilizationPercent: utilPct,
+							EfficiencyPercent:  effPct,
+						}
+					}
+				}
+			}
 		}
 	}
 
-	if gpuData, ok := utilizationMap["gpu_utilization"].(map[string]interface{}); ok {
-		utilization.GPU = GPUUtilization{
-			DeviceCount:        int(gpuData["device_count"].(float64)),
-			UtilizationPercent: gpuData["utilization_percent"].(float64),
+	if gpuData, ok := getMap(utilizationMap, "gpu_utilization"); ok {
+		if deviceCount, ok := getFloat64(gpuData, "device_count"); ok {
+			if utilPct, ok := getFloat64(gpuData, "utilization_percent"); ok {
+				utilization.GPU = GPUUtilization{
+					DeviceCount:        int(deviceCount),
+					UtilizationPercent: utilPct,
+				}
+			}
 		}
 	}
 
-	if ioData, ok := utilizationMap["io_utilization"].(map[string]interface{}); ok {
-		utilization.IO = IOUtilization{
-			ReadBytes:          int64(ioData["read_bytes"].(float64)),
-			WriteBytes:         int64(ioData["write_bytes"].(float64)),
-			UtilizationPercent: ioData["utilization_percent"].(float64),
+	if ioData, ok := getMap(utilizationMap, "io_utilization"); ok {
+		if readBytes, ok := getFloat64(ioData, "read_bytes"); ok {
+			if writeBytes, ok := getFloat64(ioData, "write_bytes"); ok {
+				if utilPct, ok := getFloat64(ioData, "utilization_percent"); ok {
+					utilization.IO = IOUtilization{
+						ReadBytes:          int64(readBytes),
+						WriteBytes:         int64(writeBytes),
+						UtilizationPercent: utilPct,
+					}
+				}
+			}
 		}
 	}
 
@@ -294,7 +346,11 @@ func (ac *AnalyticsCollector) getJobUtilization(ctx context.Context, jobID strin
 
 func (ac *AnalyticsCollector) getJobEfficiency(ctx context.Context, jobID string) (*EfficiencyData, error) {
 	url := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/efficiency", ac.baseURL, jobID)
-	resp, err := ac.httpClient.Get(url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := ac.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -314,37 +370,77 @@ func (ac *AnalyticsCollector) getJobEfficiency(ctx context.Context, jobID string
 		return nil, fmt.Errorf("invalid efficiency response format")
 	}
 
-	efficiency := &EfficiencyData{
-		OverallEfficiency: efficiencyMap["overall_efficiency_score"].(float64),
-		CPUEfficiency:     efficiencyMap["cpu_efficiency"].(float64),
-		MemoryEfficiency:  efficiencyMap["memory_efficiency"].(float64),
-		GPUEfficiency:     efficiencyMap["gpu_efficiency"].(float64),
+	efficiency := &EfficiencyData{}
+	if overall, ok := efficiencyMap["overall_efficiency_score"].(float64); ok {
+		efficiency.OverallEfficiency = overall
+	}
+	if cpu, ok := efficiencyMap["cpu_efficiency"].(float64); ok {
+		efficiency.CPUEfficiency = cpu
+	}
+	if mem, ok := efficiencyMap["memory_efficiency"].(float64); ok {
+		efficiency.MemoryEfficiency = mem
+	}
+	if gpu, ok := efficiencyMap["gpu_efficiency"].(float64); ok {
+		efficiency.GPUEfficiency = gpu
 	}
 
 	// Parse resource waste
 	if wasteData, ok := efficiencyMap["resource_waste"].(map[string]interface{}); ok {
-		efficiency.ResourceWaste = ResourceWaste{
-			CPUCoreHours:  wasteData["cpu_core_hours"].(float64),
-			CPUPercent:    wasteData["cpu_percent"].(float64),
-			MemoryGBHours: wasteData["memory_gb_hours"].(float64),
-			MemoryPercent: wasteData["memory_percent"].(float64),
+		if cpuHours, ok := wasteData["cpu_core_hours"].(float64); ok {
+			if cpuPct, ok := wasteData["cpu_percent"].(float64); ok {
+				if memHours, ok := wasteData["memory_gb_hours"].(float64); ok {
+					if memPct, ok := wasteData["memory_percent"].(float64); ok {
+						efficiency.ResourceWaste = ResourceWaste{
+							CPUCoreHours:  cpuHours,
+							CPUPercent:    cpuPct,
+							MemoryGBHours: memHours,
+							MemoryPercent: memPct,
+						}
+					}
+				}
+			}
 		}
 	}
 
 	// Parse recommendations
 	if recsData, ok := efficiencyMap["optimization_recommendations"].([]interface{}); ok {
 		for _, recData := range recsData {
-			if rec, ok := recData.(map[string]interface{}); ok {
-				recommendation := OptimizationRecommendation{
-					Type:        rec["type"].(string),
-					Resource:    rec["resource"].(string),
-					Current:     int(rec["current"].(float64)),
-					Recommended: int(rec["recommended"].(float64)),
-					Reason:      rec["reason"].(string),
-					Confidence:  rec["confidence"].(float64),
-				}
-				efficiency.Recommendations = append(efficiency.Recommendations, recommendation)
+			rec, ok := recData.(map[string]interface{})
+			if !ok {
+				continue
 			}
+			var recType, recResource, recReason string
+			var current, recommended float64
+			var confidence float64
+
+			if v, ok := rec["type"].(string); ok {
+				recType = v
+			}
+			if v, ok := rec["resource"].(string); ok {
+				recResource = v
+			}
+			if v, ok := rec["current"].(float64); ok {
+				current = v
+			}
+			if v, ok := rec["recommended"].(float64); ok {
+				recommended = v
+			}
+			if v, ok := rec["reason"].(string); ok {
+				recReason = v
+			}
+			if v, ok := rec["confidence"].(float64); ok {
+				confidence = v
+			}
+
+			recommendation := OptimizationRecommendation{
+				Type:        recType,
+				Resource:    recResource,
+				Current:     int(current),
+				Recommended: int(recommended),
+				Reason:      recReason,
+				Confidence:  confidence,
+			}
+			efficiency.Recommendations = append(efficiency.Recommendations, recommendation)
 		}
 	}
 
@@ -353,7 +449,11 @@ func (ac *AnalyticsCollector) getJobEfficiency(ctx context.Context, jobID string
 
 func (ac *AnalyticsCollector) getJobPerformance(ctx context.Context, jobID string) (*PerformanceData, error) {
 	url := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/performance", ac.baseURL, jobID)
-	resp, err := ac.httpClient.Get(url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := ac.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -373,41 +473,74 @@ func (ac *AnalyticsCollector) getJobPerformance(ctx context.Context, jobID strin
 		return nil, fmt.Errorf("invalid performance response format")
 	}
 
-	performance := &PerformanceData{
-		OverallEfficiency: performanceMap["overall_efficiency"].(float64),
+	performance := &PerformanceData{}
+	if overall, ok := getFloat64(performanceMap, "overall_efficiency"); ok {
+		performance.OverallEfficiency = overall
 	}
 
 	// Parse CPU analytics
-	if cpuData, ok := performanceMap["cpu_analytics"].(map[string]interface{}); ok {
-		performance.CPUAnalytics = CPUAnalytics{
-			AllocatedCores:     int(cpuData["allocated_cores"].(float64)),
-			UsedCores:          cpuData["used_cores"].(float64),
-			UtilizationPercent: cpuData["utilization_percent"].(float64),
-			EfficiencyPercent:  cpuData["efficiency_percent"].(float64),
-			AverageFrequency:   int(cpuData["average_frequency"].(float64)),
-			MaxFrequency:       int(cpuData["max_frequency"].(float64)),
+	if cpuData, ok := getMap(performanceMap, "cpu_analytics"); ok {
+		if allocCores, ok := getFloat64(cpuData, "allocated_cores"); ok {
+			if usedCores, ok := getFloat64(cpuData, "used_cores"); ok {
+				if utilPct, ok := getFloat64(cpuData, "utilization_percent"); ok {
+					if effPct, ok := getFloat64(cpuData, "efficiency_percent"); ok {
+						if avgFreq, ok := getFloat64(cpuData, "average_frequency"); ok {
+							if maxFreq, ok := getFloat64(cpuData, "max_frequency"); ok {
+								performance.CPUAnalytics = CPUAnalytics{
+									AllocatedCores:     int(allocCores),
+									UsedCores:          usedCores,
+									UtilizationPercent: utilPct,
+									EfficiencyPercent:  effPct,
+									AverageFrequency:   int(avgFreq),
+									MaxFrequency:       int(maxFreq),
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
 	// Parse Memory analytics
-	if memData, ok := performanceMap["memory_analytics"].(map[string]interface{}); ok {
-		performance.MemoryAnalytics = MemoryAnalytics{
-			AllocatedBytes:     int64(memData["allocated_bytes"].(float64)),
-			UsedBytes:          int64(memData["used_bytes"].(float64)),
-			UtilizationPercent: memData["utilization_percent"].(float64),
-			EfficiencyPercent:  memData["efficiency_percent"].(float64),
+	if memData, ok := getMap(performanceMap, "memory_analytics"); ok {
+		if allocBytes, ok := getFloat64(memData, "allocated_bytes"); ok {
+			if usedBytes, ok := getFloat64(memData, "used_bytes"); ok {
+				if utilPct, ok := getFloat64(memData, "utilization_percent"); ok {
+					if effPct, ok := getFloat64(memData, "efficiency_percent"); ok {
+						performance.MemoryAnalytics = MemoryAnalytics{
+							AllocatedBytes:     int64(allocBytes),
+							UsedBytes:          int64(usedBytes),
+							UtilizationPercent: utilPct,
+							EfficiencyPercent:  effPct,
+						}
+					}
+				}
+			}
 		}
 	}
 
 	// Parse IO analytics
-	if ioData, ok := performanceMap["io_analytics"].(map[string]interface{}); ok {
-		performance.IOAnalytics = IOAnalytics{
-			ReadBytes:             int64(ioData["read_bytes"].(float64)),
-			WriteBytes:            int64(ioData["write_bytes"].(float64)),
-			ReadOperations:        int(ioData["read_operations"].(float64)),
-			WriteOperations:       int(ioData["write_operations"].(float64)),
-			AverageReadBandwidth:  ioData["average_read_bandwidth"].(float64),
-			AverageWriteBandwidth: ioData["average_write_bandwidth"].(float64),
+	if ioData, ok := getMap(performanceMap, "io_analytics"); ok {
+		if readBytes, ok := getFloat64(ioData, "read_bytes"); ok {
+			if writeBytes, ok := getFloat64(ioData, "write_bytes"); ok {
+				if readOps, ok := getFloat64(ioData, "read_operations"); ok {
+					if writeOps, ok := getFloat64(ioData, "write_operations"); ok {
+						if avgReadBw, ok := getFloat64(ioData, "average_read_bandwidth"); ok {
+							if avgWriteBw, ok := getFloat64(ioData, "average_write_bandwidth"); ok {
+								performance.IOAnalytics = IOAnalytics{
+									ReadBytes:             int64(readBytes),
+									WriteBytes:            int64(writeBytes),
+									ReadOperations:        int(readOps),
+									WriteOperations:       int(writeOps),
+									AverageReadBandwidth:  avgReadBw,
+									AverageWriteBandwidth: avgWriteBw,
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -416,7 +549,11 @@ func (ac *AnalyticsCollector) getJobPerformance(ctx context.Context, jobID strin
 
 func (ac *AnalyticsCollector) getJobLiveMetrics(ctx context.Context, jobID string) (*LiveMetricsData, error) {
 	url := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/live_metrics", ac.baseURL, jobID)
-	resp, err := ac.httpClient.Get(url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := ac.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -436,43 +573,68 @@ func (ac *AnalyticsCollector) getJobLiveMetrics(ctx context.Context, jobID strin
 		return nil, fmt.Errorf("invalid live metrics response format")
 	}
 
-	liveMetrics := &LiveMetricsData{
-		Timestamp: int64(metricsMap["timestamp"].(float64)),
+	liveMetrics := &LiveMetricsData{}
+	if ts, ok := getFloat64(metricsMap, "timestamp"); ok {
+		liveMetrics.Timestamp = int64(ts)
 	}
 
 	// Parse CPU usage
-	if cpuData, ok := metricsMap["cpu_usage"].(map[string]interface{}); ok {
-		liveMetrics.CPUUsage = CPUUsage{
-			Current:     cpuData["current"].(float64),
-			Average:     cpuData["average"].(float64),
-			Peak:        cpuData["peak"].(float64),
-			Utilization: cpuData["utilization"].(float64),
+	if cpuData, ok := getMap(metricsMap, "cpu_usage"); ok {
+		if current, ok := getFloat64(cpuData, "current"); ok {
+			if average, ok := getFloat64(cpuData, "average"); ok {
+				if peak, ok := getFloat64(cpuData, "peak"); ok {
+					if util, ok := getFloat64(cpuData, "utilization"); ok {
+						liveMetrics.CPUUsage = CPUUsage{
+							Current:     current,
+							Average:     average,
+							Peak:        peak,
+							Utilization: util,
+						}
+					}
+				}
+			}
 		}
 	}
 
 	// Parse Memory usage
-	if memData, ok := metricsMap["memory_usage"].(map[string]interface{}); ok {
-		liveMetrics.MemoryUsage = MemoryUsage{
-			Current:     int64(memData["current"].(float64)),
-			Average:     int64(memData["average"].(float64)),
-			Peak:        int64(memData["peak"].(float64)),
-			Utilization: memData["utilization"].(float64),
+	if memData, ok := getMap(metricsMap, "memory_usage"); ok {
+		if current, ok := getFloat64(memData, "current"); ok {
+			if average, ok := getFloat64(memData, "average"); ok {
+				if peak, ok := getFloat64(memData, "peak"); ok {
+					if util, ok := getFloat64(memData, "utilization"); ok {
+						liveMetrics.MemoryUsage = MemoryUsage{
+							Current:     int64(current),
+							Average:     int64(average),
+							Peak:        int64(peak),
+							Utilization: util,
+						}
+					}
+				}
+			}
 		}
 	}
 
 	// Parse Disk usage
-	if diskData, ok := metricsMap["disk_usage"].(map[string]interface{}); ok {
-		liveMetrics.DiskUsage = DiskUsage{
-			ReadRateMBps:  diskData["read_rate_mbps"].(float64),
-			WriteRateMBps: diskData["write_rate_mbps"].(float64),
+	if diskData, ok := getMap(metricsMap, "disk_usage"); ok {
+		if readRate, ok := getFloat64(diskData, "read_rate_mbps"); ok {
+			if writeRate, ok := getFloat64(diskData, "write_rate_mbps"); ok {
+				liveMetrics.DiskUsage = DiskUsage{
+					ReadRateMBps:  readRate,
+					WriteRateMBps: writeRate,
+				}
+			}
 		}
 	}
 
 	// Parse Network usage
-	if netData, ok := metricsMap["network_usage"].(map[string]interface{}); ok {
-		liveMetrics.NetworkUsage = NetworkUsage{
-			InRateMBps:  netData["in_rate_mbps"].(float64),
-			OutRateMBps: netData["out_rate_mbps"].(float64),
+	if netData, ok := getMap(metricsMap, "network_usage"); ok {
+		if inRate, ok := getFloat64(netData, "in_rate_mbps"); ok {
+			if outRate, ok := getFloat64(netData, "out_rate_mbps"); ok {
+				liveMetrics.NetworkUsage = NetworkUsage{
+					InRateMBps:  inRate,
+					OutRateMBps: outRate,
+				}
+			}
 		}
 	}
 
@@ -481,7 +643,11 @@ func (ac *AnalyticsCollector) getJobLiveMetrics(ctx context.Context, jobID strin
 
 func (ac *AnalyticsCollector) getJobResourceTrends(ctx context.Context, jobID string) (*TrendsData, error) {
 	url := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/resource_trends?time_window=1h&interval=5m", ac.baseURL, jobID)
-	resp, err := ac.httpClient.Get(url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := ac.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -501,35 +667,44 @@ func (ac *AnalyticsCollector) getJobResourceTrends(ctx context.Context, jobID st
 		return nil, fmt.Errorf("invalid trends response format")
 	}
 
-	trends := &TrendsData{
-		TimeWindow: trendsMap["time_window"].(string),
+	trends := &TrendsData{}
+	if tw, ok := getString(trendsMap, "time_window"); ok {
+		trends.TimeWindow = tw
 	}
 
 	// Parse CPU trend
-	if cpuTrendData, ok := trendsMap["cpu_trend"].(map[string]interface{}); ok {
-		if dataPoints, ok := cpuTrendData["data_points"].([]interface{}); ok {
+	if cpuTrendData, ok := getMap(trendsMap, "cpu_trend"); ok {
+		if dataPoints, ok := getSlice(cpuTrendData, "data_points"); ok {
 			for _, pointData := range dataPoints {
 				if point, ok := pointData.(map[string]interface{}); ok {
-					trendPoint := TrendPoint{
-						Timestamp: int64(point["timestamp"].(float64)),
-						Value:     point["value"].(float64),
+					if ts, ok := getFloat64(point, "timestamp"); ok {
+						if val, ok := getFloat64(point, "value"); ok {
+							trendPoint := TrendPoint{
+								Timestamp: int64(ts),
+								Value:     val,
+							}
+							trends.CPUTrend.DataPoints = append(trends.CPUTrend.DataPoints, trendPoint)
+						}
 					}
-					trends.CPUTrend.DataPoints = append(trends.CPUTrend.DataPoints, trendPoint)
 				}
 			}
 		}
 	}
 
 	// Parse Memory trend
-	if memTrendData, ok := trendsMap["memory_trend"].(map[string]interface{}); ok {
-		if dataPoints, ok := memTrendData["data_points"].([]interface{}); ok {
+	if memTrendData, ok := getMap(trendsMap, "memory_trend"); ok {
+		if dataPoints, ok := getSlice(memTrendData, "data_points"); ok {
 			for _, pointData := range dataPoints {
 				if point, ok := pointData.(map[string]interface{}); ok {
-					trendPoint := TrendPoint{
-						Timestamp: int64(point["timestamp"].(float64)),
-						Value:     point["value"].(float64),
+					if ts, ok := getFloat64(point, "timestamp"); ok {
+						if val, ok := getFloat64(point, "value"); ok {
+							trendPoint := TrendPoint{
+								Timestamp: int64(ts),
+								Value:     val,
+							}
+							trends.MemoryTrend.DataPoints = append(trends.MemoryTrend.DataPoints, trendPoint)
+						}
 					}
-					trends.MemoryTrend.DataPoints = append(trends.MemoryTrend.DataPoints, trendPoint)
 				}
 			}
 		}
@@ -865,8 +1040,16 @@ func main() {
 	fmt.Println("Setting up mock SLURM server for demonstration...")
 
 	mockServer := mocks.NewMockSlurmServerForVersion("v0.0.42")
-	defer mockServer.Close()
 
+	if err := run(mockServer); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		mockServer.Close()
+		os.Exit(1)
+	}
+	mockServer.Close()
+}
+
+func run(mockServer *mocks.MockSlurmServer) error {
 	baseURL := mockServer.URL()
 	fmt.Printf("Mock server running at: %s\n\n", baseURL)
 
@@ -883,20 +1066,15 @@ func main() {
 		fmt.Printf("Collecting analytics for Job %s...\n", jobID)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		analytics, err := collector.CollectJobAnalytics(ctx, jobID)
+		analytics := collector.CollectJobAnalytics(ctx, jobID)
 		cancel()
-
-		if err != nil {
-			log.Printf("Failed to collect analytics for job %s: %v", jobID, err)
-			continue
-		}
 
 		jobAnalytics[jobID] = analytics
 		fmt.Printf("✅ Successfully collected analytics for Job %s\n", jobID)
 	}
 
 	if len(jobAnalytics) == 0 {
-		log.Fatal("Failed to collect analytics for any jobs")
+		return errors.New("failed to collect analytics for any jobs")
 	}
 
 	fmt.Println("\n" + strings.Repeat("=", 80))
@@ -965,4 +1143,5 @@ func main() {
 	fmt.Println("Analytics collection and reporting completed successfully!")
 	fmt.Println("Use --export flag to save analytics data to JSON files")
 	fmt.Println(strings.Repeat("=", 80))
+	return nil
 }

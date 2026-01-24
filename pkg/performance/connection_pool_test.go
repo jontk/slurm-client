@@ -306,7 +306,10 @@ func TestHTTPClientPoolManager_VersionSpecificOptimizations(t *testing.T) {
 		{
 			"v0.0.40",
 			func(client *http.Client) bool {
-				transport := client.Transport.(*http.Transport)
+				transport, ok := client.Transport.(*http.Transport)
+				if !ok {
+					return false
+				}
 				return transport.MaxConnsPerHost <= 20 &&
 					transport.ResponseHeaderTimeout >= 30*time.Second
 			},
@@ -314,7 +317,10 @@ func TestHTTPClientPoolManager_VersionSpecificOptimizations(t *testing.T) {
 		{
 			"v0.0.41",
 			func(client *http.Client) bool {
-				transport := client.Transport.(*http.Transport)
+				transport, ok := client.Transport.(*http.Transport)
+				if !ok {
+					return false
+				}
 				return transport.ExpectContinueTimeout == 750*time.Millisecond
 			},
 		},
@@ -328,7 +334,10 @@ func TestHTTPClientPoolManager_VersionSpecificOptimizations(t *testing.T) {
 		{
 			"v0.0.43",
 			func(client *http.Client) bool {
-				transport := client.Transport.(*http.Transport)
+				transport, ok := client.Transport.(*http.Transport)
+				if !ok {
+					return false
+				}
 				return transport.ExpectContinueTimeout == 250*time.Millisecond
 			},
 		},
@@ -461,7 +470,10 @@ func TestHTTPClientConfiguration(t *testing.T) {
 		defer pool.Close()
 
 		client := pool.GetClient("https://example.com")
-		transport := client.Transport.(*http.Transport)
+		transport, ok := client.Transport.(*http.Transport)
+		if !ok {
+			t.Fatal("expected *http.Transport")
+		}
 
 		assert.True(t, transport.DisableCompression)
 	})
@@ -475,7 +487,10 @@ func TestHTTPClientConfiguration(t *testing.T) {
 		defer pool.Close()
 
 		client := pool.GetClient("https://example.com")
-		transport := client.Transport.(*http.Transport)
+		transport, ok := client.Transport.(*http.Transport)
+		if !ok {
+			t.Fatal("expected *http.Transport")
+		}
 
 		assert.True(t, transport.DisableKeepAlives)
 	})
@@ -500,7 +515,10 @@ func TestTLSClientSessionCache(t *testing.T) {
 	defer pool.Close()
 
 	client := pool.GetClient("https://example.com")
-	transport := client.Transport.(*http.Transport)
+	transport, ok := client.Transport.(*http.Transport)
+	if !ok {
+		t.Fatal("expected *http.Transport")
+	}
 
 	require.NotNil(t, transport.TLSClientConfig)
 	require.NotNil(t, transport.TLSClientConfig.ClientSessionCache)

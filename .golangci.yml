@@ -70,6 +70,8 @@ linters:
         - rangeValCopy        # Performance impact negligible, pointers reduce clarity
         - whyNoLint
         - wrapperFunc
+        - importShadow        # Parameter shadowing package name is idiomatic in examples
+        - deferInLoop         # Deferring inside loops is sometimes necessary for resource cleanup
       enabled-tags:
         - diagnostic
         - experimental
@@ -245,30 +247,8 @@ linters:
           - lll
         source: '^//go:generate '
       - linters:
-          - dupl
           - errcheck
-          - errorlint
-          - exhaustive
-          - forcetypeassert
           - goconst
-          - gocritic
-          - gosec
-          - ineffassign
-          - noctx
-          - perfsprint
-          - prealloc
-          - staticcheck
-          - unparam
-          - unused
-        path: ^examples/
-      - linters:
-          - dupl
-          - errcheck
-          - errorlint
-          - goconst
-          - gocritic
-          - perfsprint
-          - staticcheck
           - unparam
           - unused
         path: ^cmd/
@@ -384,7 +364,6 @@ linters:
       - testdata
       - third_party$
       - builtin$
-      - examples$
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0

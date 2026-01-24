@@ -50,8 +50,16 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to create client:", err)
 	}
-	defer client.Close()
 
+	if err := run(ctx, client); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		_ = client.Close()
+		os.Exit(1)
+	}
+	_ = client.Close()
+}
+
+func run(ctx context.Context, client slurm.SlurmClient) error {
 	fmt.Printf("Connected to SLURM REST API %s at %s\n\n", client.Version(), *baseURL)
 
 	// Perform analysis based on type
@@ -62,8 +70,7 @@ func main() {
 		} else if *target != "" {
 			analyzeUserFairShare(ctx, client, *target)
 		} else {
-			fmt.Fprintf(os.Stderr, "Error: Specify -target or use -compare-users\n")
-			os.Exit(1)
+			return fmt.Errorf("specify -target or use -compare-users")
 		}
 	case "account":
 		if *compareAccounts {
@@ -71,20 +78,19 @@ func main() {
 		} else if *target != "" {
 			analyzeAccountFairShare(ctx, client, *target)
 		} else {
-			fmt.Fprintf(os.Stderr, "Error: Specify -target or use -compare-accounts\n")
-			os.Exit(1)
+			return fmt.Errorf("specify -target or use -compare-accounts")
 		}
 	case "hierarchy":
 		analyzeHierarchy(ctx, client, *target)
 	default:
-		fmt.Fprintf(os.Stderr, "Error: Invalid analysis type. Use 'user', 'account', or 'hierarchy'\n")
-		os.Exit(1)
+		return fmt.Errorf("invalid analysis type. Use 'user', 'account', or 'hierarchy'")
 	}
 
 	// Predict priority if requested
 	if *predictPriority && *target != "" {
 		predictJobPriority(ctx, client, *target)
 	}
+	return nil
 }
 
 func analyzeUserFairShare(ctx context.Context, client interfaces.SlurmClient, userName string) {

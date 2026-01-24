@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -75,7 +76,7 @@ func submitBatchJobs(ctx context.Context, client slurm.SlurmClient, count int) [
 				TimeLimit:  60,   // 60 minutes
 				WorkingDir: "/scratch/batch",
 				Environment: map[string]string{
-					"JOB_INDEX": fmt.Sprintf("%d", index),
+					"JOB_INDEX": strconv.Itoa(index),
 					"BATCH_ID":  "example-batch",
 				},
 			}

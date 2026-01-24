@@ -183,7 +183,7 @@ echo "Chunk %d processing completed"
 	// Merge job (depends on all parallel jobs)
 	dependencies := make([]string, len(parallelJobIDs))
 	for i, jobID := range parallelJobIDs {
-		dependencies[i] = fmt.Sprintf("afterok:%s", jobID)
+		dependencies[i] = "afterok:" + jobID
 	}
 
 	mergeJob := &interfaces.JobSubmission{
@@ -295,7 +295,7 @@ python3 deploy.py --evaluation evaluation/ --models models/
 		var deps []string
 		for _, depName := range job.dependencies {
 			if depJob, ok := jobs[depName]; ok && depJob.jobID != "" {
-				deps = append(deps, fmt.Sprintf("afterok:%s", depJob.jobID))
+				deps = append(deps, "afterok:"+depJob.jobID)
 			}
 		}
 

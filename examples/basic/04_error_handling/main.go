@@ -63,7 +63,7 @@ func handleConnectionErrors(ctx context.Context) {
 		}
 		return
 	}
-	defer client.Close()
+	_ = client.Close()
 }
 
 func handleAuthErrors(ctx context.Context) {
@@ -93,6 +93,8 @@ func handleAuthErrors(ctx context.Context) {
 				fmt.Println("This is a permission error - check your access rights")
 			case slurmErrors.ErrorCodeUnauthorized:
 				fmt.Println("Unauthorized access")
+			default:
+				fmt.Printf("Other error code: %s\n", slurmErr.Code)
 			}
 		} else {
 			fmt.Printf("Unexpected error: %v\n", err)
