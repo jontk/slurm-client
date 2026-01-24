@@ -17,13 +17,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Context keys used by the logging package
-// Note: Using string keys for simplicity, as the logging package looks for these exact strings
+// Context keys used by tests (other keys are defined in logger.go)
 const (
-	contextKeyTraceID   = "trace_id"
-	contextKeyRequestID = "request_id"
-	contextKeyUser      = "user"
-	contextKeyOther     = "other_key"
+	contextKeyOther contextKey = "other_key"
 )
 
 func TestNewLogger(t *testing.T) {
@@ -112,9 +108,9 @@ func TestSlogLogger_WithContext(t *testing.T) {
 
 	t.Run("context with values", func(t *testing.T) {
 		ctx := context.Background()
-		ctx = context.WithValue(ctx, contextKeyTraceID, "trace-123")     //lint:ignore SA1029 Using string key to match logger.go behavior
-		ctx = context.WithValue(ctx, contextKeyRequestID, "req-456")     //lint:ignore SA1029 Using string key to match logger.go behavior
-		ctx = context.WithValue(ctx, contextKeyUser, "john@example.com") //lint:ignore SA1029 Using string key to match logger.go behavior
+		ctx = context.WithValue(ctx, contextKeyTraceID, "trace-123")
+		ctx = context.WithValue(ctx, contextKeyRequestID, "req-456")
+		ctx = context.WithValue(ctx, contextKeyUser, "john@example.com")
 
 		contextLogger := logger.WithContext(ctx)
 
@@ -134,8 +130,8 @@ func TestSlogLogger_WithContext(t *testing.T) {
 
 	t.Run("context with some values", func(t *testing.T) {
 		ctx := context.Background()
-		ctx = context.WithValue(ctx, contextKeyTraceID, "trace-123") //lint:ignore SA1029 Using string key to match logger.go behavior
-		ctx = context.WithValue(ctx, contextKeyOther, "other_value") //lint:ignore SA1029 Using string key to match logger.go behavior // This won't be extracted
+		ctx = context.WithValue(ctx, contextKeyTraceID, "trace-123")
+		ctx = context.WithValue(ctx, contextKeyOther, "other_value") // This won't be extracted
 
 		contextLogger := logger.WithContext(ctx)
 

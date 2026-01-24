@@ -91,6 +91,7 @@ func (c *WrapperClient) HandleErrorResponse(statusCode int, body []byte) error {
 	if len(body) > 0 {
 		// Log the body for debugging (in production, you'd use a proper logger)
 		// fmt.Printf("Error response body: %s\n", string(body))
+		_ = body // Explicitly acknowledge the body parameter
 	}
 
 	// Map HTTP status code to error

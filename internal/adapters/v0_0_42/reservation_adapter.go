@@ -43,10 +43,8 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 	params := &api.SlurmV0042GetReservationsParams{}
 
 	// Apply filters from options
-	if opts != nil && len(opts.Names) > 0 {
-		// v0.0.42 doesn't support reservation name filtering in the API params,
-		// we'll need to filter client-side
-	}
+	// v0.0.42 doesn't support reservation name filtering in the API params,
+	// we'll need to filter client-side
 
 	// Call the API
 	resp, err := a.client.SlurmV0042GetReservationsWithResponse(ctx, params)

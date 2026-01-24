@@ -292,9 +292,9 @@ func (m *NodeBaseManager) matchesNodeFilters(node types.Node, opts *types.NodeLi
 	}
 
 	// Filter by update time
+	// This would require API support to track update times
+	// For now, we'll accept all items
 	if opts.UpdateTime != nil {
-		// This would require API support to track update times
-		// For now, we'll accept all items
 	}
 
 	return true

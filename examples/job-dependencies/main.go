@@ -311,6 +311,7 @@ python3 deploy.py --evaluation evaluation/ --models models/
 		if len(deps) > 0 {
 			// Note: Dependencies would be set on submission
 			// submission.Dependencies = deps
+			_ = deps // Explicitly handle the deps
 		}
 
 		resp, err := client.Jobs().Submit(ctx, submission)

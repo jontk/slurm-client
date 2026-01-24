@@ -457,9 +457,9 @@ func (c *WrapperClient) GetInstance(ctx context.Context, opts *interfaces.GetIns
 		if opts.Extra != "" {
 			params.Extra = &opts.Extra
 		}
+		// Note: The API doesn't have an Instance field in the params
+		// We'll use the instance name for filtering in the response
 		if opts.Instance != "" {
-			// Note: The API doesn't have an Instance field in the params
-			// We'll use the instance name for filtering in the response
 		}
 		if len(opts.NodeList) > 0 {
 			nodeList := strings.Join(opts.NodeList, ",")

@@ -105,10 +105,8 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 				warnings = append(warnings, *warning.Description)
 			}
 		}
-		if len(warnings) > 0 {
-			// Note: AssociationList doesn't have a Meta field in common types
-			// Warnings are being ignored for now
-		}
+		// Note: AssociationList doesn't have a Meta field in common types
+		// Warnings are being ignored for now
 	}
 
 	// Extract error messages if any
@@ -119,10 +117,8 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 				errors = append(errors, *error.Description)
 			}
 		}
-		if len(errors) > 0 {
-			// AssociationList doesn't have a Meta field in common types
-			// Log errors but continue
-		}
+		// AssociationList doesn't have a Meta field in common types
+		// Log errors but continue
 	}
 
 	return assocList, nil

@@ -53,10 +53,10 @@ func (a *AccountAdapter) convertCommonAccountCreateToAPI(account *types.AccountC
 	apiAccount.Organization = account.Organization
 
 	// Parent account - AccountCreate uses ParentName, not Parent
+	// v0.0.40 may handle parent differently, might need to set via associations
+	// For now, we'll skip this as it's typically handled by the accounting system
+	// TODO: Implement parent account handling for v0.0.40
 	if account.ParentName != "" {
-		// v0.0.40 may handle parent differently, might need to set via associations
-		// For now, we'll skip this as it's typically handled by the accounting system
-		// TODO: Implement parent account handling for v0.0.40
 	}
 
 	// Flags - Common AccountCreate type doesn't have Flags field

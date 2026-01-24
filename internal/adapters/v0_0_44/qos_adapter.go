@@ -423,10 +423,10 @@ func (a *QoSAdapter) Delete(ctx context.Context, qosName string) error {
 
 	// Check if QoS is safe to delete
 	// Note: We need association data to fully validate, but we can check basic safety
+	// For now, just log a warning since we don't have association data
+	// Log warning - we'll add proper logging later
+	// For now, just continue silently
 	if err := a.ValidateQoSDeletionSafety(qosName, []types.Association{}); err != nil {
-		// For now, just log a warning since we don't have association data
-		// Log warning - we'll add proper logging later
-		// For now, just continue silently
 	}
 
 	// Call the generated OpenAPI client

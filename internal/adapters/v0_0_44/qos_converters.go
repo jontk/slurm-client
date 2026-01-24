@@ -632,11 +632,11 @@ func (a *QoSAdapter) convertCommonQoSUpdateToAPI(existing *types.QoS, update *ty
 		if update.Limits != nil {
 			// Similar logic as in create, but for updates
 			// Initialize Max structure if we have any max limits
+			// Create the same nested structure as in create
+			// (Code would be similar to create, just using update.Limits instead)
+			// For brevity, I'll add a TODO here
+			// TODO: Implement full limits update conversion similar to create
 			if update.Limits.MaxJobsPerUser != nil || update.Limits.MaxJobsPerAccount != nil {
-				// Create the same nested structure as in create
-				// (Code would be similar to create, just using update.Limits instead)
-				// For brevity, I'll add a TODO here
-				// TODO: Implement full limits update conversion similar to create
 			}
 		}
 	}
