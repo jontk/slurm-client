@@ -1216,7 +1216,7 @@ func generatePerformanceTrendsV42(job *interfaces.Job) *interfaces.PerformanceTr
 	}
 
 	// Generate simulated trend data (simplified for v0.0.42)
-	for i := 0; i < points; i++ {
+	for i := range points {
 		timestamp := startTime.Add(time.Duration(i) * time.Hour)
 
 		// Simpler trends for v0.0.42
@@ -1854,7 +1854,7 @@ func generateTimePointsV42(startTime, endTime *time.Time, numPoints int) []time.
 
 	interval := duration / time.Duration(numPoints-1)
 
-	for i := 0; i < numPoints; i++ {
+	for i := range numPoints {
 		points[i] = startTime.Add(time.Duration(i) * interval)
 	}
 
@@ -2372,7 +2372,7 @@ func generateStepTasks(job *interfaces.Job, stepID int) []interfaces.StepTaskInf
 		nodeName = job.Nodes[0]
 	}
 
-	for i := 0; i < taskCount; i++ {
+	for i := range taskCount {
 		// Distribute tasks across nodes
 		localID := i
 		if len(job.Nodes) > 0 {
@@ -3202,7 +3202,7 @@ func (m *JobManagerImpl) GetJobComprehensiveAnalytics(ctx context.Context, jobID
 
 func generateEnhancedCoreMetrics(cpuCount int) []interfaces.CPUCoreMetric {
 	coreMetrics := make([]interfaces.CPUCoreMetric, cpuCount)
-	for i := 0; i < cpuCount; i++ {
+	for i := range cpuCount {
 		coreMetrics[i] = interfaces.CPUCoreMetric{
 			CoreID:          i,
 			Utilization:     70.0 + float64(i%20)*2.5, // More realistic variation
@@ -3230,7 +3230,7 @@ func generateEnhancedNUMAMetrics(cpus int, memory int64) []interfaces.NUMANodeMe
 	cpusPerNode := cpus / numNodes
 	memoryPerNode := memory / int64(numNodes)
 
-	for i := 0; i < numNodes; i++ {
+	for i := range numNodes {
 		// Better NUMA optimization in v0.0.42
 		nodeUtilization := 75.0 + float64(i%4)*3.0
 		localityFactor := 85.0 + float64(i%3)*2.0

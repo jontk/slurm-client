@@ -320,7 +320,7 @@ func TestConcurrentAuthenticatedRequests(t *testing.T) {
 	const numConcurrent = 5
 	errors := make(chan error, numConcurrent)
 
-	for i := 0; i < numConcurrent; i++ {
+	for i := range numConcurrent {
 		go func(index int) {
 			// Each goroutine performs multiple operations
 			err := client.Info().Ping(ctx)
@@ -341,7 +341,7 @@ func TestConcurrentAuthenticatedRequests(t *testing.T) {
 	}
 
 	// Collect results
-	for i := 0; i < numConcurrent; i++ {
+	for i := range numConcurrent {
 		err := <-errors
 		assert.NoError(t, err, "Concurrent request %d should succeed", i)
 	}

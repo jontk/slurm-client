@@ -236,7 +236,7 @@ func (suite *V0040IntegrationTestSuite) TestConcurrentOperations() {
 	var wg sync.WaitGroup
 	errors := make(chan error, 5)
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()

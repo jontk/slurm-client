@@ -20,7 +20,6 @@ linters:
     - godox                     # TODO/FIXME comments are useful for development tracking
     - gosmopolitan              # I18n linter - not needed for this project
     - interfacebloat            # Our manager interfaces intentionally provide comprehensive APIs
-    - intrange                  # Candidate for future enablement (P2)
     - ireturn                   # Returning interfaces is intentional for flexibility and mocking
     - lll                       # Long lines improve readability over unnecessary breaking
     - maintidx                  # Maintainability index too strict for this domain
@@ -337,6 +336,14 @@ linters:
         # TODO: Fix 100+ unparam issues across API layer manager converters
         # Error returns that are always nil need to be removed from converter functions
         # This affects converters in all versions (v0_0_40 through v0_0_44)
+      - linters:
+          - intrange
+        path: ^internal/managers/base/crud_manager\.go$
+        # Loop condition calls v.Len() which should not be converted
+      - linters:
+          - intrange
+        path: ^tests/integration/version_compatibility_test\.go$
+        # Loop condition calls typeVal.NumField() which should not be converted
     paths:
       - .*\.pb\.go$
       - .*\.gen\.go$

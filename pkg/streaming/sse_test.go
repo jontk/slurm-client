@@ -521,7 +521,7 @@ func TestSSEEvent_JSONMarshalling(t *testing.T) {
 func BenchmarkParseStringSlice(b *testing.B) {
 	input := "value1,value2,value3,value4,value5"
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		parseStringSlice(input)
 	}
 }
@@ -529,7 +529,7 @@ func BenchmarkParseStringSlice(b *testing.B) {
 func BenchmarkSplitString(b *testing.B) {
 	input := "value1,value2,value3,value4,value5"
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		splitString(input, ",")
 	}
 }
@@ -537,7 +537,7 @@ func BenchmarkSplitString(b *testing.B) {
 func BenchmarkTrimSpace(b *testing.B) {
 	input := "  value with spaces  "
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		trimSpace(input)
 	}
 }
@@ -552,7 +552,7 @@ func BenchmarkWriteSSEEvent(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		w := httptest.NewRecorder()
 		server.writeSSEEvent(w, w, event)
 	}
@@ -571,7 +571,7 @@ func BenchmarkHandleSSE_JobsStream(b *testing.B) {
 	server := NewSSEServer(client)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		b.StopTimer()
 		req := httptest.NewRequest(http.MethodGet, "/sse?stream=jobs", nil)
 		w := httptest.NewRecorder()

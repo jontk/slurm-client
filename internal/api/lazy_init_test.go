@@ -88,7 +88,7 @@ func TestLazyInitializationThreadSafety(t *testing.T) {
 	var mu sync.Mutex
 
 	// Launch multiple goroutines that will all try to use the manager
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

@@ -616,7 +616,7 @@ func TestConcurrentAccess(t *testing.T) {
 	t.Run("Concurrent_Get", func(t *testing.T) {
 		done := make(chan bool, 10)
 
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			go func(id int) {
 				userName := "user" + string(rune('0'+id%10))
 				_, err := manager.Get(ctx, userName)
@@ -626,7 +626,7 @@ func TestConcurrentAccess(t *testing.T) {
 		}
 
 		// Wait for all goroutines
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			<-done
 		}
 	})

@@ -477,7 +477,7 @@ func generateTestSamples(startTime, endTime time.Time, count int) []interfaces.J
 	duration := endTime.Sub(startTime)
 	interval := duration / time.Duration(count)
 
-	for i := 0; i < count; i++ {
+	for i := range count {
 		timestamp := startTime.Add(time.Duration(i) * interval)
 		progress := float64(i) / float64(count)
 

@@ -433,7 +433,7 @@ func (suite *RealServerIntegrationTestSuite) TestPerformanceAndReliability() {
 	successCount := 0
 	requestCount := 10
 
-	for i := 0; i < requestCount; i++ {
+	for i := range requestCount {
 		err := suite.client.Info().Ping(ctx)
 		if err == nil {
 			successCount++
@@ -503,7 +503,7 @@ func (suite *RealServerIntegrationTestSuite) TestPerformanceAndReliability() {
 
 	// Collect results
 	concurrentSuccessCount := 0
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		result := <-results
 		if result.error == nil {
 			concurrentSuccessCount++

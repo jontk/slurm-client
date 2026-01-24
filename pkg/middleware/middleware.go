@@ -110,7 +110,7 @@ func WithRetry(maxAttempts int, shouldRetry ShouldRetryFunc) Middleware {
 			var lastErr error
 			var lastResp *http.Response
 
-			for attempt := 0; attempt < maxAttempts; attempt++ {
+			for attempt := range maxAttempts {
 				// Clone request for retry
 				reqCopy := cloneRequest(req)
 

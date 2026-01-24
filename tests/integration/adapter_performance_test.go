@@ -160,7 +160,7 @@ func (suite *AdapterPerformanceTestSuite) TestPingPerformance() {
 
 		versionResults := make([]PerformanceMetrics, iterations)
 
-		for i := 0; i < iterations; i++ {
+		for i := range iterations {
 			metric := suite.runOperation(version, "ping", func() error {
 				return client.Info().Ping(ctx)
 			})
@@ -195,7 +195,7 @@ func (suite *AdapterPerformanceTestSuite) TestQoSListingPerformance() {
 
 		versionResults := make([]PerformanceMetrics, iterations)
 
-		for i := 0; i < iterations; i++ {
+		for i := range iterations {
 			metric := suite.runOperation(version, "qos_list", func() error {
 				_, err := client.QoS().List(ctx, &interfaces.ListQoSOptions{
 					Limit: 10,
@@ -231,7 +231,7 @@ func (suite *AdapterPerformanceTestSuite) TestJobListingPerformance() {
 
 		versionResults := make([]PerformanceMetrics, iterations)
 
-		for i := 0; i < iterations; i++ {
+		for i := range iterations {
 			metric := suite.runOperation(version, "job_list", func() error {
 				_, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
 					Limit: 20,
@@ -270,12 +270,12 @@ func (suite *AdapterPerformanceTestSuite) TestConcurrentOperations() {
 
 		start := time.Now()
 
-		for worker := 0; worker < concurrency; worker++ {
+		for worker := range concurrency {
 			wg.Add(1)
 			go func(workerID int) {
 				defer wg.Done()
 
-				for op := 0; op < operationsPerWorker; op++ {
+				for range operationsPerWorker {
 					metric := suite.runOperation(version, fmt.Sprintf("concurrent_ping_w%d", workerID), func() error {
 						return client.Info().Ping(ctx)
 					})
@@ -345,7 +345,7 @@ func (suite *AdapterPerformanceTestSuite) TestMemoryUsagePatterns() {
 		initialMemory := suite.measureMemory()
 		var memoryDeltas []int64
 
-		for i := 0; i < iterations; i++ {
+		for i := range iterations {
 			metric := suite.runOperation(version, "memory_test", func() error {
 				// Perform multiple operations to simulate real usage
 				err := client.Info().Ping(ctx)

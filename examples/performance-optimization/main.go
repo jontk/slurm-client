@@ -77,7 +77,7 @@ func demonstrateConnectionPooling(ctx context.Context, cfg *config.Config, auth 
 	start := time.Now()
 
 	// Make multiple requests that reuse connections
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		err := client.Info().Ping(ctx)
 		if err != nil {
 			log.Printf("Ping %d failed: %v", i, err)
@@ -100,7 +100,7 @@ func demonstrateConnectionPooling(ctx context.Context, cfg *config.Config, auth 
 	defer basicClient.Close()
 
 	start = time.Now()
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		err := basicClient.Info().Ping(ctx)
 		if err != nil {
 			log.Printf("Basic ping %d failed: %v", i, err)
@@ -268,7 +268,7 @@ func demonstrateBatchOperations(ctx context.Context, cfg *config.Config, auth au
 
 	// Prepare batch of jobs
 	var submittedJobs []string
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		job := &interfaces.JobSubmission{
 			Name:      fmt.Sprintf("batch-job-%d", i),
 			Command:   fmt.Sprintf("echo 'Batch job %d'", i),
@@ -299,7 +299,7 @@ func demonstrateConcurrentRequests(ctx context.Context, cfg *config.Config, auth
 	results := make(chan result, numWorkers*3)
 
 	// Start workers
-	for i := 0; i < numWorkers; i++ {
+	for i := range numWorkers {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
@@ -490,7 +490,7 @@ func runBenchmark(ctx context.Context, client slurm.SlurmClient, profileName str
 	benchStart := time.Now()
 
 	// Run requests
-	for i := 0; i < numRequests; i++ {
+	for range numRequests {
 		reqStart := time.Now()
 		err := client.Info().Ping(ctx)
 		reqDuration := time.Since(reqStart)

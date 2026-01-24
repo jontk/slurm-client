@@ -251,14 +251,14 @@ func BenchmarkJobManager_AnalyticsValidation(b *testing.B) {
 
 	b.Run("CPU analytics validation", func(b *testing.B) {
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_, _ = jm.GetJobCPUAnalytics(ctx, "") // Will fail validation quickly
 		}
 	})
 
 	b.Run("Comprehensive analytics validation", func(b *testing.B) {
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_, _ = jm.GetJobComprehensiveAnalytics(ctx, "") // Will fail validation quickly
 		}
 	})
@@ -295,7 +295,7 @@ func TestJobManager_ConcurrentAccess(t *testing.T) {
 		}()
 
 		// Wait for all to complete
-		for i := 0; i < 4; i++ {
+		for range 4 {
 			<-done
 		}
 

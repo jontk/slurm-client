@@ -57,7 +57,7 @@ func benchmarkJobOperationsWithProfile(b *testing.B, profile performance.Perform
 	defer client.Close()
 
 	// Pre-populate some jobs for listing/getting
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		job := &mocks.MockJob{
 			JobID:     int32(2000 + i), // Start from 2000 to avoid conflicts with default jobs
 			Name:      fmt.Sprintf("benchmark-job-%d", i),
@@ -79,7 +79,7 @@ func benchmarkJobOperationsWithProfile(b *testing.B, profile performance.Perform
 			}
 		})
 	} else {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			runJobOperationBenchmark(b, client)
 		}
 	}
@@ -135,7 +135,7 @@ func benchmarkConnectionPooling(b *testing.B, profile performance.PerformancePro
 	b.ResetTimer()
 
 	// Benchmark getting HTTP clients from the pool
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		client := pool.GetClient(mockServer.URL())
 		if client == nil {
 			b.Error("Failed to get HTTP client")
@@ -178,7 +178,7 @@ func benchmarkCaching(b *testing.B, profile performance.PerformanceProfile) {
 
 	// Benchmark cache operations
 	b.Run("Set", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for i := range b.N {
 			testParams := make(map[string]interface{})
 			for k, v := range params {
 				testParams[k] = v
@@ -191,7 +191,7 @@ func benchmarkCaching(b *testing.B, profile performance.PerformanceProfile) {
 
 	b.Run("Get", func(b *testing.B) {
 		// Pre-populate cache
-		for i := 0; i < 1000; i++ {
+		for i := range 1000 {
 			testParams := make(map[string]interface{})
 			for k, v := range params {
 				testParams[k] = v
@@ -202,7 +202,7 @@ func benchmarkCaching(b *testing.B, profile performance.PerformanceProfile) {
 
 		b.ResetTimer()
 
-		for i := 0; i < b.N; i++ {
+		for i := range b.N {
 			testParams := make(map[string]interface{})
 			for k, v := range params {
 				testParams[k] = v
@@ -235,7 +235,7 @@ func benchmarkConcurrentAccess(b *testing.B, concurrency int) {
 
 	// Create multiple clients to simulate concurrent access
 	clients := make([]slurm.SlurmClient, concurrency)
-	for i := 0; i < concurrency; i++ {
+	for i := range concurrency {
 		client, err := slurm.NewClientWithVersion(context.Background(), "v0.0.42",
 			slurm.WithBaseURL(mockServer.URL()),
 			slurm.WithAuth(auth.NewNoAuth()),
@@ -253,7 +253,7 @@ func benchmarkConcurrentAccess(b *testing.B, concurrency int) {
 	var wg sync.WaitGroup
 	operations := b.N
 
-	for i := 0; i < concurrency; i++ {
+	for i := range concurrency {
 		wg.Add(1)
 		go func(clientIndex int) {
 			defer wg.Done()
@@ -264,7 +264,7 @@ func benchmarkConcurrentAccess(b *testing.B, concurrency int) {
 				operationsPerWorker += operations % concurrency
 			}
 
-			for j := 0; j < operationsPerWorker; j++ {
+			for range operationsPerWorker {
 				ctx := context.Background()
 				_, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
 					Limit: 5,
@@ -312,7 +312,7 @@ func benchmarkMemoryUsage(b *testing.B, profile performance.PerformanceProfile) 
 
 	// Create clients and perform operations
 	clients := make([]slurm.SlurmClient, 10)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		client, err := slurm.NewClientWithVersion(context.Background(), "v0.0.42",
 			slurm.WithBaseURL(mockServer.URL()),
 			slurm.WithAuth(auth.NewNoAuth()),
@@ -327,7 +327,7 @@ func benchmarkMemoryUsage(b *testing.B, profile performance.PerformanceProfile) 
 	b.ResetTimer()
 
 	// Perform memory-intensive operations
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		client := clients[i%10]
 		ctx := context.Background()
 
@@ -367,7 +367,7 @@ func BenchmarkCacheHitRatio(b *testing.B) {
 	value := []byte(`{"jobs": []}`)
 
 	// Pre-populate cache with some data
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		params := map[string]interface{}{"page": i}
 		cache.Set(operation, params, value)
 	}
@@ -375,7 +375,7 @@ func BenchmarkCacheHitRatio(b *testing.B) {
 	b.ResetTimer()
 
 	hits := 0
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		// 80% chance of hitting cache (accessing existing pages)
 		var params map[string]interface{}
 		if i%10 < 8 {
@@ -439,7 +439,7 @@ func benchmarkResponseTime(b *testing.B, delay time.Duration, cacheEnabled bool)
 	b.ResetTimer()
 
 	var totalDuration time.Duration
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		start := time.Now()
 
 		// Simulate cache check if enabled
@@ -530,7 +530,7 @@ func benchmarkUserAccountQuery(b *testing.B, operation string, useCache bool) {
 
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		switch operation {
 		case "user_accounts":
 			// Benchmark GetUserAccounts
@@ -600,7 +600,7 @@ func benchmarkUserAccountQuery(b *testing.B, operation string, useCache bool) {
 			// Benchmark GetBulkUserAccounts
 			userCount := 10 + (i % 20)
 			userNames := make([]string, userCount)
-			for j := 0; j < userCount; j++ {
+			for j := range userCount {
 				userNames[j] = fmt.Sprintf("user%d", j)
 			}
 			if useCache {
@@ -661,7 +661,7 @@ func benchmarkFairShareOperation(b *testing.B, operation string, hierarchyDepth 
 
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		switch operation {
 		case "user_fair_share":
 			userName := fmt.Sprintf("user%d", i%100)
@@ -730,7 +730,7 @@ func benchmarkHierarchyTraversal(b *testing.B, maxDepth int) {
 
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		// Test parent traversal
 		childAccount := fmt.Sprintf("child_level_%d", maxDepth)
 		_, _ = accountManager.GetParentAccounts(ctx, childAccount)
@@ -766,7 +766,7 @@ func benchmarkConcurrentUserAccountOps(b *testing.B, concurrency int) {
 
 	// Create pool of clients
 	clients := make([]interfaces.SlurmClient, concurrency)
-	for i := 0; i < concurrency; i++ {
+	for i := range concurrency {
 		client, err := slurm.NewClientWithVersion(ctx, "v0.0.43",
 			slurm.WithBaseURL(mockServer.URL()),
 			slurm.WithAuth(auth.NewNoAuth()),
@@ -786,7 +786,7 @@ func benchmarkConcurrentUserAccountOps(b *testing.B, concurrency int) {
 
 	start := time.Now()
 
-	for i := 0; i < concurrency; i++ {
+	for i := range concurrency {
 		wg.Add(1)
 		go func(workerID int, client interfaces.SlurmClient) {
 			defer wg.Done()
@@ -794,7 +794,7 @@ func benchmarkConcurrentUserAccountOps(b *testing.B, concurrency int) {
 			userManager := client.Users()
 			accountManager := client.Accounts()
 
-			for j := 0; j < opsPerWorker; j++ {
+			for j := range opsPerWorker {
 				opType := j % 5
 				switch opType {
 				case 0:

@@ -179,7 +179,7 @@ echo 'Dependent job complete'`, prereqResp.JobID, prereqResp.JobID),
 
 	// Monitor the jobs
 	fmt.Println("\nMonitoring job progress...")
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		prereqJob, _ := client.Jobs().Get(ctx, prereqResp.JobID)
 		dependentJob, _ := client.Jobs().Get(ctx, dependentResp.JobID)
 

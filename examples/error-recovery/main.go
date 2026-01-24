@@ -259,7 +259,7 @@ func demonstrateCircuitBreaker(ctx context.Context, cfg *config.Config, auth aut
 	fmt.Printf("Circuit breaker initial state: %s\n", breaker.state)
 
 	// Simulate requests with circuit breaker
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		fmt.Printf("\nRequest %d:\n", i+1)
 
 		if breaker.isOpen() {

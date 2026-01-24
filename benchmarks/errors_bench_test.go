@@ -12,7 +12,7 @@ import (
 
 func BenchmarkNewSlurmError(b *testing.B) {
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = errors.NewSlurmError(
 			errors.ErrorCodeInvalidRequest,
 			"Invalid request format",
@@ -24,7 +24,7 @@ func BenchmarkWrapError(b *testing.B) {
 	originalErr := fmt.Errorf("connection timeout")
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = errors.WrapError(originalErr)
 	}
 }
@@ -36,7 +36,7 @@ func BenchmarkGetErrorCode(b *testing.B) {
 	)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = errors.GetErrorCode(err)
 	}
 }
@@ -48,7 +48,7 @@ func BenchmarkErrorFormatting(b *testing.B) {
 	)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = err.Error()
 	}
 }
@@ -57,7 +57,7 @@ func BenchmarkNestedErrorWrapping(b *testing.B) {
 	baseErr := fmt.Errorf("connection failed")
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		err1 := errors.WrapError(baseErr)
 		err2 := errors.NewSlurmErrorWithCause(errors.ErrorCodeNetworkTimeout, "network timeout", err1)
 		_ = errors.NewSlurmErrorWithCause(errors.ErrorCodeServiceUnavailable, "service unavailable", err2)
