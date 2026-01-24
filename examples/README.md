@@ -8,41 +8,41 @@ This directory contains comprehensive examples demonstrating various features an
 Start here if you're new to the library:
 
 - [`basic/`](basic/) - **Essential examples for beginners**
-  - [Connection & Authentication](basic/01_connect/) - Various ways to connect to SLURM
-  - [Listing Jobs](basic/02_list_jobs/) - Query and filter job information
-  - [Submitting Jobs](basic/03_submit_job/) - Submit different types of jobs
-  - [Error Handling](basic/04_error_handling/) - Robust error handling patterns
+  - [Connection & Authentication](basic/01_connect/main.go) - Various ways to connect to SLURM
+  - [Listing Jobs](basic/02_list_jobs/main.go) - Query and filter job information
+  - [Submitting Jobs](basic/03_submit_job/main.go) - Submit different types of jobs
+  - [Error Handling](basic/04_error_handling/main.go) - Robust error handling patterns
 
 ### Additional Quick Start
-- [`basic-usage/`](multi-version/basic-usage/) - Simple job submission and monitoring
+- [`basic-usage/`](multi-version/basic-usage/main.go) - Simple job submission and monitoring
 - [`job_list_example.go`](job_list_example.go) - Basic job listing example
 
 ### Authentication
-- [`authentication/`](multi-version/authentication/) - Different authentication methods (JWT, basic auth, no auth)
+- [`authentication/`](multi-version/authentication/main.go) - Different authentication methods (JWT, basic auth, no auth)
 
 ### Error Handling
-- [`error-handling/`](multi-version/error-handling/) - Comprehensive error handling patterns
+- [`error-handling/`](multi-version/error-handling/main.go) - Comprehensive error handling patterns
 
 ## Advanced Examples
 
 ### Job Management
 
 #### Array Jobs
-- [`array-jobs/`](array-jobs/) - Array job submission and management
+- [`array-jobs/`](array-jobs/main.go) - Array job submission and management
   - Submit array jobs with multiple tasks
   - Monitor array job progress
   - Selective task cancellation
   - Task-specific environment variables
 
 #### Job Dependencies
-- [`job-dependencies/`](job-dependencies/) - Complex job workflows
+- [`job-dependencies/`](job-dependencies/main.go) - Complex job workflows
   - Simple job chains (A → B → C)
   - Fan-out/fan-in patterns
   - Complex DAG workflows
   - Conditional execution with error handling
 
 #### Batch Operations
-- [`batch-operations/`](batch-operations/) - Concurrent job management
+- [`batch-operations/`](batch-operations/main.go) - Concurrent job management
   - Batch job submission
   - Progress monitoring
   - Results collection and reporting
@@ -59,12 +59,12 @@ Start here if you're new to the library:
 -->
 
 #### Job Workflows
-- [`job-workflow/`](multi-version/job-workflow/) - Complete job lifecycle management
+- [`job-workflow/`](multi-version/job-workflow/main.go) - Complete job lifecycle management
 
 ### Resource Management
 
 #### Resource Allocation
-- [`resource-allocation/`](resource-allocation/) - Advanced resource allocation patterns
+- [`resource-allocation/`](resource-allocation/main.go) - Advanced resource allocation patterns
   - GPU allocation (single, multi, type-specific)
   - Memory-intensive jobs
   - Node-specific constraints
@@ -86,13 +86,13 @@ Start here if you're new to the library:
 ### Real-time Monitoring
 
 #### Watch Jobs
-- [`watch-jobs/`](watch-jobs/) - Real-time job monitoring
+- [`watch-jobs/`](watch-jobs/main.go) - Real-time job monitoring
   - State change detection
   - Event-driven notifications
   - Configurable polling intervals
 
 #### Watch Nodes
-- [`watch-nodes/`](watch-nodes/) - Real-time node monitoring
+- [`watch-nodes/`](watch-nodes/main.go) - Real-time node monitoring
   - Node state changes
   - Resource availability tracking
   - Maintenance notifications
