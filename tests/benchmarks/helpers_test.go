@@ -4,6 +4,7 @@
 package benchmarks
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,7 +19,11 @@ func makeHTTPRequest(url string) (*http.Response, error) {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
-	return client.Get(url)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return client.Do(req)
 }
 
 // readResponseBody reads the entire response body and returns it as bytes

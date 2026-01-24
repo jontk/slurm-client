@@ -171,10 +171,9 @@ func TestAuthenticateMultipleTimes(t *testing.T) {
 	// Test that authentication can be called multiple times
 	auth := NewTokenAuth("test-token")
 
-	req, err := http.NewRequest(http.MethodGet, "http://example.com", http.NoBody)
-	helpers.RequireNoError(t, err)
-
 	ctx := helpers.TestContext(t)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://example.com", http.NoBody)
+	helpers.RequireNoError(t, err)
 
 	// First authentication
 	err = auth.Authenticate(ctx, req)

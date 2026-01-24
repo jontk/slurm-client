@@ -4,6 +4,7 @@
 package benchmarks
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -26,7 +27,11 @@ func BenchmarkMockServerAnalyticsOverhead(b *testing.B) {
 		endpoint := fmt.Sprintf("%s/slurm/v0.0.42/job/%s", baseURL, jobID)
 		b.ResetTimer()
 		for range b.N {
-			resp, err := http.Get(endpoint)
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, endpoint, nil)
+			if err != nil {
+				b.Fatal(err)
+			}
+			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
 				b.Fatal(err)
 			}

@@ -421,7 +421,8 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 
 		// Verify response structure - mock server nests data under "similar_jobs_performance"
 		assert.Contains(t, similar, "similar_jobs_performance")
-		similarData := similar["similar_jobs_performance"].(map[string]interface{})
+		similarData, ok := similar["similar_jobs_performance"].(map[string]interface{})
+	require.True(t, ok, "expected similar_jobs_performance to be map[string]interface{}")
 		assert.Contains(t, similarData, "reference_job_id")
 		assert.Contains(t, similarData, "similar_jobs")
 
@@ -460,7 +461,8 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 
 		// Verify response structure - mock server nests data under "batch_analysis"
 		assert.Contains(t, batchAnalysis, "batch_analysis")
-		batchData := batchAnalysis["batch_analysis"].(map[string]interface{})
+		batchData, ok := batchAnalysis["batch_analysis"].(map[string]interface{})
+	require.True(t, ok, "expected batch_analysis to be map[string]interface{}")
 		assert.Contains(t, batchData, "job_analyses")
 		assert.Contains(t, batchData, "analysis_summary")
 
@@ -486,7 +488,8 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 
 		// Verify response structure - mock server nests data under "workflow_performance"
 		assert.Contains(t, workflow, "workflow_performance")
-		workflowData := workflow["workflow_performance"].(map[string]interface{})
+		workflowData, ok := workflow["workflow_performance"].(map[string]interface{})
+	require.True(t, ok, "expected workflow_performance to be map[string]interface{}")
 		assert.Contains(t, workflowData, "workflow_id")
 		assert.Contains(t, workflowData, "job_performance")
 		assert.Contains(t, workflowData, "performance_summary")
@@ -513,7 +516,8 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 
 		// Verify response structure - mock server nests data under "efficiency_report"
 		assert.Contains(t, report, "efficiency_report")
-		reportData := report["efficiency_report"].(map[string]interface{})
+		reportData, ok := report["efficiency_report"].(map[string]interface{})
+	require.True(t, ok, "expected efficiency_report to be map[string]interface{}")
 		assert.Contains(t, reportData, "report_metadata")
 		assert.Contains(t, reportData, "executive_summary")
 		assert.Contains(t, reportData, "detailed_metrics")
