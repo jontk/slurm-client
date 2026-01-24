@@ -474,7 +474,7 @@ func TestHandleWebSocket_ConcurrentStreams(t *testing.T) {
 	// Read messages - should receive at least one event
 	messagesReceived := 0
 	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		var msg StreamMessage
 		err = conn.ReadJSON(&msg)
 		if err != nil {
@@ -584,7 +584,7 @@ func BenchmarkWebSocketUpgrade(b *testing.B) {
 	wsURL := "ws" + strings.TrimPrefix(ts.URL, "http")
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 		if err != nil {
 			b.Fatal(err)
@@ -602,7 +602,7 @@ func BenchmarkStreamMessage_Marshal(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, err := json.Marshal(msg)
 		if err != nil {
 			b.Fatal(err)
@@ -614,7 +614,7 @@ func BenchmarkStreamRequest_Unmarshal(b *testing.B) {
 	data := []byte(`{"stream":"jobs","options":{"user_id":"test","partition":"gpu"}}`)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		var req StreamRequest
 		err := json.Unmarshal(data, &req)
 		if err != nil {
@@ -641,7 +641,7 @@ func BenchmarkHandleWebSocket_JobStream(b *testing.B) {
 	wsURL := "ws" + strings.TrimPrefix(ts.URL, "http")
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		b.StopTimer()
 		conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 		if err != nil {
@@ -691,7 +691,7 @@ func BenchmarkSendMessage(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		server.sendMessage(conn, msg)
 	}
 }

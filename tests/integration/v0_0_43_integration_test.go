@@ -591,7 +591,7 @@ func (suite *V0043IntegrationTestSuite) TestPhase4_PerformanceBenchmarks() {
 		start := time.Now()
 		successCount := 0
 
-		for i := 0; i < requestCount; i++ {
+		for range requestCount {
 			if err := suite.client.Info().Ping(ctx); err == nil {
 				successCount++
 			}
@@ -611,7 +611,7 @@ func (suite *V0043IntegrationTestSuite) TestPhase4_PerformanceBenchmarks() {
 		results := make(chan error, concurrency)
 
 		start := time.Now()
-		for i := 0; i < concurrency; i++ {
+		for i := range concurrency {
 			go func(id int) {
 				_, err := suite.client.Jobs().List(ctx, &interfaces.ListJobsOptions{
 					Limit: 5,
@@ -621,7 +621,7 @@ func (suite *V0043IntegrationTestSuite) TestPhase4_PerformanceBenchmarks() {
 		}
 
 		successCount := 0
-		for i := 0; i < concurrency; i++ {
+		for range concurrency {
 			if err := <-results; err == nil {
 				successCount++
 			}
@@ -735,7 +735,7 @@ func (suite *V0043IntegrationTestSuite) TestPhase6_IntegrationWorkflows() {
 		suite.T().Log("Step 3: Monitoring job progress...")
 		states := make([]string, 0)
 
-		for i := 0; i < 30; i++ { // Monitor for up to 60 seconds
+		for range 30 { // Monitor for up to 60 seconds
 			job, err := suite.client.Jobs().Get(ctx, response.JobID)
 			if err != nil {
 				suite.T().Logf("Failed to get job status: %v", err)

@@ -415,7 +415,7 @@ func (suite *VersionCompatibilityTestSuite) TestVersionSwitching() {
 	}
 
 	// Perform operations with different versions in sequence
-	for i := 0; i < 3; i++ { // Test 3 rounds of switching
+	for i := range 3 { // Test 3 rounds of switching
 		for j, version := range versionList {
 			client := suite.clients[version]
 

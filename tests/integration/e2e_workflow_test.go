@@ -271,7 +271,7 @@ func (suite *E2EWorkflowTestSuite) TestMultiJobWorkflow() {
 	jobCount := 3
 	submittedJobs := make([]string, 0, jobCount)
 
-	for i := 0; i < jobCount; i++ {
+	for i := range jobCount {
 		jobName := fmt.Sprintf("%s-multi-%d", suite.testPrefix, i+1)
 		submission := &interfaces.JobSubmission{
 			Name:      jobName,
@@ -477,7 +477,7 @@ func (suite *E2EWorkflowTestSuite) TestErrorRecoveryWorkflow() {
 
 	// This test verifies that the client can handle temporary network issues
 	// We'll just do a series of quick operations to test resilience
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		err := suite.client.Info().Ping(ctx)
 		if err != nil {
 			suite.T().Logf("Ping %d failed: %v", i+1, err)

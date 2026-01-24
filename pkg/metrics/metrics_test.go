@@ -245,11 +245,11 @@ func TestDurationAggregator_Concurrency(t *testing.T) {
 	var wg sync.WaitGroup
 
 	// Add values concurrently
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			for j := 0; j < numOperations; j++ {
+			for j := range numOperations {
 				agg.add(time.Duration(id*numOperations+j) * time.Millisecond)
 			}
 		}(i)
@@ -273,11 +273,11 @@ func TestInMemoryCollector_Concurrency(t *testing.T) {
 	var wg sync.WaitGroup
 
 	// Test concurrent operations
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			for j := 0; j < numOperations; j++ {
+			for j := range numOperations {
 				collector.RecordRequest("GET", "/api/test")
 				collector.RecordResponse("GET", "/api/test", 200, time.Duration(j)*time.Millisecond)
 				if j%10 == 0 {

@@ -27,7 +27,7 @@ func BenchmarkRetryableCheck(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		resp := responses[i%len(responses)]
 		_ = policy.ShouldRetry(context.Background(), resp, nil, 1)
 	}
@@ -40,7 +40,7 @@ func BenchmarkBackoffCalculation(b *testing.B) {
 		WithMaxWaitTime(30 * time.Second)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		attempt := i % 5
 		_ = policy.WaitTime(attempt)
 	}
@@ -58,7 +58,7 @@ func BenchmarkRetryWithError(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		ctx := context.Background()
 		attempts := 0
 

@@ -61,7 +61,7 @@ func submitBatchJobs(ctx context.Context, client slurm.SlurmClient, count int) [
 	errChan := make(chan error, count)
 
 	// Submit jobs concurrently
-	for i := 0; i < count; i++ {
+	for i := range count {
 		wg.Add(1)
 		go func(index int) {
 			defer wg.Done()

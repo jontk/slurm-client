@@ -309,7 +309,7 @@ func complexReservationScenarios(ctx context.Context, cfg *config.Config, auth a
 	// Scenario 1: Recurring weekly reservation
 	fmt.Println("Scenario 1: Setting up recurring weekly reservations")
 
-	for week := 0; week < 4; week++ {
+	for week := range 4 {
 		startTime := getNextMonday().Add(time.Duration(week*7*24) * time.Hour)
 
 		reservation := &interfaces.ReservationCreate{
@@ -343,7 +343,7 @@ func complexReservationScenarios(ctx context.Context, cfg *config.Config, auth a
 	}
 
 	// Check for overlaps
-	for i := 0; i < len(allReservations.Reservations); i++ {
+	for i := range len(allReservations.Reservations) {
 		for j := i + 1; j < len(allReservations.Reservations); j++ {
 			res1 := allReservations.Reservations[i]
 			res2 := allReservations.Reservations[j]

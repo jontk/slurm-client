@@ -1101,7 +1101,7 @@ func (m *JobManagerImpl) GetJobUtilization(ctx context.Context, jobID string) (*
 		}
 
 		// Add per-GPU metrics
-		for i := 0; i < gpuCount; i++ {
+		for i := range gpuCount {
 			utilization.GPUUtilization.Devices[i] = interfaces.GPUDeviceUtilization{
 				DeviceID:   fmt.Sprintf("gpu%d", i),
 				DeviceUUID: fmt.Sprintf("GPU-%d-UUID", i),
@@ -1341,7 +1341,7 @@ func generatePerformanceTrends(job *interfaces.Job) *interfaces.PerformanceTrend
 	}
 
 	// Generate simulated trend data
-	for i := 0; i < points; i++ {
+	for i := range points {
 		timestamp := startTime.Add(time.Duration(i) * time.Hour)
 		trends.ClusterUtilization[i] = interfaces.UtilizationPoint{
 			Timestamp:   timestamp,
@@ -2163,7 +2163,7 @@ func generateTimePoints(startTime, endTime *time.Time, numPoints int) []time.Tim
 
 	interval := duration / time.Duration(numPoints-1)
 
-	for i := 0; i < numPoints; i++ {
+	for i := range numPoints {
 		points[i] = startTime.Add(time.Duration(i) * interval)
 	}
 
@@ -2907,7 +2907,7 @@ func generateStepTasks(job *interfaces.Job, stepID int) []interfaces.StepTaskInf
 		nodeName = job.Nodes[0]
 	}
 
-	for i := 0; i < taskCount; i++ {
+	for i := range taskCount {
 		// Distribute tasks across nodes
 		localID := i
 		if len(job.Nodes) > 0 {
@@ -3320,7 +3320,7 @@ func generateStepResourceTrends(stepDetails *interfaces.JobStepDetails, stepUtil
 	// Generate timestamps
 	timestamps := make([]time.Time, sampleCount)
 	if stepDetails.StartTime != nil {
-		for i := 0; i < sampleCount; i++ {
+		for i := range sampleCount {
 			timestamps[i] = stepDetails.StartTime.Add(time.Duration(i) * samplingInterval)
 		}
 	}
@@ -3471,7 +3471,7 @@ func generateCPUTrendValues(utilization *interfaces.ResourceUtilization, count i
 	values := make([]float64, count)
 	baseValue := utilization.Percentage
 
-	for i := 0; i < count; i++ {
+	for i := range count {
 		// Add some realistic variation
 		variation := (rand.Float64() - 0.5) * 20.0 // +/- 10%
 		values[i] = math.Max(0, math.Min(100, baseValue+variation))
@@ -3484,7 +3484,7 @@ func generateMemoryTrendValues(utilization *interfaces.ResourceUtilization, coun
 	values := make([]float64, count)
 	baseValue := utilization.Percentage
 
-	for i := 0; i < count; i++ {
+	for i := range count {
 		// Memory tends to be more stable than CPU
 		variation := (rand.Float64() - 0.5) * 10.0 // +/- 5%
 		values[i] = math.Max(0, math.Min(100, baseValue+variation))
@@ -3793,7 +3793,7 @@ func (m *JobManagerImpl) generateHistoricalSamples(
 // generateCoreMetrics generates CPU core metrics for simulation
 func generateCoreMetrics(coreCount int, avgUtilization float64) []interfaces.CPUCoreMetric {
 	metrics := make([]interfaces.CPUCoreMetric, coreCount)
-	for i := 0; i < coreCount; i++ {
+	for i := range coreCount {
 		// Add some variance between cores
 		variation := (rand.Float64() - 0.5) * 20.0 // +/- 10%
 		utilization := math.Max(0, math.Min(100, avgUtilization+variation))

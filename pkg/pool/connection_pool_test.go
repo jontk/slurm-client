@@ -471,7 +471,7 @@ func TestHTTPClientPool_ConcurrentAccess(t *testing.T) {
 	clients := make([]*http.Client, numGoroutines)
 	done := make(chan int, numGoroutines)
 
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		go func(index int) {
 			clients[index] = pool.GetClient(endpoint)
 			done <- index
@@ -479,7 +479,7 @@ func TestHTTPClientPool_ConcurrentAccess(t *testing.T) {
 	}
 
 	// Wait for all goroutines to complete
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		<-done
 	}
 

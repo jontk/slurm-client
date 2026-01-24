@@ -1094,7 +1094,7 @@ func generateMinimalTimePoints(startTime, endTime *time.Time, numPoints int) []t
 	points := make([]time.Time, numPoints)
 	interval := time.Hour / time.Duration(numPoints)
 
-	for i := 0; i < numPoints; i++ {
+	for i := range numPoints {
 		points[i] = start.Add(time.Duration(i) * interval)
 	}
 
@@ -1451,7 +1451,7 @@ func generateBasicStepTasks(job *interfaces.Job, stepID int) []interfaces.StepTa
 		nodeName = job.Nodes[0]
 	}
 
-	for i := 0; i < taskCount; i++ {
+	for i := range taskCount {
 		// Basic task distribution in v0.0.41
 		if len(job.Nodes) > 0 {
 			nodeIndex := i % len(job.Nodes)
@@ -2095,7 +2095,7 @@ func (m *JobManagerImpl) GetJobComprehensiveAnalytics(ctx context.Context, jobID
 
 func generateBasicCoreMetrics(cpuCount int) []interfaces.CPUCoreMetric {
 	coreMetrics := make([]interfaces.CPUCoreMetric, cpuCount)
-	for i := 0; i < cpuCount; i++ {
+	for i := range cpuCount {
 		coreMetrics[i] = interfaces.CPUCoreMetric{
 			CoreID:          i,
 			Utilization:     60.0 + float64(i%15)*3, // More variation
@@ -2123,7 +2123,7 @@ func generateBasicNUMAMetrics(cpus int, memory int64) []interfaces.NUMANodeMetri
 	cpusPerNode := cpus / numNodes
 	memoryPerNode := memory / int64(numNodes)
 
-	for i := 0; i < numNodes; i++ {
+	for i := range numNodes {
 		// Slight variations per node
 		nodeUtilization := 65.0 + float64(i%3)*5.0
 
