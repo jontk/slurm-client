@@ -1,6 +1,6 @@
 # Makefile for slurm-client
 
-.PHONY: build test check-mocks lint fmt vet clean docs help install-tools install-hooks generate download-specs generate-mocks
+.PHONY: build test check-mocks lint lint-staged fmt vet clean docs help install-tools install-hooks generate download-specs generate-mocks
 
 # Variables
 BINARY_NAME=slurm-client
@@ -53,6 +53,17 @@ benchmark:
 lint: install-tools
 	@echo "Running linter..."
 	golangci-lint run
+
+# Lint only staged files (for pre-commit hooks)
+lint-staged: install-tools
+	@echo "Linting staged files..."
+	@STAGED_GO_FILES=$$(git diff --cached --name-only --diff-filter=ACM -- '*.go' 2>/dev/null); \
+	if [ -z "$$STAGED_GO_FILES" ]; then \
+		echo "No staged Go files to lint"; \
+	else \
+		echo "Staged files: $$STAGED_GO_FILES"; \
+		golangci-lint run $$STAGED_GO_FILES || exit 1; \
+	fi
 
 # Format the code
 fmt:
