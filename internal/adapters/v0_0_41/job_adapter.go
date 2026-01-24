@@ -128,29 +128,8 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 		jobList.Jobs = append(jobList.Jobs, *job)
 	}
 
-	// Extract warning messages if any
-	if resp.JSON200.Warnings != nil {
-		warnings := make([]string, 0, len(*resp.JSON200.Warnings))
-		for _, warning := range *resp.JSON200.Warnings {
-			if warning.Description != nil {
-				warnings = append(warnings, *warning.Description)
-			}
-		}
-		// JobList doesn't have a Meta field in common types
-		// Warnings are being ignored for now
-	}
-
-	// Extract error messages if any
-	if resp.JSON200.Errors != nil {
-		errors := make([]string, 0, len(*resp.JSON200.Errors))
-		for _, error := range *resp.JSON200.Errors {
-			if error.Description != nil {
-				errors = append(errors, *error.Description)
-			}
-		}
-		// JobList doesn't have a Meta field in common types
-		// Errors are being ignored for now
-	}
+	// Note: JobList doesn't have a Meta field in common types
+	// Warnings and errors from the response are being ignored for now
 
 	return jobList, nil
 }

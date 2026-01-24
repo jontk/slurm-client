@@ -135,6 +135,7 @@ jobs:
           --exclude-private
           --exclude '.*\.ar\.jontk\.com.*'
           --exclude 'https://api\.securityscorecards\.dev/.*'
+          --exclude 'https://www\.conventionalcommits\.org/.*'
           './**/*.md'
         fail: true
 

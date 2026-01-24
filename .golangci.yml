@@ -6,6 +6,7 @@ linters:
     - containedctx              # Embedded context fields have legitimate use cases in our middleware
     - copyloopvar               # Fixed in Go 1.22+ with improved loop variable scoping
     - cyclop                    # Cyclomatic complexity too strict for domain-specific business logic
+    - dupl                      # Duplicate code detection too strict for adapter boilerplate patterns
     - embeddedstructfieldcheck  # Embedded struct formatting is stylistic
     - err113                    # Inline fmt.Errorf is idiomatic Go pattern
     - exhaustruct               # Allows zero-value fields for optional configuration
