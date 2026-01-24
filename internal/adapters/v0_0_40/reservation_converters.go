@@ -72,8 +72,8 @@ func (a *ReservationAdapter) convertAPIReservationToCommon(apiReservation api.V0
 	}
 
 	// License
+	// Parse licenses if needed
 	if apiReservation.Licenses != nil {
-		// Parse licenses if needed
 	}
 
 	// TRES - convert string to map

@@ -136,10 +136,8 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 				warnings = append(warnings, *warning.Description)
 			}
 		}
-		if len(warnings) > 0 {
-			// JobList doesn't have a Meta field in common types
-			// Warnings are being ignored for now
-		}
+		// JobList doesn't have a Meta field in common types
+		// Warnings are being ignored for now
 	}
 
 	// Extract error messages if any
@@ -150,10 +148,8 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 				errors = append(errors, *error.Description)
 			}
 		}
-		if len(errors) > 0 {
-			// JobList doesn't have a Meta field in common types
-			// Errors are being ignored for now
-		}
+		// JobList doesn't have a Meta field in common types
+		// Errors are being ignored for now
 	}
 
 	return jobList, nil

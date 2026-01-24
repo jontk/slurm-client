@@ -66,10 +66,8 @@ func (a *StandaloneAdapter) GetLicenses(ctx context.Context) (*types.LicenseList
 		if apiLicense.Reserved != nil {
 			license.Reserved = int(*apiLicense.Reserved)
 		}
-		if apiLicense.Remote != nil {
-			// Remote is a bool indicating if license is served by the database
-			// We don't have a direct mapping for this, so skip it
-		}
+		// Remote is a bool indicating if license is served by the database
+		// We don't have a direct mapping for this, so skip it
 
 		licenses = append(licenses, license)
 	}

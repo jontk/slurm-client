@@ -34,9 +34,9 @@ func (m *PartitionManagerImpl) List(ctx context.Context, opts *interfaces.ListPa
 	params := &SlurmV0044GetPartitionsParams{}
 
 	// Apply filtering options if provided
+	// Note: v0.0.44 API has limited filtering options
+	// States filtering will be applied client-side if needed
 	if opts != nil {
-		// Note: v0.0.44 API has limited filtering options
-		// States filtering will be applied client-side if needed
 	}
 
 	// Call the generated OpenAPI client

@@ -30,7 +30,6 @@ linters:
     - nlreturn                  # Blank lines before returns are stylistic
     - nonamedreturns            # Named returns improve clarity in appropriate contexts
     - paralleltest              # Not all tests can run in parallel (e.g., integration tests)
-    - revive                    # Candidate for future enablement (P2)
     - tagliatelle               # Struct tags follow SLURM API conventions which may differ
     - testpackage               # Internal test packages used to access unexported functions
     - tparallel                 # Over-aggressive for our test suite structure
@@ -117,6 +116,17 @@ linters:
       time-month: true
       time-layout: true
       crypto-hash: true
+    revive:
+      enable-all-rules: false
+      rules:
+        - name: empty-block
+          severity: warning
+        - name: context-as-argument
+          severity: warning
+          disabled: false
+        - name: context-keys-type
+          severity: warning
+          disabled: false
     perfsprint:
       # Enable performance optimizations for sprintf
       int-conversion: true      # Use strconv instead of fmt.Sprintf for integers
@@ -153,6 +163,10 @@ linters:
           - unparam
         path: _test\.go
       - linters:
+          - revive
+        path: _test\.go
+        text: context-as-argument
+      - linters:
           - deadcode
           - unused
           - nilnil
@@ -168,7 +182,21 @@ linters:
         path: ^internal/api/
       - linters:
           - dupl
+          - revive
         path: ^internal/adapters/
+        text: empty-block
+      - linters:
+          - revive
+        path: ^internal/api/
+        text: empty-block
+      - linters:
+          - revive
+        path: ^internal/managers/
+        text: empty-block
+      - linters:
+          - revive
+        path: ^tests/benchmarks/
+        text: empty-block
       - linters:
           - dupl
         path: ^internal/factory/

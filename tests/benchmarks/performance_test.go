@@ -98,10 +98,10 @@ func runJobOperationBenchmark(b *testing.B, client slurm.SlurmClient) {
 	}
 
 	// Test job getting
+	// Expected to fail since client isn't fully implemented
+	// In a real benchmark, this would succeed
 	_, err = client.Jobs().Get(ctx, "bench-1")
 	if err != nil {
-		// Expected to fail since client isn't fully implemented
-		// In a real benchmark, this would succeed
 	}
 }
 
@@ -334,8 +334,8 @@ func benchmarkMemoryUsage(b *testing.B, profile performance.PerformanceProfile) 
 		_, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
 			Limit: 100,
 		})
+		// Expected to fail with current implementation
 		if err != nil {
-			// Expected to fail with current implementation
 		}
 
 		// Add some cache operations
@@ -468,8 +468,8 @@ func benchmarkResponseTime(b *testing.B, delay time.Duration, cacheEnabled bool)
 			cache.Set("jobs.list", params, value)
 		}
 
+		// Expected to fail with current implementation
 		if err != nil {
-			// Expected to fail with current implementation
 		}
 	}
 

@@ -62,10 +62,9 @@ func (m *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	response := m.responses[0]
 	if len(m.responses) > 1 {
 		m.responses = m.responses[1:]
-	} else {
-		// Keep the last response for subsequent calls
-		// Don't remove it to avoid nil pointer issues
 	}
+	// Keep the last response for subsequent calls
+	// Don't remove it to avoid nil pointer issues
 
 	return response.response, response.err
 }

@@ -16,6 +16,15 @@ import (
 	"unicode"
 )
 
+// contextKey is the type for context keys to avoid collisions
+type contextKey string
+
+const (
+	contextKeyTraceID   contextKey = "trace_id"
+	contextKeyRequestID contextKey = "request_id"
+	contextKeyUser      contextKey = "user"
+)
+
 // Logger is the interface for structured logging
 type Logger interface {
 	Debug(msg string, args ...any)
@@ -92,17 +101,17 @@ func (l *slogLogger) WithContext(ctx context.Context) Logger {
 	attrs := make([]any, 0)
 
 	// Add trace ID if present
-	if traceID := ctx.Value("trace_id"); traceID != nil {
+	if traceID := ctx.Value(contextKeyTraceID); traceID != nil {
 		attrs = append(attrs, "trace_id", traceID)
 	}
 
 	// Add request ID if present
-	if requestID := ctx.Value("request_id"); requestID != nil {
+	if requestID := ctx.Value(contextKeyRequestID); requestID != nil {
 		attrs = append(attrs, "request_id", requestID)
 	}
 
 	// Add user if present
-	if user := ctx.Value("user"); user != nil {
+	if user := ctx.Value(contextKeyUser); user != nil {
 		attrs = append(attrs, "user", user)
 	}
 

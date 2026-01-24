@@ -373,14 +373,14 @@ func (m *InfoManagerImpl) Stats(ctx context.Context) (*interfaces.ClusterStats, 
 	}
 
 	// Add more diagnostic statistics if available
+	// We can track failed jobs separately if needed
+	// stats.FailedJobs = int(*resp.JSON200.Statistics.JobsFailed)
 	if resp.JSON200.Statistics.JobsFailed != nil {
-		// We can track failed jobs separately if needed
-		// stats.FailedJobs = int(*resp.JSON200.Statistics.JobsFailed)
 	}
 
+	// We can track canceled jobs separately if needed
+	// stats.CanceledJobs = int(*resp.JSON200.Statistics.JobsCanceled)
 	if resp.JSON200.Statistics.JobsCanceled != nil {
-		// We can track canceled jobs separately if needed
-		// stats.CanceledJobs = int(*resp.JSON200.Statistics.JobsCanceled)
 	}
 
 	return stats, nil

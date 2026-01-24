@@ -177,6 +177,7 @@ func (c *ResponseCache) Get(operation string, params map[string]interface{}) ([]
 	if item.Compressed && c.config.EnableCompression {
 		// In a production implementation, you would decompress here
 		// For this example, we'll assume the value is already decompressed
+		_ = item.Compressed // Explicitly handle the compressed flag
 	}
 
 	return value, true

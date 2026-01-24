@@ -293,19 +293,19 @@ func (m *QoSBaseManager) ValidateQoSUpdateSafety(currentQoS *types.QoS, update *
 	if update.Limits != nil {
 		// If we're reducing MaxJobsPerUser, check if any user currently exceeds the new limit
 		if update.Limits.MaxJobsPerUser != nil && currentQoS.Limits != nil && currentQoS.Limits.MaxJobsPerUser != nil {
+			// This is a potentially breaking change
+			// In a real implementation, we'd check active job counts
+			// Log warning - we'll add proper logging later
+			// For now, just continue silently
 			if *update.Limits.MaxJobsPerUser < *currentQoS.Limits.MaxJobsPerUser {
-				// This is a potentially breaking change
-				// In a real implementation, we'd check active job counts
-				// Log warning - we'll add proper logging later
-				// For now, just continue silently
 			}
 		}
 	}
 
 	// Check if changing priority would affect job scheduling
+	// Log warning - we'll add proper logging later
+	// For now, just continue silently
 	if update.Priority != nil && *update.Priority != currentQoS.Priority {
-		// Log warning - we'll add proper logging later
-		// For now, just continue silently
 	}
 
 	// Check if removing allowed accounts/users would affect associations

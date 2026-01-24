@@ -259,9 +259,9 @@ func (m *PartitionBaseManager) matchesPartitionFilters(partition types.Partition
 	}
 
 	// Filter by update time
+	// This would require API support to track update times
+	// For now, we'll accept all items
 	if opts.UpdateTime != nil {
-		// This would require API support to track update times
-		// For now, we'll accept all items
 	}
 
 	return true

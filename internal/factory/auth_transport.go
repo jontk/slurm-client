@@ -37,6 +37,7 @@ func (t *authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		if err := t.auth.Authenticate(req.Context(), reqCopy); err != nil {
 			// Log error but continue - some endpoints may not need auth
 			// In production, you might want to handle this differently
+			_ = err // Explicitly ignore the error as documented above
 		}
 	}
 

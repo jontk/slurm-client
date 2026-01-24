@@ -886,15 +886,15 @@ func (a *JobAdapter) convertCommonJobCreateToAPI(create *types.JobCreate) (*api.
 	}
 
 	// Set working directory if provided
+	// Note: WorkDirectory field might not exist in V0044Job
+	// This will be set in the V0044JobDescMsg in Submit method
 	if create.WorkingDirectory != "" {
-		// Note: WorkDirectory field might not exist in V0044Job
-		// This will be set in the V0044JobDescMsg in Submit method
 	}
 
 	// Set comment if provided
+	// Comment field in V0044Job is a complex struct, not a simple string
+	// This will be handled in the Submit method with proper job description
 	if create.Comment != "" {
-		// Comment field in V0044Job is a complex struct, not a simple string
-		// This will be handled in the Submit method with proper job description
 	}
 
 	// Set priority if provided
