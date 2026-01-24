@@ -39,6 +39,9 @@ func (a *AccountAdapter) convertAPIAccountToCommon(apiAccount api.V0043Account) 
 			case api.V0043AccountFlagsDELETED:
 				account.Deleted = true
 				// Note: V0043AccountFlagsDEFAULT does not exist in this API version
+			default:
+				// Handle other flags (NoUsersAreCoords, UsersAreCoords, WithAssociations, WithCoordinators)
+				// These are not directly mapped to account properties
 			}
 		}
 	}

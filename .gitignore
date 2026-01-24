@@ -162,3 +162,9 @@ commit_*.txt
 test-*.txt
 test*.txt
 
+# Agent documentation (local only)
+AGENTS.md
+
+# Planning documents (local only)
+plan/
+

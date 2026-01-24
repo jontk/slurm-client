@@ -331,7 +331,7 @@ func TestNetworkErrors(t *testing.T) {
 					// For timeout tests, use a short context
 					opCtx := ctx
 					if test.name == "Timeout" {
-						timeoutCtx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+						timeoutCtx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 						defer cancel()
 						opCtx = timeoutCtx
 					}

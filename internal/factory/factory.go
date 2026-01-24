@@ -144,7 +144,7 @@ func (f *ClientFactory) NewClientWithVersion(ctx context.Context, version string
 		}
 	}
 
-	return f.createClient(targetVersion)
+	return f.createClient(ctx, targetVersion)
 }
 
 // NewClientForSlurmVersion creates a client compatible with a specific Slurm version
@@ -164,7 +164,7 @@ func (f *ClientFactory) NewClientForSlurmVersion(ctx context.Context, slurmVersi
 		return nil, fmt.Errorf("no compatible API version found for Slurm %s", slurmVersion)
 	}
 
-	return f.createClient(compatibleVersion)
+	return f.createClient(ctx, compatibleVersion)
 }
 
 // ListSupportedVersions returns all supported API versions
@@ -263,18 +263,18 @@ func (f *ClientFactory) detectVersion(ctx context.Context) (*versioning.APIVersi
 }
 
 // createClient creates a version-specific client implementation
-func (f *ClientFactory) createClient(version *versioning.APIVersion) (SlurmClient, error) {
+func (f *ClientFactory) createClient(ctx context.Context, version *versioning.APIVersion) (SlurmClient, error) {
 	switch version.String() {
 	case "v0.0.40":
-		return f.createV0_0_40Client()
+		return f.createV0_0_40Client(ctx)
 	case "v0.0.41":
-		return f.createV0_0_41Client()
+		return f.createV0_0_41Client(ctx)
 	case "v0.0.42":
-		return f.createV0_0_42Client()
+		return f.createV0_0_42Client(ctx)
 	case "v0.0.43":
-		return f.createV0_0_43Client()
+		return f.createV0_0_43Client(ctx)
 	case "v0.0.44":
-		return f.createV0_0_44Client()
+		return f.createV0_0_44Client(ctx)
 	default:
 		return nil, fmt.Errorf("unsupported API version: %s", version.String())
 	}
@@ -282,9 +282,9 @@ func (f *ClientFactory) createClient(version *versioning.APIVersion) (SlurmClien
 
 // Version-specific client creation methods (to be implemented with generated code)
 
-func (f *ClientFactory) createV0_0_40Client() (SlurmClient, error) {
+func (f *ClientFactory) createV0_0_40Client(ctx context.Context) (SlurmClient, error) {
 	// Create enhanced HTTP client with all features
-	httpClient := f.buildEnhancedHTTPClient()
+	httpClient := f.buildEnhancedHTTPClient(ctx)
 
 	// Apply authentication if needed
 	if f.auth != nil {
@@ -315,9 +315,9 @@ func (f *ClientFactory) createV0_0_40Client() (SlurmClient, error) {
 	return v040.NewWrapperClient(config)
 }
 
-func (f *ClientFactory) createV0_0_41Client() (SlurmClient, error) {
+func (f *ClientFactory) createV0_0_41Client(ctx context.Context) (SlurmClient, error) {
 	// Create enhanced HTTP client with all features
-	httpClient := f.buildEnhancedHTTPClient()
+	httpClient := f.buildEnhancedHTTPClient(ctx)
 
 	// Apply authentication if needed
 	if f.auth != nil {
@@ -348,9 +348,9 @@ func (f *ClientFactory) createV0_0_41Client() (SlurmClient, error) {
 	return v041.NewWrapperClient(config)
 }
 
-func (f *ClientFactory) createV0_0_42Client() (SlurmClient, error) {
+func (f *ClientFactory) createV0_0_42Client(ctx context.Context) (SlurmClient, error) {
 	// Create enhanced HTTP client with all features
-	httpClient := f.buildEnhancedHTTPClient()
+	httpClient := f.buildEnhancedHTTPClient(ctx)
 
 	// Apply authentication if needed
 	if f.auth != nil {
@@ -381,9 +381,9 @@ func (f *ClientFactory) createV0_0_42Client() (SlurmClient, error) {
 	return v042.NewWrapperClient(config)
 }
 
-func (f *ClientFactory) createV0_0_43Client() (SlurmClient, error) {
+func (f *ClientFactory) createV0_0_43Client(ctx context.Context) (SlurmClient, error) {
 	// Create enhanced HTTP client with all features
-	httpClient := f.buildEnhancedHTTPClient()
+	httpClient := f.buildEnhancedHTTPClient(ctx)
 
 	// Apply authentication if needed
 	if f.auth != nil {
@@ -414,9 +414,9 @@ func (f *ClientFactory) createV0_0_43Client() (SlurmClient, error) {
 	return v043.NewWrapperClient(config)
 }
 
-func (f *ClientFactory) createV0_0_44Client() (SlurmClient, error) {
+func (f *ClientFactory) createV0_0_44Client(ctx context.Context) (SlurmClient, error) {
 	// Create enhanced HTTP client with all features
-	httpClient := f.buildEnhancedHTTPClient()
+	httpClient := f.buildEnhancedHTTPClient(ctx)
 
 	// Apply authentication if needed
 	if f.auth != nil {

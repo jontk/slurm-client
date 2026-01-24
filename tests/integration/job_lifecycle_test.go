@@ -368,7 +368,3 @@ func TestJobListFiltering(t *testing.T) {
 }
 
 // Helper functions
-
-func stringPtr(s string) *string {
-	return &s
-}

@@ -4,13 +4,10 @@ linters:
   disable:
     - canonicalheader
     - containedctx
-    - contextcheck
     - copyloopvar
     - cyclop
-    - dupword
     - embeddedstructfieldcheck  # Embedded struct formatting is stylistic
     - err113
-    - exhaustive
     - exhaustruct
     - forbidigo
     - forcetypeassert
@@ -33,7 +30,6 @@ linters:
     - nestif
     - noinlineerr               # Inline error handling is idiomatic Go
     - nlreturn
-    - noctx
     - nonamedreturns
     - paralleltest
     - revive
@@ -41,7 +37,6 @@ linters:
     - testpackage
     - tparallel
     - unparam
-    - usetesting
     - varnamelen
     - wrapcheck
     - wsl                       # Whitespace linter (deprecated version)
@@ -64,6 +59,10 @@ linters:
       errorf: true      # Check for error wrapping with %w
       asserts: true     # Check for error type assertions
       comparison: true  # Check for error comparisons
+    exhaustive:
+      check: [switch, map]  # Check both switches and maps
+      explicit-exhaustive-switch: false  # Allow default cases
+      default-signifies-exhaustive: true  # Treat default case as exhaustive
     gocritic:
       disabled-checks:
         - dupImport
@@ -148,6 +147,7 @@ linters:
           - gocyclo
           - gocritic
           - gosec
+          - noctx
           - prealloc
           - staticcheck
           - testifylint
@@ -220,10 +220,12 @@ linters:
           - dupl
           - errcheck
           - errorlint
+          - exhaustive
           - goconst
           - gocritic
           - gosec
           - ineffassign
+          - noctx
           - perfsprint
           - prealloc
           - staticcheck
@@ -244,6 +246,7 @@ linters:
           - errcheck
           - goconst
           - gocritic
+          - noctx
           - perfsprint
           - staticcheck
           - testifylint
@@ -252,9 +255,22 @@ linters:
       - linters:
           - goconst
           - gocritic
+          - noctx
           - testifylint
           - thelper
         path: ^tests/
+      - linters:
+          - exhaustive
+        path: ^internal/common/slurm_error_codes\.go$
+      - linters:
+          - exhaustive
+        path: ^pkg/context/context\.go$
+      - linters:
+          - exhaustive
+        path: ^pkg/errors/builders\.go$
+      - linters:
+          - exhaustive
+        path: ^pkg/errors/version_mapping\.go$
       - linters:
           - goconst
         path: ^pkg/errors/  # Error messages are intentionally repeated for clarity

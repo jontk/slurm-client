@@ -15,10 +15,10 @@ import (
 )
 
 func testV0041() {
-	// Get JWT token from environment or use test token
+	// Get JWT token from environment or use default value
 	token := os.Getenv("SLURM_JWT_TOKEN")
 	if token == "" {
-		// Use test token
+		// Use default value
 		token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjI2NTM4Mjk5NzYsImlhdCI6MTc1MzgyOTk3Niwic3VuIjoicm9vdCJ9.-z8Cq_wHuOxNJ7KHHTboX3l9r6JBtSD1RxQUgQR9owE"
 	}
 

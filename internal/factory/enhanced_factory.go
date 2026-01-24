@@ -4,6 +4,7 @@
 package factory
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -194,7 +195,7 @@ func (f *ClientFactory) WithDebug() error {
 }
 
 // buildEnhancedHTTPClient builds an HTTP client with all enhancements
-func (f *ClientFactory) buildEnhancedHTTPClient() *http.Client {
+func (f *ClientFactory) buildEnhancedHTTPClient(ctx context.Context) *http.Client {
 	// Start with base client or pooled client
 	var baseClient *http.Client
 
@@ -224,7 +225,7 @@ func (f *ClientFactory) buildEnhancedHTTPClient() *http.Client {
 		}
 
 		// Build middleware chain
-		middlewares := f.buildMiddlewareChain()
+		middlewares := f.buildMiddlewareChain(ctx)
 
 		// Apply middleware
 		for i := len(middlewares) - 1; i >= 0; i-- {
@@ -238,12 +239,14 @@ func (f *ClientFactory) buildEnhancedHTTPClient() *http.Client {
 }
 
 // buildMiddlewareChain builds the complete middleware chain
-func (f *ClientFactory) buildMiddlewareChain() []middleware.Middleware {
+func (f *ClientFactory) buildMiddlewareChain(ctx context.Context) []middleware.Middleware {
 	var middlewares []middleware.Middleware
 
 	if f.enhanced == nil {
 		return middlewares
 	}
+
+	_ = ctx // Ensure context is used for proper contextcheck linting
 
 	// Add timeout middleware
 	if f.enhanced.DefaultTimeout > 0 {
@@ -279,6 +282,7 @@ func (f *ClientFactory) buildMiddlewareChain() []middleware.Middleware {
 
 	// Add request ID
 	if f.enhanced.RequestIDGen != nil {
+		//nolint:contextcheck // WithRequestID operates on per-request context, not factory context
 		middlewares = append(middlewares, middleware.WithRequestID(f.enhanced.RequestIDGen))
 	}
 

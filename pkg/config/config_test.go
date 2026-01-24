@@ -4,7 +4,6 @@
 package config
 
 import (
-	"os"
 	"testing"
 	"time"
 
@@ -31,33 +30,6 @@ func TestNewDefault(t *testing.T) {
 }
 
 func TestConfigLoad(t *testing.T) {
-	// Save original environment
-	originalEnv := make(map[string]string)
-	testEnvVars := []string{
-		"SLURM_REST_URL",
-		"SLURM_TIMEOUT",
-		"SLURM_USER_AGENT",
-		"SLURM_MAX_RETRIES",
-		"SLURM_API_VERSION",
-		"SLURM_DEBUG",
-		"SLURM_INSECURE_SKIP_VERIFY",
-	}
-
-	for _, envVar := range testEnvVars {
-		originalEnv[envVar] = os.Getenv(envVar)
-	}
-
-	// Clean up after test
-	defer func() {
-		for _, envVar := range testEnvVars {
-			if val, exists := originalEnv[envVar]; exists {
-				os.Setenv(envVar, val)
-			} else {
-				os.Unsetenv(envVar)
-			}
-		}
-	}()
-
 	tests := []struct {
 		name     string
 		envVars  map[string]string
@@ -152,7 +124,7 @@ func TestConfigLoad(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set environment variables
 			for key, value := range tt.envVars {
-				os.Setenv(key, value)
+				t.Setenv(key, value)
 			}
 
 			config := NewDefault()
@@ -160,11 +132,6 @@ func TestConfigLoad(t *testing.T) {
 
 			helpers.AssertNotNil(t, config)
 			tt.expected(config)
-
-			// Clean up environment variables for this test
-			for key := range tt.envVars {
-				os.Unsetenv(key)
-			}
 		})
 	}
 }

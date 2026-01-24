@@ -118,21 +118,21 @@ func (a *UserAdapter) convertCommonToAPIUser(user *types.User) *api.V0041Openapi
 			// AdministratorLevel AdminLevel granted to the user
 			AdministratorLevel *[]api.V0041OpenapiUsersRespUsersAdministratorLevel `json:"administrator_level,omitempty"`
 
-			// Associations Associations created for this user
+			// Associations created for this user
 			Associations *[]struct {
-				// Account Account
+				// Account details
 				Account *string `json:"account,omitempty"`
 
-				// Cluster Cluster
+				// Cluster details
 				Cluster *string `json:"cluster,omitempty"`
 
 				// Id Numeric association ID
 				Id *int32 `json:"id,omitempty"`
 
-				// Partition Partition
+				// Partition details
 				Partition *string `json:"partition,omitempty"`
 
-				// User User name
+				// User name
 				User string `json:"user"`
 			} `json:"associations,omitempty"`
 
@@ -163,7 +163,7 @@ func (a *UserAdapter) convertCommonToAPIUser(user *types.User) *api.V0041Openapi
 
 			// Wckeys List of available WCKeys
 			Wckeys *[]struct {
-				// Accounting Accounting records containing related resource usage
+				// Accounting records containing related resource usage
 				Accounting *[]struct {
 					// TRES Trackable resources
 					TRES *struct {
@@ -191,10 +191,10 @@ func (a *UserAdapter) convertCommonToAPIUser(user *types.User) *api.V0041Openapi
 					Start *int64 `json:"start,omitempty"`
 				} `json:"accounting,omitempty"`
 
-				// Cluster Cluster name
+				// Cluster name
 				Cluster string `json:"cluster"`
 
-				// Flags Flags associated with the WCKey
+				// Flags associated with the WCKey
 				Flags *[]api.V0041OpenapiUsersRespUsersWckeysFlags `json:"flags,omitempty"`
 
 				// Id Unique ID for this user-cluster-wckey combination
@@ -203,7 +203,7 @@ func (a *UserAdapter) convertCommonToAPIUser(user *types.User) *api.V0041Openapi
 				// Name WCKey name
 				Name string `json:"name"`
 
-				// User User name
+				// User name
 				User string `json:"user"`
 			} `json:"wckeys,omitempty"`
 		}{

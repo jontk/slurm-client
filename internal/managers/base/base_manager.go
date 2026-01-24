@@ -91,6 +91,8 @@ func (b *BaseManager) ValidateResourceID(id interface{}, fieldName string) error
 				fieldName, id, nil,
 			)
 		}
+	default:
+		// For other types (e.g., bool, float, slice), no validation needed
 	}
 
 	return nil

@@ -62,6 +62,11 @@ func intPtr(i int) *int {
 	return &i
 }
 
+// stringPtr is a helper function to create a pointer to a string
+func stringPtr(s string) *string {
+	return &s
+}
+
 // GetTestConfig loads test configuration from environment variables
 func GetTestConfig(version string) *TestConfig {
 	config := &TestConfig{
