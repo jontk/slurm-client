@@ -322,7 +322,8 @@ func testHistoricalAnalyticsEndpoints(t *testing.T, baseURL, apiVersion string) 
 
 		// Verify response structure - mock server wraps data under "performance_trends"
 		assert.Contains(t, response, "performance_trends")
-		trends := response["performance_trends"].(map[string]interface{})
+		trends, ok := response["performance_trends"].(map[string]interface{})
+	require.True(t, ok, "expected performance_trends to be map[string]interface{}")
 
 		assert.Contains(t, trends, "cluster_performance")
 		assert.Contains(t, trends, "resource_trends")
@@ -350,7 +351,8 @@ func testHistoricalAnalyticsEndpoints(t *testing.T, baseURL, apiVersion string) 
 
 		// Verify response structure - mock server wraps data under "user_efficiency_trends"
 		assert.Contains(t, response, "user_efficiency_trends")
-		userTrends := response["user_efficiency_trends"].(map[string]interface{})
+		userTrends, ok := response["user_efficiency_trends"].(map[string]interface{})
+	require.True(t, ok, "expected user_efficiency_trends to be map[string]interface{}")
 
 		assert.Contains(t, userTrends, "user_id")
 		assert.Contains(t, userTrends, "efficiency_trends")
@@ -393,7 +395,8 @@ func testComparativeAnalyticsEndpoints(t *testing.T, baseURL, apiVersion, jobID 
 
 		// Verify response structure - mock server nests data under "performance_comparison"
 		assert.Contains(t, comparison, "performance_comparison")
-		comparisonData := comparison["performance_comparison"].(map[string]interface{})
+		comparisonData, ok := comparison["performance_comparison"].(map[string]interface{})
+	require.True(t, ok, "expected performance_comparison to be map[string]interface{}")
 		assert.Contains(t, comparisonData, "metrics")
 
 		t.Logf("Job performance comparison response received successfully, payload: %s", payload)
