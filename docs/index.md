@@ -1192,7 +1192,7 @@ slurm-cli nodes list --states IDLE
 slurm-cli info
 ```
 
-See the [CLI documentation](cmd/slurm-cli/README.md) for complete usage information.
+See the [CLI documentation](cli/README.md) for complete usage information.
 
 ## 🧪 Testing
 

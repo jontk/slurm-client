@@ -611,14 +611,14 @@ go test ./tests/integration/... -v
 
 If you encounter issues during migration:
 
-1. **Check version compatibility**: See [README.md](README.md#supported-versions)
+1. **Check version compatibility**: See [README.md](../index.md#supported-versions)
 2. **Review examples**: See [examples/](examples/) for version-specific examples
 3. **Run diagnostics**: Use `./scripts/diagnose-slurm-auth.sh` for auth issues
 4. **Open an issue**: [GitHub Issues](https://github.com/jontk/slurm-client/issues)
 
 ## Additional Resources
 
-- [API Compatibility Matrix](README.md#api-compatibility-matrix)
-- [Real Server Testing Guide](tests/integration/REAL_SERVER_TESTING.md)
-- [Builder Pattern Guide](tests/mocks/generated/README.md)
-- [Architecture Documentation](docs/ARCHITECTURE.md)
+- [API Compatibility Matrix](../index.md#api-compatibility-matrix)
+- [Real Server Testing Guide](https://github.com/jontk/slurm-client/blob/main/tests/integration/REAL_SERVER_TESTING.md)
+- [Builder Pattern Guide](https://github.com/jontk/slurm-client/blob/main/tests/mocks/generated/README.md)
+- [Architecture Documentation](../guides/ARCHITECTURE.md)

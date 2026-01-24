@@ -282,4 +282,4 @@ go build ./...
 
 - [API Documentation](./api)
 - [Code Generation](./CODE_GENERATION.md)
-- [Contributing Guide](../CONTRIBUTING.md)
+- [Contributing Guide](development/CONTRIBUTING.md)
