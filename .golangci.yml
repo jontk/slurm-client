@@ -139,6 +139,27 @@ linters:
         - name: unreachable-code
           severity: warning
           disabled: false
+        - name: error-naming
+          severity: warning
+          disabled: false
+        - name: error-return
+          severity: warning
+          disabled: false
+        - name: receiver-naming
+          severity: warning
+          disabled: false
+        - name: indent-error-flow
+          severity: warning
+          disabled: false
+        - name: blank-imports
+          severity: warning
+          disabled: false
+        - name: var-declaration
+          severity: warning
+          disabled: false
+        - name: unnecessary-stmt
+          severity: warning
+          disabled: false
     perfsprint:
       # Enable performance optimizations for sprintf
       int-conversion: true      # Use strconv instead of fmt.Sprintf for integers

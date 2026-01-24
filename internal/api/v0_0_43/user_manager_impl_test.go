@@ -61,8 +61,7 @@ func TestUserManagerImpl_List(t *testing.T) {
 				}
 
 				// Check error type
-				switch tt.errType {
-				case "client error":
+				if tt.errType == "client error" {
 					if !errors.IsClientError(err) {
 						t.Errorf("List() expected client error, got %T: %v", err, err)
 					}
