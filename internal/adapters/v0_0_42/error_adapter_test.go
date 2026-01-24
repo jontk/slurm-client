@@ -431,14 +431,14 @@ func TestErrorAdapter_HandleAPIResponse_ConcurrentAccess(t *testing.T) {
 
 	// Test concurrent access to error handling (should be safe)
 	done := make(chan bool)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		go func(index int) {
 			_ = adapter.HandleAPIResponse(400, []byte("test"), fmt.Sprintf("operation_%d", index))
 			done <- true
 		}(i)
 	}
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		<-done
 	}
 

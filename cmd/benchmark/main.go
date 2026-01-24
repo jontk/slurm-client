@@ -125,7 +125,7 @@ func benchmarkImplementation(version, jwtToken string, useAdapters bool) []Bench
 		var successCount int
 		var lastErr error
 
-		for i := 0; i < iterations; i++ {
+		for range iterations {
 			start := time.Now()
 			err := op.fn()
 			duration := time.Since(start)

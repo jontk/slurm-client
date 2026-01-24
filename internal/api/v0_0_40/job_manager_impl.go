@@ -1488,7 +1488,7 @@ func generateMinimalStepTasks(job *interfaces.Job) []interfaces.StepTaskInfo {
 		nodeName = job.Nodes[0]
 	}
 
-	for i := 0; i < taskCount; i++ {
+	for i := range taskCount {
 		// Minimal task distribution in v0.0.40
 		if len(job.Nodes) > 0 {
 			nodeIndex := i % len(job.Nodes)
@@ -2056,7 +2056,7 @@ func (m *JobManagerImpl) GetJobComprehensiveAnalytics(ctx context.Context, jobID
 
 func generateMinimalCoreMetrics(cpuCount int) []interfaces.CPUCoreMetric {
 	coreMetrics := make([]interfaces.CPUCoreMetric, cpuCount)
-	for i := 0; i < cpuCount; i++ {
+	for i := range cpuCount {
 		coreMetrics[i] = interfaces.CPUCoreMetric{
 			CoreID:          i,
 			Utilization:     50.0 + float64(i%10)*2, // Slight variation

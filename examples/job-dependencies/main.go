@@ -155,7 +155,7 @@ echo "Setup completed - data split into 3 chunks"
 
 	// Submit parallel processing jobs
 	var parallelJobIDs []string
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		parallelJob := &interfaces.JobSubmission{
 			Name: fmt.Sprintf("parallel-task-%d", i),
 			Script: fmt.Sprintf(`#!/bin/bash

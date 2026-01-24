@@ -17,7 +17,7 @@ func BenchmarkTokenAuth(b *testing.B) {
 	ctx := context.Background()
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		ta.Authenticate(ctx, req)
 	}
 }
@@ -28,7 +28,7 @@ func BenchmarkBasicAuth(b *testing.B) {
 	ctx := context.Background()
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		ba.Authenticate(ctx, req)
 	}
 }
@@ -39,7 +39,7 @@ func BenchmarkNoAuth(b *testing.B) {
 	ctx := context.Background()
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		na.Authenticate(ctx, req)
 	}
 }

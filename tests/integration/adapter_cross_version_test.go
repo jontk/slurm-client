@@ -420,7 +420,7 @@ func (suite *AdapterCrossVersionTestSuite) TestConcurrentOperations() {
 
 	// Collect results
 	successCount := 0
-	for i := 0; i < len(suite.clients); i++ {
+	for range len(suite.clients) {
 		res := <-results
 		if res.Error == nil {
 			successCount++

@@ -25,7 +25,7 @@ func BenchmarkMockServerAnalyticsOverhead(b *testing.B) {
 	b.Run("Baseline_JobGet", func(b *testing.B) {
 		endpoint := fmt.Sprintf("%s/slurm/v0.0.42/job/%s", baseURL, jobID)
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			resp, err := http.Get(endpoint)
 			if err != nil {
 				b.Fatal(err)
@@ -46,7 +46,7 @@ func BenchmarkMockServerAnalyticsOverhead(b *testing.B) {
 	for name, endpoint := range analyticsEndpoints {
 		b.Run(name, func(b *testing.B) {
 			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				resp, err := http.Get(endpoint)
 				if err != nil {
 					b.Fatal(err)
@@ -75,7 +75,7 @@ func BenchmarkMockServerAnalyticsMemoryUsage(b *testing.B) {
 		b.Run("Memory_"+name, func(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				resp, err := http.Get(endpoint)
 				if err != nil {
 					b.Fatal(err)
@@ -133,7 +133,7 @@ func BenchmarkMockServerAnalyticsVersionComparison(b *testing.B) {
 			endpoint := fmt.Sprintf("%s/slurm/%s/job/%s/utilization", baseURL, version, jobID)
 
 			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				resp, err := http.Get(endpoint)
 				if err != nil {
 					b.Fatal(err)
@@ -159,7 +159,7 @@ func BenchmarkMockServerAnalyticsLatencyDistribution(b *testing.B) {
 	latencies := make([]time.Duration, b.N)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		start := time.Now()
 		resp, err := http.Get(endpoint)
 		latencies[i] = time.Since(start)
@@ -315,7 +315,7 @@ func TestAnalyticsScalabilityRequirements(t *testing.T) {
 			successful := 0
 			failed := 0
 
-			for i := 0; i < tc.requestCount; i++ {
+			for range tc.requestCount {
 				resp, err := http.Get(endpoint)
 				if err != nil {
 					failed++
@@ -393,7 +393,7 @@ func TestAnalyticsResourceUsage(t *testing.T) {
 
 			// Measure resource usage
 			start := time.Now()
-			for j := 0; j < iterations; j++ {
+			for range iterations {
 				resp, err := http.Get(endpoint)
 				if err != nil {
 					t.Fatal(err)

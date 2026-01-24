@@ -1057,7 +1057,7 @@ func (m *MockSlurmServer) handleJobResourceTrends(w http.ResponseWriter, r *http
 	// Generate mock trend data for the last hour
 	trends := []map[string]interface{}{}
 	baseTime := time.Now().Add(-1 * time.Hour)
-	for i := 0; i < 12; i++ { // 12 data points, 5 minutes apart
+	for i := range 12 { // 12 data points, 5 minutes apart
 		timestamp := baseTime.Add(time.Duration(i*5) * time.Minute)
 		trends = append(trends, map[string]interface{}{
 			"timestamp":          timestamp.Unix(),
@@ -1134,7 +1134,7 @@ func (m *MockSlurmServer) handleJobPerformanceHistory(w http.ResponseWriter, r *
 	// Generate mock historical data
 	baseTime := time.Now().Add(-24 * time.Hour)
 	timeSeriesData := []map[string]interface{}{}
-	for i := 0; i < 24; i++ { // Hourly data for 24 hours
+	for i := range 24 { // Hourly data for 24 hours
 		timestamp := baseTime.Add(time.Duration(i) * time.Hour)
 		timeSeriesData = append(timeSeriesData, map[string]interface{}{
 			"timestamp":          timestamp.Unix(),

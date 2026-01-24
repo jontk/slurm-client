@@ -98,7 +98,7 @@ func calculateLatencyStats(latencies []time.Duration) (minLatency, maxLatency, a
 func measureOperationTime(t *testing.T, operation func() error, iterations int) time.Duration {
 	start := time.Now()
 
-	for i := 0; i < iterations; i++ {
+	for i := range iterations {
 		if err := operation(); err != nil {
 			t.Fatalf("Operation failed on iteration %d: %v", i, err)
 		}
@@ -129,7 +129,7 @@ func MeasurePerformance(name string, operation func() error, iterations int) (*P
 	times := make([]time.Duration, iterations)
 	start := time.Now()
 
-	for i := 0; i < iterations; i++ {
+	for i := range iterations {
 		iterStart := time.Now()
 		if err := operation(); err != nil {
 			return nil, fmt.Errorf("operation failed on iteration %d: %w", i, err)
@@ -209,7 +209,7 @@ func RunLoadTest(endpoint string, concurrency int, duration time.Duration) (*Loa
 	resultChan := make(chan bool, concurrency*10)  // Buffer for results
 
 	// Start workers
-	for i := 0; i < concurrency; i++ {
+	for range concurrency {
 		go func() {
 			for range requestChan {
 				success := true
@@ -245,7 +245,7 @@ func RunLoadTest(endpoint string, concurrency int, duration time.Duration) (*Loa
 	}()
 
 	// Collect results
-	for i := 0; i < result.TotalRequests; i++ {
+	for range result.TotalRequests {
 		success := <-resultChan
 		if success {
 			result.SuccessfulRequests++

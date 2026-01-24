@@ -26,7 +26,7 @@ func BenchmarkJobAnalyticsOverhead(b *testing.B) {
 	// Benchmark baseline job operation (getting job details)
 	b.Run("Baseline_JobGet", func(b *testing.B) {
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			resp, err := makeHTTPRequest(fmt.Sprintf("%s/slurm/v0.0.42/job/%s", baseURL, jobID))
 			if err != nil {
 				b.Fatal(err)
@@ -50,7 +50,7 @@ func BenchmarkJobAnalyticsOverhead(b *testing.B) {
 	for _, endpoint := range analyticsEndpoints {
 		b.Run(endpoint.name, func(b *testing.B) {
 			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				resp, err := makeHTTPRequest(endpoint.endpoint)
 				if err != nil {
 					b.Fatal(err)
@@ -74,7 +74,7 @@ func BenchmarkAnalyticsCollectionOverhead(b *testing.B) {
 	b.Run("Single_UtilizationCall", func(b *testing.B) {
 		endpoint := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/utilization", baseURL, jobID)
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			resp, err := makeHTTPRequest(endpoint)
 			if err != nil {
 				b.Fatal(err)
@@ -93,7 +93,7 @@ func BenchmarkAnalyticsCollectionOverhead(b *testing.B) {
 		}
 
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			for _, endpoint := range endpoints {
 				resp, err := makeHTTPRequest(endpoint)
 				if err != nil {
@@ -114,7 +114,7 @@ func BenchmarkAnalyticsCollectionOverhead(b *testing.B) {
 		}
 
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			var wg sync.WaitGroup
 			errChan := make(chan error, len(endpoints))
 			for _, endpoint := range endpoints {
@@ -151,7 +151,7 @@ func BenchmarkAnalyticsMemoryUsage(b *testing.B) {
 		endpoint := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/utilization", baseURL, jobID)
 		b.ResetTimer()
 		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			resp, err := makeHTTPRequest(endpoint)
 			if err != nil {
 				b.Fatal(err)
@@ -169,7 +169,7 @@ func BenchmarkAnalyticsMemoryUsage(b *testing.B) {
 		endpoint := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/efficiency", baseURL, jobID)
 		b.ResetTimer()
 		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			resp, err := makeHTTPRequest(endpoint)
 			if err != nil {
 				b.Fatal(err)
@@ -186,7 +186,7 @@ func BenchmarkAnalyticsMemoryUsage(b *testing.B) {
 		endpoint := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/performance", baseURL, jobID)
 		b.ResetTimer()
 		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			resp, err := makeHTTPRequest(endpoint)
 			if err != nil {
 				b.Fatal(err)
@@ -248,7 +248,7 @@ func BenchmarkAnalyticsLatencyDistribution(b *testing.B) {
 		b.ResetTimer()
 		start := time.Now()
 
-		for i := 0; i < b.N; i++ {
+		for i := range b.N {
 			reqStart := time.Now()
 			resp, err := makeHTTPRequest(endpoint)
 			latencies[i] = time.Since(reqStart)
@@ -289,7 +289,7 @@ func BenchmarkAnalyticsVersionComparison(b *testing.B) {
 			endpoint := fmt.Sprintf("%s/slurm/%s/job/%s/utilization", baseURL, version, jobID)
 
 			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				resp, err := makeHTTPRequest(endpoint)
 				if err != nil {
 					b.Fatal(err)
@@ -312,7 +312,7 @@ func BenchmarkAnalyticsDataProcessing(b *testing.B) {
 	b.Run("Raw_Request", func(b *testing.B) {
 		endpoint := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/utilization", baseURL, jobID)
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			resp, err := makeHTTPRequest(endpoint)
 			if err != nil {
 				b.Fatal(err)
@@ -325,7 +325,7 @@ func BenchmarkAnalyticsDataProcessing(b *testing.B) {
 	b.Run("With_JSON_Parsing", func(b *testing.B) {
 		endpoint := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/utilization", baseURL, jobID)
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			resp, err := makeHTTPRequest(endpoint)
 			if err != nil {
 				b.Fatal(err)
@@ -344,7 +344,7 @@ func BenchmarkAnalyticsDataProcessing(b *testing.B) {
 	b.Run("With_Full_Processing", func(b *testing.B) {
 		endpoint := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/efficiency", baseURL, jobID)
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			resp, err := makeHTTPRequest(endpoint)
 			if err != nil {
 				b.Fatal(err)
@@ -489,7 +489,7 @@ func TestAnalyticsScalability(t *testing.T) {
 			var wg sync.WaitGroup
 			errors := make(chan error, volume)
 
-			for i := 0; i < volume; i++ {
+			for range volume {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()

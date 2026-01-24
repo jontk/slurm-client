@@ -166,7 +166,7 @@ func testLiveMetricsMonitoring(t *testing.T, client slurm.SlurmClient) {
 		timeout := time.After(5 * time.Second)
 
 	collectLoop:
-		for i := 0; i < 3; i++ {
+		for range 3 {
 			select {
 			case event, ok := <-eventChan:
 				if !ok {
@@ -465,7 +465,7 @@ func TestJobAnalyticsPerformanceOverhead(t *testing.T) {
 
 	// Measure baseline job retrieval time
 	baselineStart := time.Now()
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		_, err := client.Jobs().Get(ctx, jobID)
 		require.NoError(t, err)
 	}
@@ -474,7 +474,7 @@ func TestJobAnalyticsPerformanceOverhead(t *testing.T) {
 
 	// Measure analytics collection time
 	analyticsStart := time.Now()
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		_, err := client.Jobs().GetJobUtilization(ctx, jobID)
 		require.NoError(t, err)
 	}
@@ -520,7 +520,7 @@ func TestJobAnalyticsConcurrency(t *testing.T) {
 	concurrency := 10
 	errChan := make(chan error, concurrency*len(jobIDs))
 
-	for i := 0; i < concurrency; i++ {
+	for range concurrency {
 		go func() {
 			for _, jobID := range jobIDs {
 				// Test various analytics endpoints concurrently
@@ -547,7 +547,7 @@ func TestJobAnalyticsConcurrency(t *testing.T) {
 	}
 
 	// Wait for all goroutines to complete
-	for i := 0; i < concurrency; i++ {
+	for range concurrency {
 		err := <-errChan
 		assert.NoError(t, err)
 	}

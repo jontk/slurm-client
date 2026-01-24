@@ -543,7 +543,7 @@ func TestJobAnalyticsPerformance(t *testing.T) {
 
 		start := time.Now()
 
-		for i := 0; i < numRequests; i++ {
+		for i := range numRequests {
 			go func(requestID int) {
 				url := fmt.Sprintf("%s/slurm/v0.0.42/job/%s/utilization", baseURL, jobID)
 				resp, err := http.Get(url)
@@ -559,7 +559,7 @@ func TestJobAnalyticsPerformance(t *testing.T) {
 		}
 
 		// Wait for all requests to complete
-		for i := 0; i < numRequests; i++ {
+		for range numRequests {
 			<-done
 		}
 

@@ -234,14 +234,14 @@ func (suite *IntegrationTestSuite) TestConcurrentOperations(resourceName string,
 
 	errChan := make(chan error, concurrency)
 
-	for i := 0; i < concurrency; i++ {
+	for i := range concurrency {
 		go func(id int) {
 			errChan <- operation(id)
 		}(i)
 	}
 
 	var errors []error
-	for i := 0; i < concurrency; i++ {
+	for range concurrency {
 		if err := <-errChan; err != nil {
 			errors = append(errors, err)
 		}
