@@ -365,4 +365,4 @@ if err != nil {
 - [API Overview](./README.md)
 - [Account Management API](./accounts.md)
 - [Job Management API](./jobs.md)
-- [Examples](../../examples/qos-management)
+- [Examples](../../examples/qos-management/main.go)

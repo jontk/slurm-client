@@ -289,5 +289,5 @@ if err != nil {
 - [API Overview](./README.md)
 - [Job Management API](./jobs.md)
 - [Partition Management API](./partitions.md)
-- [Node Monitoring Example](../../examples/watch-nodes) - Real-time node monitoring
-- [Basic Examples](../../examples/basic) - Getting started with nodes
+- [Node Monitoring Example](../../examples/watch-nodes/main.go) - Real-time node monitoring
+- [Basic Examples](../../examples/basic/README.md) - Getting started with nodes

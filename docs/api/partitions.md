@@ -320,5 +320,5 @@ if err != nil {
 - [API Overview](./README.md)
 - [Job Management API](./jobs.md)
 - [Node Management API](./nodes.md)
-- [Resource Allocation Example](../../examples/resource-allocation) - Working with partitions for resource allocation
-- [Basic Examples](../../examples/basic) - Getting started with partitions
+- [Resource Allocation Example](../../examples/resource-allocation/main.go) - Working with partitions for resource allocation
+- [Basic Examples](../../examples/basic/README.md) - Getting started with partitions
