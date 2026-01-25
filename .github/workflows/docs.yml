@@ -136,6 +136,8 @@ jobs:
           --exclude '.*\.ar\.jontk\.com.*'
           --exclude 'https://api\.securityscorecards\.dev/.*'
           --exclude 'https://www\.conventionalcommits\.org/.*'
+          --exclude 'https://www\.sigstore\.dev/.*'
+          --exclude 'https://rekor\.sigstore\.dev/.*'
           './**/*.md'
         fail: true
 
