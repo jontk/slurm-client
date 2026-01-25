@@ -594,6 +594,63 @@ func (a *JobAdapter) Watch(ctx context.Context, opts *types.JobWatchOptions) (<-
 }
 
 // pollJobs polls for job changes and sends events
+// matchesEventTypeFilter checks if an event type passes the filter
+func (a *JobAdapter) matchesEventTypeFilter(eventType string, opts *types.JobWatchOptions) bool {
+	if opts == nil || len(opts.EventTypes) == 0 {
+		return true
+	}
+	for _, et := range opts.EventTypes {
+		if et == eventType {
+			return true
+		}
+	}
+	return false
+}
+
+// sendEventIfOpen sends an event on the channel if the context is not closed
+func (a *JobAdapter) sendEventIfOpen(ctx context.Context, eventCh chan<- types.JobWatchEvent, event types.JobWatchEvent) bool {
+	select {
+	case eventCh <- event:
+		return true
+	case <-ctx.Done():
+		return false
+	}
+}
+
+// processJobStateChange handles a job state change and sends appropriate event
+func (a *JobAdapter) processJobStateChange(ctx context.Context, job types.Job, previousState types.JobState, eventCh chan<- types.JobWatchEvent, opts *types.JobWatchOptions) bool {
+	eventType := a.getEventTypeFromStateChange(previousState, job.State)
+
+	// Filter by event types if specified
+	if !a.matchesEventTypeFilter(eventType, opts) {
+		return true
+	}
+
+	event := types.JobWatchEvent{
+		EventTime:     time.Now(),
+		EventType:     eventType,
+		JobID:         job.JobID,
+		JobName:       job.Name,
+		UserName:      job.UserName,
+		PreviousState: previousState,
+		NewState:      job.State,
+		NodeList:      job.NodeList,
+		Reason:        a.getReasonFromStateChange(previousState, job.State),
+	}
+
+	return a.sendEventIfOpen(ctx, eventCh, event)
+}
+
+// jobExistsInList checks if a job ID exists in the job list
+func (a *JobAdapter) jobExistsInList(jobID int32, jobs []types.Job) bool {
+	for _, job := range jobs {
+		if job.JobID == jobID {
+			return true
+		}
+	}
+	return false
+}
+
 func (a *JobAdapter) pollJobs(ctx context.Context, opts *types.JobWatchOptions, jobStates map[int32]types.JobState, eventCh chan<- types.JobWatchEvent, isInitial bool) {
 	// Create list options based on watch options
 	listOpts := &types.JobListOptions{}
@@ -607,15 +664,12 @@ func (a *JobAdapter) pollJobs(ctx context.Context, opts *types.JobWatchOptions, 
 	jobList, err := a.List(ctx, listOpts)
 	if err != nil {
 		// Send error event
-		select {
-		case eventCh <- types.JobWatchEvent{
+		a.sendEventIfOpen(ctx, eventCh, types.JobWatchEvent{
 			EventTime: time.Now(),
 			EventType: "error",
 			JobID:     0,
 			Reason:    fmt.Sprintf("Failed to poll jobs: %v", err),
-		}:
-		case <-ctx.Done():
-		}
+		})
 		return
 	}
 
@@ -634,37 +688,7 @@ func (a *JobAdapter) pollJobs(ctx context.Context, opts *types.JobWatchOptions, 
 
 		// Send event if state changed
 		if exists && previousState != currentState {
-			eventType := a.getEventTypeFromStateChange(previousState, currentState)
-
-			// Filter by event types if specified
-			if opts != nil && len(opts.EventTypes) > 0 {
-				found := false
-				for _, et := range opts.EventTypes {
-					if et == eventType {
-						found = true
-						break
-					}
-				}
-				if !found {
-					continue
-				}
-			}
-
-			event := types.JobWatchEvent{
-				EventTime:     time.Now(),
-				EventType:     eventType,
-				JobID:         job.JobID,
-				JobName:       job.Name,
-				UserName:      job.UserName,
-				PreviousState: previousState,
-				NewState:      currentState,
-				NodeList:      job.NodeList,
-				Reason:        a.getReasonFromStateChange(previousState, currentState),
-			}
-
-			select {
-			case eventCh <- event:
-			case <-ctx.Done():
+			if !a.processJobStateChange(ctx, job, previousState, eventCh, opts) {
 				return
 			}
 		}
@@ -672,16 +696,8 @@ func (a *JobAdapter) pollJobs(ctx context.Context, opts *types.JobWatchOptions, 
 
 	// Check for completed/removed jobs (jobs that existed before but don't exist now)
 	for jobID, previousState := range jobStates {
-		found := false
-		for _, job := range jobList.Jobs {
-			if job.JobID == jobID {
-				found = true
-				break
-			}
-		}
-
 		// If job is not found and was not in a terminal state, it might have been removed
-		if !found && !a.isTerminalState(previousState) {
+		if !a.jobExistsInList(jobID, jobList.Jobs) && !a.isTerminalState(previousState) {
 			// Send completion event
 			event := types.JobWatchEvent{
 				EventTime:     time.Now(),
@@ -692,9 +708,7 @@ func (a *JobAdapter) pollJobs(ctx context.Context, opts *types.JobWatchOptions, 
 				Reason:        "Job completed and removed from active list",
 			}
 
-			select {
-			case eventCh <- event:
-			case <-ctx.Done():
+			if !a.sendEventIfOpen(ctx, eventCh, event) {
 				return
 			}
 
