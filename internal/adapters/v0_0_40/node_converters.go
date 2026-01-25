@@ -11,7 +11,7 @@ import (
 )
 
 // convertAPINodeToCommon converts a v0.0.40 API Node to common Node type
-func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0040Node) (*types.Node, error) {
+func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0040Node) *types.Node {
 	node := &types.Node{}
 
 	// Essential fields only for v0.0.40 - minimal conversion to get building
@@ -69,11 +69,11 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0040Node) (*types.Node
 		node.Comment = *apiNode.Comment
 	}
 
-	return node, nil
+	return node
 }
 
 // convertCommonNodeUpdateToAPI converts common NodeUpdate to v0.0.40 API format
-func (a *NodeAdapter) convertCommonNodeUpdateToAPI(nodeName string, update *types.NodeUpdate) (*api.V0040UpdateNodeMsg, error) {
+func (a *NodeAdapter) convertCommonNodeUpdateToAPI(nodeName string, update *types.NodeUpdate) *api.V0040UpdateNodeMsg {
 	apiNode := &api.V0040UpdateNodeMsg{}
 
 	// Name (required) - V0040HostlistString is []string
@@ -109,5 +109,5 @@ func (a *NodeAdapter) convertCommonNodeUpdateToAPI(nodeName string, update *type
 		apiNode.FeaturesAct = &activeFeatures
 	}
 
-	return apiNode, nil
+	return apiNode
 }

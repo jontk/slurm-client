@@ -91,10 +91,7 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 	// Convert the response to common types
 	userList := make([]types.User, 0, len(resp.JSON200.Users))
 	for _, apiUser := range resp.JSON200.Users {
-		user, err := a.convertAPIUserToCommon(apiUser)
-		if err != nil {
-			return nil, a.HandleConversionError(err, apiUser.Name)
-		}
+		user := a.convertAPIUserToCommon(apiUser)
 		userList = append(userList, *user)
 	}
 
@@ -175,11 +172,7 @@ func (a *UserAdapter) Get(ctx context.Context, userName string) (*types.User, er
 	}
 
 	// Convert the first user (should be the only one)
-	user, err := a.convertAPIUserToCommon(resp.JSON200.Users[0])
-	if err != nil {
-		return nil, a.HandleConversionError(err, userName)
-	}
-
+	user := a.convertAPIUserToCommon(resp.JSON200.Users[0])
 	return user, nil
 }
 
@@ -197,10 +190,7 @@ func (a *UserAdapter) Create(ctx context.Context, user *types.UserCreate) (*type
 	}
 
 	// Convert to API format
-	apiUser, err := a.convertCommonUserCreateToAPI(user)
-	if err != nil {
-		return nil, err
-	}
+	apiUser := a.convertCommonUserCreateToAPI(user)
 
 	// Create request body
 	reqBody := api.SlurmdbV0043PostUsersJSONRequestBody{
@@ -252,10 +242,7 @@ func (a *UserAdapter) Update(ctx context.Context, userName string, update *types
 	}
 
 	// Convert to API format and apply updates
-	apiUser, err := a.convertCommonUserUpdateToAPI(existingUser, update)
-	if err != nil {
-		return err
-	}
+	apiUser := a.convertCommonUserUpdateToAPI(existingUser, update)
 
 	// Create request body
 	reqBody := api.SlurmdbV0043PostUsersJSONRequestBody{
@@ -335,7 +322,7 @@ func (a *UserAdapter) validateUserUpdate(update *types.UserUpdate) error {
 }
 
 // Simplified converter methods for user management
-func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0043User) (*types.User, error) {
+func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0043User) *types.User {
 	user := &types.User{
 		Name: apiUser.Name, // Name is not a pointer in the API
 	}
@@ -357,10 +344,10 @@ func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0043User) (*types.User
 		}
 	}
 
-	return user, nil
+	return user
 }
 
-func (a *UserAdapter) convertCommonUserCreateToAPI(create *types.UserCreate) (*api.V0043User, error) {
+func (a *UserAdapter) convertCommonUserCreateToAPI(create *types.UserCreate) *api.V0043User {
 	apiUser := &api.V0043User{
 		Name: create.Name, // Name is not a pointer
 	}
@@ -377,10 +364,10 @@ func (a *UserAdapter) convertCommonUserCreateToAPI(create *types.UserCreate) (*a
 
 	// Note: DefaultQoS is not supported in V0043User API
 
-	return apiUser, nil
+	return apiUser
 }
 
-func (a *UserAdapter) convertCommonUserUpdateToAPI(existing *types.User, update *types.UserUpdate) (*api.V0043User, error) {
+func (a *UserAdapter) convertCommonUserUpdateToAPI(existing *types.User, update *types.UserUpdate) *api.V0043User {
 	apiUser := &api.V0043User{
 		Name: existing.Name, // Name is not a pointer
 	}
@@ -404,7 +391,7 @@ func (a *UserAdapter) convertCommonUserUpdateToAPI(existing *types.User, update 
 	// Note: DefaultQoS is not supported in V0043User API
 	// If DefaultQoS was updated, we would need to log a warning or return an error
 
-	return apiUser, nil
+	return apiUser
 }
 
 // CreateAssociation creates associations for users
@@ -421,10 +408,7 @@ func (a *UserAdapter) CreateAssociation(ctx context.Context, req *types.UserAsso
 	}
 
 	// Convert to API format
-	apiAssociations, err := a.convertCommonUserAssociationToAPI(req)
-	if err != nil {
-		return nil, err
-	}
+	apiAssociations := a.convertCommonUserAssociationToAPI(req)
 
 	// Create request body
 	reqBody := api.SlurmdbV0043PostAssociationsJSONRequestBody{
@@ -476,7 +460,7 @@ func (a *UserAdapter) validateUserAssociationRequest(req *types.UserAssociationR
 }
 
 // convertCommonUserAssociationToAPI converts common user association request to API format
-func (a *UserAdapter) convertCommonUserAssociationToAPI(req *types.UserAssociationRequest) ([]api.V0043Assoc, error) {
+func (a *UserAdapter) convertCommonUserAssociationToAPI(req *types.UserAssociationRequest) []api.V0043Assoc {
 	associations := make([]api.V0043Assoc, 0, len(req.Users))
 
 	for _, userName := range req.Users {
@@ -519,5 +503,5 @@ func (a *UserAdapter) convertCommonUserAssociationToAPI(req *types.UserAssociati
 		associations = append(associations, association)
 	}
 
-	return associations, nil
+	return associations
 }

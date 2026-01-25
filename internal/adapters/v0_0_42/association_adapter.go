@@ -88,11 +88,7 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 
 	if resp.JSON200.Associations != nil {
 		for _, apiAssoc := range resp.JSON200.Associations {
-			assoc, err := a.convertAPIAssociationToCommon(apiAssoc)
-			if err != nil {
-				// Log conversion error but continue
-				continue
-			}
+			assoc := a.convertAPIAssociationToCommon(apiAssoc)
 			assocList.Associations = append(assocList.Associations, *assoc)
 		}
 	}
@@ -133,10 +129,7 @@ func (a *AssociationAdapter) Get(ctx context.Context, associationID string) (*ty
 
 	// Find the matching association by ID
 	for _, apiAssoc := range resp.JSON200.Associations {
-		assoc, err := a.convertAPIAssociationToCommon(apiAssoc)
-		if err != nil {
-			continue
-		}
+		assoc := a.convertAPIAssociationToCommon(apiAssoc)
 		if assoc.ID == associationID {
 			return assoc, nil
 		}
@@ -265,7 +258,7 @@ func (a *AssociationAdapter) Delete(ctx context.Context, associationID string) e
 }
 
 // convertAPIAssociationToCommon converts API association to common type
-func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssoc api.V0042Assoc) (*types.Association, error) {
+func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssoc api.V0042Assoc) *types.Association {
 	assoc := &types.Association{}
 
 	// Set basic fields
@@ -346,7 +339,7 @@ func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssoc api.V0042Ass
 		assoc.IsDefault = *apiAssoc.IsDefault
 	}
 
-	return assoc, nil
+	return assoc
 }
 
 // convertCommonAssociationCreateToAPI converts common association create to API format

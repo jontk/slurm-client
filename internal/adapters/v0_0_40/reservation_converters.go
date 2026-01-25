@@ -12,7 +12,7 @@ import (
 )
 
 // convertAPIReservationToCommon converts a v0.0.40 API Reservation to common Reservation type
-func (a *ReservationAdapter) convertAPIReservationToCommon(apiReservation api.V0040ReservationInfo) (*types.Reservation, error) {
+func (a *ReservationAdapter) convertAPIReservationToCommon(apiReservation api.V0040ReservationInfo) *types.Reservation {
 	reservation := &types.Reservation{}
 
 	// Basic fields
@@ -90,5 +90,5 @@ func (a *ReservationAdapter) convertAPIReservationToCommon(apiReservation api.V0
 		reservation.CoreCount = *apiReservation.CoreCount
 	}
 
-	return reservation, nil
+	return reservation
 }

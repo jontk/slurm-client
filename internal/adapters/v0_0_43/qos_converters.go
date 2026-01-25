@@ -9,7 +9,7 @@ import (
 )
 
 // convertAPIQoSToCommon converts a v0.0.43 API QoS to common QoS type
-func (a *QoSAdapter) convertAPIQoSToCommon(apiQoS api.V0043Qos) (*types.QoS, error) {
+func (a *QoSAdapter) convertAPIQoSToCommon(apiQoS api.V0043Qos) *types.QoS {
 	qos := &types.QoS{}
 
 	// Basic fields
@@ -170,11 +170,11 @@ func (a *QoSAdapter) convertAPIQoSToCommon(apiQoS api.V0043Qos) (*types.QoS, err
 		}
 	}
 
-	return qos, nil
+	return qos
 }
 
 // convertCommonQoSCreateToAPI converts common QoS create type to v0.0.43 API format
-func (a *QoSAdapter) convertCommonQoSCreateToAPI(create *types.QoSCreate) (*api.V0043Qos, error) {
+func (a *QoSAdapter) convertCommonQoSCreateToAPI(create *types.QoSCreate) *api.V0043Qos {
 	apiQoS := &api.V0043Qos{}
 
 	// Required fields
@@ -473,11 +473,11 @@ func (a *QoSAdapter) convertCommonQoSCreateToAPI(create *types.QoSCreate) (*api.
 		}
 	}
 
-	return apiQoS, nil
+	return apiQoS
 }
 
 // convertCommonQoSUpdateToAPI converts common QoS update to v0.0.43 API format
-func (a *QoSAdapter) convertCommonQoSUpdateToAPI(existing *types.QoS, update *types.QoSUpdate) (*api.V0043Qos, error) {
+func (a *QoSAdapter) convertCommonQoSUpdateToAPI(existing *types.QoS, update *types.QoSUpdate) *api.V0043Qos {
 	apiQoS := &api.V0043Qos{}
 	apiQoS.Name = &existing.Name
 	apiQoS.Description = &existing.Description
@@ -641,5 +641,5 @@ func (a *QoSAdapter) convertCommonQoSUpdateToAPI(existing *types.QoS, update *ty
 		}
 	}
 
-	return apiQoS, nil
+	return apiQoS
 }

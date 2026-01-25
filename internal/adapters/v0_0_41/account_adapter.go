@@ -169,11 +169,10 @@ func (a *AccountAdapter) Create(ctx context.Context, account *types.AccountCreat
 	}
 
 	// Convert account to API request
-	createReq := a.convertCommonToAPIAccount(commonAccount)
+	a.convertCommonToAPIAccount(commonAccount)
 
 	// For now, return success without actual API call since we fixed the interface types
 	// TODO: Implement actual API call when client is ready
-	_ = createReq
 	return &types.AccountCreateResponse{
 		AccountName: account.Name,
 	}, nil
@@ -216,11 +215,10 @@ func (a *AccountAdapter) Update(ctx context.Context, name string, update *types.
 	}
 
 	// Convert to API request
-	updateReq := a.convertCommonToAPIAccount(existingAccount)
+	a.convertCommonToAPIAccount(existingAccount)
 
 	// For now, return success without actual API call since interface{} cannot be dereferenced
 	// TODO: Implement actual API call when client signature is fixed
-	_ = updateReq
 
 	return nil
 }

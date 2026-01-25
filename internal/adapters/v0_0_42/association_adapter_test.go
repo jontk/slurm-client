@@ -243,9 +243,7 @@ func TestAssociationAdapter_ConvertAPIAssociationToCommon(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := adapter.convertAPIAssociationToCommon(tt.apiAssociation)
-
-			require.NoError(t, err)
+			result := adapter.convertAPIAssociationToCommon(tt.apiAssociation)
 			assert.Equal(t, tt.expected.AccountName, result.AccountName)
 			assert.Equal(t, tt.expected.UserName, result.UserName)
 			assert.Equal(t, tt.expected.Cluster, result.Cluster)

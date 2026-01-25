@@ -496,10 +496,7 @@ func (a *JobAdapter) Allocate(ctx context.Context, req *types.JobAllocateRequest
 	}
 
 	// Convert common allocation request to API request
-	apiReq, err := a.convertCommonJobAllocateToAPI(req)
-	if err != nil {
-		return nil, a.WrapError(err, "failed to convert allocation request")
-	}
+	apiReq := a.convertCommonJobAllocateToAPI(req)
 
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmV0042PostJobAllocateWithResponse(ctx, *apiReq)
@@ -540,7 +537,7 @@ func (a *JobAdapter) validateJobAllocateRequest(req *types.JobAllocateRequest) e
 }
 
 // convertCommonJobAllocateToAPI converts common allocation request to API request
-func (a *JobAdapter) convertCommonJobAllocateToAPI(req *types.JobAllocateRequest) (*api.V0042JobAllocReq, error) {
+func (a *JobAdapter) convertCommonJobAllocateToAPI(req *types.JobAllocateRequest) *api.V0042JobAllocReq {
 	// Create the job description message
 	jobDesc := &api.V0042JobDescMsg{}
 
@@ -563,7 +560,7 @@ func (a *JobAdapter) convertCommonJobAllocateToAPI(req *types.JobAllocateRequest
 		Job: jobDesc,
 	}
 
-	return apiReq, nil
+	return apiReq
 }
 
 // convertAPIJobAllocateResponseToCommon converts API allocation response to common response

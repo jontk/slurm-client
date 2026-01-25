@@ -9,7 +9,7 @@ import (
 )
 
 // convertAPIAccountToCommon converts a v0.0.43 API Account to common Account type
-func (a *AccountAdapter) convertAPIAccountToCommon(apiAccount api.V0043Account) (*types.Account, error) {
+func (a *AccountAdapter) convertAPIAccountToCommon(apiAccount api.V0043Account) *types.Account {
 	account := &types.Account{}
 
 	// Basic fields - in v0.0.43 these are direct strings, not pointers
@@ -46,11 +46,11 @@ func (a *AccountAdapter) convertAPIAccountToCommon(apiAccount api.V0043Account) 
 		}
 	}
 
-	return account, nil
+	return account
 }
 
 // convertCommonAccountCreateToAPI converts common AccountCreate type to v0.0.43 API format
-func (a *AccountAdapter) convertCommonAccountCreateToAPI(create *types.AccountCreate) (*api.V0043Account, error) {
+func (a *AccountAdapter) convertCommonAccountCreateToAPI(create *types.AccountCreate) *api.V0043Account {
 	apiAccount := &api.V0043Account{}
 
 	// Required fields - these are non-pointer strings in v0.0.43
@@ -90,11 +90,11 @@ func (a *AccountAdapter) convertCommonAccountCreateToAPI(create *types.AccountCr
 	// These settings may need to be handled through account associations or
 	// separate API endpoints.
 
-	return apiAccount, nil
+	return apiAccount
 }
 
 // convertCommonAccountUpdateToAPI converts common AccountUpdate to v0.0.43 API format
-func (a *AccountAdapter) convertCommonAccountUpdateToAPI(existing *types.Account, update *types.AccountUpdate) (*api.V0043Account, error) {
+func (a *AccountAdapter) convertCommonAccountUpdateToAPI(existing *types.Account, update *types.AccountUpdate) *api.V0043Account {
 	apiAccount := &api.V0043Account{}
 
 	// Always include the account name for updates
@@ -133,5 +133,5 @@ func (a *AccountAdapter) convertCommonAccountUpdateToAPI(existing *types.Account
 	// - Name, Description, Organization, Coordinators, Associations, Flags
 	// Other fields like QoS, limits, priority are not available in this API version.
 
-	return apiAccount, nil
+	return apiAccount
 }

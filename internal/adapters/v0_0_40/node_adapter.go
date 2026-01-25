@@ -83,10 +83,7 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 	// Convert the response to common types
 	nodeList := make([]types.Node, 0, len(resp.JSON200.Nodes))
 	for _, apiNode := range resp.JSON200.Nodes {
-		node, err := a.convertAPINodeToCommon(apiNode)
-		if err != nil {
-			return nil, a.HandleConversionError(err, apiNode.Name)
-		}
+		node := a.convertAPINodeToCommon(apiNode)
 		nodeList = append(nodeList, *node)
 	}
 
@@ -175,10 +172,7 @@ func (a *NodeAdapter) Get(ctx context.Context, nodeName string) (*types.Node, er
 	}
 
 	// Convert the first node (should be the only one)
-	node, err := a.convertAPINodeToCommon(resp.JSON200.Nodes[0])
-	if err != nil {
-		return nil, a.HandleConversionError(err, nodeName)
-	}
+	node := a.convertAPINodeToCommon(resp.JSON200.Nodes[0])
 
 	return node, nil
 }
@@ -200,10 +194,7 @@ func (a *NodeAdapter) Update(ctx context.Context, nodeName string, update *types
 	}
 
 	// Convert to API format
-	apiNode, err := a.convertCommonNodeUpdateToAPI(nodeName, update)
-	if err != nil {
-		return err
-	}
+	apiNode := a.convertCommonNodeUpdateToAPI(nodeName, update)
 
 	// Create request body - v0.0.40 uses V0040UpdateNodeMsg directly
 	reqBody := *apiNode

@@ -9,7 +9,7 @@ import (
 )
 
 // convertAPIUserToCommon converts a v0.0.40 API User to common User type
-func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0040User) (*types.User, error) {
+func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0040User) *types.User {
 	user := &types.User{}
 
 	// Basic fields
@@ -67,11 +67,11 @@ func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0040User) (*types.User
 		}
 	}
 
-	return user, nil
+	return user
 }
 
 // convertCommonUserCreateToAPI converts common UserCreate to v0.0.40 API format
-func (a *UserAdapter) convertCommonUserCreateToAPI(user *types.UserCreate) (*api.V0040User, error) {
+func (a *UserAdapter) convertCommonUserCreateToAPI(user *types.UserCreate) *api.V0040User {
 	apiUser := &api.V0040User{}
 
 	// Basic fields
@@ -94,11 +94,11 @@ func (a *UserAdapter) convertCommonUserCreateToAPI(user *types.UserCreate) (*api
 		apiUser.AdministratorLevel = &adminLevel
 	}
 
-	return apiUser, nil
+	return apiUser
 }
 
 // convertCommonUserUpdateToAPI converts common UserUpdate to v0.0.40 API format
-func (a *UserAdapter) convertCommonUserUpdateToAPI(existingUser *types.User, update *types.UserUpdate) (*api.V0040User, error) {
+func (a *UserAdapter) convertCommonUserUpdateToAPI(existingUser *types.User, update *types.UserUpdate) *api.V0040User {
 	apiUser := &api.V0040User{}
 
 	// Name (required)
@@ -121,5 +121,5 @@ func (a *UserAdapter) convertCommonUserUpdateToAPI(existingUser *types.User, upd
 		apiUser.AdministratorLevel = &adminLevel
 	}
 
-	return apiUser, nil
+	return apiUser
 }

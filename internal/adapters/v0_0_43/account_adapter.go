@@ -94,10 +94,7 @@ func (a *AccountAdapter) List(ctx context.Context, opts *types.AccountListOption
 	// Convert the response to common types
 	accountList := make([]types.Account, 0, len(resp.JSON200.Accounts))
 	for _, apiAccount := range resp.JSON200.Accounts {
-		account, err := a.convertAPIAccountToCommon(apiAccount)
-		if err != nil {
-			return nil, a.HandleConversionError(err, apiAccount.Name)
-		}
+		account := a.convertAPIAccountToCommon(apiAccount)
 		accountList = append(accountList, *account)
 	}
 
@@ -180,10 +177,7 @@ func (a *AccountAdapter) Get(ctx context.Context, accountName string) (*types.Ac
 	}
 
 	// Convert the first account (should be the only one)
-	account, err := a.convertAPIAccountToCommon(resp.JSON200.Accounts[0])
-	if err != nil {
-		return nil, a.HandleConversionError(err, accountName)
-	}
+	account := a.convertAPIAccountToCommon(resp.JSON200.Accounts[0])
 
 	return account, nil
 }
@@ -202,10 +196,7 @@ func (a *AccountAdapter) Create(ctx context.Context, account *types.AccountCreat
 	}
 
 	// Convert to API format
-	apiAccount, err := a.convertCommonAccountCreateToAPI(account)
-	if err != nil {
-		return nil, err
-	}
+	apiAccount := a.convertCommonAccountCreateToAPI(account)
 
 	// Create request body
 	reqBody := api.SlurmdbV0043PostAccountsJSONRequestBody{
@@ -257,10 +248,7 @@ func (a *AccountAdapter) Update(ctx context.Context, accountName string, update 
 	}
 
 	// Convert to API format and apply updates
-	apiAccount, err := a.convertCommonAccountUpdateToAPI(existingAccount, update)
-	if err != nil {
-		return err
-	}
+	apiAccount := a.convertCommonAccountUpdateToAPI(existingAccount, update)
 
 	// Create request body
 	reqBody := api.SlurmdbV0043PostAccountsJSONRequestBody{
@@ -380,10 +368,7 @@ func (a *AccountAdapter) CreateAssociation(ctx context.Context, req *types.Accou
 	}
 
 	// Convert to API format
-	apiAssociations, err := a.convertCommonAccountAssociationToAPI(req)
-	if err != nil {
-		return nil, err
-	}
+	apiAssociations := a.convertCommonAccountAssociationToAPI(req)
 
 	// Create request body
 	reqBody := api.SlurmdbV0043PostAssociationsJSONRequestBody{
@@ -432,7 +417,7 @@ func (a *AccountAdapter) validateAccountAssociationRequest(req *types.AccountAss
 }
 
 // convertCommonAccountAssociationToAPI converts common account association request to API format
-func (a *AccountAdapter) convertCommonAccountAssociationToAPI(req *types.AccountAssociationRequest) ([]api.V0043Assoc, error) {
+func (a *AccountAdapter) convertCommonAccountAssociationToAPI(req *types.AccountAssociationRequest) []api.V0043Assoc {
 	associations := make([]api.V0043Assoc, 0, len(req.Accounts))
 
 	for _, accountName := range req.Accounts {
@@ -472,5 +457,5 @@ func (a *AccountAdapter) convertCommonAccountAssociationToAPI(req *types.Account
 		associations = append(associations, association)
 	}
 
-	return associations, nil
+	return associations
 }

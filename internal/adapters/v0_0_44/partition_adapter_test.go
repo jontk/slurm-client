@@ -96,8 +96,7 @@ func TestPartitionAdapter_ConvertAPIPartitionToCommon(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := adapter.convertAPIPartitionToCommon(tt.apiPartition)
-			assert.NoError(t, err)
+			result := adapter.convertAPIPartitionToCommon(tt.apiPartition)
 			assert.NotNil(t, result)
 			assert.Equal(t, tt.expectedName, result.Name)
 			assert.Equal(t, tt.expectedState, result.State)

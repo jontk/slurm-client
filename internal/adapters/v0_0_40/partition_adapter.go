@@ -83,10 +83,7 @@ func (a *PartitionAdapter) List(ctx context.Context, opts *types.PartitionListOp
 	// Convert the response to common types
 	partitionList := make([]types.Partition, 0, len(resp.JSON200.Partitions))
 	for _, apiPartition := range resp.JSON200.Partitions {
-		partition, err := a.convertAPIPartitionToCommon(apiPartition)
-		if err != nil {
-			return nil, a.HandleConversionError(err, apiPartition.Name)
-		}
+		partition := a.convertAPIPartitionToCommon(apiPartition)
 		partitionList = append(partitionList, *partition)
 	}
 
@@ -175,10 +172,7 @@ func (a *PartitionAdapter) Get(ctx context.Context, partitionName string) (*type
 	}
 
 	// Convert the first partition (should be the only one)
-	partition, err := a.convertAPIPartitionToCommon(resp.JSON200.Partitions[0])
-	if err != nil {
-		return nil, a.HandleConversionError(err, partitionName)
-	}
+	partition := a.convertAPIPartitionToCommon(resp.JSON200.Partitions[0])
 
 	return partition, nil
 }
@@ -202,7 +196,7 @@ func (a *PartitionAdapter) Delete(ctx context.Context, partitionName string) err
 }
 
 // convertAPIPartitionToCommon converts a v0.0.40 API Partition to common Partition type
-func (a *PartitionAdapter) convertAPIPartitionToCommon(apiPartition api.V0040PartitionInfo) (*types.Partition, error) {
+func (a *PartitionAdapter) convertAPIPartitionToCommon(apiPartition api.V0040PartitionInfo) *types.Partition {
 	partition := &types.Partition{}
 
 	// Basic fields
@@ -216,7 +210,7 @@ func (a *PartitionAdapter) convertAPIPartitionToCommon(apiPartition api.V0040Par
 	// Limits and timeouts - v0.0.40 structure is different
 	// Just set basic fields for now
 
-	return partition, nil
+	return partition
 }
 
 // filterPartitionList applies client-side filtering to partition list

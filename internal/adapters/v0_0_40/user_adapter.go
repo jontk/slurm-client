@@ -93,10 +93,7 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 	// Convert the response to common types
 	userList := make([]types.User, 0, len(resp.JSON200.Users))
 	for _, apiUser := range resp.JSON200.Users {
-		user, err := a.convertAPIUserToCommon(apiUser)
-		if err != nil {
-			return nil, a.HandleConversionError(err, apiUser.Name)
-		}
+		user := a.convertAPIUserToCommon(apiUser)
 		userList = append(userList, *user)
 	}
 
@@ -185,10 +182,7 @@ func (a *UserAdapter) Get(ctx context.Context, userName string) (*types.User, er
 	}
 
 	// Convert the first user (should be the only one)
-	user, err := a.convertAPIUserToCommon(resp.JSON200.Users[0])
-	if err != nil {
-		return nil, a.HandleConversionError(err, userName)
-	}
+	user := a.convertAPIUserToCommon(resp.JSON200.Users[0])
 
 	return user, nil
 }
@@ -207,10 +201,7 @@ func (a *UserAdapter) Create(ctx context.Context, user *types.UserCreate) (*type
 	}
 
 	// Convert to API format
-	apiUser, err := a.convertCommonUserCreateToAPI(user)
-	if err != nil {
-		return nil, err
-	}
+	apiUser := a.convertCommonUserCreateToAPI(user)
 
 	// Create request body
 	reqBody := api.SlurmdbV0040PostUsersJSONRequestBody{
@@ -266,10 +257,7 @@ func (a *UserAdapter) Update(ctx context.Context, userName string, update *types
 	}
 
 	// Convert to API format and apply updates
-	apiUser, err := a.convertCommonUserUpdateToAPI(existingUser, update)
-	if err != nil {
-		return err
-	}
+	apiUser := a.convertCommonUserUpdateToAPI(existingUser, update)
 
 	// Create request body
 	reqBody := api.SlurmdbV0040PostUsersJSONRequestBody{

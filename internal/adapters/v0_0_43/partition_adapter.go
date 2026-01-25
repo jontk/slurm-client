@@ -83,14 +83,7 @@ func (a *PartitionAdapter) List(ctx context.Context, opts *types.PartitionListOp
 	// Convert the response to common types
 	partitionList := make([]types.Partition, 0, len(resp.JSON200.Partitions))
 	for _, apiPartition := range resp.JSON200.Partitions {
-		partition, err := a.convertAPIPartitionToCommon(apiPartition)
-		if err != nil {
-			partitionName := ""
-			if apiPartition.Name != nil {
-				partitionName = *apiPartition.Name
-			}
-			return nil, a.HandleConversionError(err, partitionName)
-		}
+		partition := a.convertAPIPartitionToCommon(apiPartition)
 		partitionList = append(partitionList, *partition)
 	}
 
@@ -179,10 +172,7 @@ func (a *PartitionAdapter) Get(ctx context.Context, partitionName string) (*type
 	}
 
 	// Convert the first partition (should be the only one)
-	partition, err := a.convertAPIPartitionToCommon(resp.JSON200.Partitions[0])
-	if err != nil {
-		return nil, a.HandleConversionError(err, partitionName)
-	}
+	partition := a.convertAPIPartitionToCommon(resp.JSON200.Partitions[0])
 
 	return partition, nil
 }
@@ -264,7 +254,7 @@ func (a *PartitionAdapter) matchesPartitionFilters(partition types.Partition, op
 }
 
 // convertAPIPartitionToCommon converts a v0.0.43 API Partition to common Partition type
-func (a *PartitionAdapter) convertAPIPartitionToCommon(apiPartition api.V0043PartitionInfo) (*types.Partition, error) {
+func (a *PartitionAdapter) convertAPIPartitionToCommon(apiPartition api.V0043PartitionInfo) *types.Partition {
 	partition := &types.Partition{}
 
 	// Basic fields
@@ -350,5 +340,5 @@ func (a *PartitionAdapter) convertAPIPartitionToCommon(apiPartition api.V0043Par
 	// These might be determined from other fields or defaults
 	// For now, we'll leave them as false
 
-	return partition, nil
+	return partition
 }
