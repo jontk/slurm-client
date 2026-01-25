@@ -65,9 +65,8 @@ func TestConvertAPINodeToInterface(t *testing.T) {
 		State:      &state,
 	}
 
-	interfaceNode, err := convertAPINodeToInterface(apiNode)
+	interfaceNode := convertAPINodeToInterface(apiNode)
 
-	assert.NoError(t, err)
 	assert.NotNil(t, interfaceNode)
 	assert.Equal(t, "node-001", interfaceNode.Name)
 	assert.Equal(t, 48, interfaceNode.CPUs)
@@ -82,9 +81,8 @@ func TestConvertAPINodeToInterface_EmptyFields(t *testing.T) {
 	// Test with empty/nil fields
 	apiNode := V0042Node{}
 
-	interfaceNode, err := convertAPINodeToInterface(apiNode)
+	interfaceNode := convertAPINodeToInterface(apiNode)
 
-	assert.NoError(t, err)
 	assert.NotNil(t, interfaceNode)
 	assert.Equal(t, "", interfaceNode.Name)
 	assert.Equal(t, 0, interfaceNode.CPUs)

@@ -97,13 +97,7 @@ func (m *JobManagerImpl) List(ctx context.Context, opts *interfaces.ListJobsOpti
 	// Convert the response to our interface types
 	jobs := make([]interfaces.Job, 0, len(resp.JSON200.Jobs))
 	for _, apiJob := range resp.JSON200.Jobs {
-		job, err := convertAPIJobToInterface(apiJob)
-		if err != nil {
-			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert job data")
-			conversionErr.Cause = err
-			conversionErr.Details = fmt.Sprintf("Error converting job ID %v", apiJob.JobId)
-			return nil, conversionErr
-		}
+		job := convertAPIJobToInterface(apiJob)
 		jobs = append(jobs, *job)
 	}
 
@@ -119,7 +113,7 @@ func (m *JobManagerImpl) List(ctx context.Context, opts *interfaces.ListJobsOpti
 }
 
 // convertAPIJobToInterface converts a V0040JobInfo to interfaces.Job
-func convertAPIJobToInterface(apiJob V0040JobInfo) (*interfaces.Job, error) {
+func convertAPIJobToInterface(apiJob V0040JobInfo) *interfaces.Job {
 	job := &interfaces.Job{}
 
 	// Job ID - simple int32 pointer
@@ -233,7 +227,7 @@ func convertAPIJobToInterface(apiJob V0040JobInfo) (*interfaces.Job, error) {
 		job.Metadata["allocating_node"] = *apiJob.AllocatingNode
 	}
 
-	return job, nil
+	return job
 }
 
 // filterJobs applies client-side filtering to job list
@@ -360,14 +354,7 @@ func (m *JobManagerImpl) Get(ctx context.Context, jobID string) (*interfaces.Job
 		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected multiple jobs returned", fmt.Sprintf("Expected 1 job but got %d for ID %s", len(resp.JSON200.Jobs), jobID))
 	}
 
-	job, err := convertAPIJobToInterface(resp.JSON200.Jobs[0])
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert job data")
-		conversionErr.Cause = err
-		conversionErr.Details = "Error converting job ID " + jobID
-		return nil, conversionErr
-	}
-
+	job := convertAPIJobToInterface(resp.JSON200.Jobs[0])
 	return job, nil
 }
 

@@ -99,10 +99,7 @@ func (m *NodeManagerImpl) List(ctx context.Context, opts *interfaces.ListNodesOp
 	// Convert the response to our interface types
 	nodes := make([]interfaces.Node, 0, len(resp.JSON200.Nodes))
 	for _, apiNode := range resp.JSON200.Nodes {
-		node, err := convertAPINodeToInterface(apiNode)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert node data: %w", err)
-		}
+		node := convertAPINodeToInterface(apiNode)
 		nodes = append(nodes, *node)
 	}
 
@@ -118,7 +115,7 @@ func (m *NodeManagerImpl) List(ctx context.Context, opts *interfaces.ListNodesOp
 }
 
 // convertAPINodeToInterface converts a V0043Node to interfaces.Node
-func convertAPINodeToInterface(apiNode V0043Node) (*interfaces.Node, error) {
+func convertAPINodeToInterface(apiNode V0043Node) *interfaces.Node {
 	node := &interfaces.Node{}
 
 	// Node name - simple string
@@ -231,7 +228,7 @@ func convertAPINodeToInterface(apiNode V0043Node) (*interfaces.Node, error) {
 		node.Metadata["gres_used"] = *apiNode.GresUsed
 	}
 
-	return node, nil
+	return node
 }
 
 // filterNodes applies client-side filtering to node list
@@ -388,14 +385,7 @@ func (m *NodeManagerImpl) Get(ctx context.Context, nodeName string) (*interfaces
 		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected multiple nodes returned", fmt.Sprintf("Expected 1 node but got %d for name %s", len(resp.JSON200.Nodes), nodeName))
 	}
 
-	node, err := convertAPINodeToInterface(resp.JSON200.Nodes[0])
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert node data")
-		conversionErr.Cause = err
-		conversionErr.Details = "Error converting node " + nodeName
-		return nil, conversionErr
-	}
-
+	node := convertAPINodeToInterface(resp.JSON200.Nodes[0])
 	return node, nil
 }
 

@@ -1029,7 +1029,7 @@ func (m *JobManagerImpl) GetJobResourceTrends(ctx context.Context, jobID string,
 	}
 
 	// Generate time points
-	timePoints := generateMinimalTimePoints(job.StartTime, job.EndTime, opts.DataPoints)
+	timePoints := generateMinimalTimePoints(job.StartTime, opts.DataPoints)
 
 	// Create minimal trends object
 	trends := &interfaces.JobResourceTrends{
@@ -1080,7 +1080,7 @@ func (m *JobManagerImpl) GetJobResourceTrends(ctx context.Context, jobID string,
 }
 
 // Helper functions for v0.0.41
-func generateMinimalTimePoints(startTime, endTime *time.Time, numPoints int) []time.Time {
+func generateMinimalTimePoints(startTime *time.Time, numPoints int) []time.Time {
 	if numPoints <= 0 {
 		return []time.Time{}
 	}
@@ -1173,7 +1173,7 @@ func (m *JobManagerImpl) GetJobStepDetails(ctx context.Context, jobID string, st
 		StepName:  "step_" + stepID,
 		JobID:     jobID,
 		JobName:   job.Name,
-		State:     deriveBasicStepState(job.State, stepIDInt),
+		State:     deriveBasicStepState(job.State),
 		StartTime: job.StartTime,
 		EndTime:   job.EndTime,
 		Duration:  calculateBasicStepDuration(job.StartTime, job.EndTime),
@@ -1183,11 +1183,11 @@ func (m *JobManagerImpl) GetJobStepDetails(ctx context.Context, jobID string, st
 		CPUAllocation:    job.CPUs / 2,          // Assume step uses half the job's CPUs
 		MemoryAllocation: int64(job.Memory / 2), // Half the memory
 		NodeList:         job.Nodes,
-		TaskCount:        calculateBasicStepTaskCount(job.CPUs, stepIDInt),
+		TaskCount:        calculateBasicStepTaskCount(job.CPUs),
 
 		// Basic command info
-		Command:     deriveBasicStepCommand(job.Command, stepIDInt),
-		CommandLine: deriveBasicStepCommandLine(job.Command, stepIDInt),
+		Command:     deriveBasicStepCommand(job.Command),
+		CommandLine: deriveBasicStepCommandLine(job.Command),
 		WorkingDir:  job.WorkingDir,
 		Environment: job.Environment,
 
@@ -1202,10 +1202,10 @@ func (m *JobManagerImpl) GetJobStepDetails(ctx context.Context, jobID string, st
 		AverageRSS: int64(job.Memory / 8), // Conservative estimate
 
 		// Limited I/O statistics (basic tracking in v0.0.41)
-		TotalReadBytes:  calculateBasicStepIOBytes(job.CPUs, stepIDInt, "read"),
-		TotalWriteBytes: calculateBasicStepIOBytes(job.CPUs, stepIDInt, "write"),
-		ReadOperations:  calculateBasicStepIOOps(job.CPUs, stepIDInt, "read"),
-		WriteOperations: calculateBasicStepIOOps(job.CPUs, stepIDInt, "write"),
+		TotalReadBytes:  calculateBasicStepIOBytes(job.CPUs, "read"),
+		TotalWriteBytes: calculateBasicStepIOBytes(job.CPUs, "write"),
+		ReadOperations:  calculateBasicStepIOOps(job.CPUs, "read"),
+		WriteOperations: calculateBasicStepIOOps(job.CPUs, "write"),
 
 		// No network statistics in v0.0.41
 		NetworkBytesReceived: 0,
@@ -1216,7 +1216,7 @@ func (m *JobManagerImpl) GetJobStepDetails(ctx context.Context, jobID string, st
 		AveragePowerDraw: 0,
 
 		// Basic task-level information
-		Tasks: generateBasicStepTasks(job, stepIDInt),
+		Tasks: generateBasicStepTasks(job),
 
 		// Step-specific metadata
 		StepType:        deriveBasicStepType(stepIDInt),
@@ -1257,9 +1257,8 @@ func (m *JobManagerImpl) GetJobStepUtilization(ctx context.Context, jobID string
 		return nil, err
 	}
 
-	// Parse step ID for calculations
-	stepIDInt, err := strconv.Atoi(stepID)
-	if err != nil {
+	// Validate step ID format
+	if _, err := strconv.Atoi(stepID); err != nil {
 		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, "Invalid step ID format", err.Error())
 	}
 
@@ -1342,7 +1341,7 @@ func (m *JobManagerImpl) GetJobStepUtilization(ctx context.Context, jobID string
 		},
 
 		// Basic task-level utilization
-		TaskUtilizations: generateBasicTaskUtilizations(stepDetails, stepIDInt),
+		TaskUtilizations: generateBasicTaskUtilizations(stepDetails),
 
 		// Basic performance metrics
 		PerformanceMetrics: &interfaces.StepPerformanceMetrics{
@@ -1379,7 +1378,7 @@ func (m *JobManagerImpl) GetJobStepUtilization(ctx context.Context, jobID string
 
 // Helper functions for v0.0.41 basic step calculations
 
-func deriveBasicStepState(jobState string, stepID int) string {
+func deriveBasicStepState(jobState string) string {
 	// Basic step state derivation for v0.0.41
 	switch jobState {
 	case "RUNNING":
@@ -1409,23 +1408,23 @@ func calculateBasicStepDuration(startTime, endTime *time.Time) time.Duration {
 	return endTime.Sub(*startTime)
 }
 
-func calculateBasicStepTaskCount(cpus int, stepID int) int {
+func calculateBasicStepTaskCount(cpus int) int {
 	// Simple calculation for v0.0.41
 	return cpus / 2 // Half the job's CPUs
 }
 
-func deriveBasicStepCommand(jobCommand string, stepID int) string {
+func deriveBasicStepCommand(jobCommand string) string {
 	if jobCommand == "" {
 		return "srun /bin/bash" // Basic command
 	}
 	return "srun " + jobCommand
 }
 
-func deriveBasicStepCommandLine(jobCommand string, stepID int) string {
+func deriveBasicStepCommandLine(jobCommand string) string {
 	return "srun " + jobCommand
 }
 
-func calculateBasicStepIOBytes(cpus int, stepID int, ioType string) int64 {
+func calculateBasicStepIOBytes(cpus int, ioType string) int64 {
 	base := int64(cpus) * 512 * 1024 * 1024 // 512MB per CPU base (lower than newer versions)
 	if ioType == "write" {
 		base /= 2 // Write is half of read
@@ -1433,7 +1432,7 @@ func calculateBasicStepIOBytes(cpus int, stepID int, ioType string) int64 {
 	return base
 }
 
-func calculateBasicStepIOOps(cpus int, stepID int, ioType string) int64 {
+func calculateBasicStepIOOps(cpus int, ioType string) int64 {
 	base := int64(cpus) * 5000 // 5K ops per CPU base (lower than newer versions)
 	if ioType == "write" {
 		base /= 2
@@ -1441,8 +1440,8 @@ func calculateBasicStepIOOps(cpus int, stepID int, ioType string) int64 {
 	return base
 }
 
-func generateBasicStepTasks(job *interfaces.Job, stepID int) []interfaces.StepTaskInfo {
-	taskCount := calculateBasicStepTaskCount(job.CPUs, stepID)
+func generateBasicStepTasks(job *interfaces.Job) []interfaces.StepTaskInfo {
+	taskCount := calculateBasicStepTaskCount(job.CPUs)
 	tasks := make([]interfaces.StepTaskInfo, taskCount)
 
 	// Default to "unknown" if no nodes specified
@@ -1495,7 +1494,7 @@ func deriveBasicQOSLevel(metadata map[string]interface{}) string {
 	return "normal" // Fixed QOS for v0.0.41
 }
 
-func generateBasicTaskUtilizations(stepDetails *interfaces.JobStepDetails, stepID int) []interfaces.TaskUtilization {
+func generateBasicTaskUtilizations(stepDetails *interfaces.JobStepDetails) []interfaces.TaskUtilization {
 	tasks := make([]interfaces.TaskUtilization, len(stepDetails.Tasks))
 
 	for i, task := range stepDetails.Tasks {

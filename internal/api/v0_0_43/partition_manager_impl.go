@@ -94,13 +94,7 @@ func (m *PartitionManagerImpl) List(ctx context.Context, opts *interfaces.ListPa
 	// Convert the response to our interface types
 	partitions := make([]interfaces.Partition, 0, len(resp.JSON200.Partitions))
 	for _, apiPartition := range resp.JSON200.Partitions {
-		partition, err := convertAPIPartitionToInterface(apiPartition)
-		if err != nil {
-			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert partition data")
-			conversionErr.Cause = err
-			conversionErr.Details = fmt.Sprintf("Error converting partition %v", apiPartition.Name)
-			return nil, conversionErr
-		}
+		partition := convertAPIPartitionToInterface(apiPartition)
 		partitions = append(partitions, *partition)
 	}
 
@@ -116,7 +110,7 @@ func (m *PartitionManagerImpl) List(ctx context.Context, opts *interfaces.ListPa
 }
 
 // convertAPIPartitionToInterface converts a V0043PartitionInfo to interfaces.Partition
-func convertAPIPartitionToInterface(apiPartition V0043PartitionInfo) (*interfaces.Partition, error) {
+func convertAPIPartitionToInterface(apiPartition V0043PartitionInfo) *interfaces.Partition {
 	partition := &interfaces.Partition{}
 
 	// Partition name - simple string
@@ -224,7 +218,7 @@ func convertAPIPartitionToInterface(apiPartition V0043PartitionInfo) (*interface
 		partition.Nodes = []string{}
 	}
 
-	return partition, nil
+	return partition
 }
 
 // filterPartitions applies client-side filtering to partition list
@@ -346,14 +340,7 @@ func (m *PartitionManagerImpl) Get(ctx context.Context, partitionName string) (*
 		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected multiple partitions returned", fmt.Sprintf("Expected 1 partition but got %d for name %s", len(resp.JSON200.Partitions), partitionName))
 	}
 
-	partition, err := convertAPIPartitionToInterface(resp.JSON200.Partitions[0])
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert partition data")
-		conversionErr.Cause = err
-		conversionErr.Details = "Error converting partition " + partitionName
-		return nil, conversionErr
-	}
-
+	partition := convertAPIPartitionToInterface(resp.JSON200.Partitions[0])
 	return partition, nil
 }
 

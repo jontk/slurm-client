@@ -73,10 +73,7 @@ func (q *QoSManagerImpl) List(ctx context.Context, opts *interfaces.ListQoSOptio
 	// Convert the response to our interface types
 	qosList := make([]interfaces.QoS, 0, len(resp.JSON200.Qos))
 	for _, apiQos := range resp.JSON200.Qos {
-		qos, err := convertAPIQoSToInterface(apiQos)
-		if err != nil {
-			return nil, common.HandleConversionError(err, "QoS", apiQos.Name)
-		}
+		qos := convertAPIQoSToInterface(apiQos)
 		qosList = append(qosList, *qos)
 	}
 
@@ -140,11 +137,7 @@ func (q *QoSManagerImpl) Get(ctx context.Context, qosName string) (*interfaces.Q
 	}
 
 	// Convert the first QoS (should be the only one)
-	qos, err := convertAPIQoSToInterface(resp.JSON200.Qos[0])
-	if err != nil {
-		return nil, common.HandleConversionError(err, "QoS", qosName)
-	}
-
+	qos := convertAPIQoSToInterface(resp.JSON200.Qos[0])
 	return qos, nil
 }
 
@@ -172,10 +165,7 @@ func (q *QoSManagerImpl) Create(ctx context.Context, qos *interfaces.QoSCreate) 
 	}
 
 	// Convert the QoS create request to API format
-	apiQoS, err := convertQoSCreateToAPI(qos)
-	if err != nil {
-		return nil, err
-	}
+	apiQoS := convertQoSCreateToAPI(qos)
 
 	// Create request body
 	reqBody := SlurmdbV0043PostQosJSONRequestBody{
@@ -237,10 +227,7 @@ func (q *QoSManagerImpl) Update(ctx context.Context, qosName string, update *int
 	}
 
 	// Convert existing QoS to API format and apply updates
-	apiQoS, err := convertQoSUpdateToAPI(existingQoS, update)
-	if err != nil {
-		return err
-	}
+	apiQoS := convertQoSUpdateToAPI(existingQoS, update)
 
 	// Create request body
 	reqBody := SlurmdbV0043PostQosJSONRequestBody{
@@ -309,7 +296,7 @@ func (q *QoSManagerImpl) Delete(ctx context.Context, qosName string) error {
 // since they don't contain the repetitive error handling patterns
 
 // convertAPIQoSToInterface converts a V0043Qos to interfaces.QoS
-func convertAPIQoSToInterface(apiQoS V0043Qos) (*interfaces.QoS, error) {
+func convertAPIQoSToInterface(apiQoS V0043Qos) *interfaces.QoS {
 	qos := &interfaces.QoS{}
 
 	// Basic fields
@@ -368,7 +355,7 @@ func convertAPIQoSToInterface(apiQoS V0043Qos) (*interfaces.QoS, error) {
 		}
 	}
 
-	return qos, nil
+	return qos
 }
 
 // filterQoS applies client-side filtering to the QoS list
@@ -454,7 +441,7 @@ func filterQoS(qosList []interfaces.QoS, opts *interfaces.ListQoSOptions) []inte
 }
 
 // convertQoSCreateToAPI converts interfaces.QoSCreate to API format
-func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
+func convertQoSCreateToAPI(create *interfaces.QoSCreate) *V0043Qos {
 	apiQoS := &V0043Qos{}
 
 	// Required fields
@@ -526,11 +513,11 @@ func convertQoSCreateToAPI(create *interfaces.QoSCreate) (*V0043Qos, error) {
 	// Limits would be converted here if provided
 	// This is a simplified version - full implementation would handle all limit types
 
-	return apiQoS, nil
+	return apiQoS
 }
 
 // convertQoSUpdateToAPI converts interfaces.QoSUpdate to API format
-func convertQoSUpdateToAPI(existing *interfaces.QoS, update *interfaces.QoSUpdate) (*V0043Qos, error) {
+func convertQoSUpdateToAPI(existing *interfaces.QoS, update *interfaces.QoSUpdate) *V0043Qos {
 	apiQoS := &V0043Qos{}
 	apiQoS.Name = &existing.Name
 	apiQoS.Description = &existing.Description
@@ -618,5 +605,5 @@ func convertQoSUpdateToAPI(existing *interfaces.QoS, update *interfaces.QoSUpdat
 	// Limits would be updated here if provided
 	// This is a simplified version - full implementation would handle all limit types
 
-	return apiQoS, nil
+	return apiQoS
 }

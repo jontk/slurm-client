@@ -378,12 +378,6 @@ linters:
         path: _test\.go
         text: do not pass a nil Context
       - linters:
-          - unparam
-        path: ^internal/api/.*/.*_manager_impl\.go$
-        # TODO: Fix 100+ unparam issues across API layer manager converters
-        # Error returns that are always nil need to be removed from converter functions
-        # This affects converters in all versions (v0_0_40 through v0_0_44)
-      - linters:
           - intrange
         path: ^internal/managers/base/crud_manager\.go$
         # Loop condition calls v.Len() which should not be converted

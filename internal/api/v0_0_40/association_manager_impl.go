@@ -188,7 +188,7 @@ func (a *AssociationManagerImpl) Update(ctx context.Context, associations []*int
 		}
 
 		// Apply updates to existing association
-		apiAssoc := a.convertInterfaceAssociationToV0040Update(existing, update)
+		apiAssoc := a.convertInterfaceAssociationToV0040Update(existing)
 		apiAssocs = append(apiAssocs, *apiAssoc)
 	}
 
@@ -343,8 +343,8 @@ func (a *AssociationManagerImpl) convertInterfaceAssociationCreateToV0040(assoc 
 	return apiAssoc
 }
 
-// convertInterfaceAssociationToV0040Update converts interface association with updates to v0.0.40 format
-func (a *AssociationManagerImpl) convertInterfaceAssociationToV0040Update(existing *interfaces.Association, update *interfaces.AssociationUpdate) *V0040Assoc {
+// convertInterfaceAssociationToV0040Update converts interface association to v0.0.40 format
+func (a *AssociationManagerImpl) convertInterfaceAssociationToV0040Update(existing *interfaces.Association) *V0040Assoc {
 	apiAssoc := &V0040Assoc{
 		Account: &existing.Account,
 		User:    existing.User, // User is string, not *string

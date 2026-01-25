@@ -43,9 +43,8 @@ func TestConvertAPIJobToInterface(t *testing.T) {
 		UserId: &userID,
 	}
 
-	interfaceJob, err := convertAPIJobToInterface(apiJob)
+	interfaceJob := convertAPIJobToInterface(apiJob)
 
-	assert.NoError(t, err)
 	assert.NotNil(t, interfaceJob)
 	assert.Equal(t, "12345", interfaceJob.ID)
 	assert.Equal(t, "test-job", interfaceJob.Name)
