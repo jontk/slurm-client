@@ -484,15 +484,26 @@ func (c *WrapperClient) GetInstance(ctx context.Context, opts *interfaces.GetIns
 		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.43")
 	}
 
+	// Handle response errors
+	if err := c.handleGetInstanceResponse(resp); err != nil {
+		return nil, err
+	}
+
+	// Convert and filter response
+	return c.findAndConvertInstance(resp.JSON200.Instances, opts)
+}
+
+// handleGetInstanceResponse validates the API response
+func (c *WrapperClient) handleGetInstanceResponse(resp *SlurmdbV0043GetInstanceResponse) error {
 	// Check HTTP status
 	if resp.StatusCode() != 200 {
-		return nil, errors.NewClientError(
+		return errors.NewClientError(
 			errors.ErrorCodeServerInternal,
 			fmt.Sprintf("Operation failed with status %d", resp.StatusCode()))
 	}
 
 	if resp.JSON200 == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeValidationFailed, "Empty response from instance API")
+		return errors.NewClientError(errors.ErrorCodeValidationFailed, "Empty response from instance API")
 	}
 
 	// Check for API errors
@@ -510,32 +521,33 @@ func (c *WrapperClient) GetInstance(ctx context.Context, opts *interfaces.GetIns
 				Source:      getStringFromPtr(apiErr.Source),
 			}
 		}
-		return nil, errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors).SlurmError
+		return errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors).SlurmError
 	}
 
-	// Convert response to our interface types
-	// resp.JSON200.Instances is of type V0043InstanceList which is []V0043Instance
-	if len(resp.JSON200.Instances) > 0 {
+	return nil
+}
+
+// findAndConvertInstance finds and converts a single instance from the response
+func (c *WrapperClient) findAndConvertInstance(instances []V0043Instance, opts *interfaces.GetInstanceOptions) (*interfaces.Instance, error) {
+	for _, inst := range instances {
 		// Filter by instance name if provided
-		for _, inst := range resp.JSON200.Instances {
-			if opts != nil && opts.Instance != "" {
-				if getStringFromPtr(inst.InstanceId) != opts.Instance {
-					continue
-				}
+		if opts != nil && opts.Instance != "" {
+			if getStringFromPtr(inst.InstanceId) != opts.Instance {
+				continue
 			}
-			instance := &interfaces.Instance{
-				Cluster:   getStringFromPtr(inst.Cluster),
-				ExtraInfo: getStringFromPtr(inst.Extra),
-				Instance:  getStringFromPtr(inst.InstanceId),
-				NodeName:  getStringFromPtr(inst.NodeName),
-				TimeEnd:   getTimeFromInstance(inst.Time, false),
-				TimeStart: getTimeFromInstance(inst.Time, true),
-				TRES:      "", // Not available in this structure
-				Created:   time.Now(),
-				Modified:  time.Now(),
-			}
-			return instance, nil
 		}
+		instance := &interfaces.Instance{
+			Cluster:   getStringFromPtr(inst.Cluster),
+			ExtraInfo: getStringFromPtr(inst.Extra),
+			Instance:  getStringFromPtr(inst.InstanceId),
+			NodeName:  getStringFromPtr(inst.NodeName),
+			TimeEnd:   getTimeFromInstance(inst.Time, false),
+			TimeStart: getTimeFromInstance(inst.Time, true),
+			TRES:      "", // Not available in this structure
+			Created:   time.Now(),
+			Modified:  time.Now(),
+		}
+		return instance, nil
 	}
 
 	return nil, errors.NewClientError(errors.ErrorCodeResourceNotFound, "Instance not found")
