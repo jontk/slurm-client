@@ -514,7 +514,31 @@ func (a *JobAdapter) convertAPIJobAllocateResponseToCommon(apiResp *api.V0042Ope
 	return resp
 }
 
-// convertAPIJobToCommon converts API job to common type
+// extractTimeIfSet safely extracts a Unix timestamp from a nested structure
+func (a *JobAdapter) extractTimeIfSet(timeStruct *api.V0042Uint64NoValStruct) *time.Time {
+	if timeStruct == nil || timeStruct.Number == nil {
+		return nil
+	}
+	t := time.Unix(*timeStruct.Number, 0)
+	return &t
+}
+
+// extractTimeRequired safely extracts a required Unix timestamp (non-pointer return)
+func (a *JobAdapter) extractTimeRequired(timeStruct *api.V0042Uint64NoValStruct) time.Time {
+	if timeStruct == nil || timeStruct.Number == nil {
+		return time.Time{}
+	}
+	return time.Unix(*timeStruct.Number, 0)
+}
+
+// extractInt32IfSet safely extracts int32 from nested structure
+func (a *JobAdapter) extractInt32IfSet(valStruct *api.V0042Uint32NoValStruct) int32 {
+	if valStruct == nil || valStruct.Number == nil {
+		return 0
+	}
+	return *valStruct.Number
+}
+
 func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0042JobInfo) (*types.Job, error) {
 	job := &types.Job{}
 
@@ -562,23 +586,10 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0042JobInfo) (*types.Job,
 	}
 
 	// Time fields - convert from Unix timestamp to time.Time
-	if apiJob.SubmitTime != nil && apiJob.SubmitTime.Set != nil && *apiJob.SubmitTime.Set && apiJob.SubmitTime.Number != nil {
-		job.SubmitTime = time.Unix(*apiJob.SubmitTime.Number, 0)
-	}
-
-	if apiJob.StartTime != nil && apiJob.StartTime.Set != nil && *apiJob.StartTime.Set && apiJob.StartTime.Number != nil {
-		startTime := time.Unix(*apiJob.StartTime.Number, 0)
-		job.StartTime = &startTime
-	}
-
-	if apiJob.EndTime != nil && apiJob.EndTime.Set != nil && *apiJob.EndTime.Set && apiJob.EndTime.Number != nil {
-		endTime := time.Unix(*apiJob.EndTime.Number, 0)
-		job.EndTime = &endTime
-	}
-
-	if apiJob.TimeLimit != nil && apiJob.TimeLimit.Set != nil && *apiJob.TimeLimit.Set && apiJob.TimeLimit.Number != nil {
-		job.TimeLimit = *apiJob.TimeLimit.Number
-	}
+	job.SubmitTime = a.extractTimeRequired(apiJob.SubmitTime)
+	job.StartTime = a.extractTimeIfSet(apiJob.StartTime)
+	job.EndTime = a.extractTimeIfSet(apiJob.EndTime)
+	job.TimeLimit = a.extractInt32IfSet(apiJob.TimeLimit)
 
 	// Working directory is not available in v0.0.42 JobInfo structure
 
