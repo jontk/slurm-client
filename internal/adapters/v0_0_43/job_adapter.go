@@ -183,6 +183,72 @@ func (a *JobAdapter) Get(ctx context.Context, jobID int32) (*types.Job, error) {
 }
 
 // Submit submits a new job
+// buildEnvironmentListV0043 builds the environment variable list with defaults
+func (a *JobAdapter) buildEnvironmentListV0043(jobEnv map[string]string) []string {
+	envList := make([]string, 0)
+
+	// Always provide at least minimal environment to avoid SLURM write errors
+	hasPath := false
+	for key := range jobEnv {
+		if key == "PATH" {
+			hasPath = true
+			break
+		}
+	}
+
+	if !hasPath {
+		envList = append(envList, "PATH=/usr/bin:/bin")
+	}
+
+	// Add all user-provided environment variables
+	for key, value := range jobEnv {
+		envList = append(envList, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	return envList
+}
+
+// setV0043JobIOProperties sets I/O properties for v0.0.43
+func (a *JobAdapter) setV0043JobIOProperties(reqBody *api.V0043JobDescMsg, job *types.JobCreate) {
+	if job.Script != "" {
+		reqBody.Script = &job.Script
+	}
+
+	if job.WorkingDirectory != "" {
+		reqBody.CurrentWorkingDirectory = &job.WorkingDirectory
+	} else {
+		defaultWorkDir := "/tmp"
+		reqBody.CurrentWorkingDirectory = &defaultWorkDir
+	}
+
+	if job.StandardOutput != "" {
+		reqBody.StandardOutput = &job.StandardOutput
+	}
+	if job.StandardError != "" {
+		reqBody.StandardError = &job.StandardError
+	}
+	if job.StandardInput != "" {
+		reqBody.StandardInput = &job.StandardInput
+	}
+}
+
+// setV0043JobResources sets resource properties for v0.0.43
+func (a *JobAdapter) setV0043JobResources(reqBody *api.V0043JobDescMsg, job *types.JobCreate) {
+	if job.TimeLimit > 0 {
+		timeLimit := job.TimeLimit
+		setTrue := true
+		reqBody.TimeLimit = &api.V0043Uint32NoValStruct{
+			Set:    &setTrue,
+			Number: &timeLimit,
+		}
+	}
+	if job.Nodes > 0 {
+		nodeMin := job.Nodes
+		reqBody.MinimumNodes = &nodeMin
+		reqBody.MaximumNodes = &nodeMin
+	}
+}
+
 func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.JobSubmitResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
@@ -198,77 +264,17 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 	// Convert to API format
 	apiJob := a.convertCommonJobCreateToAPI(job)
 
-	// Create request body - V0043JobDescMsg format
+	// Create and populate request body
 	reqBody := api.V0043JobDescMsg{
 		Account:   apiJob.Account,
 		Name:      apiJob.Name,
 		Partition: apiJob.Partition,
 	}
+	a.setV0043JobIOProperties(&reqBody, job)
+	a.setV0043JobResources(&reqBody, job)
 
-	// Handle script/command
-	if job.Script != "" {
-		reqBody.Script = &job.Script
-	}
-
-	// Handle working directory - REQUIRED in SLURM v25.05.0
-	if job.WorkingDirectory != "" {
-		reqBody.CurrentWorkingDirectory = &job.WorkingDirectory
-	} else {
-		// Default to /tmp if not specified to avoid SLURM error
-		defaultWorkDir := "/tmp"
-		reqBody.CurrentWorkingDirectory = &defaultWorkDir
-	}
-
-	// Handle standard output/error/input
-	if job.StandardOutput != "" {
-		reqBody.StandardOutput = &job.StandardOutput
-	}
-	if job.StandardError != "" {
-		reqBody.StandardError = &job.StandardError
-	}
-	if job.StandardInput != "" {
-		reqBody.StandardInput = &job.StandardInput
-	}
-
-	// Handle time limit
-	if job.TimeLimit > 0 {
-		timeLimit := job.TimeLimit
-		setTrue := true
-		reqBody.TimeLimit = &api.V0043Uint32NoValStruct{
-			Set:    &setTrue,
-			Number: &timeLimit,
-		}
-	}
-
-	// Handle node count
-	if job.Nodes > 0 {
-		nodeMin := job.Nodes
-		reqBody.MinimumNodes = &nodeMin
-		reqBody.MaximumNodes = &nodeMin
-	}
-
-	// Handle environment variables - CRITICAL for avoiding SLURM errors
-	envVars := make([]string, 0)
-
-	// Always provide at least minimal environment to avoid SLURM write errors
-	hasPath := false
-	for key := range job.Environment {
-		if key == "PATH" {
-			hasPath = true
-			break
-		}
-	}
-
-	if !hasPath {
-		envVars = append(envVars, "PATH=/usr/bin:/bin")
-	}
-
-	// Add all user-provided environment variables
-	for key, value := range job.Environment {
-		envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
-	}
-
-	// Set environment in request body
+	// Build and set environment variables
+	envVars := a.buildEnvironmentListV0043(job.Environment)
 	reqBody.Environment = &envVars
 
 	// Create job submit request wrapping the job description

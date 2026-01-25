@@ -180,6 +180,77 @@ func (a *JobAdapter) Get(ctx context.Context, jobID int32) (*types.Job, error) {
 }
 
 // Submit submits a new job
+// setBasicJobProperties sets basic job properties (name, account, partition)
+func (a *JobAdapter) setBasicJobProperties(jobDesc *api.V0040JobDescMsg, job *types.JobCreate) {
+	if job.Name != "" {
+		jobDesc.Name = &job.Name
+	}
+	if job.Account != "" {
+		jobDesc.Account = &job.Account
+	}
+	if job.Partition != "" {
+		jobDesc.Partition = &job.Partition
+	}
+}
+
+// setJobIOProperties sets I/O properties (working directory, standard streams)
+func (a *JobAdapter) setJobIOProperties(jobDesc *api.V0040JobDescMsg, job *types.JobCreate) {
+	if job.WorkingDirectory != "" {
+		jobDesc.CurrentWorkingDirectory = &job.WorkingDirectory
+	}
+	if job.StandardOutput != "" {
+		jobDesc.StandardOutput = &job.StandardOutput
+	}
+	if job.StandardError != "" {
+		jobDesc.StandardError = &job.StandardError
+	}
+	if job.StandardInput != "" {
+		jobDesc.StandardInput = &job.StandardInput
+	}
+}
+
+// setJobResources sets resource properties (time limit, nodes)
+func (a *JobAdapter) setJobResources(jobDesc *api.V0040JobDescMsg, job *types.JobCreate) {
+	if job.TimeLimit > 0 {
+		timeLimit := int64(job.TimeLimit)
+		setTrue := true
+		jobDesc.TimeLimit = &api.V0040Uint32NoVal{
+			Set:    &setTrue,
+			Number: &timeLimit,
+		}
+	}
+	if job.Nodes > 0 {
+		nodes := job.Nodes
+		jobDesc.MinimumNodes = &nodes
+		jobDesc.MaximumNodes = &nodes
+	}
+}
+
+// buildEnvironmentList builds the environment variable list with defaults
+func (a *JobAdapter) buildEnvironmentList(jobEnv map[string]string) []string {
+	envList := make([]string, 0)
+
+	// Always provide at least minimal environment to avoid SLURM write errors
+	hasPath := false
+	for key := range jobEnv {
+		if key == "PATH" {
+			hasPath = true
+			break
+		}
+	}
+
+	if !hasPath {
+		envList = append(envList, "PATH=/usr/bin:/bin")
+	}
+
+	// Add all user-provided environment variables
+	for key, value := range jobEnv {
+		envList = append(envList, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	return envList
+}
+
 func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.JobSubmitResponse, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
@@ -192,77 +263,18 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 		return nil, err
 	}
 
-	// Create job submission structure
+	// Create and populate job submission structure
 	jobDesc := &api.V0040JobDescMsg{
 		Script: &job.Script,
 	}
 
-	// Basic job properties
-	if job.Name != "" {
-		jobDesc.Name = &job.Name
-	}
-	if job.Account != "" {
-		jobDesc.Account = &job.Account
-	}
-	if job.Partition != "" {
-		jobDesc.Partition = &job.Partition
-	}
+	// Use helper methods to set fields
+	a.setBasicJobProperties(jobDesc, job)
+	a.setJobIOProperties(jobDesc, job)
+	a.setJobResources(jobDesc, job)
 
-	// Working directory
-	if job.WorkingDirectory != "" {
-		jobDesc.CurrentWorkingDirectory = &job.WorkingDirectory
-	}
-
-	// Standard output/error/input
-	if job.StandardOutput != "" {
-		jobDesc.StandardOutput = &job.StandardOutput
-	}
-	if job.StandardError != "" {
-		jobDesc.StandardError = &job.StandardError
-	}
-	if job.StandardInput != "" {
-		jobDesc.StandardInput = &job.StandardInput
-	}
-
-	// Time limit
-	if job.TimeLimit > 0 {
-		timeLimit := int64(job.TimeLimit)
-		setTrue := true
-		jobDesc.TimeLimit = &api.V0040Uint32NoVal{
-			Set:    &setTrue,
-			Number: &timeLimit,
-		}
-	}
-
-	// Node count
-	if job.Nodes > 0 {
-		nodes := job.Nodes
-		jobDesc.MinimumNodes = &nodes
-		jobDesc.MaximumNodes = &nodes
-	}
-
-	// Handle environment variables - CRITICAL for avoiding SLURM errors
-	envList := make([]string, 0)
-
-	// Always provide at least minimal environment to avoid SLURM write errors
-	hasPath := false
-	for key := range job.Environment {
-		if key == "PATH" {
-			hasPath = true
-			break
-		}
-	}
-
-	if !hasPath {
-		envList = append(envList, "PATH=/usr/bin:/bin")
-	}
-
-	// Add all user-provided environment variables
-	for key, value := range job.Environment {
-		envList = append(envList, fmt.Sprintf("%s=%s", key, value))
-	}
-
-	// Set environment in job submission
+	// Set environment variables with defaults
+	envList := a.buildEnvironmentList(job.Environment)
 	jobDesc.Environment = &envList
 
 	// Create request body
