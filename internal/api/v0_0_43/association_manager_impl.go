@@ -622,11 +622,11 @@ func handleAPIErrorForDelete(statusCode int, response *V0043OpenapiAssocsRemoved
 // Helper function to extract metadata from API response
 func extractMetadata(meta interface{}) map[string]interface{} {
 	if meta == nil {
-		return nil
+		return make(map[string]interface{})
 	}
 	// Convert meta to map if needed
 	// This implementation depends on the actual structure of the Meta field
-	return nil
+	return make(map[string]interface{})
 }
 
 // Conversion helper functions

@@ -100,13 +100,7 @@ func (m *JobManagerImpl) List(ctx context.Context, opts *interfaces.ListJobsOpti
 	// Convert the response to our interface types
 	jobs := make([]interfaces.Job, 0, len(resp.JSON200.Jobs))
 	for _, apiJob := range resp.JSON200.Jobs {
-		job, err := convertAPIJobToInterface(apiJob)
-		if err != nil {
-			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert job data")
-			conversionErr.Cause = err
-			conversionErr.Details = fmt.Sprintf("Error converting job ID %v", apiJob.JobId)
-			return nil, conversionErr
-		}
+		job := convertAPIJobToInterface(apiJob)
 		jobs = append(jobs, *job)
 	}
 
@@ -122,7 +116,7 @@ func (m *JobManagerImpl) List(ctx context.Context, opts *interfaces.ListJobsOpti
 }
 
 // convertAPIJobToInterface converts a V0043JobInfo to interfaces.Job
-func convertAPIJobToInterface(apiJob V0043JobInfo) (*interfaces.Job, error) {
+func convertAPIJobToInterface(apiJob V0043JobInfo) *interfaces.Job {
 	job := &interfaces.Job{}
 
 	// Job ID - simple int32 pointer
@@ -236,7 +230,7 @@ func convertAPIJobToInterface(apiJob V0043JobInfo) (*interfaces.Job, error) {
 		job.Metadata["allocating_node"] = *apiJob.AllocatingNode
 	}
 
-	return job, nil
+	return job
 }
 
 // filterJobs applies client-side filtering to job list
@@ -363,14 +357,7 @@ func (m *JobManagerImpl) Get(ctx context.Context, jobID string) (*interfaces.Job
 		return nil, errors.NewClientError(errors.ErrorCodeServerInternal, "Unexpected multiple jobs returned", fmt.Sprintf("Expected 1 job but got %d for ID %s", len(resp.JSON200.Jobs), jobID))
 	}
 
-	job, err := convertAPIJobToInterface(resp.JSON200.Jobs[0])
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert job data")
-		conversionErr.Cause = err
-		conversionErr.Details = "Error converting job ID " + jobID
-		return nil, conversionErr
-	}
-
+	job := convertAPIJobToInterface(resp.JSON200.Jobs[0])
 	return job, nil
 }
 
@@ -2092,7 +2079,7 @@ func (m *JobManagerImpl) GetJobResourceTrends(ctx context.Context, jobID string,
 
 	// Generate CPU trends
 	if opts.IncludeCPU {
-		trends.CPUTrends = generateCPUTrends(job, timePoints, opts.Aggregation)
+		trends.CPUTrends = generateCPUTrends(job, timePoints)
 		if opts.DetectAnomalies {
 			cpuAnomalies := detectAnomalies("cpu", trends.CPUTrends, timePoints)
 			trends.Anomalies = append(trends.Anomalies, cpuAnomalies...)
@@ -2101,7 +2088,7 @@ func (m *JobManagerImpl) GetJobResourceTrends(ctx context.Context, jobID string,
 
 	// Generate memory trends
 	if opts.IncludeMemory {
-		trends.MemoryTrends = generateMemoryTrends(job, timePoints, opts.Aggregation)
+		trends.MemoryTrends = generateMemoryTrends(job, timePoints)
 		if opts.DetectAnomalies {
 			memAnomalies := detectAnomalies("memory", trends.MemoryTrends, timePoints)
 			trends.Anomalies = append(trends.Anomalies, memAnomalies...)
@@ -2110,7 +2097,7 @@ func (m *JobManagerImpl) GetJobResourceTrends(ctx context.Context, jobID string,
 
 	// Generate GPU trends (v0.0.43 supports full GPU metrics)
 	if opts.IncludeGPU && hasGPU(job) {
-		trends.GPUTrends = generateGPUTrends(job, timePoints, opts.Aggregation)
+		trends.GPUTrends = generateGPUTrends(timePoints)
 		if opts.DetectAnomalies {
 			gpuAnomalies := detectAnomalies("gpu", trends.GPUTrends, timePoints)
 			trends.Anomalies = append(trends.Anomalies, gpuAnomalies...)
@@ -2119,17 +2106,17 @@ func (m *JobManagerImpl) GetJobResourceTrends(ctx context.Context, jobID string,
 
 	// Generate I/O trends
 	if opts.IncludeIO {
-		trends.IOTrends = generateIOTrends(job, timePoints, opts.Aggregation)
+		trends.IOTrends = generateIOTrends(timePoints)
 	}
 
 	// Generate network trends
 	if opts.IncludeNetwork {
-		trends.NetworkTrends = generateNetworkTrends(job, timePoints, opts.Aggregation)
+		trends.NetworkTrends = generateNetworkTrends(timePoints)
 	}
 
 	// Generate energy trends (v0.0.43 supports energy metrics)
 	if opts.IncludeEnergy {
-		trends.EnergyTrends = generateEnergyTrends(job, timePoints, opts.Aggregation)
+		trends.EnergyTrends = generateEnergyTrends(job, timePoints)
 	}
 
 	// Generate summary
@@ -2181,7 +2168,7 @@ func hasGPU(job *interfaces.Job) bool {
 }
 
 // Helper function to generate CPU trends
-func generateCPUTrends(job *interfaces.Job, timePoints []time.Time, aggregation string) *interfaces.ResourceTimeSeries {
+func generateCPUTrends(job *interfaces.Job, timePoints []time.Time) *interfaces.ResourceTimeSeries {
 	values := make([]float64, len(timePoints))
 
 	// Simulate CPU usage pattern
@@ -2202,7 +2189,7 @@ func generateCPUTrends(job *interfaces.Job, timePoints []time.Time, aggregation 
 }
 
 // Helper function to generate memory trends
-func generateMemoryTrends(job *interfaces.Job, timePoints []time.Time, aggregation string) *interfaces.ResourceTimeSeries {
+func generateMemoryTrends(job *interfaces.Job, timePoints []time.Time) *interfaces.ResourceTimeSeries {
 	values := make([]float64, len(timePoints))
 
 	// Simulate memory usage pattern (gradual increase)
@@ -2221,7 +2208,7 @@ func generateMemoryTrends(job *interfaces.Job, timePoints []time.Time, aggregati
 }
 
 // Helper function to generate GPU trends
-func generateGPUTrends(job *interfaces.Job, timePoints []time.Time, aggregation string) *interfaces.ResourceTimeSeries {
+func generateGPUTrends(timePoints []time.Time) *interfaces.ResourceTimeSeries {
 	values := make([]float64, len(timePoints))
 
 	// Simulate GPU usage pattern
@@ -2234,7 +2221,7 @@ func generateGPUTrends(job *interfaces.Job, timePoints []time.Time, aggregation 
 }
 
 // Helper function to generate I/O trends
-func generateIOTrends(job *interfaces.Job, timePoints []time.Time, aggregation string) *interfaces.IOTimeSeries {
+func generateIOTrends(timePoints []time.Time) *interfaces.IOTimeSeries {
 	// Simulate I/O patterns
 	readValues := make([]float64, len(timePoints))
 	writeValues := make([]float64, len(timePoints))
@@ -2259,7 +2246,7 @@ func generateIOTrends(job *interfaces.Job, timePoints []time.Time, aggregation s
 }
 
 // Helper function to generate network trends
-func generateNetworkTrends(job *interfaces.Job, timePoints []time.Time, aggregation string) *interfaces.NetworkTimeSeries {
+func generateNetworkTrends(timePoints []time.Time) *interfaces.NetworkTimeSeries {
 	// Simulate network patterns
 	ingressValues := make([]float64, len(timePoints))
 	egressValues := make([]float64, len(timePoints))
@@ -2278,7 +2265,7 @@ func generateNetworkTrends(job *interfaces.Job, timePoints []time.Time, aggregat
 }
 
 // Helper function to generate energy trends
-func generateEnergyTrends(job *interfaces.Job, timePoints []time.Time, aggregation string) *interfaces.EnergyTimeSeries {
+func generateEnergyTrends(job *interfaces.Job, timePoints []time.Time) *interfaces.EnergyTimeSeries {
 	// Simulate energy patterns
 	powerValues := make([]float64, len(timePoints))
 
@@ -2668,12 +2655,6 @@ func (m *JobManagerImpl) GetJobStepUtilization(ctx context.Context, jobID string
 		return nil, err
 	}
 
-	// Parse step ID for calculations
-	stepIDInt, err := strconv.Atoi(stepID)
-	if err != nil {
-		return nil, errors.NewClientError(errors.ErrorCodeInvalidRequest, "Invalid step ID format", err.Error())
-	}
-
 	// Create step utilization metrics
 	stepUtilization := &interfaces.JobStepUtilization{
 		StepID:   stepID,
@@ -2759,7 +2740,7 @@ func (m *JobManagerImpl) GetJobStepUtilization(ctx context.Context, jobID string
 		},
 
 		// Task-level utilization
-		TaskUtilizations: generateTaskUtilizations(stepDetails, stepIDInt),
+		TaskUtilizations: generateTaskUtilizations(stepDetails),
 
 		// Performance metrics
 		PerformanceMetrics: &interfaces.StepPerformanceMetrics{
@@ -3108,7 +3089,7 @@ func calculateStepScalability(stepDetails *interfaces.JobStepDetails, nodeCount 
 	return scalabilityRatio * 100
 }
 
-func generateTaskUtilizations(stepDetails *interfaces.JobStepDetails, stepID int) []interfaces.TaskUtilization {
+func generateTaskUtilizations(stepDetails *interfaces.JobStepDetails) []interfaces.TaskUtilization {
 	tasks := make([]interfaces.TaskUtilization, len(stepDetails.Tasks))
 
 	for i, task := range stepDetails.Tasks {
@@ -3216,7 +3197,7 @@ func (m *JobManagerImpl) ListJobStepsWithMetrics(ctx context.Context, jobID stri
 
 	// Apply sorting if requested
 	if opts != nil && opts.SortBy != "" {
-		sortJobStepsWithMetrics(filteredSteps, opts.SortBy, opts.SortOrder)
+		sortJobStepsWithMetrics(filteredSteps, opts.SortOrder)
 	}
 
 	// Apply pagination if requested
@@ -3600,7 +3581,7 @@ func calculateImprovementPotential(cpuUtil, memUtil float64) float64 {
 	return math.Min(100.0, (cpuWaste+memWaste)*2.0)
 }
 
-func sortJobStepsWithMetrics(steps []*interfaces.JobStepWithMetrics, sortBy, sortOrder string) {
+func sortJobStepsWithMetrics(steps []*interfaces.JobStepWithMetrics, sortOrder string) {
 	// Implementation would depend on sort field
 	// For now, just sort by step ID
 	if sortOrder == "desc" {
@@ -3704,10 +3685,7 @@ func (m *JobManagerImpl) GetJobPerformanceHistory(
 
 	// In v0.0.43, we would integrate with SLURM's accounting database
 	// For now, we'll simulate historical data based on current analytics
-	samples, err := m.generateHistoricalSamples(ctx, job)
-	if err != nil {
-		return nil, err
-	}
+	samples := m.generateHistoricalSamples(job)
 
 	// If no samples (job missing timing info), return minimal history
 	if len(samples) == 0 {
@@ -3726,12 +3704,11 @@ func (m *JobManagerImpl) GetJobPerformanceHistory(
 // generateHistoricalSamples generates sample data for demonstration
 // In production, this would query SLURM's accounting database
 func (m *JobManagerImpl) generateHistoricalSamples(
-	ctx context.Context,
 	job *interfaces.Job,
-) ([]interfaces.JobComprehensiveAnalytics, error) {
+) []interfaces.JobComprehensiveAnalytics {
 	// For running/pending jobs without timing info, return empty samples
 	if job.StartTime == nil || job.EndTime == nil {
-		return []interfaces.JobComprehensiveAnalytics{}, nil
+		return []interfaces.JobComprehensiveAnalytics{}
 	}
 
 	// Generate samples every 10 minutes during job execution
@@ -3791,7 +3768,7 @@ func (m *JobManagerImpl) generateHistoricalSamples(
 		samples = append(samples, sample)
 	}
 
-	return samples, nil
+	return samples
 }
 
 // generateCoreMetrics generates CPU core metrics for simulation

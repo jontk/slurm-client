@@ -90,15 +90,7 @@ func (c *ClusterManagerImpl) List(ctx context.Context, opts *interfaces.ListClus
 	// Convert the response to our interface types
 	clusters := make([]*interfaces.Cluster, 0, len(resp.JSON200.Clusters))
 	for _, apiCluster := range resp.JSON200.Clusters {
-		cluster, err := convertAPIClusterToInterface(apiCluster)
-		if err != nil {
-			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert cluster data")
-			conversionErr.Cause = err
-			if apiCluster.Name != nil {
-				conversionErr.Details = "Error converting cluster " + *apiCluster.Name
-			}
-			return nil, conversionErr
-		}
+		cluster := convertAPIClusterToInterface(apiCluster)
 		clusters = append(clusters, cluster)
 	}
 
@@ -208,14 +200,7 @@ func (c *ClusterManagerImpl) Get(ctx context.Context, clusterName string) (*inte
 	}
 
 	// Convert the first cluster in the response
-	cluster, err := convertAPIClusterToInterface(resp.JSON200.Clusters[0])
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert cluster data")
-		conversionErr.Cause = err
-		conversionErr.Details = "Error converting cluster " + clusterName
-		return nil, conversionErr
-	}
-
+	cluster := convertAPIClusterToInterface(resp.JSON200.Clusters[0])
 	return cluster, nil
 }
 
@@ -234,12 +219,7 @@ func (c *ClusterManagerImpl) Create(ctx context.Context, cluster *interfaces.Clu
 	}
 
 	// Convert interface cluster to API cluster
-	apiCluster, err := convertInterfaceClusterCreateToAPI(cluster)
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert cluster data for API")
-		conversionErr.Cause = err
-		return nil, conversionErr
-	}
+	apiCluster := convertInterfaceClusterCreateToAPI(cluster)
 
 	// Prepare the request body
 	requestBody := SlurmdbV0043PostClustersJSONRequestBody{
@@ -320,12 +300,7 @@ func (c *ClusterManagerImpl) Update(ctx context.Context, clusterName string, upd
 	}
 
 	// Convert interface update to API cluster
-	apiCluster, err := convertInterfaceClusterUpdateToAPI(clusterName, update)
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert cluster update data for API")
-		conversionErr.Cause = err
-		return conversionErr
-	}
+	apiCluster := convertInterfaceClusterUpdateToAPI(clusterName, update)
 
 	// Prepare the request body
 	requestBody := SlurmdbV0043PostClustersJSONRequestBody{
@@ -463,7 +438,7 @@ func (c *ClusterManagerImpl) Delete(ctx context.Context, clusterName string) err
 // Helper functions for data conversion
 
 // convertAPIClusterToInterface converts an API cluster response to interface type
-func convertAPIClusterToInterface(apiCluster V0043ClusterRec) (*interfaces.Cluster, error) {
+func convertAPIClusterToInterface(apiCluster V0043ClusterRec) *interfaces.Cluster {
 	cluster := &interfaces.Cluster{
 		Metadata: make(map[string]interface{}),
 	}
@@ -501,11 +476,11 @@ func convertAPIClusterToInterface(apiCluster V0043ClusterRec) (*interfaces.Clust
 	cluster.Created = now
 	cluster.Modified = now
 
-	return cluster, nil
+	return cluster
 }
 
 // convertInterfaceClusterCreateToAPI converts interface cluster create to API type
-func convertInterfaceClusterCreateToAPI(cluster *interfaces.ClusterCreate) (*V0043ClusterRec, error) {
+func convertInterfaceClusterCreateToAPI(cluster *interfaces.ClusterCreate) *V0043ClusterRec {
 	apiCluster := &V0043ClusterRec{}
 
 	// Required fields
@@ -537,11 +512,11 @@ func convertInterfaceClusterCreateToAPI(cluster *interfaces.ClusterCreate) (*V00
 		apiCluster.Flags = &flags
 	}
 
-	return apiCluster, nil
+	return apiCluster
 }
 
 // convertInterfaceClusterUpdateToAPI converts interface cluster update to API type
-func convertInterfaceClusterUpdateToAPI(clusterName string, update *interfaces.ClusterUpdate) (*V0043ClusterRec, error) {
+func convertInterfaceClusterUpdateToAPI(clusterName string, update *interfaces.ClusterUpdate) *V0043ClusterRec {
 	apiCluster := &V0043ClusterRec{}
 
 	// Set the cluster name
@@ -573,7 +548,7 @@ func convertInterfaceClusterUpdateToAPI(clusterName string, update *interfaces.C
 		apiCluster.Flags = &flags
 	}
 
-	return apiCluster, nil
+	return apiCluster
 }
 
 // applyClusterFiltering applies client-side filtering to clusters

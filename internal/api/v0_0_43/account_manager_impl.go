@@ -90,13 +90,7 @@ func (a *AccountManagerImpl) List(ctx context.Context, opts *interfaces.ListAcco
 	// Convert the response to our interface types
 	accounts := make([]interfaces.Account, 0, len(resp.JSON200.Accounts))
 	for _, apiAccount := range resp.JSON200.Accounts {
-		account, err := convertAPIAccountToInterface(apiAccount)
-		if err != nil {
-			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert account data")
-			conversionErr.Cause = err
-			conversionErr.Details = "Error converting account " + apiAccount.Name
-			return nil, conversionErr
-		}
+		account := convertAPIAccountToInterface(apiAccount)
 		accounts = append(accounts, *account)
 	}
 
@@ -181,14 +175,7 @@ func (a *AccountManagerImpl) Get(ctx context.Context, accountName string) (*inte
 	}
 
 	// Convert the first account (should be the only one)
-	account, err := convertAPIAccountToInterface(resp.JSON200.Accounts[0])
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert account data")
-		conversionErr.Cause = err
-		conversionErr.Details = "Error converting account " + accountName
-		return nil, conversionErr
-	}
-
+	account := convertAPIAccountToInterface(resp.JSON200.Accounts[0])
 	return account, nil
 }
 
@@ -216,10 +203,7 @@ func (a *AccountManagerImpl) Create(ctx context.Context, account *interfaces.Acc
 	}
 
 	// Convert the account create request to API format
-	apiAccount, err := convertAccountCreateToAPI(account)
-	if err != nil {
-		return nil, err
-	}
+	apiAccount := convertAccountCreateToAPI(account)
 
 	// Create request body
 	reqBody := SlurmdbV0043PostAccountsJSONRequestBody{
@@ -463,11 +447,7 @@ func (a *AccountManagerImpl) GetAccountHierarchy(ctx context.Context, rootAccoun
 	}
 
 	// Build the hierarchy recursively
-	hierarchy, err := a.buildAccountHierarchy(ctx, rootAccountData, 0, []string{rootAccount})
-	if err != nil {
-		return nil, err
-	}
-
+	hierarchy := a.buildAccountHierarchy(ctx, rootAccountData, 0, []string{rootAccount})
 	return hierarchy, nil
 }
 
@@ -1010,7 +990,7 @@ func validateTRES(tres map[string]int) error {
 }
 
 // convertAPIAccountToInterface converts V0043Account to interfaces.Account
-func convertAPIAccountToInterface(apiAccount V0043Account) (*interfaces.Account, error) {
+func convertAPIAccountToInterface(apiAccount V0043Account) *interfaces.Account {
 	account := &interfaces.Account{}
 
 	// Basic fields
@@ -1036,7 +1016,7 @@ func convertAPIAccountToInterface(apiAccount V0043Account) (*interfaces.Account,
 		account.CoordinatorUsers = coordinators
 	}
 
-	return account, nil
+	return account
 }
 
 // filterAccounts applies client-side filtering to the account list
@@ -1111,7 +1091,7 @@ func filterAccounts(accounts []interfaces.Account, opts *interfaces.ListAccounts
 }
 
 // convertAccountCreateToAPI converts interfaces.AccountCreate to API format
-func convertAccountCreateToAPI(create *interfaces.AccountCreate) (*V0043Account, error) {
+func convertAccountCreateToAPI(create *interfaces.AccountCreate) *V0043Account {
 	apiAccount := &V0043Account{
 		Name:         create.Name,
 		Description:  create.Description,
@@ -1139,11 +1119,11 @@ func convertAccountCreateToAPI(create *interfaces.AccountCreate) (*V0043Account,
 		apiAccount.Coordinators = &coords
 	}
 
-	return apiAccount, nil
+	return apiAccount
 }
 
 // buildAccountHierarchy recursively builds the account hierarchy
-func (a *AccountManagerImpl) buildAccountHierarchy(ctx context.Context, account *interfaces.Account, level int, path []string) (*interfaces.AccountHierarchy, error) {
+func (a *AccountManagerImpl) buildAccountHierarchy(ctx context.Context, account *interfaces.Account, level int, path []string) *interfaces.AccountHierarchy {
 	hierarchy := &interfaces.AccountHierarchy{
 		Account: account,
 		Level:   level,
@@ -1165,10 +1145,7 @@ func (a *AccountManagerImpl) buildAccountHierarchy(ctx context.Context, account 
 		for _, child := range children {
 			childPath := append([]string{}, path...)
 			childPath = append(childPath, child.Name)
-			childHierarchy, err := a.buildAccountHierarchy(ctx, child, level+1, childPath)
-			if err != nil {
-				continue // Skip on error
-			}
+			childHierarchy := a.buildAccountHierarchy(ctx, child, level+1, childPath)
 			hierarchy.ChildAccounts = append(hierarchy.ChildAccounts, childHierarchy)
 			hierarchy.TotalSubAccounts += childHierarchy.TotalSubAccounts
 		}
@@ -1192,7 +1169,7 @@ func (a *AccountManagerImpl) buildAccountHierarchy(ctx context.Context, account 
 		hierarchy.AggregateUsage = usage
 	}
 
-	return hierarchy, nil
+	return hierarchy
 }
 
 // collectChildAccounts recursively collects child accounts up to the specified depth

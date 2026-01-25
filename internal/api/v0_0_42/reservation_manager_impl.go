@@ -91,13 +91,7 @@ func (r *ReservationManagerImpl) List(ctx context.Context, opts *interfaces.List
 	// Convert the response to our interface types
 	reservations := make([]interfaces.Reservation, 0, len(resp.JSON200.Reservations))
 	for _, apiRes := range resp.JSON200.Reservations {
-		reservation, err := convertAPIReservationToInterface(apiRes)
-		if err != nil {
-			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert reservation data")
-			conversionErr.Cause = err
-			conversionErr.Details = fmt.Sprintf("Error converting reservation %v", apiRes.Name)
-			return nil, conversionErr
-		}
+		reservation := convertAPIReservationToInterface(apiRes)
 		reservations = append(reservations, *reservation)
 	}
 
@@ -180,14 +174,7 @@ func (r *ReservationManagerImpl) Get(ctx context.Context, reservationName string
 	}
 
 	// Convert the first reservation in the response
-	reservation, err := convertAPIReservationToInterface(resp.JSON200.Reservations[0])
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert reservation data")
-		conversionErr.Cause = err
-		conversionErr.Details = fmt.Sprintf("Error converting reservation '%s'", reservationName)
-		return nil, conversionErr
-	}
-
+	reservation := convertAPIReservationToInterface(resp.JSON200.Reservations[0])
 	return reservation, nil
 }
 
@@ -299,7 +286,7 @@ func (r *ReservationManagerImpl) Delete(ctx context.Context, reservationName str
 }
 
 // convertAPIReservationToInterface converts V0042ReservationInfo to interfaces.Reservation
-func convertAPIReservationToInterface(apiRes V0042ReservationInfo) (*interfaces.Reservation, error) {
+func convertAPIReservationToInterface(apiRes V0042ReservationInfo) *interfaces.Reservation {
 	reservation := &interfaces.Reservation{}
 
 	// Basic fields
@@ -370,7 +357,7 @@ func convertAPIReservationToInterface(apiRes V0042ReservationInfo) (*interfaces.
 	// v0.0.42 doesn't have MaxStartDelay field in interfaces, skip it
 	_ = apiRes.MaxStartDelay
 
-	return reservation, nil
+	return reservation
 }
 
 // filterReservations applies client-side filtering to the reservation list
