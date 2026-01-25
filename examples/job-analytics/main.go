@@ -796,9 +796,9 @@ func reportUtilizationSection(report *strings.Builder, util *UtilizationData) {
 	// CPU Analysis
 	cpu := util.CPU
 	report.WriteString("CPU Utilization:\n")
-	report.WriteString(fmt.Sprintf("  • Allocated Cores: %d\n", cpu.AllocatedCores))
-	report.WriteString(fmt.Sprintf("  • Used Cores: %.2f (%.1f%% utilization)\n", cpu.UsedCores, cpu.UtilizationPercent))
-	report.WriteString(fmt.Sprintf("  • Efficiency: %.1f%%\n", cpu.EfficiencyPercent))
+	fmt.Fprintf(report, "  • Allocated Cores: %d\n", cpu.AllocatedCores)
+	fmt.Fprintf(report, "  • Used Cores: %.2f (%.1f%% utilization)\n", cpu.UsedCores, cpu.UtilizationPercent)
+	fmt.Fprintf(report, "  • Efficiency: %.1f%%\n", cpu.EfficiencyPercent)
 
 	if cpu.UtilizationPercent < 50 {
 		report.WriteString("  ⚠️  WARNING: Low CPU utilization detected\n")
@@ -810,9 +810,9 @@ func reportUtilizationSection(report *strings.Builder, util *UtilizationData) {
 	// Memory Analysis
 	mem := util.Memory
 	report.WriteString("Memory Utilization:\n")
-	report.WriteString(fmt.Sprintf("  • Allocated: %s\n", formatBytes(mem.AllocatedBytes)))
-	report.WriteString(fmt.Sprintf("  • Used: %s (%.1f%% utilization)\n", formatBytes(mem.UsedBytes), mem.UtilizationPercent))
-	report.WriteString(fmt.Sprintf("  • Efficiency: %.1f%%\n", mem.EfficiencyPercent))
+	fmt.Fprintf(report, "  • Allocated: %s\n", formatBytes(mem.AllocatedBytes))
+	fmt.Fprintf(report, "  • Used: %s (%.1f%% utilization)\n", formatBytes(mem.UsedBytes), mem.UtilizationPercent)
+	fmt.Fprintf(report, "  • Efficiency: %.1f%%\n", mem.EfficiencyPercent)
 
 	if mem.UtilizationPercent < 30 {
 		report.WriteString("  ⚠️  WARNING: Low memory utilization detected\n")
@@ -825,8 +825,8 @@ func reportUtilizationSection(report *strings.Builder, util *UtilizationData) {
 	if util.GPU.DeviceCount > 0 {
 		gpu := util.GPU
 		report.WriteString("GPU Utilization:\n")
-		report.WriteString(fmt.Sprintf("  • GPU Devices: %d\n", gpu.DeviceCount))
-		report.WriteString(fmt.Sprintf("  • Utilization: %.1f%%\n", gpu.UtilizationPercent))
+		fmt.Fprintf(report, "  • GPU Devices: %d\n", gpu.DeviceCount)
+		fmt.Fprintf(report, "  • Utilization: %.1f%%\n", gpu.UtilizationPercent)
 
 		if gpu.UtilizationPercent < 60 {
 			report.WriteString("  ⚠️  WARNING: Low GPU utilization detected\n")
@@ -839,9 +839,9 @@ func reportUtilizationSection(report *strings.Builder, util *UtilizationData) {
 	// I/O Analysis
 	io := util.IO
 	report.WriteString("I/O Utilization:\n")
-	report.WriteString(fmt.Sprintf("  • Read: %s\n", formatBytes(io.ReadBytes)))
-	report.WriteString(fmt.Sprintf("  • Write: %s\n", formatBytes(io.WriteBytes)))
-	report.WriteString(fmt.Sprintf("  • I/O Utilization: %.1f%%\n", io.UtilizationPercent))
+	fmt.Fprintf(report, "  • Read: %s\n", formatBytes(io.ReadBytes))
+	fmt.Fprintf(report, "  • Write: %s\n", formatBytes(io.WriteBytes))
+	fmt.Fprintf(report, "  • I/O Utilization: %.1f%%\n", io.UtilizationPercent)
 	report.WriteString("\n")
 }
 
@@ -852,17 +852,17 @@ func reportEfficiencySection(report *strings.Builder, eff *EfficiencyData) {
 	report.WriteString("EFFICIENCY ANALYSIS\n")
 	report.WriteString("-" + strings.Repeat("-", 18) + "\n")
 
-	report.WriteString(fmt.Sprintf("Overall Efficiency Score: %.1f%%\n", eff.OverallEfficiency))
-	report.WriteString(fmt.Sprintf("CPU Efficiency: %.1f%%\n", eff.CPUEfficiency))
-	report.WriteString(fmt.Sprintf("Memory Efficiency: %.1f%%\n", eff.MemoryEfficiency))
-	report.WriteString(fmt.Sprintf("GPU Efficiency: %.1f%%\n", eff.GPUEfficiency))
+	fmt.Fprintf(report, "Overall Efficiency Score: %.1f%%\n", eff.OverallEfficiency)
+	fmt.Fprintf(report, "CPU Efficiency: %.1f%%\n", eff.CPUEfficiency)
+	fmt.Fprintf(report, "Memory Efficiency: %.1f%%\n", eff.MemoryEfficiency)
+	fmt.Fprintf(report, "GPU Efficiency: %.1f%%\n", eff.GPUEfficiency)
 	report.WriteString("\n")
 
 	// Resource Waste Analysis
 	waste := eff.ResourceWaste
 	report.WriteString("Resource Waste Analysis:\n")
-	report.WriteString(fmt.Sprintf("  • CPU Waste: %.2f core-hours (%.1f%%)\n", waste.CPUCoreHours, waste.CPUPercent))
-	report.WriteString(fmt.Sprintf("  • Memory Waste: %.2f GB-hours (%.1f%%)\n", waste.MemoryGBHours, waste.MemoryPercent))
+	fmt.Fprintf(report, "  • CPU Waste: %.2f core-hours (%.1f%%)\n", waste.CPUCoreHours, waste.CPUPercent)
+	fmt.Fprintf(report, "  • Memory Waste: %.2f GB-hours (%.1f%%)\n", waste.MemoryGBHours, waste.MemoryPercent)
 	report.WriteString("\n")
 
 	// Optimization Recommendations
@@ -870,10 +870,10 @@ func reportEfficiencySection(report *strings.Builder, eff *EfficiencyData) {
 		report.WriteString("OPTIMIZATION RECOMMENDATIONS\n")
 		report.WriteString("-" + strings.Repeat("-", 28) + "\n")
 		for i, rec := range eff.Recommendations {
-			report.WriteString(fmt.Sprintf("%d. %s %s:\n", i+1, cases.Title(language.English).String(rec.Type), rec.Resource))
-			report.WriteString(fmt.Sprintf("   Current: %d → Recommended: %d\n", rec.Current, rec.Recommended))
-			report.WriteString(fmt.Sprintf("   Reason: %s\n", rec.Reason))
-			report.WriteString(fmt.Sprintf("   Confidence: %.0f%%\n", rec.Confidence*100))
+			fmt.Fprintf(report, "%d. %s %s:\n", i+1, cases.Title(language.English).String(rec.Type), rec.Resource)
+			fmt.Fprintf(report, "   Current: %d → Recommended: %d\n", rec.Current, rec.Recommended)
+			fmt.Fprintf(report, "   Reason: %s\n", rec.Reason)
+			fmt.Fprintf(report, "   Confidence: %.0f%%\n", rec.Confidence*100)
 			report.WriteString("\n")
 		}
 	}
@@ -886,31 +886,31 @@ func reportPerformanceSection(report *strings.Builder, perf *PerformanceData) {
 	report.WriteString("PERFORMANCE ANALYSIS\n")
 	report.WriteString("-" + strings.Repeat("-", 19) + "\n")
 
-	report.WriteString(fmt.Sprintf("Overall Performance: %.1f%%\n", perf.OverallEfficiency))
+	fmt.Fprintf(report, "Overall Performance: %.1f%%\n", perf.OverallEfficiency)
 
 	// CPU Performance
 	cpu := perf.CPUAnalytics
 	report.WriteString("CPU Performance:\n")
-	report.WriteString(fmt.Sprintf("  • Utilization: %.1f%% (%.2f/%.d cores)\n",
-		cpu.UtilizationPercent, cpu.UsedCores, cpu.AllocatedCores))
-	report.WriteString(fmt.Sprintf("  • Frequency: %d MHz (max: %d MHz)\n",
-		cpu.AverageFrequency, cpu.MaxFrequency))
+	fmt.Fprintf(report, "  • Utilization: %.1f%% (%.2f/%.d cores)\n",
+		cpu.UtilizationPercent, cpu.UsedCores, cpu.AllocatedCores)
+	fmt.Fprintf(report, "  • Frequency: %d MHz (max: %d MHz)\n",
+		cpu.AverageFrequency, cpu.MaxFrequency)
 	report.WriteString("\n")
 
 	// Memory Performance
 	mem := perf.MemoryAnalytics
 	report.WriteString("Memory Performance:\n")
-	report.WriteString(fmt.Sprintf("  • Utilization: %.1f%% (%s/%s)\n",
-		mem.UtilizationPercent, formatBytes(mem.UsedBytes), formatBytes(mem.AllocatedBytes)))
+	fmt.Fprintf(report, "  • Utilization: %.1f%% (%s/%s)\n",
+		mem.UtilizationPercent, formatBytes(mem.UsedBytes), formatBytes(mem.AllocatedBytes))
 	report.WriteString("\n")
 
 	// I/O Performance
 	io := perf.IOAnalytics
 	report.WriteString("I/O Performance:\n")
-	report.WriteString(fmt.Sprintf("  • Read: %s (%d ops, %.1f MB/s)\n",
-		formatBytes(io.ReadBytes), io.ReadOperations, io.AverageReadBandwidth))
-	report.WriteString(fmt.Sprintf("  • Write: %s (%d ops, %.1f MB/s)\n",
-		formatBytes(io.WriteBytes), io.WriteOperations, io.AverageWriteBandwidth))
+	fmt.Fprintf(report, "  • Read: %s (%d ops, %.1f MB/s)\n",
+		formatBytes(io.ReadBytes), io.ReadOperations, io.AverageReadBandwidth)
+	fmt.Fprintf(report, "  • Write: %s (%d ops, %.1f MB/s)\n",
+		formatBytes(io.WriteBytes), io.WriteOperations, io.AverageWriteBandwidth)
 	report.WriteString("\n")
 }
 
@@ -922,17 +922,17 @@ func reportMetricsSection(report *strings.Builder, live *LiveMetricsData) {
 	report.WriteString("-" + strings.Repeat("-", 21) + "\n")
 
 	timestamp := time.Unix(live.Timestamp, 0)
-	report.WriteString(fmt.Sprintf("Snapshot Time: %s\n", timestamp.Format(time.DateTime)))
+	fmt.Fprintf(report, "Snapshot Time: %s\n", timestamp.Format(time.DateTime))
 
 	report.WriteString("Current Usage:\n")
-	report.WriteString(fmt.Sprintf("  • CPU: %.1f%% (avg: %.1f%%, peak: %.1f%%)\n",
-		live.CPUUsage.Current, live.CPUUsage.Average, live.CPUUsage.Peak))
-	report.WriteString(fmt.Sprintf("  • Memory: %s (avg: %s, peak: %s)\n",
-		formatBytes(live.MemoryUsage.Current), formatBytes(live.MemoryUsage.Average), formatBytes(live.MemoryUsage.Peak)))
-	report.WriteString(fmt.Sprintf("  • Disk I/O: %.1f MB/s read, %.1f MB/s write\n",
-		live.DiskUsage.ReadRateMBps, live.DiskUsage.WriteRateMBps))
-	report.WriteString(fmt.Sprintf("  • Network: %.1f MB/s in, %.1f MB/s out\n",
-		live.NetworkUsage.InRateMBps, live.NetworkUsage.OutRateMBps))
+	fmt.Fprintf(report, "  • CPU: %.1f%% (avg: %.1f%%, peak: %.1f%%)\n",
+		live.CPUUsage.Current, live.CPUUsage.Average, live.CPUUsage.Peak)
+	fmt.Fprintf(report, "  • Memory: %s (avg: %s, peak: %s)\n",
+		formatBytes(live.MemoryUsage.Current), formatBytes(live.MemoryUsage.Average), formatBytes(live.MemoryUsage.Peak))
+	fmt.Fprintf(report, "  • Disk I/O: %.1f MB/s read, %.1f MB/s write\n",
+		live.DiskUsage.ReadRateMBps, live.DiskUsage.WriteRateMBps)
+	fmt.Fprintf(report, "  • Network: %.1f MB/s in, %.1f MB/s out\n",
+		live.NetworkUsage.InRateMBps, live.NetworkUsage.OutRateMBps)
 	report.WriteString("\n")
 }
 
@@ -943,18 +943,18 @@ func reportTrendsSection(report *strings.Builder, trends *TrendsData) {
 	report.WriteString("RESOURCE TRENDS ANALYSIS\n")
 	report.WriteString("-" + strings.Repeat("-", 24) + "\n")
 
-	report.WriteString(fmt.Sprintf("Time Window: %s\n", trends.TimeWindow))
+	fmt.Fprintf(report, "Time Window: %s\n", trends.TimeWindow)
 
 	// CPU Trend Analysis
 	if len(trends.CPUTrend.DataPoints) > 0 {
 		cpuTrend := analyzeTrend(trends.CPUTrend.DataPoints)
-		report.WriteString(fmt.Sprintf("CPU Trend: %s\n", cpuTrend))
+		fmt.Fprintf(report, "CPU Trend: %s\n", cpuTrend)
 	}
 
 	// Memory Trend Analysis
 	if len(trends.MemoryTrend.DataPoints) > 0 {
 		memTrend := analyzeTrend(trends.MemoryTrend.DataPoints)
-		report.WriteString(fmt.Sprintf("Memory Trend: %s\n", memTrend))
+		fmt.Fprintf(report, "Memory Trend: %s\n", memTrend)
 	}
 	report.WriteString("\n")
 }
@@ -964,7 +964,7 @@ func reportOverallAssessment(report *strings.Builder, analytics *JobAnalyticsDat
 	report.WriteString("-" + strings.Repeat("-", 18) + "\n")
 
 	overallScore := calculateOverallScore(analytics)
-	report.WriteString(fmt.Sprintf("Job Efficiency Score: %.1f/100\n", overallScore))
+	fmt.Fprintf(report, "Job Efficiency Score: %.1f/100\n", overallScore)
 
 	if overallScore >= 80 {
 		report.WriteString("✅ EXCELLENT: Job is running efficiently with optimal resource usage\n")
@@ -981,7 +981,7 @@ func GenerateUtilizationReport(analytics *JobAnalyticsData) string {
 	var report strings.Builder
 
 	report.WriteString("=" + strings.Repeat("=", 60) + "\n")
-	report.WriteString(fmt.Sprintf("Job Analytics Report for Job ID: %s\n", analytics.JobID))
+	fmt.Fprintf(&report, "Job Analytics Report for Job ID: %s\n", analytics.JobID)
 	report.WriteString("=" + strings.Repeat("=", 60) + "\n\n")
 
 	reportUtilizationSection(&report, analytics.Utilization)
