@@ -307,15 +307,26 @@ func (c *WrapperClient) GetDiagnostics(ctx context.Context) (*interfaces.Diagnos
 		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.43")
 	}
 
+	// Handle response errors
+	if err := c.handleDiagnosticsResponse(resp); err != nil {
+		return nil, err
+	}
+
+	// Extract and convert diagnostics
+	return c.convertDiagnosticsResponse(resp.JSON200.Statistics), nil
+}
+
+// handleDiagnosticsResponse validates the diagnostics API response
+func (c *WrapperClient) handleDiagnosticsResponse(resp *SlurmV0043GetDiagResponse) error {
 	// Check HTTP status
 	if resp.StatusCode() != 200 {
-		return nil, errors.NewClientError(
+		return errors.NewClientError(
 			errors.ErrorCodeServerInternal,
 			fmt.Sprintf("Operation failed with status %d", resp.StatusCode()))
 	}
 
 	if resp.JSON200 == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeValidationFailed, "Empty response from diagnostics API")
+		return errors.NewClientError(errors.ErrorCodeValidationFailed, "Empty response from diagnostics API")
 	}
 
 	// Check for API errors
@@ -333,10 +344,14 @@ func (c *WrapperClient) GetDiagnostics(ctx context.Context) (*interfaces.Diagnos
 				Source:      getStringFromPtr(apiErr.Source),
 			}
 		}
-		return nil, errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors).SlurmError
+		return errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors).SlurmError
 	}
 
-	// Convert response to our interface types
+	return nil
+}
+
+// convertDiagnosticsResponse converts API statistics to interface diagnostics
+func (c *WrapperClient) convertDiagnosticsResponse(stats V0043StatsMsg) *interfaces.Diagnostics {
 	diagnostics := &interfaces.Diagnostics{
 		DataCollected:     time.Now(),
 		RPCsByMessageType: make(map[string]int),
@@ -344,43 +359,46 @@ func (c *WrapperClient) GetDiagnostics(ctx context.Context) (*interfaces.Diagnos
 		Statistics:        make(map[string]interface{}),
 	}
 
-	// Extract diagnostics information from the response
-	// The resp.JSON200.Statistics field is of type V0043StatsMsg (not a pointer)
-	if resp.JSON200.Statistics.ReqTime != nil && resp.JSON200.Statistics.ReqTime.Number != nil {
-		diagnostics.ReqTime = *resp.JSON200.Statistics.ReqTime.Number
+	// Extract time-based fields
+	if stats.ReqTime != nil && stats.ReqTime.Number != nil {
+		diagnostics.ReqTime = *stats.ReqTime.Number
 	}
-	if resp.JSON200.Statistics.ReqTimeStart != nil && resp.JSON200.Statistics.ReqTimeStart.Number != nil {
-		diagnostics.ReqTimeStart = *resp.JSON200.Statistics.ReqTimeStart.Number
+	if stats.ReqTimeStart != nil && stats.ReqTimeStart.Number != nil {
+		diagnostics.ReqTimeStart = *stats.ReqTimeStart.Number
 	}
-	if resp.JSON200.Statistics.ServerThreadCount != nil {
-		diagnostics.ServerThreadCount = int(*resp.JSON200.Statistics.ServerThreadCount)
+
+	// Extract integer count fields
+	if stats.ServerThreadCount != nil {
+		diagnostics.ServerThreadCount = int(*stats.ServerThreadCount)
 	}
-	if resp.JSON200.Statistics.AgentCount != nil {
-		diagnostics.AgentCount = int(*resp.JSON200.Statistics.AgentCount)
+	if stats.AgentCount != nil {
+		diagnostics.AgentCount = int(*stats.AgentCount)
 	}
-	if resp.JSON200.Statistics.AgentThreadCount != nil {
-		diagnostics.AgentThreadCount = int(*resp.JSON200.Statistics.AgentThreadCount)
+	if stats.AgentThreadCount != nil {
+		diagnostics.AgentThreadCount = int(*stats.AgentThreadCount)
 	}
-	if resp.JSON200.Statistics.JobsSubmitted != nil {
-		diagnostics.JobsSubmitted = int(*resp.JSON200.Statistics.JobsSubmitted)
+
+	// Extract job statistics
+	if stats.JobsSubmitted != nil {
+		diagnostics.JobsSubmitted = int(*stats.JobsSubmitted)
 	}
-	if resp.JSON200.Statistics.JobsStarted != nil {
-		diagnostics.JobsStarted = int(*resp.JSON200.Statistics.JobsStarted)
+	if stats.JobsStarted != nil {
+		diagnostics.JobsStarted = int(*stats.JobsStarted)
 	}
-	if resp.JSON200.Statistics.JobsCompleted != nil {
-		diagnostics.JobsCompleted = int(*resp.JSON200.Statistics.JobsCompleted)
+	if stats.JobsCompleted != nil {
+		diagnostics.JobsCompleted = int(*stats.JobsCompleted)
 	}
-	if resp.JSON200.Statistics.JobsCanceled != nil {
-		diagnostics.JobsCanceled = int(*resp.JSON200.Statistics.JobsCanceled)
+	if stats.JobsCanceled != nil {
+		diagnostics.JobsCanceled = int(*stats.JobsCanceled)
 	}
-	if resp.JSON200.Statistics.JobsFailed != nil {
-		diagnostics.JobsFailed = int(*resp.JSON200.Statistics.JobsFailed)
+	if stats.JobsFailed != nil {
+		diagnostics.JobsFailed = int(*stats.JobsFailed)
 	}
 
 	// Store raw statistics for additional information
-	diagnostics.Statistics["raw_statistics"] = resp.JSON200.Statistics
+	diagnostics.Statistics["raw_statistics"] = stats
 
-	return diagnostics, nil
+	return diagnostics
 }
 
 // GetDBDiagnostics retrieves SLURM database diagnostics information
