@@ -542,37 +542,70 @@ func (c *WrapperClient) GetInstance(ctx context.Context, opts *interfaces.GetIns
 }
 
 // GetInstances retrieves multiple database instances with filtering
+// buildInstanceParams builds API parameters from request options
+func (c *WrapperClient) buildInstanceParams(opts *interfaces.GetInstancesOptions) *SlurmdbV0043GetInstancesParams {
+	params := &SlurmdbV0043GetInstancesParams{}
+	if opts == nil {
+		return params
+	}
+
+	if len(opts.Clusters) > 0 {
+		clusters := strings.Join(opts.Clusters, ",")
+		params.Cluster = &clusters
+	}
+	if opts.Extra != "" {
+		params.Extra = &opts.Extra
+	}
+	if len(opts.NodeList) > 0 {
+		nodeList := strings.Join(opts.NodeList, ",")
+		params.NodeList = &nodeList
+	}
+	if opts.TimeStart != nil {
+		timeStartStr := opts.TimeStart.Format("2006-01-02T15:04:05")
+		params.TimeStart = &timeStartStr
+	}
+	if opts.TimeEnd != nil {
+		timeEndStr := opts.TimeEnd.Format("2006-01-02T15:04:05")
+		params.TimeEnd = &timeEndStr
+	}
+	return params
+}
+
+// instanceMatchesFilter checks if an instance matches the filter
+func (c *WrapperClient) instanceMatchesFilter(instanceID string, opts *interfaces.GetInstancesOptions) bool {
+	if opts == nil || len(opts.Instances) == 0 {
+		return true
+	}
+	for _, filterName := range opts.Instances {
+		if instanceID == filterName {
+			return true
+		}
+	}
+	return false
+}
+
+// convertAPIInstance converts API instance to interface type
+func (c *WrapperClient) convertAPIInstance(inst V0043Instance) interfaces.Instance {
+	return interfaces.Instance{
+		Cluster:   getStringFromPtr(inst.Cluster),
+		ExtraInfo: getStringFromPtr(inst.Extra),
+		Instance:  getStringFromPtr(inst.InstanceId),
+		NodeName:  getStringFromPtr(inst.NodeName),
+		TimeEnd:   getTimeFromInstance(inst.Time, false),
+		TimeStart: getTimeFromInstance(inst.Time, true),
+		TRES:      "",
+		Created:   time.Now(),
+		Modified:  time.Now(),
+	}
+}
+
 func (c *WrapperClient) GetInstances(ctx context.Context, opts *interfaces.GetInstancesOptions) (*interfaces.InstanceList, error) {
 	if c.apiClient == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Prepare parameters
-	params := &SlurmdbV0043GetInstancesParams{}
-	if opts != nil {
-		if len(opts.Clusters) > 0 {
-			clusters := strings.Join(opts.Clusters, ",")
-			params.Cluster = &clusters
-		}
-		if opts.Extra != "" {
-			params.Extra = &opts.Extra
-		}
-		// Note: The API doesn't have an Instance field in the params for filtering multiple instances
-		if len(opts.NodeList) > 0 {
-			nodeList := strings.Join(opts.NodeList, ",")
-			params.NodeList = &nodeList
-		}
-		if opts.TimeStart != nil {
-			// Convert time to string format expected by API
-			timeStartStr := opts.TimeStart.Format("2006-01-02T15:04:05")
-			params.TimeStart = &timeStartStr
-		}
-		if opts.TimeEnd != nil {
-			// Convert time to string format expected by API
-			timeEndStr := opts.TimeEnd.Format("2006-01-02T15:04:05")
-			params.TimeEnd = &timeEndStr
-		}
-	}
+	params := c.buildInstanceParams(opts)
 
 	// Call the generated OpenAPI client
 	resp, err := c.apiClient.SlurmdbV0043GetInstancesWithResponse(ctx, params)
@@ -612,35 +645,11 @@ func (c *WrapperClient) GetInstances(ctx context.Context, opts *interfaces.GetIn
 
 	// Convert response to our interface types
 	instances := make([]interfaces.Instance, 0)
-	// resp.JSON200.Instances is of type V0043InstanceList which is []V0043Instance
 	for _, inst := range resp.JSON200.Instances {
-		// Filter by instance names if provided
-		if opts != nil && len(opts.Instances) > 0 {
-			found := false
-			instName := getStringFromPtr(inst.InstanceId)
-			for _, filterName := range opts.Instances {
-				if instName == filterName {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
+		instName := getStringFromPtr(inst.InstanceId)
+		if c.instanceMatchesFilter(instName, opts) {
+			instances = append(instances, c.convertAPIInstance(inst))
 		}
-
-		convertedInstance := interfaces.Instance{
-			Cluster:   getStringFromPtr(inst.Cluster),
-			ExtraInfo: getStringFromPtr(inst.Extra),
-			Instance:  getStringFromPtr(inst.InstanceId),
-			NodeName:  getStringFromPtr(inst.NodeName),
-			TimeEnd:   getTimeFromInstance(inst.Time, false),
-			TimeStart: getTimeFromInstance(inst.Time, true),
-			TRES:      "", // Not available in this structure
-			Created:   time.Now(),
-			Modified:  time.Now(),
-		}
-		instances = append(instances, convertedInstance)
 	}
 
 	result := &interfaces.InstanceList{
