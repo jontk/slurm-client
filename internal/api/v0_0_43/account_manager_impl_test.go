@@ -79,10 +79,8 @@ func TestAccountManagerImpl_GetAccountHierarchy(t *testing.T) {
 						t.Errorf("GetAccountHierarchy() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetAccountHierarchy() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetAccountHierarchy() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -152,10 +150,8 @@ func TestAccountManagerImpl_GetParentAccounts(t *testing.T) {
 						t.Errorf("GetParentAccounts() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetParentAccounts() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetParentAccounts() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -239,10 +235,8 @@ func TestAccountManagerImpl_GetChildAccounts(t *testing.T) {
 						t.Errorf("GetChildAccounts() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetChildAccounts() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetChildAccounts() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -312,10 +306,8 @@ func TestAccountManagerImpl_GetAccountQuotas(t *testing.T) {
 						t.Errorf("GetAccountQuotas() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetAccountQuotas() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetAccountQuotas() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -409,10 +401,8 @@ func TestAccountManagerImpl_GetAccountQuotaUsage(t *testing.T) {
 						t.Errorf("GetAccountQuotaUsage() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetAccountQuotaUsage() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetAccountQuotaUsage() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -468,10 +458,8 @@ func TestValidateTRES(t *testing.T) {
 				if !errors.IsValidationError(err) {
 					t.Errorf("validateTRES() expected validation error, got %T: %v", err, err)
 				}
-			} else {
-				if err != nil {
-					t.Errorf("validateTRES() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("validateTRES() unexpected error: %v", err)
 			}
 		})
 	}
@@ -546,10 +534,8 @@ func TestAccountManagerImpl_GetAccountFairShare(t *testing.T) {
 						t.Errorf("GetAccountFairShare() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetAccountFairShare() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetAccountFairShare() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -628,10 +614,8 @@ func TestAccountManagerImpl_GetFairShareHierarchy(t *testing.T) {
 						t.Errorf("GetFairShareHierarchy() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetFairShareHierarchy() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetFairShareHierarchy() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {

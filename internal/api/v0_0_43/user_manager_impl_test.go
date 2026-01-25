@@ -66,10 +66,8 @@ func TestUserManagerImpl_List(t *testing.T) {
 						t.Errorf("List() expected client error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("List() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("List() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -139,10 +137,8 @@ func TestUserManagerImpl_Get(t *testing.T) {
 						t.Errorf("Get() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("Get() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("Get() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -212,10 +208,8 @@ func TestUserManagerImpl_GetUserAccounts(t *testing.T) {
 						t.Errorf("GetUserAccounts() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetUserAccounts() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetUserAccounts() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -285,10 +279,8 @@ func TestUserManagerImpl_GetUserQuotas(t *testing.T) {
 						t.Errorf("GetUserQuotas() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetUserQuotas() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetUserQuotas() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -358,10 +350,8 @@ func TestUserManagerImpl_GetUserDefaultAccount(t *testing.T) {
 						t.Errorf("GetUserDefaultAccount() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetUserDefaultAccount() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetUserDefaultAccount() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -431,10 +421,8 @@ func TestUserManagerImpl_GetUserFairShare(t *testing.T) {
 						t.Errorf("GetUserFairShare() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetUserFairShare() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetUserFairShare() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -538,10 +526,8 @@ func TestUserManagerImpl_CalculateJobPriority(t *testing.T) {
 						t.Errorf("CalculateJobPriority() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("CalculateJobPriority() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("CalculateJobPriority() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -600,10 +586,8 @@ func TestValidateUserName(t *testing.T) {
 				if !errors.IsValidationError(err) {
 					t.Errorf("validateUserName() expected validation error, got %T: %v", err, err)
 				}
-			} else {
-				if err != nil {
-					t.Errorf("validateUserName() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("validateUserName() unexpected error: %v", err)
 			}
 		})
 	}
@@ -658,10 +642,8 @@ func TestValidateAccountContext(t *testing.T) {
 				if !errors.IsValidationError(err) {
 					t.Errorf("validateAccountContext() expected validation error, got %T: %v", err, err)
 				}
-			} else {
-				if err != nil {
-					t.Errorf("validateAccountContext() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("validateAccountContext() unexpected error: %v", err)
 			}
 		})
 	}
@@ -741,10 +723,8 @@ func TestUserManagerImpl_ValidateUserAccountAccess(t *testing.T) {
 						t.Errorf("ValidateUserAccountAccess() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("ValidateUserAccountAccess() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("ValidateUserAccountAccess() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -820,10 +800,8 @@ func TestUserManagerImpl_GetUserAccountAssociations(t *testing.T) {
 						t.Errorf("GetUserAccountAssociations() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetUserAccountAssociations() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetUserAccountAssociations() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -925,10 +903,8 @@ func TestUserManagerImpl_GetBulkUserAccounts(t *testing.T) {
 						t.Errorf("GetBulkUserAccounts() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetBulkUserAccounts() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetBulkUserAccounts() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -1030,10 +1006,8 @@ func TestUserManagerImpl_GetBulkAccountUsers(t *testing.T) {
 						t.Errorf("GetBulkAccountUsers() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetBulkAccountUsers() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetBulkAccountUsers() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {

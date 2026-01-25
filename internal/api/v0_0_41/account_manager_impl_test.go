@@ -76,10 +76,8 @@ func TestAccountManagerImpl_List(t *testing.T) {
 						t.Errorf("List() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("List() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("List() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -153,10 +151,8 @@ func TestAccountManagerImpl_Get(t *testing.T) {
 						t.Errorf("Get() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("Get() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("Get() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -242,10 +238,8 @@ func TestAccountManagerImpl_Create(t *testing.T) {
 						t.Errorf("Create() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("Create() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("Create() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -333,10 +327,8 @@ func TestAccountManagerImpl_Update(t *testing.T) {
 						t.Errorf("Update() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("Update() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("Update() unexpected error: %v", err)
 			}
 		})
 	}
@@ -406,10 +398,8 @@ func TestAccountManagerImpl_Delete(t *testing.T) {
 						t.Errorf("Delete() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("Delete() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("Delete() unexpected error: %v", err)
 			}
 		})
 	}
@@ -479,10 +469,8 @@ func TestAccountManagerImpl_GetAccountHierarchy(t *testing.T) {
 						t.Errorf("GetAccountHierarchy() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetAccountHierarchy() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetAccountHierarchy() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -556,10 +544,8 @@ func TestAccountManagerImpl_GetParentAccounts(t *testing.T) {
 						t.Errorf("GetParentAccounts() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetParentAccounts() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetParentAccounts() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -657,10 +643,8 @@ func TestAccountManagerImpl_GetChildAccounts(t *testing.T) {
 						t.Errorf("GetChildAccounts() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetChildAccounts() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetChildAccounts() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -734,10 +718,8 @@ func TestAccountManagerImpl_GetAccountQuotas(t *testing.T) {
 						t.Errorf("GetAccountQuotas() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetAccountQuotas() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetAccountQuotas() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -815,10 +797,8 @@ func TestAccountManagerImpl_GetAccountQuotaUsage(t *testing.T) {
 						t.Errorf("GetAccountQuotaUsage() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetAccountQuotaUsage() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetAccountQuotaUsage() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -898,10 +878,8 @@ func TestAccountManagerImpl_GetAccountUsers(t *testing.T) {
 						t.Errorf("GetAccountUsers() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetAccountUsers() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetAccountUsers() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -989,10 +967,8 @@ func TestAccountManagerImpl_ValidateUserAccess(t *testing.T) {
 						t.Errorf("ValidateUserAccess() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("ValidateUserAccess() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("ValidateUserAccess() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -1080,10 +1056,8 @@ func TestAccountManagerImpl_GetAccountUsersWithPermissions(t *testing.T) {
 						t.Errorf("GetAccountUsersWithPermissions() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetAccountUsersWithPermissions() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetAccountUsersWithPermissions() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -1157,10 +1131,8 @@ func TestAccountManagerImpl_GetAccountFairShare(t *testing.T) {
 						t.Errorf("GetAccountFairShare() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetAccountFairShare() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetAccountFairShare() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -1234,10 +1206,8 @@ func TestAccountManagerImpl_GetFairShareHierarchy(t *testing.T) {
 						t.Errorf("GetFairShareHierarchy() expected not implemented error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetFairShareHierarchy() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetFairShareHierarchy() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {

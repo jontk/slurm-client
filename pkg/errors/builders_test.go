@@ -5,6 +5,7 @@ package errors
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -372,7 +373,7 @@ func TestNewAuthError(t *testing.T) {
 				t.Errorf("Expected token type %s, got %s", tt.tokenType, result.TokenType)
 			}
 
-			if result.Cause != tt.cause {
+			if !errors.Is(result.Cause, tt.cause) {
 				t.Errorf("Expected cause %v, got %v", tt.cause, result.Cause)
 			}
 		})
@@ -461,7 +462,7 @@ func TestNewJobError(t *testing.T) {
 				t.Errorf("Expected details to contain operation %s", tt.operation)
 			}
 
-			if result.Cause != tt.cause {
+			if !errors.Is(result.Cause, tt.cause) {
 				t.Errorf("Expected cause %v, got %v", tt.cause, result.Cause)
 			}
 		})

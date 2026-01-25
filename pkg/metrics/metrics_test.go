@@ -120,7 +120,7 @@ func TestInMemoryCollector_RecordCache(t *testing.T) {
 	stats := collector.GetStats()
 	assert.Equal(t, int64(3), stats.CacheHits)
 	assert.Equal(t, int64(1), stats.CacheMisses)
-	assert.Equal(t, 0.75, stats.CacheRatio) // 3/(3+1) = 0.75
+	assert.Equal(t, 0.75, stats.CacheRatio) // Ratio: 3 hits / 4 total = 0.75
 }
 
 func TestInMemoryCollector_Reset(t *testing.T) {

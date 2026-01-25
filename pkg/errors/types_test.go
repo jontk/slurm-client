@@ -49,7 +49,8 @@ func TestSlurmError_Unwrap(t *testing.T) {
 	originalErr := errors.New("original error")
 	slurmErr := NewSlurmErrorWithCause(ErrorCodeNetworkTimeout, "timeout", originalErr)
 
-	if unwrapped := slurmErr.Unwrap(); unwrapped != originalErr {
+	unwrapped := slurmErr.Unwrap()
+	if !errors.Is(unwrapped, originalErr) {
 		t.Errorf("SlurmError.Unwrap() = %v, want %v", unwrapped, originalErr)
 	}
 }
@@ -154,11 +155,11 @@ func TestNewSlurmErrorWithCause(t *testing.T) {
 	originalErr := errors.New("original error")
 	err := NewSlurmErrorWithCause(ErrorCodeNetworkTimeout, "timeout error", originalErr)
 
-	if err.Cause != originalErr {
+	if !errors.Is(err.Cause, originalErr) {
 		t.Errorf("Expected cause %v, got %v", originalErr, err.Cause)
 	}
 
-	if err.Unwrap() != originalErr {
+	if !errors.Is(err.Unwrap(), originalErr) {
 		t.Errorf("Expected Unwrap() to return %v, got %v", originalErr, err.Unwrap())
 	}
 }

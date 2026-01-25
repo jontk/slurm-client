@@ -268,6 +268,22 @@ make uninstall-hooks
 - Run `golangci-lint` before submitting
 - Add comments for exported functions
 
+### Linting and Code Quality
+
+For comprehensive guidance on linting, configuration, and the code review process, see [docs/LINTING.md](./docs/LINTING.md). This includes:
+
+- How to run linters locally
+- Understanding disabled linters and project philosophy
+- Proposing linter changes
+- CI/CD linting integration
+
+**Quick reference:**
+```bash
+make lint              # Run full lint check
+make lint-staged       # Check only staged changes
+make fmt               # Auto-format code
+```
+
 ### File Headers
 All Go files must include SPDX headers:
 ```go

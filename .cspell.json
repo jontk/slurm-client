@@ -160,6 +160,7 @@
     "embeddedstructfieldcheck",
     "funcorder",
     "nlreturn",
+    "nestif",
     "testpackage",
     "godoclint",
     "godox",
@@ -184,7 +185,11 @@
     "gocognit",
     "funlen",
     "exhaustruct",
-    "nonamedreturns"
+    "nonamedreturns",
+    "Setenv",
+    "subtests",
+    "Errorf",
+    "nolint"
   ],
   "ignorePaths": [
     "vendor/**",

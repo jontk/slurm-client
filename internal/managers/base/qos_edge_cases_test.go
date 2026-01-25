@@ -107,7 +107,9 @@ func TestQoSHierarchy(t *testing.T) {
 
 	// Test circular dependency
 	// Add a QoS that would create a circle
-	circularQoS := append(existingQoS, types.QoS{Name: "circular", ParentQoS: "new_qos"})
+	circularQoS := make([]types.QoS, len(existingQoS)+1)
+	copy(circularQoS, existingQoS)
+	circularQoS[len(existingQoS)] = types.QoS{Name: "circular", ParentQoS: "new_qos"}
 	err = mgr.ValidateQoSHierarchy("new_qos", "circular", circularQoS)
 	assert.NoError(t, err) // This should pass as the circle isn't complete yet
 }

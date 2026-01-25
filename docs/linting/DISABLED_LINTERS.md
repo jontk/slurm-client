@@ -148,6 +148,10 @@ This document explains why certain golangci-lint linters are permanently disable
 **Status**: Disabled
 **Reason**: Modernization suggestions (v2.8+ only). Not all suggestions are appropriate; we evaluate improvements case-by-case.
 
+#### `nestif`
+**Status**: Disabled
+**Reason**: Suggests reducing nested if statements. While reducing deep nesting can improve readability, sometimes nested if statements are the clearest way to express complex conditional logic without introducing unnecessary helper functions.
+
 ## Linters Intentionally Enabled
 
 These linters were recently enabled as part of major enhancements:
@@ -160,6 +164,11 @@ These linters were recently enabled as part of major enhancements:
 - ✅ `unparam` - Detects unused parameters and always-nil returns
 - ✅ `intrange` - Suggests Go 1.22+ range loop syntax
 - ✅ `revive` (Phase 1) - Comprehensive Go style checking
+  - empty-block, context-as-argument, context-keys-type
+- ✅ `revive` (Phase 2) - Exported API checking and unreachable code
+  - exported, unused-parameter, unreachable-code
+- ✅ `revive` (Phase 3) - Error handling and code organization patterns
+  - error-naming, error-return, receiver-naming, indent-error-flow, blank-imports, var-declaration, unnecessary-stmt
 
 ## Future Enablement Candidates
 

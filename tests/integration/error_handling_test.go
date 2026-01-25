@@ -5,6 +5,7 @@ package integration
 
 import (
 	"context"
+	stderrors "errors"
 	"net/http"
 	"strings"
 	"testing"
@@ -153,7 +154,8 @@ func TestStructuredErrorHandling(t *testing.T) {
 			require.Error(t, err, "Operation should fail for %s", scenario.name)
 
 			// Test structured error checking
-			if slurmErr, ok := err.(*errors.SlurmError); ok {
+			var slurmErr *errors.SlurmError
+			if stderrors.As(err, &slurmErr) {
 				assert.Equal(t, scenario.expectedCode, slurmErr.Code, "Error code should match")
 				assert.Equal(t, scenario.retryable, slurmErr.IsRetryable(), "Retryable status should match")
 				assert.Equal(t, scenario.temporary, slurmErr.IsTemporary(), "Temporary status should match")
@@ -443,7 +445,8 @@ func TestErrorContextPropagation(t *testing.T) {
 	assert.True(t, errors.IsTemporaryError(err), "Context timeout should be temporary")
 
 	// Check the error type
-	if slurmErr, ok := err.(*errors.SlurmError); ok {
+	var slurmErr *errors.SlurmError
+	if stderrors.As(err, &slurmErr) {
 		assert.Equal(t, errors.ErrorCodeDeadlineExceeded, slurmErr.Code)
 	}
 
@@ -477,7 +480,8 @@ func TestErrorWrapping(t *testing.T) {
 	require.Error(t, err)
 
 	// Test error unwrapping
-	if slurmErr, ok := err.(*errors.SlurmError); ok {
+	var slurmErr *errors.SlurmError
+	if stderrors.As(err, &slurmErr) {
 		assert.NotEmpty(t, slurmErr.Message, "Error message should be set")
 		assert.NotEmpty(t, slurmErr.Details, "Error details should be set")
 		assert.Equal(t, "v0.0.42", slurmErr.APIVersion, "API version should be set")

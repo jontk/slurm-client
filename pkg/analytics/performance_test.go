@@ -407,12 +407,6 @@ func TestGenerateRecommendations(t *testing.T) {
 	for _, rec := range recommendations {
 		// Just verify recommendations contain meaningful content
 		assert.NotEmpty(t, rec)
-		// if contains(rec, "reducing CPU allocation") {
-		//	foundCPUReduction = true
-		//	assert.Contains(t, rec, "16 cores")
-		// }
-		// if contains(rec, "reducing memory allocation") {
-		//	foundMemoryReduction = true
 		//	assert.Contains(t, rec, "64.0 GB")
 		// }
 	}

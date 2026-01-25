@@ -323,7 +323,7 @@ func fetchJWTTokenViaSSH() (string, error) {
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("SSH command failed: %v, output: %s", err, string(output))
+		return "", fmt.Errorf("SSH command failed: %w, output: %s", err, string(output))
 	}
 
 	token := strings.TrimSpace(string(output))

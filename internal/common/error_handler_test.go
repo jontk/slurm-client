@@ -324,8 +324,8 @@ func TestNewResourceNotFoundError(t *testing.T) {
 			err := NewResourceNotFoundError(tt.resourceType, tt.identifier)
 
 			require.Error(t, err)
-			slurmErr, ok := err.(*errors.SlurmError)
-			require.True(t, ok)
+			var slurmErr *errors.SlurmError
+			require.True(t, stderrors.As(err, &slurmErr))
 			assert.Equal(t, errors.ErrorCodeResourceNotFound, slurmErr.Code)
 
 			for _, exp := range tt.expectInMsg {
@@ -371,8 +371,8 @@ func TestNewValidationError(t *testing.T) {
 			err := NewValidationError(tt.message, tt.field, tt.value)
 
 			require.Error(t, err)
-			valErr, ok := err.(*errors.ValidationError)
-			require.True(t, ok)
+			var valErr *errors.ValidationError
+			require.True(t, stderrors.As(err, &valErr))
 			assert.Equal(t, errors.ErrorCodeValidationFailed, valErr.Code)
 			assert.Equal(t, tt.field, valErr.Field)
 			assert.Equal(t, tt.value, valErr.Value)

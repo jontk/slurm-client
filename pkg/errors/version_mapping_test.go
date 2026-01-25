@@ -4,6 +4,7 @@
 package errors
 
 import (
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -311,7 +312,8 @@ func TestValidateVersionCompatibility(t *testing.T) {
 
 			if err != nil {
 				// Verify it's a SlurmError with appropriate code
-				if slurmErr, ok := err.(*SlurmError); ok {
+				var slurmErr *SlurmError
+				if errors.As(err, &slurmErr) {
 					if slurmErr.Code != ErrorCodeVersionMismatch {
 						t.Errorf("Expected ErrorCodeVersionMismatch, got %v", slurmErr.Code)
 					}

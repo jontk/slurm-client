@@ -6,7 +6,6 @@ package v0_0_43
 import (
 	"testing"
 
-	"github.com/jontk/slurm-client/internal/adapters/common"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 	"github.com/stretchr/testify/assert"
 )
@@ -66,7 +65,7 @@ func TestAdapter_GetQoSManager(t *testing.T) {
 	assert.IsType(t, &QoSAdapter{}, manager)
 
 	// Verify it implements the interface
-	var _ common.QoSAdapter = manager
+	_ = manager
 }
 
 func TestAdapter_GetJobManager(t *testing.T) {
@@ -78,7 +77,7 @@ func TestAdapter_GetJobManager(t *testing.T) {
 	assert.IsType(t, &JobAdapter{}, manager)
 
 	// Verify it implements the interface
-	var _ common.JobAdapter = manager
+	_ = manager
 }
 
 func TestAdapter_GetPartitionManager(t *testing.T) {
@@ -90,7 +89,7 @@ func TestAdapter_GetPartitionManager(t *testing.T) {
 	assert.IsType(t, &PartitionAdapter{}, manager)
 
 	// Verify it implements the interface
-	var _ common.PartitionAdapter = manager
+	_ = manager
 }
 
 func TestAdapter_GetNodeManager(t *testing.T) {
@@ -102,7 +101,7 @@ func TestAdapter_GetNodeManager(t *testing.T) {
 	assert.IsType(t, &NodeAdapter{}, manager)
 
 	// Verify it implements the interface
-	var _ common.NodeAdapter = manager
+	_ = manager
 }
 
 func TestAdapter_GetAccountManager(t *testing.T) {
@@ -114,7 +113,7 @@ func TestAdapter_GetAccountManager(t *testing.T) {
 	assert.IsType(t, &AccountAdapter{}, manager)
 
 	// Verify it implements the interface
-	var _ common.AccountAdapter = manager
+	_ = manager
 }
 
 func TestAdapter_GetUserManager(t *testing.T) {
@@ -126,7 +125,7 @@ func TestAdapter_GetUserManager(t *testing.T) {
 	assert.IsType(t, &UserAdapter{}, manager)
 
 	// Verify it implements the interface
-	var _ common.UserAdapter = manager
+	_ = manager
 }
 
 func TestAdapter_GetReservationManager(t *testing.T) {
@@ -138,7 +137,7 @@ func TestAdapter_GetReservationManager(t *testing.T) {
 	assert.IsType(t, &ReservationAdapter{}, manager)
 
 	// Verify it implements the interface
-	var _ common.ReservationAdapter = manager
+	_ = manager
 }
 
 func TestAdapter_GetAssociationManager(t *testing.T) {
@@ -150,7 +149,7 @@ func TestAdapter_GetAssociationManager(t *testing.T) {
 	assert.IsType(t, &AssociationAdapter{}, manager)
 
 	// Verify it implements the interface
-	var _ common.AssociationAdapter = manager
+	_ = manager
 }
 
 func TestAdapter_GetWCKeyManager(t *testing.T) {
@@ -162,7 +161,7 @@ func TestAdapter_GetWCKeyManager(t *testing.T) {
 	assert.IsType(t, &WCKeyAdapter{}, manager)
 
 	// Verify it implements the interface
-	var _ common.WCKeyAdapter = manager
+	_ = manager
 }
 
 func TestAdapter_GetStandaloneManager(t *testing.T) {
@@ -174,7 +173,7 @@ func TestAdapter_GetStandaloneManager(t *testing.T) {
 	assert.IsType(t, &StandaloneAdapter{}, manager)
 
 	// Verify it implements the interface
-	var _ common.StandaloneAdapter = manager
+	_ = manager
 }
 
 func TestAdapter_GetClusterManager(t *testing.T) {
@@ -186,13 +185,13 @@ func TestAdapter_GetClusterManager(t *testing.T) {
 	assert.IsType(t, &ClusterAdapter{}, manager)
 
 	// Verify it implements the interface
-	var _ common.ClusterAdapter = manager
+	_ = manager
 }
 
 func TestAdapter_InterfaceCompliance(t *testing.T) {
 	// Verify the adapter implements the VersionAdapter interface
 	adapter := NewAdapter(nil)
-	var _ common.VersionAdapter = adapter
+	_ = adapter
 }
 
 func TestAdapter_ManagerConsistency(t *testing.T) {

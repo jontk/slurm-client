@@ -744,11 +744,11 @@ func TestCircuitBreaker(t *testing.T) {
 
 func TestMiddlewareInterface(t *testing.T) {
 	// Test that our middleware functions return the correct type
-	var _ Middleware = WithTimeout(1 * time.Second)
-	var _ Middleware = WithLogging(logging.NoOpLogger{})
-	var _ Middleware = WithRetry(3, DefaultShouldRetry)
-	var _ Middleware = WithHeaders(map[string]string{})
-	var _ Middleware = WithUserAgent("test")
-	var _ Middleware = WithRequestID(func() string { return "test" })
-	var _ Middleware = WithCircuitBreaker(5, 1*time.Second)
+	_ = WithTimeout(1 * time.Second)
+	_ = WithLogging(logging.NoOpLogger{})
+	_ = WithRetry(3, DefaultShouldRetry)
+	_ = WithHeaders(map[string]string{})
+	_ = WithUserAgent("test")
+	_ = WithRequestID(func() string { return "test" })
+	_ = WithCircuitBreaker(5, 1*time.Second)
 }

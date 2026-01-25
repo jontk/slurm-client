@@ -32,7 +32,7 @@ func TestHandleSSE_MissingStreamParameter(t *testing.T) {
 	client := &mockSlurmClient{}
 	server := NewSSEServer(client)
 
-	req := httptest.NewRequest(http.MethodGet, "/sse", nil)
+	req := httptest.NewRequest(http.MethodGet, "/sse", http.NoBody)
 	w := httptest.NewRecorder()
 
 	server.HandleSSE(w, req)
@@ -55,7 +55,7 @@ func TestHandleSSE_UnknownStreamType(t *testing.T) {
 	client := &mockSlurmClient{}
 	server := NewSSEServer(client)
 
-	req := httptest.NewRequest(http.MethodGet, "/sse?stream=invalid", nil)
+	req := httptest.NewRequest(http.MethodGet, "/sse?stream=invalid", http.NoBody)
 	w := httptest.NewRecorder()
 
 	server.HandleSSE(w, req)
@@ -92,7 +92,7 @@ func TestHandleSSE_JobsStream(t *testing.T) {
 	}
 	server := NewSSEServer(client)
 
-	req := httptest.NewRequest(http.MethodGet, "/sse?stream=jobs&user_id=testuser&partition=default", nil)
+	req := httptest.NewRequest(http.MethodGet, "/sse?stream=jobs&user_id=testuser&partition=default", http.NoBody)
 	w := httptest.NewRecorder()
 
 	// Use a context with timeout to prevent hanging
@@ -126,7 +126,7 @@ func TestHandleSSE_JobsStreamError(t *testing.T) {
 	}
 	server := NewSSEServer(client)
 
-	req := httptest.NewRequest(http.MethodGet, "/sse?stream=jobs", nil)
+	req := httptest.NewRequest(http.MethodGet, "/sse?stream=jobs", http.NoBody)
 	w := httptest.NewRecorder()
 
 	server.HandleSSE(w, req)
@@ -163,7 +163,7 @@ func TestHandleSSE_NodesStream(t *testing.T) {
 	}
 	server := NewSSEServer(client)
 
-	req := httptest.NewRequest(http.MethodGet, "/sse?stream=nodes&partition=gpu", nil)
+	req := httptest.NewRequest(http.MethodGet, "/sse?stream=nodes&partition=gpu", http.NoBody)
 	w := httptest.NewRecorder()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
@@ -207,7 +207,7 @@ func TestHandleSSE_PartitionsStream(t *testing.T) {
 	}
 	server := NewSSEServer(client)
 
-	req := httptest.NewRequest(http.MethodGet, "/sse?stream=partitions", nil)
+	req := httptest.NewRequest(http.MethodGet, "/sse?stream=partitions", http.NoBody)
 	w := httptest.NewRecorder()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
@@ -242,7 +242,7 @@ func TestHandleSSE_ContextCancellation(t *testing.T) {
 	}
 	server := NewSSEServer(client)
 
-	req := httptest.NewRequest(http.MethodGet, "/sse?stream=jobs", nil)
+	req := httptest.NewRequest(http.MethodGet, "/sse?stream=jobs", http.NoBody)
 	w := httptest.NewRecorder()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -281,7 +281,7 @@ func TestHandleSSE_StreamClosedEvent(t *testing.T) {
 	}
 	server := NewSSEServer(client)
 
-	req := httptest.NewRequest(http.MethodGet, "/sse?stream=jobs", nil)
+	req := httptest.NewRequest(http.MethodGet, "/sse?stream=jobs", http.NoBody)
 	w := httptest.NewRecorder()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
@@ -573,7 +573,7 @@ func BenchmarkHandleSSE_JobsStream(b *testing.B) {
 	b.ResetTimer()
 	for range b.N {
 		b.StopTimer()
-		req := httptest.NewRequest(http.MethodGet, "/sse?stream=jobs", nil)
+		req := httptest.NewRequest(http.MethodGet, "/sse?stream=jobs", http.NoBody)
 		w := httptest.NewRecorder()
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		req = req.WithContext(ctx)

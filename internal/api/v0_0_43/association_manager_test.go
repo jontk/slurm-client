@@ -89,10 +89,8 @@ func TestAssociationManagerImpl_List(t *testing.T) {
 						t.Errorf("List() expected client error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("List() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("List() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -196,10 +194,8 @@ func TestAssociationManagerImpl_Get(t *testing.T) {
 						t.Errorf("Get() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("Get() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("Get() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -314,10 +310,8 @@ func TestAssociationManagerImpl_Create(t *testing.T) {
 						t.Errorf("Create() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("Create() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("Create() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -432,10 +426,8 @@ func TestAssociationManagerImpl_Update(t *testing.T) {
 						t.Errorf("Update() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("Update() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("Update() unexpected error: %v", err)
 			}
 		})
 	}
@@ -534,10 +526,8 @@ func TestAssociationManagerImpl_Delete(t *testing.T) {
 						t.Errorf("Delete() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("Delete() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("Delete() unexpected error: %v", err)
 			}
 		})
 	}
@@ -619,10 +609,8 @@ func TestAssociationManagerImpl_BulkDelete(t *testing.T) {
 						t.Errorf("BulkDelete() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("BulkDelete() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("BulkDelete() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -692,10 +680,8 @@ func TestAssociationManagerImpl_GetUserAssociations(t *testing.T) {
 						t.Errorf("GetUserAssociations() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetUserAssociations() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetUserAssociations() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -765,10 +751,8 @@ func TestAssociationManagerImpl_GetAccountAssociations(t *testing.T) {
 						t.Errorf("GetAccountAssociations() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("GetAccountAssociations() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("GetAccountAssociations() unexpected error: %v", err)
 			}
 
 			if result != nil && tt.wantErr {
@@ -874,10 +858,8 @@ func TestAssociationManagerImpl_ValidateAssociation(t *testing.T) {
 						t.Errorf("ValidateAssociation() expected validation error, got %T: %v", err, err)
 					}
 				}
-			} else {
-				if err != nil {
-					t.Errorf("ValidateAssociation() unexpected error: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("ValidateAssociation() unexpected error: %v", err)
 			}
 
 			if got != tt.want {

@@ -14,7 +14,7 @@ func TestSupportedVersions(t *testing.T) {
 	// Test that SupportedVersions contains expected versions
 	expected := []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43", "v0.0.44"}
 
-	var versionStrings []string
+	versionStrings := make([]string, 0, len(SupportedVersions))
 	for _, v := range SupportedVersions {
 		versionStrings = append(versionStrings, v.String())
 	}

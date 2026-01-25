@@ -335,7 +335,7 @@ func (suite *AdapterCrossVersionTestSuite) TestPartitionListingConsistency() {
 		// Find common partition names
 		partitionNames := make(map[string][]string)
 		for version, partitionList := range partitionResults {
-			var names []string
+			names := make([]string, 0, len(partitionList.Partitions))
 			for _, partition := range partitionList.Partitions {
 				names = append(names, partition.Name)
 			}

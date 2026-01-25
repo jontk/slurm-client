@@ -213,8 +213,8 @@ func TestBaseManager_HandleAPIError(t *testing.T) {
 			err := manager.HandleAPIError(tt.inputErr)
 			if tt.wantErr {
 				require.Error(t, err)
-				slurmErr, ok := err.(*slurmErrors.SlurmError)
-				require.True(t, ok)
+				var slurmErr *slurmErrors.SlurmError
+				require.True(t, errors.As(err, &slurmErr))
 				assert.Equal(t, tt.errCode, slurmErr.Code)
 			} else {
 				require.NoError(t, err)

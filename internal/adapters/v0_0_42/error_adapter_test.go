@@ -5,6 +5,7 @@ package v0_0_42
 
 import (
 	"encoding/json"
+	stderrors "errors"
 	"fmt"
 	"testing"
 
@@ -393,14 +394,14 @@ func TestErrorAdapter_HandleAPIResponse_ErrorTypesValidation(t *testing.T) {
 			// Check the specific error type
 			switch tt.expectedType {
 			case "*errors.AuthenticationError":
-				_, ok := err.(*errors.AuthenticationError)
-				assert.True(t, ok, "Expected AuthenticationError but got %T", err)
+				var authErr *errors.AuthenticationError
+				assert.True(t, stderrors.As(err, &authErr), "Expected AuthenticationError but got %T", err)
 			case "*errors.ValidationError":
-				_, ok := err.(*errors.ValidationError)
-				assert.True(t, ok, "Expected ValidationError but got %T", err)
+				var valErr *errors.ValidationError
+				assert.True(t, stderrors.As(err, &valErr), "Expected ValidationError but got %T", err)
 			case "*errors.SlurmError":
-				_, ok := err.(*errors.SlurmError)
-				assert.True(t, ok, "Expected SlurmError but got %T", err)
+				var slErr *errors.SlurmError
+				assert.True(t, stderrors.As(err, &slErr), "Expected SlurmError but got %T", err)
 			}
 		})
 	}
