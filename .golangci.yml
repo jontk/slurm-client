@@ -445,4 +445,3 @@ formatters:
       - testdata
       - third_party$
       - builtin$
-      - examples$
