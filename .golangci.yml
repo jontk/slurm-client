@@ -283,10 +283,7 @@ linters:
           - lll
         source: '^//go:generate '
       - linters:
-          - errcheck
           - goconst
-          - unparam
-          - unused
         path: ^cmd/
       - linters:
           - bodyclose
