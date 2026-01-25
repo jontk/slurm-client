@@ -80,49 +80,10 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 			// Log the error but continue processing other jobs
 			continue
 		}
+
 		// Apply filters if options were provided
-		if opts != nil {
-			// Filter by account
-			if len(opts.Accounts) > 0 {
-				match := false
-				for _, account := range opts.Accounts {
-					if job.Account == account {
-						match = true
-						break
-					}
-				}
-				if !match {
-					continue
-				}
-			}
-
-			// Filter by partition
-			if len(opts.Partitions) > 0 {
-				match := false
-				for _, partition := range opts.Partitions {
-					if job.Partition == partition {
-						match = true
-						break
-					}
-				}
-				if !match {
-					continue
-				}
-			}
-
-			// Filter by state
-			if len(opts.States) > 0 {
-				match := false
-				for _, state := range opts.States {
-					if job.State == state {
-						match = true
-						break
-					}
-				}
-				if !match {
-					continue
-				}
-			}
+		if opts != nil && !a.jobPassesFilters(job, opts) {
+			continue
 		}
 
 		jobList.Jobs = append(jobList.Jobs, *job)
@@ -132,6 +93,56 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 	// Warnings and errors from the response are being ignored for now
 
 	return jobList, nil
+}
+
+// jobPassesFilters checks if a job matches all provided filters
+func (a *JobAdapter) jobPassesFilters(job *types.Job, opts *types.JobListOptions) bool {
+	// Filter by account
+	if len(opts.Accounts) > 0 && !a.jobAccountMatches(job.Account, opts.Accounts) {
+		return false
+	}
+
+	// Filter by partition
+	if len(opts.Partitions) > 0 && !a.jobPartitionMatches(job.Partition, opts.Partitions) {
+		return false
+	}
+
+	// Filter by state
+	if len(opts.States) > 0 && !a.jobStateMatches(job.State, opts.States) {
+		return false
+	}
+
+	return true
+}
+
+// jobAccountMatches checks if a job account is in the filter list
+func (a *JobAdapter) jobAccountMatches(account string, accounts []string) bool {
+	for _, a := range accounts {
+		if a == account {
+			return true
+		}
+	}
+	return false
+}
+
+// jobPartitionMatches checks if a job partition is in the filter list
+func (a *JobAdapter) jobPartitionMatches(partition string, partitions []string) bool {
+	for _, p := range partitions {
+		if p == partition {
+			return true
+		}
+	}
+	return false
+}
+
+// jobStateMatches checks if a job state is in the filter list
+func (a *JobAdapter) jobStateMatches(state types.JobState, states []types.JobState) bool {
+	for _, s := range states {
+		if s == state {
+			return true
+		}
+	}
+	return false
 }
 
 // Get retrieves a specific job by ID
