@@ -242,13 +242,14 @@ func TestTRESUtils_ConvertCommonTRESToAPI(t *testing.T) {
 			assert.Equal(t, len(tt.expected), len(result))
 
 			for i, expected := range tt.expected {
-				if i < len(result) {
-					actual := result[i]
-					assert.Equal(t, expected.Type, actual.Type)
-					assert.Equal(t, expected.Id, actual.Id)
-					assert.Equal(t, expected.Name, actual.Name)
-					assert.Equal(t, expected.Count, actual.Count)
+				if i >= len(result) {
+					continue
 				}
+				actual := result[i]
+				assert.Equal(t, expected.Type, actual.Type)
+				assert.Equal(t, expected.Id, actual.Id)
+				assert.Equal(t, expected.Name, actual.Name)
+				assert.Equal(t, expected.Count, actual.Count)
 			}
 		})
 	}
