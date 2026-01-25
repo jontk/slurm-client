@@ -931,6 +931,84 @@ func (a *JobAdapter) convertCommonJobUpdateToAPI(existing *types.Job, update *ty
 }
 
 // applyClientSideFilters applies filters that the API doesn't support
+// matchesAccountFilter checks if a job matches the account filter
+func (a *JobAdapter) matchesAccountFilter(job types.Job, accounts []string) bool {
+	if len(accounts) == 0 {
+		return true
+	}
+	for _, account := range accounts {
+		if job.Account == account {
+			return true
+		}
+	}
+	return false
+}
+
+// matchesUserFilter checks if a job matches the user filter
+func (a *JobAdapter) matchesUserFilter(job types.Job, users []string) bool {
+	if len(users) == 0 {
+		return true
+	}
+	for _, user := range users {
+		if job.UserName == user || strconv.Itoa(int(job.UserID)) == user {
+			return true
+		}
+	}
+	return false
+}
+
+// matchesStateFilter checks if a job matches the state filter
+func (a *JobAdapter) matchesStateFilter(job types.Job, states []types.JobState) bool {
+	if len(states) == 0 {
+		return true
+	}
+	for _, state := range states {
+		if job.State == state {
+			return true
+		}
+	}
+	return false
+}
+
+// matchesPartitionFilter checks if a job matches the partition filter
+func (a *JobAdapter) matchesPartitionFilter(job types.Job, partitions []string) bool {
+	if len(partitions) == 0 {
+		return true
+	}
+	for _, partition := range partitions {
+		if job.Partition == partition {
+			return true
+		}
+	}
+	return false
+}
+
+// matchesJobIDFilter checks if a job matches the job ID filter
+func (a *JobAdapter) matchesJobIDFilter(job types.Job, jobIDs []int32) bool {
+	if len(jobIDs) == 0 {
+		return true
+	}
+	for _, id := range jobIDs {
+		if job.JobID == id {
+			return true
+		}
+	}
+	return false
+}
+
+// matchesJobNameFilter checks if a job matches the job name filter
+func (a *JobAdapter) matchesJobNameFilter(job types.Job, jobNames []string) bool {
+	if len(jobNames) == 0 {
+		return true
+	}
+	for _, name := range jobNames {
+		if job.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 func (a *JobAdapter) applyClientSideFilters(jobs []types.Job, opts *types.JobListOptions) []types.Job {
 	if opts == nil {
 		return jobs
@@ -939,91 +1017,14 @@ func (a *JobAdapter) applyClientSideFilters(jobs []types.Job, opts *types.JobLis
 	filtered := make([]types.Job, 0, len(jobs))
 
 	for _, job := range jobs {
-		// Apply account filter
-		if len(opts.Accounts) > 0 {
-			found := false
-			for _, account := range opts.Accounts {
-				if job.Account == account {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
+		if a.matchesAccountFilter(job, opts.Accounts) &&
+			a.matchesUserFilter(job, opts.Users) &&
+			a.matchesStateFilter(job, opts.States) &&
+			a.matchesPartitionFilter(job, opts.Partitions) &&
+			a.matchesJobIDFilter(job, opts.JobIDs) &&
+			a.matchesJobNameFilter(job, opts.JobNames) {
+			filtered = append(filtered, job)
 		}
-
-		// Apply user filter (using UserName or UserID)
-		if len(opts.Users) > 0 {
-			found := false
-			for _, user := range opts.Users {
-				if job.UserName == user || strconv.Itoa(int(job.UserID)) == user {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
-		}
-
-		// Apply state filter
-		if len(opts.States) > 0 {
-			found := false
-			for _, state := range opts.States {
-				if string(job.State) == string(state) {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
-		}
-
-		// Apply partition filter
-		if len(opts.Partitions) > 0 {
-			found := false
-			for _, partition := range opts.Partitions {
-				if job.Partition == partition {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
-		}
-
-		// Apply job ID filter
-		if len(opts.JobIDs) > 0 {
-			found := false
-			for _, id := range opts.JobIDs {
-				if job.JobID == id {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
-		}
-
-		// Apply job name filter
-		if len(opts.JobNames) > 0 {
-			found := false
-			for _, name := range opts.JobNames {
-				if job.Name == name {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
-		}
-
-		filtered = append(filtered, job)
 	}
 
 	return filtered
