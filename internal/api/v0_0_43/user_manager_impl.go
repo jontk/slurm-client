@@ -92,13 +92,7 @@ func (u *UserManagerImpl) List(ctx context.Context, opts *interfaces.ListUsersOp
 	// Convert the response to our interface types
 	users := make([]interfaces.User, 0, len(resp.JSON200.Users))
 	for _, apiUser := range resp.JSON200.Users {
-		user, err := convertAPIUserToInterface(&apiUser)
-		if err != nil {
-			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert user data")
-			conversionErr.Cause = err
-			conversionErr.Details = "Error converting user data"
-			return nil, conversionErr
-		}
+		user := convertAPIUserToInterface(&apiUser)
 		users = append(users, *user)
 	}
 
@@ -183,14 +177,7 @@ func (u *UserManagerImpl) Get(ctx context.Context, userName string) (*interfaces
 	}
 
 	// Convert the first user in the response
-	user, err := convertAPIUserToInterface(&resp.JSON200.Users[0])
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert user data")
-		conversionErr.Cause = err
-		conversionErr.Details = fmt.Sprintf("Error converting user '%s'", userName)
-		return nil, conversionErr
-	}
-
+	user := convertAPIUserToInterface(&resp.JSON200.Users[0])
 	return user, nil
 }
 
@@ -580,8 +567,6 @@ func (u *UserManagerImpl) CalculateJobPriority(ctx context.Context, userName str
 		factors.QoS +
 		factors.TRES -
 		factors.Nice
-
-	priorityInfo.Priority = totalPriority
 
 	priorityInfo.Priority = totalPriority
 
@@ -1241,7 +1226,7 @@ func calculateJobSizeFactor(jobSubmission *interfaces.JobSubmission) float64 {
 }
 
 // convertAPIUserToInterface converts V0043User to interfaces.User
-func convertAPIUserToInterface(apiUser *V0043User) (*interfaces.User, error) {
+func convertAPIUserToInterface(apiUser *V0043User) *interfaces.User {
 	user := &interfaces.User{}
 
 	// Basic user information
@@ -1288,7 +1273,7 @@ func convertAPIUserToInterface(apiUser *V0043User) (*interfaces.User, error) {
 	// Note: Flags field not available in interfaces.User
 	// Flag conversion code removed as the result is not used
 
-	return user, nil
+	return user
 }
 
 // Helper functions for safe value extraction

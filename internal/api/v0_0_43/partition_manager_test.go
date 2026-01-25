@@ -136,9 +136,8 @@ func TestConvertAPIPartitionToInterface(t *testing.T) {
 		},
 	}
 
-	interfacePartition, err := convertAPIPartitionToInterface(apiPartition)
+	interfacePartition := convertAPIPartitionToInterface(apiPartition)
 
-	assert.NoError(t, err)
 	assert.NotNil(t, interfacePartition)
 	assert.Equal(t, "gpu-partition", interfacePartition.Name)
 	assert.Equal(t, "UP", interfacePartition.State)
@@ -162,9 +161,8 @@ func TestConvertAPIPartitionToInterface_EmptyFields(t *testing.T) {
 	// Test with empty/nil fields
 	apiPartition := V0043PartitionInfo{}
 
-	interfacePartition, err := convertAPIPartitionToInterface(apiPartition)
+	interfacePartition := convertAPIPartitionToInterface(apiPartition)
 
-	assert.NoError(t, err)
 	assert.NotNil(t, interfacePartition)
 	assert.Equal(t, "", interfacePartition.Name)
 	assert.Equal(t, "", interfacePartition.State)

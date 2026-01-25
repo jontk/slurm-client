@@ -92,13 +92,7 @@ func (r *ReservationManagerImpl) List(ctx context.Context, opts *interfaces.List
 	// Convert the response to our interface types
 	reservations := make([]interfaces.Reservation, 0, len(resp.JSON200.Reservations))
 	for _, apiRes := range resp.JSON200.Reservations {
-		reservation, err := convertAPIReservationToInterface(apiRes)
-		if err != nil {
-			conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert reservation data")
-			conversionErr.Cause = err
-			conversionErr.Details = fmt.Sprintf("Error converting reservation %v", apiRes.Name)
-			return nil, conversionErr
-		}
+		reservation := convertAPIReservationToInterface(apiRes)
 		reservations = append(reservations, *reservation)
 	}
 
@@ -183,14 +177,7 @@ func (r *ReservationManagerImpl) Get(ctx context.Context, reservationName string
 	}
 
 	// Convert the first reservation in the response
-	reservation, err := convertAPIReservationToInterface(resp.JSON200.Reservations[0])
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeServerInternal, "Failed to convert reservation data")
-		conversionErr.Cause = err
-		conversionErr.Details = fmt.Sprintf("Error converting reservation '%s'", reservationName)
-		return nil, conversionErr
-	}
-
+	reservation := convertAPIReservationToInterface(resp.JSON200.Reservations[0])
 	return reservation, nil
 }
 
@@ -216,12 +203,7 @@ func (r *ReservationManagerImpl) Create(ctx context.Context, reservation *interf
 	}
 
 	// Convert interface types to API types
-	apiReservation, err := convertReservationCreateToAPI(reservation)
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeInvalidRequest, "Failed to convert reservation data")
-		conversionErr.Cause = err
-		return nil, conversionErr
-	}
+	apiReservation := convertReservationCreateToAPI(reservation)
 
 	// Create the request body - SlurmV0043PostReservationJSONRequestBody is just V0043ReservationDescMsg
 	requestBody := *apiReservation
@@ -306,12 +288,7 @@ func (r *ReservationManagerImpl) Update(ctx context.Context, reservationName str
 	}
 
 	// Convert update to API format
-	apiUpdate, err := convertReservationUpdateToAPI(update)
-	if err != nil {
-		conversionErr := errors.NewClientError(errors.ErrorCodeInvalidRequest, "Failed to convert update data")
-		conversionErr.Cause = err
-		return conversionErr
-	}
+	apiUpdate := convertReservationUpdateToAPI(update)
 
 	// Set the reservation name in the update
 	apiUpdate.Name = &reservationName
@@ -434,7 +411,7 @@ func (r *ReservationManagerImpl) Delete(ctx context.Context, reservationName str
 }
 
 // convertAPIReservationToInterface converts V0043ReservationInfo to interfaces.Reservation
-func convertAPIReservationToInterface(apiRes V0043ReservationInfo) (*interfaces.Reservation, error) {
+func convertAPIReservationToInterface(apiRes V0043ReservationInfo) *interfaces.Reservation {
 	reservation := &interfaces.Reservation{}
 
 	// Basic fields
@@ -516,7 +493,7 @@ func convertAPIReservationToInterface(apiRes V0043ReservationInfo) (*interfaces.
 		_ = *apiRes.MaxStartDelay
 	}
 
-	return reservation, nil
+	return reservation
 }
 
 // filterReservations applies client-side filtering to the reservation list
@@ -602,7 +579,7 @@ func filterReservations(reservations []interfaces.Reservation, opts *interfaces.
 }
 
 // convertReservationCreateToAPI converts interfaces.ReservationCreate to API format
-func convertReservationCreateToAPI(create *interfaces.ReservationCreate) (*V0043ReservationDescMsg, error) {
+func convertReservationCreateToAPI(create *interfaces.ReservationCreate) *V0043ReservationDescMsg {
 	apiRes := &V0043ReservationDescMsg{}
 
 	// Required fields
@@ -693,11 +670,11 @@ func convertReservationCreateToAPI(create *interfaces.ReservationCreate) (*V0043
 		apiRes.Licenses = &licenses
 	}
 
-	return apiRes, nil
+	return apiRes
 }
 
 // convertReservationUpdateToAPI converts interfaces.ReservationUpdate to API format
-func convertReservationUpdateToAPI(update *interfaces.ReservationUpdate) (*V0043ReservationDescMsg, error) {
+func convertReservationUpdateToAPI(update *interfaces.ReservationUpdate) *V0043ReservationDescMsg {
 	apiRes := &V0043ReservationDescMsg{}
 
 	// Time fields (only if specified in update) - use correct types
@@ -767,5 +744,5 @@ func convertReservationUpdateToAPI(update *interfaces.ReservationUpdate) (*V0043
 		apiRes.Features = &featureStr
 	}
 
-	return apiRes, nil
+	return apiRes
 }
