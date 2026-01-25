@@ -252,67 +252,74 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0042Node) (*types.Node
 	if apiNode.Name != nil {
 		node.Name = *apiNode.Name
 	}
-
-	// Node state conversion
-	if apiNode.State != nil && len(*apiNode.State) > 0 {
-		node.State = types.NodeState((*apiNode.State)[0]) // Take the first state and convert to NodeState type
-	}
-
-	// CPU information
 	if apiNode.Cpus != nil {
 		node.CPUs = *apiNode.Cpus
 	}
-
-	// Memory information
 	if apiNode.RealMemory != nil {
 		node.RealMemory = *apiNode.RealMemory
 	}
-
-	// Partition information
-	if apiNode.Partitions != nil && len(*apiNode.Partitions) > 0 {
-		node.Partitions = *apiNode.Partitions
+	if apiNode.Version != nil {
+		node.Version = *apiNode.Version
+	}
+	if apiNode.Reason != nil {
+		node.Reason = *apiNode.Reason
 	}
 
-	// Architecture
+	// Set state and partitions
+	a.setNodeState(node, apiNode)
+	a.setNodePartitions(node, apiNode)
+
+	// Set architecture and OS
 	if apiNode.Architecture != nil {
 		node.Arch = *apiNode.Architecture
 	}
-
-	// OS information
 	if apiNode.OperatingSystem != nil {
 		node.OS = *apiNode.OperatingSystem
 	}
 
-	// Features
+	// Set features and resources
+	a.setNodeFeatures(node, apiNode)
+
+	// Set boot time
+	a.setNodeBootTime(node, apiNode)
+
+	return node, nil
+}
+
+// setNodeState sets the node state from the API node
+func (a *NodeAdapter) setNodeState(node *types.Node, apiNode api.V0042Node) {
+	if apiNode.State != nil && len(*apiNode.State) > 0 {
+		node.State = types.NodeState((*apiNode.State)[0])
+	}
+}
+
+// setNodePartitions sets the node partitions from the API node
+func (a *NodeAdapter) setNodePartitions(node *types.Node, apiNode api.V0042Node) {
+	if apiNode.Partitions != nil && len(*apiNode.Partitions) > 0 {
+		node.Partitions = *apiNode.Partitions
+	}
+}
+
+// setNodeFeatures sets node features and GRES from the API node
+func (a *NodeAdapter) setNodeFeatures(node *types.Node, apiNode api.V0042Node) {
 	if apiNode.ActiveFeatures != nil && len(*apiNode.ActiveFeatures) > 0 {
 		node.ActiveFeatures = *apiNode.ActiveFeatures
 	}
 	if apiNode.Features != nil && len(*apiNode.Features) > 0 {
 		node.Features = *apiNode.Features
 	}
-
-	// GRES (Generic Resources)
 	if apiNode.Gres != nil {
 		node.Gres = *apiNode.Gres
 	}
+}
 
-	// Boot time - check if it's set and has a number
-	if apiNode.BootTime != nil && apiNode.BootTime.Set != nil && *apiNode.BootTime.Set && apiNode.BootTime.Number != nil {
-		bootTime := time.Unix(*apiNode.BootTime.Number, 0)
-		node.BootTime = &bootTime
+// setNodeBootTime sets the node boot time from the API node
+func (a *NodeAdapter) setNodeBootTime(node *types.Node, apiNode api.V0042Node) {
+	if apiNode.BootTime == nil || apiNode.BootTime.Set == nil || !*apiNode.BootTime.Set || apiNode.BootTime.Number == nil {
+		return
 	}
-
-	// Slurm version
-	if apiNode.Version != nil {
-		node.Version = *apiNode.Version
-	}
-
-	// Reason for node state
-	if apiNode.Reason != nil {
-		node.Reason = *apiNode.Reason
-	}
-
-	return node, nil
+	bootTime := time.Unix(*apiNode.BootTime.Number, 0)
+	node.BootTime = &bootTime
 }
 
 // convertCommonNodeUpdateToAPI converts common node update to API format
