@@ -307,15 +307,26 @@ func (c *WrapperClient) GetDiagnostics(ctx context.Context) (*interfaces.Diagnos
 		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.43")
 	}
 
+	// Handle response errors
+	if err := c.handleDiagnosticsResponse(resp); err != nil {
+		return nil, err
+	}
+
+	// Extract and convert diagnostics
+	return c.convertDiagnosticsResponse(resp.JSON200.Statistics), nil
+}
+
+// handleDiagnosticsResponse validates the diagnostics API response
+func (c *WrapperClient) handleDiagnosticsResponse(resp *SlurmV0043GetDiagResponse) error {
 	// Check HTTP status
 	if resp.StatusCode() != 200 {
-		return nil, errors.NewClientError(
+		return errors.NewClientError(
 			errors.ErrorCodeServerInternal,
 			fmt.Sprintf("Operation failed with status %d", resp.StatusCode()))
 	}
 
 	if resp.JSON200 == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeValidationFailed, "Empty response from diagnostics API")
+		return errors.NewClientError(errors.ErrorCodeValidationFailed, "Empty response from diagnostics API")
 	}
 
 	// Check for API errors
@@ -333,10 +344,14 @@ func (c *WrapperClient) GetDiagnostics(ctx context.Context) (*interfaces.Diagnos
 				Source:      getStringFromPtr(apiErr.Source),
 			}
 		}
-		return nil, errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors).SlurmError
+		return errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors).SlurmError
 	}
 
-	// Convert response to our interface types
+	return nil
+}
+
+// convertDiagnosticsResponse converts API statistics to interface diagnostics
+func (c *WrapperClient) convertDiagnosticsResponse(stats V0043StatsMsg) *interfaces.Diagnostics {
 	diagnostics := &interfaces.Diagnostics{
 		DataCollected:     time.Now(),
 		RPCsByMessageType: make(map[string]int),
@@ -344,43 +359,46 @@ func (c *WrapperClient) GetDiagnostics(ctx context.Context) (*interfaces.Diagnos
 		Statistics:        make(map[string]interface{}),
 	}
 
-	// Extract diagnostics information from the response
-	// The resp.JSON200.Statistics field is of type V0043StatsMsg (not a pointer)
-	if resp.JSON200.Statistics.ReqTime != nil && resp.JSON200.Statistics.ReqTime.Number != nil {
-		diagnostics.ReqTime = *resp.JSON200.Statistics.ReqTime.Number
+	// Extract time-based fields
+	if stats.ReqTime != nil && stats.ReqTime.Number != nil {
+		diagnostics.ReqTime = *stats.ReqTime.Number
 	}
-	if resp.JSON200.Statistics.ReqTimeStart != nil && resp.JSON200.Statistics.ReqTimeStart.Number != nil {
-		diagnostics.ReqTimeStart = *resp.JSON200.Statistics.ReqTimeStart.Number
+	if stats.ReqTimeStart != nil && stats.ReqTimeStart.Number != nil {
+		diagnostics.ReqTimeStart = *stats.ReqTimeStart.Number
 	}
-	if resp.JSON200.Statistics.ServerThreadCount != nil {
-		diagnostics.ServerThreadCount = int(*resp.JSON200.Statistics.ServerThreadCount)
+
+	// Extract integer count fields
+	if stats.ServerThreadCount != nil {
+		diagnostics.ServerThreadCount = int(*stats.ServerThreadCount)
 	}
-	if resp.JSON200.Statistics.AgentCount != nil {
-		diagnostics.AgentCount = int(*resp.JSON200.Statistics.AgentCount)
+	if stats.AgentCount != nil {
+		diagnostics.AgentCount = int(*stats.AgentCount)
 	}
-	if resp.JSON200.Statistics.AgentThreadCount != nil {
-		diagnostics.AgentThreadCount = int(*resp.JSON200.Statistics.AgentThreadCount)
+	if stats.AgentThreadCount != nil {
+		diagnostics.AgentThreadCount = int(*stats.AgentThreadCount)
 	}
-	if resp.JSON200.Statistics.JobsSubmitted != nil {
-		diagnostics.JobsSubmitted = int(*resp.JSON200.Statistics.JobsSubmitted)
+
+	// Extract job statistics
+	if stats.JobsSubmitted != nil {
+		diagnostics.JobsSubmitted = int(*stats.JobsSubmitted)
 	}
-	if resp.JSON200.Statistics.JobsStarted != nil {
-		diagnostics.JobsStarted = int(*resp.JSON200.Statistics.JobsStarted)
+	if stats.JobsStarted != nil {
+		diagnostics.JobsStarted = int(*stats.JobsStarted)
 	}
-	if resp.JSON200.Statistics.JobsCompleted != nil {
-		diagnostics.JobsCompleted = int(*resp.JSON200.Statistics.JobsCompleted)
+	if stats.JobsCompleted != nil {
+		diagnostics.JobsCompleted = int(*stats.JobsCompleted)
 	}
-	if resp.JSON200.Statistics.JobsCanceled != nil {
-		diagnostics.JobsCanceled = int(*resp.JSON200.Statistics.JobsCanceled)
+	if stats.JobsCanceled != nil {
+		diagnostics.JobsCanceled = int(*stats.JobsCanceled)
 	}
-	if resp.JSON200.Statistics.JobsFailed != nil {
-		diagnostics.JobsFailed = int(*resp.JSON200.Statistics.JobsFailed)
+	if stats.JobsFailed != nil {
+		diagnostics.JobsFailed = int(*stats.JobsFailed)
 	}
 
 	// Store raw statistics for additional information
-	diagnostics.Statistics["raw_statistics"] = resp.JSON200.Statistics
+	diagnostics.Statistics["raw_statistics"] = stats
 
-	return diagnostics, nil
+	return diagnostics
 }
 
 // GetDBDiagnostics retrieves SLURM database diagnostics information
@@ -484,15 +502,26 @@ func (c *WrapperClient) GetInstance(ctx context.Context, opts *interfaces.GetIns
 		return nil, errors.EnhanceErrorWithVersion(wrappedErr, "v0.0.43")
 	}
 
+	// Handle response errors
+	if err := c.handleGetInstanceResponse(resp); err != nil {
+		return nil, err
+	}
+
+	// Convert and filter response
+	return c.findAndConvertInstance(resp.JSON200.Instances, opts)
+}
+
+// handleGetInstanceResponse validates the API response
+func (c *WrapperClient) handleGetInstanceResponse(resp *SlurmdbV0043GetInstanceResponse) error {
 	// Check HTTP status
 	if resp.StatusCode() != 200 {
-		return nil, errors.NewClientError(
+		return errors.NewClientError(
 			errors.ErrorCodeServerInternal,
 			fmt.Sprintf("Operation failed with status %d", resp.StatusCode()))
 	}
 
 	if resp.JSON200 == nil {
-		return nil, errors.NewClientError(errors.ErrorCodeValidationFailed, "Empty response from instance API")
+		return errors.NewClientError(errors.ErrorCodeValidationFailed, "Empty response from instance API")
 	}
 
 	// Check for API errors
@@ -510,69 +539,103 @@ func (c *WrapperClient) GetInstance(ctx context.Context, opts *interfaces.GetIns
 				Source:      getStringFromPtr(apiErr.Source),
 			}
 		}
-		return nil, errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors).SlurmError
+		return errors.NewSlurmAPIError(resp.StatusCode(), "v0.0.43", apiErrors).SlurmError
 	}
 
-	// Convert response to our interface types
-	// resp.JSON200.Instances is of type V0043InstanceList which is []V0043Instance
-	if len(resp.JSON200.Instances) > 0 {
+	return nil
+}
+
+// findAndConvertInstance finds and converts a single instance from the response
+func (c *WrapperClient) findAndConvertInstance(instances []V0043Instance, opts *interfaces.GetInstanceOptions) (*interfaces.Instance, error) {
+	for _, inst := range instances {
 		// Filter by instance name if provided
-		for _, inst := range resp.JSON200.Instances {
-			if opts != nil && opts.Instance != "" {
-				if getStringFromPtr(inst.InstanceId) != opts.Instance {
-					continue
-				}
+		if opts != nil && opts.Instance != "" {
+			if getStringFromPtr(inst.InstanceId) != opts.Instance {
+				continue
 			}
-			instance := &interfaces.Instance{
-				Cluster:   getStringFromPtr(inst.Cluster),
-				ExtraInfo: getStringFromPtr(inst.Extra),
-				Instance:  getStringFromPtr(inst.InstanceId),
-				NodeName:  getStringFromPtr(inst.NodeName),
-				TimeEnd:   getTimeFromInstance(inst.Time, false),
-				TimeStart: getTimeFromInstance(inst.Time, true),
-				TRES:      "", // Not available in this structure
-				Created:   time.Now(),
-				Modified:  time.Now(),
-			}
-			return instance, nil
 		}
+		instance := &interfaces.Instance{
+			Cluster:   getStringFromPtr(inst.Cluster),
+			ExtraInfo: getStringFromPtr(inst.Extra),
+			Instance:  getStringFromPtr(inst.InstanceId),
+			NodeName:  getStringFromPtr(inst.NodeName),
+			TimeEnd:   getTimeFromInstance(inst.Time, false),
+			TimeStart: getTimeFromInstance(inst.Time, true),
+			TRES:      "", // Not available in this structure
+			Created:   time.Now(),
+			Modified:  time.Now(),
+		}
+		return instance, nil
 	}
 
 	return nil, errors.NewClientError(errors.ErrorCodeResourceNotFound, "Instance not found")
 }
 
 // GetInstances retrieves multiple database instances with filtering
+// buildInstanceParams builds API parameters from request options
+func (c *WrapperClient) buildInstanceParams(opts *interfaces.GetInstancesOptions) *SlurmdbV0043GetInstancesParams {
+	params := &SlurmdbV0043GetInstancesParams{}
+	if opts == nil {
+		return params
+	}
+
+	if len(opts.Clusters) > 0 {
+		clusters := strings.Join(opts.Clusters, ",")
+		params.Cluster = &clusters
+	}
+	if opts.Extra != "" {
+		params.Extra = &opts.Extra
+	}
+	if len(opts.NodeList) > 0 {
+		nodeList := strings.Join(opts.NodeList, ",")
+		params.NodeList = &nodeList
+	}
+	if opts.TimeStart != nil {
+		timeStartStr := opts.TimeStart.Format("2006-01-02T15:04:05")
+		params.TimeStart = &timeStartStr
+	}
+	if opts.TimeEnd != nil {
+		timeEndStr := opts.TimeEnd.Format("2006-01-02T15:04:05")
+		params.TimeEnd = &timeEndStr
+	}
+	return params
+}
+
+// instanceMatchesFilter checks if an instance matches the filter
+func (c *WrapperClient) instanceMatchesFilter(instanceID string, opts *interfaces.GetInstancesOptions) bool {
+	if opts == nil || len(opts.Instances) == 0 {
+		return true
+	}
+	for _, filterName := range opts.Instances {
+		if instanceID == filterName {
+			return true
+		}
+	}
+	return false
+}
+
+// convertAPIInstance converts API instance to interface type
+func (c *WrapperClient) convertAPIInstance(inst V0043Instance) interfaces.Instance {
+	return interfaces.Instance{
+		Cluster:   getStringFromPtr(inst.Cluster),
+		ExtraInfo: getStringFromPtr(inst.Extra),
+		Instance:  getStringFromPtr(inst.InstanceId),
+		NodeName:  getStringFromPtr(inst.NodeName),
+		TimeEnd:   getTimeFromInstance(inst.Time, false),
+		TimeStart: getTimeFromInstance(inst.Time, true),
+		TRES:      "",
+		Created:   time.Now(),
+		Modified:  time.Now(),
+	}
+}
+
 func (c *WrapperClient) GetInstances(ctx context.Context, opts *interfaces.GetInstancesOptions) (*interfaces.InstanceList, error) {
 	if c.apiClient == nil {
 		return nil, errors.NewClientError(errors.ErrorCodeClientNotInitialized, "API client not initialized")
 	}
 
 	// Prepare parameters
-	params := &SlurmdbV0043GetInstancesParams{}
-	if opts != nil {
-		if len(opts.Clusters) > 0 {
-			clusters := strings.Join(opts.Clusters, ",")
-			params.Cluster = &clusters
-		}
-		if opts.Extra != "" {
-			params.Extra = &opts.Extra
-		}
-		// Note: The API doesn't have an Instance field in the params for filtering multiple instances
-		if len(opts.NodeList) > 0 {
-			nodeList := strings.Join(opts.NodeList, ",")
-			params.NodeList = &nodeList
-		}
-		if opts.TimeStart != nil {
-			// Convert time to string format expected by API
-			timeStartStr := opts.TimeStart.Format("2006-01-02T15:04:05")
-			params.TimeStart = &timeStartStr
-		}
-		if opts.TimeEnd != nil {
-			// Convert time to string format expected by API
-			timeEndStr := opts.TimeEnd.Format("2006-01-02T15:04:05")
-			params.TimeEnd = &timeEndStr
-		}
-	}
+	params := c.buildInstanceParams(opts)
 
 	// Call the generated OpenAPI client
 	resp, err := c.apiClient.SlurmdbV0043GetInstancesWithResponse(ctx, params)
@@ -612,35 +675,11 @@ func (c *WrapperClient) GetInstances(ctx context.Context, opts *interfaces.GetIn
 
 	// Convert response to our interface types
 	instances := make([]interfaces.Instance, 0)
-	// resp.JSON200.Instances is of type V0043InstanceList which is []V0043Instance
 	for _, inst := range resp.JSON200.Instances {
-		// Filter by instance names if provided
-		if opts != nil && len(opts.Instances) > 0 {
-			found := false
-			instName := getStringFromPtr(inst.InstanceId)
-			for _, filterName := range opts.Instances {
-				if instName == filterName {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
+		instName := getStringFromPtr(inst.InstanceId)
+		if c.instanceMatchesFilter(instName, opts) {
+			instances = append(instances, c.convertAPIInstance(inst))
 		}
-
-		convertedInstance := interfaces.Instance{
-			Cluster:   getStringFromPtr(inst.Cluster),
-			ExtraInfo: getStringFromPtr(inst.Extra),
-			Instance:  getStringFromPtr(inst.InstanceId),
-			NodeName:  getStringFromPtr(inst.NodeName),
-			TimeEnd:   getTimeFromInstance(inst.Time, false),
-			TimeStart: getTimeFromInstance(inst.Time, true),
-			TRES:      "", // Not available in this structure
-			Created:   time.Now(),
-			Modified:  time.Now(),
-		}
-		instances = append(instances, convertedInstance)
 	}
 
 	result := &interfaces.InstanceList{

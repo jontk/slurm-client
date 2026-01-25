@@ -45,6 +45,16 @@ linters:
           deny:
             - pkg: github.com/pkg/errors
               desc: Use standard library errors package or fmt.Errorf with %w
+            - pkg: io/ioutil
+              desc: io/ioutil is deprecated as of Go 1.16; use io or os packages directly
+            - pkg: golang.org/x/net/context
+              desc: Use standard library context package instead of golang.org/x/net/context
+        mainAndNonTest:
+          deny:
+            - pkg: github.com/stretchr/testify/assert
+              desc: Use require instead of assert for better test failure diagnostics
+          files:
+            - "!$test"
     dogsled:
       max-blank-identifiers: 2
     dupl:
@@ -79,13 +89,13 @@ linters:
         - performance
         - style
     gocyclo:
-      min-complexity: 25
+      min-complexity: 20
+    goheader:
+      template-path: .goheader
     gosec:
       excludes:
-        - G104  # Duplicated errcheck
-        - G307  # Duplicated errcheck on file defer Close()
-        - G115  # Integer overflow conversion - SLURM resource counts unlikely to overflow int32
-        - G404  # Use of weak random generator - acceptable for test data and non-cryptographic randomness
+        - G104  # Duplicated errcheck - errcheck linter is more comprehensive
+        - G307  # Duplicated errcheck on file defer Close() - handled by errcheck linter
         - G601  # Implicit memory aliasing - fixed in Go 1.22+ with new loop variable scoping
         - G602  # Slice index out of range - covered by bounds checking
     misspell:
@@ -105,11 +115,11 @@ linters:
     staticcheck:
       checks:
         - all
-        - -SA9003   # Empty branch - placeholder branches reserved for future implementation
-        - -ST1003   # Package naming - version packages use underscores to match SLURM API versions
-        - -QF1001   # De Morgan's law - readability preference
-        - -QF1003   # Tagged switch - style preference
-        - -QF1008   # Embedded field selector - intentional for clarity
+        - -SA9003   # Empty branch - placeholder branches reserved for future implementation (27 violations)
+        - -ST1003   # Package naming - version packages use underscores to match SLURM API versions (255 violations)
+        - -QF1001   # De Morgan's law - readability preference (3 violations)
+        - -QF1003   # Tagged switch - style preference (4 violations)
+        - -QF1008   # Embedded field selector - intentional for clarity (9 violations)
     unparam:
       check-exported: false
     usestdlibvars:
@@ -192,6 +202,18 @@ linters:
           - unparam
         path: _test\.go
       - linters:
+          - gosec
+        path: (^internal/adapters/|^internal/api/|^internal/factory/|^internal/common/|^tests/|_test\.go$|^tests/mocks/)
+        text: G115  # Integer overflow conversions are safe for SLURM API type transformations and test data
+      - linters:
+          - gosec
+        path: ^pkg/retry/
+        text: G404  # Weak random used for non-cryptographic jitter in exponential backoff
+      - linters:
+          - gosec
+        path: ^internal/api/v0_0_43/
+        text: G404  # Weak random used for generating synthetic test data in simulation functions
+      - linters:
           - revive
         path: _test\.go
         text: context-as-argument
@@ -200,6 +222,9 @@ linters:
           - unused
           - nilnil
         path: test_helpers\.go
+      - linters:
+          - depguard
+        path: (test_helpers\.go|^tests/|^benchmarks/)
       - linters:
           - funlen
           - gocognit
@@ -258,10 +283,7 @@ linters:
           - lll
         source: '^//go:generate '
       - linters:
-          - errcheck
           - goconst
-          - unparam
-          - unused
         path: ^cmd/
       - linters:
           - bodyclose
@@ -385,6 +407,12 @@ linters:
           - intrange
         path: ^tests/integration/version_compatibility_test\.go$
         # Loop condition calls typeVal.NumField() which should not be converted
+      - linters:
+          - goheader
+        path: (\.pb\.go|\.gen\.go|/wrapper\.go$|/client\.go$|/managers\.go$)  # Generated files
+      - linters:
+          - goheader
+        path: vendor/  # Third-party dependencies
     paths:
       - .*\.pb\.go$
       - .*\.gen\.go$

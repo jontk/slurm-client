@@ -28,6 +28,47 @@ func NewNodeAdapter(client *api.ClientWithResponses) *NodeAdapter {
 }
 
 // List retrieves a list of nodes
+// matchesNodeNameFilter checks if a node matches the name filter
+func (a *NodeAdapter) matchesNodeNameFilter(node types.Node, names []string) bool {
+	if len(names) == 0 {
+		return true
+	}
+	for _, name := range names {
+		if node.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+// matchesNodeStateFilter checks if a node matches the state filter
+func (a *NodeAdapter) matchesNodeStateFilter(node types.Node, states []types.NodeState) bool {
+	if len(states) == 0 {
+		return true
+	}
+	for _, state := range states {
+		if node.State == state {
+			return true
+		}
+	}
+	return false
+}
+
+// matchesNodePartitionFilter checks if a node matches the partition filter
+func (a *NodeAdapter) matchesNodePartitionFilter(node types.Node, partitions []string) bool {
+	if len(partitions) == 0 {
+		return true
+	}
+	for _, partition := range partitions {
+		for _, nodePartition := range node.Partitions {
+			if nodePartition == partition {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*types.NodeList, error) {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
@@ -81,58 +122,14 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 			}
 			// Apply filters if options were provided
 			if opts != nil {
-				// Filter by name
-				if len(opts.Names) > 0 {
-					match := false
-					for _, name := range opts.Names {
-						if node.Name == name {
-							match = true
-							break
-						}
-					}
-					if !match {
-						continue
-					}
+				if a.matchesNodeNameFilter(*node, opts.Names) &&
+					a.matchesNodeStateFilter(*node, opts.States) &&
+					a.matchesNodePartitionFilter(*node, opts.Partitions) {
+					nodeList.Nodes = append(nodeList.Nodes, *node)
 				}
-
-				// Filter by state
-				if len(opts.States) > 0 {
-					match := false
-					for _, state := range opts.States {
-						if string(node.State) == string(state) {
-							match = true
-							break
-						}
-					}
-					if !match {
-						continue
-					}
-				}
-
-				// Filter by partition
-				if len(opts.Partitions) > 0 {
-					match := false
-					for _, partition := range opts.Partitions {
-						// Check if the node belongs to the partition
-						// This might need to be adjusted based on how partitions are stored in nodes
-						// Check if partition is in the node's partition list
-						for _, nodePartition := range node.Partitions {
-							if nodePartition == partition {
-								match = true
-								break
-							}
-						}
-						if match {
-							break
-						}
-					}
-					if !match {
-						continue
-					}
-				}
+			} else {
+				nodeList.Nodes = append(nodeList.Nodes, *node)
 			}
-
-			nodeList.Nodes = append(nodeList.Nodes, *node)
 		}
 	}
 
@@ -255,67 +252,74 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0042Node) (*types.Node
 	if apiNode.Name != nil {
 		node.Name = *apiNode.Name
 	}
-
-	// Node state conversion
-	if apiNode.State != nil && len(*apiNode.State) > 0 {
-		node.State = types.NodeState((*apiNode.State)[0]) // Take the first state and convert to NodeState type
-	}
-
-	// CPU information
 	if apiNode.Cpus != nil {
 		node.CPUs = *apiNode.Cpus
 	}
-
-	// Memory information
 	if apiNode.RealMemory != nil {
 		node.RealMemory = *apiNode.RealMemory
 	}
-
-	// Partition information
-	if apiNode.Partitions != nil && len(*apiNode.Partitions) > 0 {
-		node.Partitions = *apiNode.Partitions
+	if apiNode.Version != nil {
+		node.Version = *apiNode.Version
+	}
+	if apiNode.Reason != nil {
+		node.Reason = *apiNode.Reason
 	}
 
-	// Architecture
+	// Set state and partitions
+	a.setNodeState(node, apiNode)
+	a.setNodePartitions(node, apiNode)
+
+	// Set architecture and OS
 	if apiNode.Architecture != nil {
 		node.Arch = *apiNode.Architecture
 	}
-
-	// OS information
 	if apiNode.OperatingSystem != nil {
 		node.OS = *apiNode.OperatingSystem
 	}
 
-	// Features
+	// Set features and resources
+	a.setNodeFeatures(node, apiNode)
+
+	// Set boot time
+	a.setNodeBootTime(node, apiNode)
+
+	return node, nil
+}
+
+// setNodeState sets the node state from the API node
+func (a *NodeAdapter) setNodeState(node *types.Node, apiNode api.V0042Node) {
+	if apiNode.State != nil && len(*apiNode.State) > 0 {
+		node.State = types.NodeState((*apiNode.State)[0])
+	}
+}
+
+// setNodePartitions sets the node partitions from the API node
+func (a *NodeAdapter) setNodePartitions(node *types.Node, apiNode api.V0042Node) {
+	if apiNode.Partitions != nil && len(*apiNode.Partitions) > 0 {
+		node.Partitions = *apiNode.Partitions
+	}
+}
+
+// setNodeFeatures sets node features and GRES from the API node
+func (a *NodeAdapter) setNodeFeatures(node *types.Node, apiNode api.V0042Node) {
 	if apiNode.ActiveFeatures != nil && len(*apiNode.ActiveFeatures) > 0 {
 		node.ActiveFeatures = *apiNode.ActiveFeatures
 	}
 	if apiNode.Features != nil && len(*apiNode.Features) > 0 {
 		node.Features = *apiNode.Features
 	}
-
-	// GRES (Generic Resources)
 	if apiNode.Gres != nil {
 		node.Gres = *apiNode.Gres
 	}
+}
 
-	// Boot time - check if it's set and has a number
-	if apiNode.BootTime != nil && apiNode.BootTime.Set != nil && *apiNode.BootTime.Set && apiNode.BootTime.Number != nil {
-		bootTime := time.Unix(*apiNode.BootTime.Number, 0)
-		node.BootTime = &bootTime
+// setNodeBootTime sets the node boot time from the API node
+func (a *NodeAdapter) setNodeBootTime(node *types.Node, apiNode api.V0042Node) {
+	if apiNode.BootTime == nil || apiNode.BootTime.Set == nil || !*apiNode.BootTime.Set || apiNode.BootTime.Number == nil {
+		return
 	}
-
-	// Slurm version
-	if apiNode.Version != nil {
-		node.Version = *apiNode.Version
-	}
-
-	// Reason for node state
-	if apiNode.Reason != nil {
-		node.Reason = *apiNode.Reason
-	}
-
-	return node, nil
+	bootTime := time.Unix(*apiNode.BootTime.Number, 0)
+	node.BootTime = &bootTime
 }
 
 // convertCommonNodeUpdateToAPI converts common node update to API format

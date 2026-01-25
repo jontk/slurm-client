@@ -138,6 +138,7 @@ jobs:
           --exclude 'https://www\.conventionalcommits\.org/.*'
           --exclude 'https://www\.sigstore\.dev/.*'
           --exclude 'https://rekor\.sigstore\.dev/.*'
+          --exclude 'https://www\.contributor-covenant\.org/.*'
           './**/*.md'
         fail: true
 

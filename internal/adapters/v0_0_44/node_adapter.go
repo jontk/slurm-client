@@ -311,49 +311,58 @@ func (a *NodeAdapter) Watch(ctx context.Context, opts *types.NodeWatchOptions) (
 
 // pollNodes polls for node changes and sends events
 func (a *NodeAdapter) pollNodes(ctx context.Context, opts *types.NodeWatchOptions, nodeStates map[string]types.NodeState, eventCh chan<- types.NodeWatchEvent, isInitial bool) {
-	// Create list options based on watch options
-	listOpts := &types.NodeListOptions{}
-
-	// If watching specific nodes, filter by node names
-	if opts != nil && len(opts.NodeNames) > 0 {
-		listOpts.Names = opts.NodeNames
-	}
-
-	// If watching specific states, filter by states
-	if opts != nil && len(opts.States) > 0 {
-		listOpts.States = opts.States
-	}
-
-	// If watching specific partitions, filter by partitions
-	if opts != nil && len(opts.Partitions) > 0 {
-		listOpts.Partitions = opts.Partitions
-	}
+	// Build list options from watch options
+	listOpts := a.buildNodeListOptions(opts)
 
 	// Get current node list
 	nodeList, err := a.List(ctx, listOpts)
 	if err != nil {
 		// Send error event
-		select {
-		case eventCh <- types.NodeWatchEvent{
+		a.sendNodeWatchEvent(ctx, eventCh, types.NodeWatchEvent{
 			EventTime: time.Now(),
 			EventType: "error",
 			NodeName:  "",
 			Reason:    fmt.Sprintf("Failed to poll nodes: %v", err),
-		}:
-		case <-ctx.Done():
-		}
+		})
 		return
 	}
 
-	// Check for state changes
-	for _, node := range nodeList.Nodes {
+	// Process state changes for existing nodes
+	a.processNodeStateChanges(ctx, nodeList.Nodes, nodeStates, eventCh, isInitial)
+
+	// Check for removed nodes
+	a.processRemovedNodes(ctx, nodeList.Nodes, nodeStates, eventCh)
+}
+
+// buildNodeListOptions constructs list options from watch options
+func (a *NodeAdapter) buildNodeListOptions(opts *types.NodeWatchOptions) *types.NodeListOptions {
+	listOpts := &types.NodeListOptions{}
+
+	if opts != nil {
+		if len(opts.NodeNames) > 0 {
+			listOpts.Names = opts.NodeNames
+		}
+		if len(opts.States) > 0 {
+			listOpts.States = opts.States
+		}
+		if len(opts.Partitions) > 0 {
+			listOpts.Partitions = opts.Partitions
+		}
+	}
+
+	return listOpts
+}
+
+// processNodeStateChanges handles state changes for nodes currently in the list
+func (a *NodeAdapter) processNodeStateChanges(ctx context.Context, nodes []types.Node, nodeStates map[string]types.NodeState, eventCh chan<- types.NodeWatchEvent, isInitial bool) {
+	for _, node := range nodes {
 		previousState, exists := nodeStates[node.Name]
 		currentState := node.State
 
 		// Update the state map
 		nodeStates[node.Name] = currentState
 
-		// Skip initial population unless it's a special event
+		// Skip initial population
 		if isInitial {
 			continue
 		}
@@ -372,46 +381,58 @@ func (a *NodeAdapter) pollNodes(ctx context.Context, opts *types.NodeWatchOption
 				Partitions:    node.Partitions,
 			}
 
-			select {
-			case eventCh <- event:
-			case <-ctx.Done():
+			if !a.sendNodeWatchEvent(ctx, eventCh, event) {
 				return
 			}
 		}
 	}
+}
 
-	// Check for removed nodes (nodes that existed before but don't exist now)
+// processRemovedNodes handles detection and reporting of removed nodes
+func (a *NodeAdapter) processRemovedNodes(ctx context.Context, currentNodes []types.Node, nodeStates map[string]types.NodeState, eventCh chan<- types.NodeWatchEvent) {
 	for nodeName, previousState := range nodeStates {
-		found := false
-		for _, node := range nodeList.Nodes {
-			if node.Name == nodeName {
-				found = true
-				break
-			}
+		// Check if node still exists in current list
+		if a.nodeExistsInList(nodeName, currentNodes) {
+			continue
 		}
 
-		// If node is not found, it might have been removed
-		if !found {
-			// Send removal event
-			event := types.NodeWatchEvent{
-				EventTime:     time.Now(),
-				EventType:     "removed",
-				NodeName:      nodeName,
-				PreviousState: previousState,
-				NewState:      types.NodeStateUnknown,
-				Reason:        "Node removed from cluster",
-			}
+		// Send removal event for node not found in current list
+		event := types.NodeWatchEvent{
+			EventTime:     time.Now(),
+			EventType:     "removed",
+			NodeName:      nodeName,
+			PreviousState: previousState,
+			NewState:      types.NodeStateUnknown,
+			Reason:        "Node removed from cluster",
+		}
 
-			select {
-			case eventCh <- event:
-			case <-ctx.Done():
-				return
-			}
+		if !a.sendNodeWatchEvent(ctx, eventCh, event) {
+			return
+		}
 
-			// Remove from state map
-			delete(nodeStates, nodeName)
+		// Remove from state map
+		delete(nodeStates, nodeName)
+	}
+}
+
+// sendNodeWatchEvent safely sends a watch event, respecting context cancellation
+func (a *NodeAdapter) sendNodeWatchEvent(ctx context.Context, eventCh chan<- types.NodeWatchEvent, event types.NodeWatchEvent) bool {
+	select {
+	case eventCh <- event:
+		return true
+	case <-ctx.Done():
+		return false
+	}
+}
+
+// nodeExistsInList checks if a node with the given name exists in the node list
+func (a *NodeAdapter) nodeExistsInList(nodeName string, nodes []types.Node) bool {
+	for _, node := range nodes {
+		if node.Name == nodeName {
+			return true
 		}
 	}
+	return false
 }
 
 // getEventTypeFromNodeStateChange determines the event type based on node state transition

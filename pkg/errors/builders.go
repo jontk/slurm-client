@@ -79,34 +79,66 @@ func classifyNetworkError(err error) *SlurmError {
 
 	// Check for context errors first (before net.Error check)
 	// because context.DeadlineExceeded also implements net.Error with Timeout() == true
-	// Use errors.Is() to handle wrapped errors
+	if contextErr := classifyContextError(err); contextErr != nil {
+		return contextErr
+	}
+
+	errStr := err.Error()
+
+	// Check for specific network error types
+	if netClassified := classifyNetworkErrorType(err, errStr); netClassified != nil {
+		return netClassified
+	}
+
+	// Check for specific error patterns
+	if patternErr := classifyErrorByPattern(err, errStr); patternErr != nil {
+		return patternErr
+	}
+
+	// Check for syscall errors
+	if syscallErr := classifySyscallError(err); syscallErr != nil {
+		return syscallErr
+	}
+
+	return nil
+}
+
+// classifyContextError checks for context-related errors
+func classifyContextError(err error) *SlurmError {
 	if stderrors.Is(err, context.Canceled) {
 		return NewSlurmErrorWithCause(ErrorCodeContextCanceled, "Operation was canceled", err)
 	}
 	if stderrors.Is(err, context.DeadlineExceeded) {
 		return NewSlurmErrorWithCause(ErrorCodeDeadlineExceeded, "Operation deadline exceeded", err)
 	}
+	return nil
+}
 
-	errStr := err.Error()
-
-	// Check for specific network error types
+// classifyNetworkErrorType checks for specific network error types
+func classifyNetworkErrorType(err error, errStr string) *SlurmError {
 	var netErr net.Error
-	if stderrors.As(err, &netErr) {
-		if netErr.Timeout() {
-			return NewSlurmErrorWithCause(ErrorCodeNetworkTimeout, "Network operation timed out", err)
-		}
-		// Note: netErr.Temporary() is deprecated since Go 1.18
-		// We classify common temporary network errors by error string patterns
-		errorStr := err.Error()
-		if strings.Contains(errorStr, "connection reset") ||
-			strings.Contains(errorStr, "broken pipe") ||
-			strings.Contains(errorStr, "network is unreachable") ||
-			strings.Contains(errorStr, "temporary") {
-			return NewSlurmErrorWithCause(ErrorCodeConnectionRefused, "Temporary network failure", err)
-		}
+	if !stderrors.As(err, &netErr) {
+		return nil
 	}
 
-	// Check for specific error patterns
+	if netErr.Timeout() {
+		return NewSlurmErrorWithCause(ErrorCodeNetworkTimeout, "Network operation timed out", err)
+	}
+
+	// Note: netErr.Temporary() is deprecated since Go 1.18
+	// We classify common temporary network errors by error string patterns
+	if strings.Contains(errStr, "connection reset") ||
+		strings.Contains(errStr, "broken pipe") ||
+		strings.Contains(errStr, "network is unreachable") ||
+		strings.Contains(errStr, "temporary") {
+		return NewSlurmErrorWithCause(ErrorCodeConnectionRefused, "Temporary network failure", err)
+	}
+
+	return nil
+}
+
+// classifyErrorByPattern checks for error patterns
+func classifyErrorByPattern(err error, errStr string) *SlurmError {
 	switch {
 	case strings.Contains(errStr, "connection refused"):
 		return NewSlurmErrorWithCause(ErrorCodeConnectionRefused, "Connection refused by server", err)
@@ -119,24 +151,32 @@ func classifyNetworkError(err error) *SlurmError {
 	case strings.Contains(errStr, "certificate"):
 		return NewSlurmErrorWithCause(ErrorCodeTLSHandshake, "TLS certificate error", err)
 	}
+	return nil
+}
+
+// classifySyscallError checks for syscall-specific errors
+func classifySyscallError(err error) *SlurmError {
+	var opErr *net.OpError
+	if !stderrors.As(err, &opErr) {
+		return nil
+	}
+
+	// Check for DNS errors
+	var dnsErr *net.DNSError
+	if stderrors.As(opErr.Err, &dnsErr) {
+		return NewSlurmErrorWithCause(ErrorCodeDNSResolution, "DNS lookup failed", dnsErr)
+	}
 
 	// Check for syscall errors
-	var opErr *net.OpError
-	if stderrors.As(err, &opErr) {
-		var dnsErr *net.DNSError
-		if stderrors.As(opErr.Err, &dnsErr) {
-			return NewSlurmErrorWithCause(ErrorCodeDNSResolution, "DNS lookup failed", dnsErr)
-		}
-		var syscallErr syscall.Errno
-		if stderrors.As(opErr.Err, &syscallErr) {
-			switch syscallErr {
-			case syscall.ECONNREFUSED:
-				return NewSlurmErrorWithCause(ErrorCodeConnectionRefused, "Connection refused", err)
-			case syscall.ETIMEDOUT:
-				return NewSlurmErrorWithCause(ErrorCodeNetworkTimeout, "Connection timeout", err)
-			case syscall.ENETUNREACH:
-				return NewSlurmErrorWithCause(ErrorCodeDNSResolution, "Network unreachable", err)
-			}
+	var syscallErr syscall.Errno
+	if stderrors.As(opErr.Err, &syscallErr) {
+		switch syscallErr {
+		case syscall.ECONNREFUSED:
+			return NewSlurmErrorWithCause(ErrorCodeConnectionRefused, "Connection refused", err)
+		case syscall.ETIMEDOUT:
+			return NewSlurmErrorWithCause(ErrorCodeNetworkTimeout, "Connection timeout", err)
+		case syscall.ENETUNREACH:
+			return NewSlurmErrorWithCause(ErrorCodeDNSResolution, "Network unreachable", err)
 		}
 	}
 

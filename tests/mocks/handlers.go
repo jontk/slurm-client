@@ -418,72 +418,17 @@ func (m *MockSlurmServer) handleNodesList(w http.ResponseWriter, r *http.Request
 	m.storage.mu.RLock()
 	defer m.storage.mu.RUnlock()
 
-	nodes := []*MockNode{}
-	for _, node := range m.storage.Nodes {
-		// Apply filters
-		if partition != "" && node.Partition != partition {
-			continue
-		}
-		if len(stateList) > 0 {
-			found := false
-			for _, state := range stateList {
-				requestedState := strings.TrimSpace(state)
-				// Check if any of the node's states match the requested state
-				for _, nodeState := range node.State {
-					if nodeState == requestedState {
-						found = true
-						break
-					}
-				}
-				if found {
-					break
-				}
-			}
-			if !found {
-				continue
-			}
-		}
-		if len(featureList) > 0 {
-			hasAllFeatures := true
-			for _, requiredFeature := range featureList {
-				requiredFeature = strings.TrimSpace(requiredFeature)
-				found := false
-				for _, nodeFeature := range node.Features {
-					if nodeFeature == requiredFeature {
-						found = true
-						break
-					}
-				}
-				if !found {
-					hasAllFeatures = false
-					break
-				}
-			}
-			if !hasAllFeatures {
-				continue
-			}
-		}
-		nodes = append(nodes, node)
-	}
+	// Filter nodes
+	nodes := m.filterNodes(partition, stateList, featureList)
+
+	// Get total before pagination
+	total := len(nodes)
 
 	// Apply pagination
-	total := len(nodes)
-	start := offset
-	end := offset + limit
-	if start > total {
-		start = total
-	}
-	if end > total {
-		end = total
-	}
-	if start < end {
-		nodes = nodes[start:end]
-	} else {
-		nodes = []*MockNode{}
-	}
+	paginatedNodes := m.applyNodePagination(nodes, offset, limit)
 
 	response := map[string]interface{}{
-		"nodes": nodes,
+		"nodes": paginatedNodes,
 		"meta": map[string]interface{}{
 			"total":  total,
 			"offset": offset,
@@ -492,6 +437,90 @@ func (m *MockSlurmServer) handleNodesList(w http.ResponseWriter, r *http.Request
 	}
 
 	m.writeJSONResponse(w, response)
+}
+
+// filterNodes filters nodes by partition, state, and features
+func (m *MockSlurmServer) filterNodes(partition string, stateList, featureList []string) []*MockNode {
+	nodes := []*MockNode{}
+	for _, node := range m.storage.Nodes {
+		if !m.nodePassesPartitionFilter(node, partition) {
+			continue
+		}
+		if !m.nodePassesStateFilter(node, stateList) {
+			continue
+		}
+		if !m.nodePassesFeaturesFilter(node, featureList) {
+			continue
+		}
+		nodes = append(nodes, node)
+	}
+	return nodes
+}
+
+// nodePassesPartitionFilter checks if a node matches the partition filter
+func (m *MockSlurmServer) nodePassesPartitionFilter(node *MockNode, partition string) bool {
+	if partition == "" {
+		return true
+	}
+	return node.Partition == partition
+}
+
+// nodePassesStateFilter checks if a node matches the state filter
+func (m *MockSlurmServer) nodePassesStateFilter(node *MockNode, stateList []string) bool {
+	if len(stateList) == 0 {
+		return true
+	}
+
+	for _, state := range stateList {
+		requestedState := strings.TrimSpace(state)
+		for _, nodeState := range node.State {
+			if nodeState == requestedState {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// nodePassesFeaturesFilter checks if a node matches the features filter
+func (m *MockSlurmServer) nodePassesFeaturesFilter(node *MockNode, featureList []string) bool {
+	if len(featureList) == 0 {
+		return true
+	}
+
+	for _, requiredFeature := range featureList {
+		requiredFeature = strings.TrimSpace(requiredFeature)
+		found := false
+		for _, nodeFeature := range node.Features {
+			if nodeFeature == requiredFeature {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+// applyNodePagination applies pagination to a node list
+func (m *MockSlurmServer) applyNodePagination(nodes []*MockNode, offset, limit int) []*MockNode {
+	total := len(nodes)
+	start := offset
+	end := offset + limit
+
+	if start > total {
+		start = total
+	}
+	if end > total {
+		end = total
+	}
+
+	if start < end {
+		return nodes[start:end]
+	}
+	return []*MockNode{}
 }
 
 func (m *MockSlurmServer) handleNodesGet(w http.ResponseWriter, r *http.Request) {

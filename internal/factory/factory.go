@@ -243,9 +243,20 @@ func (f *ClientFactory) detectVersion(ctx context.Context) (*versioning.APIVersi
 		return nil, fmt.Errorf("could not determine API version from OpenAPI spec")
 	}
 
-	version, err := versioning.ParseVersion(detectedVersionStr)
-	if err != nil {
-		return nil, fmt.Errorf("invalid detected version %s: %w", detectedVersionStr, err)
+	// Check if this is a SLURM version string (Slurm-x.y.z format)
+	// and map it to a compatible API version
+	var version *versioning.APIVersion
+	if strings.HasPrefix(detectedVersionStr, "Slurm-") {
+		slurmVersion := strings.TrimPrefix(detectedVersionStr, "Slurm-")
+		version, err = f.findCompatibleAPIVersion(slurmVersion)
+		if err != nil {
+			return nil, fmt.Errorf("invalid detected SLURM version %s: %w", detectedVersionStr, err)
+		}
+	} else {
+		version, err = versioning.ParseVersion(detectedVersionStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid detected version %s: %w", detectedVersionStr, err)
+		}
 	}
 
 	// Verify this version is supported
@@ -263,6 +274,26 @@ func (f *ClientFactory) detectVersion(ctx context.Context) (*versioning.APIVersi
 
 	f.detectedVersion = version
 	return version, nil
+}
+
+// findCompatibleAPIVersion finds a compatible API version for the given SLURM version
+func (f *ClientFactory) findCompatibleAPIVersion(slurmVersion string) (*versioning.APIVersion, error) {
+	var compatibleVersion *versioning.APIVersion
+
+	// Find the best compatible API version for this SLURM version
+	for _, apiVersion := range versioning.SupportedVersions {
+		if f.compatibility.IsSlurmVersionSupported(apiVersion.String(), slurmVersion) {
+			if compatibleVersion == nil || apiVersion.Compare(compatibleVersion) > 0 {
+				compatibleVersion = apiVersion
+			}
+		}
+	}
+
+	if compatibleVersion == nil {
+		return nil, fmt.Errorf("no compatible API version found for SLURM %s", slurmVersion)
+	}
+
+	return compatibleVersion, nil
 }
 
 // createClient creates a version-specific client implementation

@@ -351,52 +351,76 @@ func (m *QoSBaseManager) EnhanceQoSCreateWithDefaults(qos *types.QoSCreate) *typ
 	// Apply intelligent defaults based on QoS name patterns
 	lowerName := strings.ToLower(qos.Name)
 
-	// High priority QoS patterns
-	if strings.Contains(lowerName, "high") || strings.Contains(lowerName, "priority") || strings.Contains(lowerName, "urgent") {
-		if qos.Priority == 0 {
-			qos.Priority = 1000000 // High priority
-		}
-		if len(qos.PreemptMode) == 0 {
-			qos.PreemptMode = []string{"REQUEUE"} // Allow preemption
-		}
-	}
-
-	// Low priority QoS patterns
-	if strings.Contains(lowerName, "low") || strings.Contains(lowerName, "batch") || strings.Contains(lowerName, "background") {
-		if qos.Priority == 0 {
-			qos.Priority = 1 // Low priority
-		}
-		if len(qos.PreemptMode) == 0 {
-			qos.PreemptMode = []string{"OFF"} // Can be preempted
-		}
-	}
-
-	// Debug/test QoS patterns
-	if strings.Contains(lowerName, "debug") || strings.Contains(lowerName, "test") || strings.Contains(lowerName, "devel") {
-		if qos.Limits == nil {
-			qos.Limits = &types.QoSLimits{}
-		}
-		// Set reasonable limits for debug QoS
-		if qos.Limits.MaxWallTimePerJob == nil {
-			maxTime := 3600 // 1 hour default for debug
-			qos.Limits.MaxWallTimePerJob = &maxTime
-		}
-		if qos.Limits.MaxJobsPerUser == nil {
-			maxJobs := 2 // Limited concurrent debug jobs
-			qos.Limits.MaxJobsPerUser = &maxJobs
-		}
-	}
-
-	// Long-running job QoS patterns
-	if strings.Contains(lowerName, "long") || strings.Contains(lowerName, "extended") {
-		if qos.Limits == nil {
-			qos.Limits = &types.QoSLimits{}
-		}
-		if qos.Limits.MaxWallTimePerJob == nil {
-			maxTime := 604800 // 7 days for long jobs
-			qos.Limits.MaxWallTimePerJob = &maxTime
-		}
-	}
+	// Apply pattern-specific enhancements
+	m.enhanceHighPriorityQoS(qos, lowerName)
+	m.enhanceLowPriorityQoS(qos, lowerName)
+	m.enhanceDebugQoS(qos, lowerName)
+	m.enhanceLongRunningQoS(qos, lowerName)
 
 	return qos
+}
+
+// enhanceHighPriorityQoS applies defaults for high priority QoS patterns
+func (m *QoSBaseManager) enhanceHighPriorityQoS(qos *types.QoSCreate, lowerName string) {
+	if !strings.Contains(lowerName, "high") && !strings.Contains(lowerName, "priority") && !strings.Contains(lowerName, "urgent") {
+		return
+	}
+
+	if qos.Priority == 0 {
+		qos.Priority = 1000000 // High priority
+	}
+	if len(qos.PreemptMode) == 0 {
+		qos.PreemptMode = []string{"REQUEUE"} // Allow preemption
+	}
+}
+
+// enhanceLowPriorityQoS applies defaults for low priority QoS patterns
+func (m *QoSBaseManager) enhanceLowPriorityQoS(qos *types.QoSCreate, lowerName string) {
+	if !strings.Contains(lowerName, "low") && !strings.Contains(lowerName, "batch") && !strings.Contains(lowerName, "background") {
+		return
+	}
+
+	if qos.Priority == 0 {
+		qos.Priority = 1 // Low priority
+	}
+	if len(qos.PreemptMode) == 0 {
+		qos.PreemptMode = []string{"OFF"} // Can be preempted
+	}
+}
+
+// enhanceDebugQoS applies defaults for debug/test QoS patterns
+func (m *QoSBaseManager) enhanceDebugQoS(qos *types.QoSCreate, lowerName string) {
+	if !strings.Contains(lowerName, "debug") && !strings.Contains(lowerName, "test") && !strings.Contains(lowerName, "devel") {
+		return
+	}
+
+	if qos.Limits == nil {
+		qos.Limits = &types.QoSLimits{}
+	}
+
+	// Set reasonable limits for debug QoS
+	if qos.Limits.MaxWallTimePerJob == nil {
+		maxTime := 3600 // 1 hour default for debug
+		qos.Limits.MaxWallTimePerJob = &maxTime
+	}
+	if qos.Limits.MaxJobsPerUser == nil {
+		maxJobs := 2 // Limited concurrent debug jobs
+		qos.Limits.MaxJobsPerUser = &maxJobs
+	}
+}
+
+// enhanceLongRunningQoS applies defaults for long-running job QoS patterns
+func (m *QoSBaseManager) enhanceLongRunningQoS(qos *types.QoSCreate, lowerName string) {
+	if !strings.Contains(lowerName, "long") && !strings.Contains(lowerName, "extended") {
+		return
+	}
+
+	if qos.Limits == nil {
+		qos.Limits = &types.QoSLimits{}
+	}
+
+	if qos.Limits.MaxWallTimePerJob == nil {
+		maxTime := 604800 // 7 days for long jobs
+		qos.Limits.MaxWallTimePerJob = &maxTime
+	}
 }

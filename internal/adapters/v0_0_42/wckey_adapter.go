@@ -40,60 +40,8 @@ func (a *WCKeyAdapter) List(ctx context.Context, opts *types.WCKeyListOptions) (
 		return nil, err
 	}
 
-	// Prepare parameters for the API call
-	params := &api.SlurmdbV0042GetWckeysParams{}
-
-	// Apply filters from options
-	if opts != nil {
-		if len(opts.Users) > 0 {
-			// API expects CSV string
-			usersStr := opts.Users[0]
-			if len(opts.Users) > 1 {
-				var usersStrSb51 strings.Builder
-				for _, user := range opts.Users[1:] {
-					usersStrSb51.WriteString("," + user)
-				}
-				usersStr += usersStrSb51.String()
-			}
-			params.User = &usersStr
-		}
-
-		if len(opts.Clusters) > 0 {
-			// API expects CSV string
-			clustersStr := opts.Clusters[0]
-			if len(opts.Clusters) > 1 {
-				var clustersStrSb62 strings.Builder
-				for _, cluster := range opts.Clusters[1:] {
-					clustersStrSb62.WriteString("," + cluster)
-				}
-				clustersStr += clustersStrSb62.String()
-			}
-			params.Cluster = &clustersStr
-		}
-
-		if len(opts.Names) > 0 {
-			// API expects CSV string
-			namesStr := opts.Names[0]
-			if len(opts.Names) > 1 {
-				var namesStrSb73 strings.Builder
-				for _, name := range opts.Names[1:] {
-					namesStrSb73.WriteString("," + name)
-				}
-				namesStr += namesStrSb73.String()
-			}
-			params.Name = &namesStr
-		}
-
-		if opts.OnlyDefaults {
-			onlyDefaultsStr := "true"
-			params.OnlyDefaults = &onlyDefaultsStr
-		}
-
-		if opts.WithDeleted {
-			withDeletedStr := "true"
-			params.WithDeleted = &withDeletedStr
-		}
-	}
+	// Build parameters from options
+	params := a.buildWCKeyListParams(opts)
 
 	// Call the API
 	resp, err := a.client.SlurmdbV0042GetWckeysWithResponse(ctx, params)
@@ -129,6 +77,52 @@ func (a *WCKeyAdapter) List(ctx context.Context, opts *types.WCKeyListOptions) (
 		WCKeys: wckeys,
 		Meta:   a.extractMeta(resp.JSON200.Meta),
 	}, nil
+}
+
+// buildWCKeyListParams constructs API parameters from options
+func (a *WCKeyAdapter) buildWCKeyListParams(opts *types.WCKeyListOptions) *api.SlurmdbV0042GetWckeysParams {
+	params := &api.SlurmdbV0042GetWckeysParams{}
+
+	if opts == nil {
+		return params
+	}
+
+	// Build user filter
+	if len(opts.Users) > 0 {
+		params.User = a.buildCSVString(opts.Users)
+	}
+
+	// Build cluster filter
+	if len(opts.Clusters) > 0 {
+		params.Cluster = a.buildCSVString(opts.Clusters)
+	}
+
+	// Build name filter
+	if len(opts.Names) > 0 {
+		params.Name = a.buildCSVString(opts.Names)
+	}
+
+	// Set boolean flags
+	if opts.OnlyDefaults {
+		onlyDefaultsStr := "true"
+		params.OnlyDefaults = &onlyDefaultsStr
+	}
+
+	if opts.WithDeleted {
+		withDeletedStr := "true"
+		params.WithDeleted = &withDeletedStr
+	}
+
+	return params
+}
+
+// buildCSVString constructs a comma-separated string from a slice
+func (a *WCKeyAdapter) buildCSVString(items []string) *string {
+	if len(items) == 0 {
+		return nil
+	}
+	result := strings.Join(items, ",")
+	return &result
 }
 
 // Get retrieves a specific WCKey by ID

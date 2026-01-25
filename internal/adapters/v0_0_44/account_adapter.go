@@ -336,15 +336,26 @@ func (a *AccountAdapter) validateAccountUpdate(update *types.AccountUpdate) erro
 	if update == nil {
 		return errors.NewValidationErrorf("update", nil, "account update data is required")
 	}
-	// At least one field should be provided for update
-	if update.Description == nil && update.Organization == nil && len(update.Coordinators) == 0 &&
-		update.DefaultQoS == nil && len(update.QoSList) == 0 && len(update.AllowedPartitions) == 0 &&
-		update.DefaultPartition == nil && update.FairShare == nil && update.Priority == nil &&
-		update.MaxJobs == nil && update.MaxWallTime == nil {
+
+	// Check if at least one field is provided
+	if !a.hasAccountUpdateFields(update) {
 		return errors.NewValidationErrorf("update", update, "at least one field must be provided for update")
 	}
 
-	// Validate numeric fields if provided
+	// Validate numeric fields
+	return a.validateAccountUpdateNumericFields(update)
+}
+
+// hasAccountUpdateFields checks if any update field is provided
+func (a *AccountAdapter) hasAccountUpdateFields(update *types.AccountUpdate) bool {
+	return update.Description != nil || update.Organization != nil || len(update.Coordinators) > 0 ||
+		update.DefaultQoS != nil || len(update.QoSList) > 0 || len(update.AllowedPartitions) > 0 ||
+		update.DefaultPartition != nil || update.FairShare != nil || update.Priority != nil ||
+		update.MaxJobs != nil || update.MaxWallTime != nil
+}
+
+// validateAccountUpdateNumericFields validates numeric update fields
+func (a *AccountAdapter) validateAccountUpdateNumericFields(update *types.AccountUpdate) error {
 	if update.FairShare != nil && *update.FairShare < 0 {
 		return errors.NewValidationErrorf("fairShare", *update.FairShare, "fair share must be non-negative")
 	}
