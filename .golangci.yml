@@ -228,37 +228,22 @@ linters:
         text: empty-block
       - linters:
           - dupl
-        path: ^internal/factory/
+        path: ^internal/(factory|managers/base)/  # Factory and base managers boilerplate
       - linters:
           - dupl
-        path: ^internal/common/builders/
+        path: ^internal/common/(builders|types)/  # Builder and type boilerplate patterns
       - linters:
           - dupl
-        path: ^pkg/watch/
+        path: ^pkg/(streaming|watch)/  # Streaming and watch implementations
       - linters:
           - dupl
-        path: ^pkg/streaming/
+        path: ^tests/mocks/  # Mock implementations
       - linters:
           - dupl
-        path: ^tests/mocks/
+        path: (^internal/)?interfaces/  # Interface definitions
       - linters:
           - dupl
-        path: ^internal/interfaces/
-      - linters:
-          - dupl
-        path: ^interfaces/
-      - linters:
-          - dupl
-        path: ^internal/common/types/
-      - linters:
-          - dupl
-        path: ^internal/managers/base/
-      - linters:
-          - dupl
-        path: ^pkg/retry/
-      - linters:
-          - dupl
-        path: ^pkg/analytics/
+        path: ^pkg/(retry|analytics)/  # Retry and analytics packages
       - linters:
           - dupl
           - gocyclo
