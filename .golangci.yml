@@ -80,6 +80,8 @@ linters:
         - style
     gocyclo:
       min-complexity: 20
+    goheader:
+      template-path: .goheader
     gosec:
       excludes:
         - G104  # Duplicated errcheck
@@ -385,6 +387,12 @@ linters:
           - intrange
         path: ^tests/integration/version_compatibility_test\.go$
         # Loop condition calls typeVal.NumField() which should not be converted
+      - linters:
+          - goheader
+        path: (\.pb\.go|\.gen\.go|/wrapper\.go$|/client\.go$|/managers\.go$)  # Generated files
+      - linters:
+          - goheader
+        path: vendor/  # Third-party dependencies
     paths:
       - .*\.pb\.go$
       - .*\.gen\.go$
