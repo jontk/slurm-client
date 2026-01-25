@@ -11,7 +11,7 @@ import (
 )
 
 // convertAPINodeToCommon converts a v0.0.44 API Node to common Node type
-func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0044Node) (*types.Node, error) {
+func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0044Node) *types.Node {
 	node := &types.Node{}
 
 	// Basic fields
@@ -189,11 +189,11 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0044Node) (*types.Node
 		node.Energy = energy
 	}
 
-	return node, nil
+	return node
 }
 
 // convertCommonNodeUpdateToAPI converts common NodeUpdate to v0.0.44 API format
-func (a *NodeAdapter) convertCommonNodeUpdateToAPI(existing *types.Node, update *types.NodeUpdate) (*api.V0044Node, error) {
+func (a *NodeAdapter) convertCommonNodeUpdateToAPI(existing *types.Node, update *types.NodeUpdate) *api.V0044Node {
 	apiNode := &api.V0044Node{}
 
 	// Always include the node name for updates
@@ -284,5 +284,5 @@ func (a *NodeAdapter) convertCommonNodeUpdateToAPI(existing *types.Node, update 
 		apiNode.Weight = &weight
 	}
 
-	return apiNode, nil
+	return apiNode
 }

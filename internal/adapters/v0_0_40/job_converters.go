@@ -12,7 +12,7 @@ import (
 )
 
 // convertAPIJobToCommon converts a v0.0.40 API Job to common Job type
-func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0040JobInfo) (*types.Job, error) {
+func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0040JobInfo) *types.Job {
 	job := &types.Job{}
 
 	// Basic fields
@@ -159,7 +159,7 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0040JobInfo) (*types.Job,
 	// Note: Tags field not available in common Job type
 	// This would need to be added to the common Job type or mapped to WCKey
 
-	return job, nil
+	return job
 }
 
 // Helper functions

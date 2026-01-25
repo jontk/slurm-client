@@ -119,8 +119,7 @@ func TestBasicConversions(t *testing.T) {
 	assert.Nil(t, err)
 
 	userAdapter := NewUserAdapter(&api.ClientWithResponses{})
-	_, err = userAdapter.convertAPIUserToCommon(api.V0042User{})
-	assert.Nil(t, err)
+	userAdapter.convertAPIUserToCommon(api.V0042User{})
 }
 
 func TestConversionWithData(t *testing.T) {
@@ -184,8 +183,7 @@ func TestConversionWithData(t *testing.T) {
 			Account: &defaultAccount,
 		},
 	}
-	userResult, err := userAdapter.convertAPIUserToCommon(user)
-	assert.Nil(t, err)
+	userResult := userAdapter.convertAPIUserToCommon(user)
 	assert.Equal(t, "test-user", userResult.Name)
 	assert.Equal(t, "test-account", userResult.DefaultAccount)
 }

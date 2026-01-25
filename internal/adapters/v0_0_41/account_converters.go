@@ -62,7 +62,7 @@ func (a *AccountAdapter) convertAPIAccountToCommon(apiAccount interface{}) (*typ
 }
 
 // convertCommonToAPIAccount converts common Account to v0.0.41 API request
-func (a *AccountAdapter) convertCommonToAPIAccount(account *types.Account) interface{} {
+func (a *AccountAdapter) convertCommonToAPIAccount(account *types.Account) {
 	// Return a simplified structure that matches what the API expects
 	// without relying on undefined specific types
 	req := struct {
@@ -121,6 +121,4 @@ func (a *AccountAdapter) convertCommonToAPIAccount(account *types.Account) inter
 		}
 		acc.Coordinators = &coords
 	}
-
-	return req
 }

@@ -93,8 +93,7 @@ func TestNodeAdapter_ConvertAPINodeToCommon(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := adapter.convertAPINodeToCommon(tt.apiNode)
-			assert.NoError(t, err)
+			result := adapter.convertAPINodeToCommon(tt.apiNode)
 			assert.NotNil(t, result)
 			assert.Equal(t, tt.expectedName, result.Name)
 			assert.Equal(t, tt.expectedCpus, result.CPUs)

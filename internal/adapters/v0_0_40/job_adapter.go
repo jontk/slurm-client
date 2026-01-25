@@ -90,10 +90,7 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 	// Convert the response to common types
 	jobList := make([]types.Job, 0, len(resp.JSON200.Jobs))
 	for _, apiJob := range resp.JSON200.Jobs {
-		job, err := a.convertAPIJobToCommon(apiJob)
-		if err != nil {
-			return nil, a.HandleConversionError(err, apiJob.JobId)
-		}
+		job := a.convertAPIJobToCommon(apiJob)
 		jobList = append(jobList, *job)
 	}
 
@@ -177,10 +174,7 @@ func (a *JobAdapter) Get(ctx context.Context, jobID int32) (*types.Job, error) {
 	}
 
 	// Convert the first job (should be the only one)
-	job, err := a.convertAPIJobToCommon(resp.JSON200.Jobs[0])
-	if err != nil {
-		return nil, a.HandleConversionError(err, jobID)
-	}
+	job := a.convertAPIJobToCommon(resp.JSON200.Jobs[0])
 
 	return job, nil
 }

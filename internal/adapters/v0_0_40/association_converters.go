@@ -9,7 +9,7 @@ import (
 )
 
 // convertAPIAssociationToCommon converts a v0.0.40 API Association to common Association type
-func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0040Assoc) (*types.Association, error) {
+func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0040Assoc) *types.Association {
 	association := &types.Association{}
 
 	// Basic fields from V0040Assoc
@@ -31,11 +31,11 @@ func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0
 		association.ID = string(*apiAssociation.Id.Id)
 	}
 
-	return association, nil
+	return association
 }
 
 // convertCommonAssociationCreateToAPI converts common AssociationCreate to v0.0.40 API format
-func (a *AssociationAdapter) convertCommonAssociationCreateToAPI(association *types.AssociationCreate) (*api.V0040AssocShort, error) {
+func (a *AssociationAdapter) convertCommonAssociationCreateToAPI(association *types.AssociationCreate) *api.V0040AssocShort {
 	apiAssociation := &api.V0040AssocShort{}
 
 	// Basic fields for V0040AssocShort
@@ -49,5 +49,5 @@ func (a *AssociationAdapter) convertCommonAssociationCreateToAPI(association *ty
 
 	// Note: V0040AssocShort is used for creation requests
 
-	return apiAssociation, nil
+	return apiAssociation
 }

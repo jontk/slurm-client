@@ -83,10 +83,7 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 	// Convert the response to common types
 	reservationList := make([]types.Reservation, 0, len(resp.JSON200.Reservations))
 	for _, apiReservation := range resp.JSON200.Reservations {
-		reservation, err := a.convertAPIReservationToCommon(apiReservation)
-		if err != nil {
-			return nil, a.HandleConversionError(err, apiReservation.Name)
-		}
+		reservation := a.convertAPIReservationToCommon(apiReservation)
 		reservationList = append(reservationList, *reservation)
 	}
 
@@ -173,10 +170,7 @@ func (a *ReservationAdapter) Get(ctx context.Context, reservationName string) (*
 	}
 
 	// Convert the first reservation (should be the only one)
-	reservation, err := a.convertAPIReservationToCommon(resp.JSON200.Reservations[0])
-	if err != nil {
-		return nil, a.HandleConversionError(err, reservationName)
-	}
+	reservation := a.convertAPIReservationToCommon(resp.JSON200.Reservations[0])
 
 	return reservation, nil
 }
@@ -195,16 +189,10 @@ func (a *ReservationAdapter) Create(ctx context.Context, reservation *types.Rese
 	}
 
 	// Convert to API format
-	apiReservation, err := a.convertCommonReservationCreateToAPI(reservation)
-	if err != nil {
-		return nil, err
-	}
+	apiReservation := a.convertCommonReservationCreateToAPI(reservation)
 
 	// Create request body - PostReservation expects a V0044ReservationDescMsg
-	apiReservationDesc, err := a.convertAPIReservationInfoToDescMsg(apiReservation)
-	if err != nil {
-		return nil, err
-	}
+	apiReservationDesc := a.convertAPIReservationInfoToDescMsg(apiReservation)
 	reqBody := *apiReservationDesc
 
 	// Call the generated OpenAPI client
@@ -252,16 +240,10 @@ func (a *ReservationAdapter) Update(ctx context.Context, reservationName string,
 	}
 
 	// Convert to API format and apply updates
-	apiReservation, err := a.convertCommonReservationUpdateToAPI(existingReservation, update)
-	if err != nil {
-		return err
-	}
+	apiReservation := a.convertCommonReservationUpdateToAPI(existingReservation)
 
 	// Create request body - PostReservation expects a V0044ReservationDescMsg
-	apiReservationDesc, err := a.convertAPIReservationInfoToDescMsg(apiReservation)
-	if err != nil {
-		return err
-	}
+	apiReservationDesc := a.convertAPIReservationInfoToDescMsg(apiReservation)
 	reqBody := *apiReservationDesc
 
 	// Call the generated OpenAPI client (POST is used for updates in SLURM API)
@@ -353,16 +335,16 @@ func (a *ReservationAdapter) validateReservationUpdate(update *types.Reservation
 }
 
 // Simplified converter methods for reservation management
-func (a *ReservationAdapter) convertAPIReservationToCommon(apiReservation api.V0044ReservationInfo) (*types.Reservation, error) {
+func (a *ReservationAdapter) convertAPIReservationToCommon(apiReservation api.V0044ReservationInfo) *types.Reservation {
 	reservation := &types.Reservation{}
 	if apiReservation.Name != nil {
 		reservation.Name = *apiReservation.Name
 	}
 	// TODO: Add more field conversions as needed
-	return reservation, nil
+	return reservation
 }
 
-func (a *ReservationAdapter) convertCommonReservationCreateToAPI(create *types.ReservationCreate) (*api.V0044ReservationInfo, error) {
+func (a *ReservationAdapter) convertCommonReservationCreateToAPI(create *types.ReservationCreate) *api.V0044ReservationInfo {
 	apiReservation := &api.V0044ReservationInfo{}
 
 	// Required: Set reservation name
@@ -437,14 +419,14 @@ func (a *ReservationAdapter) convertCommonReservationCreateToAPI(create *types.R
 		apiReservation.Flags = &flags
 	}
 
-	return apiReservation, nil
+	return apiReservation
 }
 
-func (a *ReservationAdapter) convertCommonReservationUpdateToAPI(existing *types.Reservation, update *types.ReservationUpdate) (*api.V0044ReservationInfo, error) {
+func (a *ReservationAdapter) convertCommonReservationUpdateToAPI(existing *types.Reservation) *api.V0044ReservationInfo {
 	apiReservation := &api.V0044ReservationInfo{}
 	apiReservation.Name = &existing.Name
 	// TODO: Add more field conversions as needed
-	return apiReservation, nil
+	return apiReservation
 }
 
 // filterReservationList applies client-side filtering to the reservation list
@@ -471,7 +453,7 @@ func (a *ReservationAdapter) filterReservationList(reservations []types.Reservat
 }
 
 // convertAPIReservationInfoToDescMsg converts V0044ReservationInfo to V0044ReservationDescMsg
-func (a *ReservationAdapter) convertAPIReservationInfoToDescMsg(info *api.V0044ReservationInfo) (*api.V0044ReservationDescMsg, error) {
+func (a *ReservationAdapter) convertAPIReservationInfoToDescMsg(info *api.V0044ReservationInfo) *api.V0044ReservationDescMsg {
 	// Create a new V0044ReservationDescMsg
 	descMsg := &api.V0044ReservationDescMsg{}
 
@@ -603,5 +585,5 @@ func (a *ReservationAdapter) convertAPIReservationInfoToDescMsg(info *api.V0044R
 		descMsg.Tres = &tresList
 	}
 
-	return descMsg, nil
+	return descMsg
 }

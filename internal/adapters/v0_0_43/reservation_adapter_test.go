@@ -94,8 +94,7 @@ func TestReservationAdapter_ConvertAPIReservationToCommon(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := adapter.convertAPIReservationToCommon(tt.apiReservation)
-			assert.NoError(t, err)
+			result := adapter.convertAPIReservationToCommon(tt.apiReservation)
 			assert.NotNil(t, result)
 			assert.Equal(t, tt.expectedName, result.Name)
 			// Note: Check available fields in the result struct

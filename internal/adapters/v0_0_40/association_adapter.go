@@ -102,10 +102,7 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 	// Convert the response to common types
 	associationList := make([]types.Association, 0, len(resp.JSON200.Associations))
 	for _, apiAssociation := range resp.JSON200.Associations {
-		association, err := a.convertAPIAssociationToCommon(apiAssociation)
-		if err != nil {
-			return nil, a.HandleConversionError(err, "association")
-		}
+		association := a.convertAPIAssociationToCommon(apiAssociation)
 		associationList = append(associationList, *association)
 	}
 
@@ -184,10 +181,7 @@ func (a *AssociationAdapter) Create(ctx context.Context, association *types.Asso
 	}
 
 	// Convert to API format
-	apiAssociation, err := a.convertCommonAssociationCreateToAPI(association)
-	if err != nil {
-		return nil, err
-	}
+	apiAssociation := a.convertCommonAssociationCreateToAPI(association)
 
 	// Create request body
 	// Convert V0040AssocShort to V0040Assoc for the associations list

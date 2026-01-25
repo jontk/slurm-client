@@ -85,11 +85,7 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 
 	if resp.JSON200.Users != nil {
 		for _, apiUser := range resp.JSON200.Users {
-			user, err := a.convertAPIUserToCommon(apiUser)
-			if err != nil {
-				// Log conversion error but continue
-				continue
-			}
+			user := a.convertAPIUserToCommon(apiUser)
 			userList.Users = append(userList.Users, *user)
 		}
 
@@ -146,10 +142,7 @@ func (a *UserAdapter) Get(ctx context.Context, name string) (*types.User, error)
 
 	// Find the specific user by name
 	for _, apiUser := range resp.JSON200.Users {
-		user, err := a.convertAPIUserToCommon(apiUser)
-		if err != nil {
-			continue
-		}
+		user := a.convertAPIUserToCommon(apiUser)
 		if user.Name == name {
 			return user, nil
 		}
@@ -263,10 +256,7 @@ func (a *UserAdapter) CreateAssociation(ctx context.Context, req *types.UserAsso
 	}
 
 	// Convert common request to API request structure
-	apiReq, err := a.convertUserAssociationRequestToAPI(req)
-	if err != nil {
-		return nil, a.WrapError(err, "failed to convert association request")
-	}
+	apiReq := a.convertUserAssociationRequestToAPI(req)
 
 	// Prepare parameters (optional flags)
 	params := &api.SlurmdbV0042PostUsersAssociationParams{}
@@ -292,7 +282,7 @@ func (a *UserAdapter) CreateAssociation(ctx context.Context, req *types.UserAsso
 }
 
 // convertUserAssociationRequestToAPI converts common request to API structure
-func (a *UserAdapter) convertUserAssociationRequestToAPI(req *types.UserAssociationRequest) (*api.V0042OpenapiUsersAddCondResp, error) {
+func (a *UserAdapter) convertUserAssociationRequestToAPI(req *types.UserAssociationRequest) *api.V0042OpenapiUsersAddCondResp {
 	// Create users list from string slice
 	users := make(api.V0042StringList, len(req.Users))
 	copy(users, req.Users)
@@ -360,7 +350,7 @@ func (a *UserAdapter) convertUserAssociationRequestToAPI(req *types.UserAssociat
 		User:                 userShort,
 	}
 
-	return apiReq, nil
+	return apiReq
 }
 
 // convertUserAssociationResponseToCommon converts API response to common type
@@ -409,7 +399,7 @@ func (a *UserAdapter) convertUserAssociationResponseToCommon(apiResp *api.V0042O
 }
 
 // convertAPIUserToCommon converts API user to common type
-func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0042User) (*types.User, error) {
+func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0042User) *types.User {
 	user := &types.User{}
 
 	// Set basic fields - apiUser.Name is a string in V0042User
@@ -468,7 +458,7 @@ func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0042User) (*types.User
 		}
 	}
 
-	return user, nil
+	return user
 }
 
 // convertCommonUserCreateToAPI converts common user create to API format

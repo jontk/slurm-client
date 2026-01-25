@@ -99,10 +99,7 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 	// Convert the response to common types
 	associationList := make([]types.Association, 0, len(resp.JSON200.Associations))
 	for _, apiAssociation := range resp.JSON200.Associations {
-		association, err := a.convertAPIAssociationToCommon(apiAssociation)
-		if err != nil {
-			return nil, a.HandleConversionError(err, apiAssociation.Id)
-		}
+		association := a.convertAPIAssociationToCommon(apiAssociation)
 		associationList = append(associationList, *association)
 	}
 
@@ -186,10 +183,7 @@ func (a *AssociationAdapter) Get(ctx context.Context, associationID string) (*ty
 	}
 
 	// Convert the first association (should be the only one)
-	association, err := a.convertAPIAssociationToCommon(resp.JSON200.Associations[0])
-	if err != nil {
-		return nil, a.HandleConversionError(err, associationID)
-	}
+	association := a.convertAPIAssociationToCommon(resp.JSON200.Associations[0])
 
 	return association, nil
 }
@@ -219,10 +213,7 @@ func (a *AssociationAdapter) Create(ctx context.Context, association *types.Asso
 	}
 
 	// Convert to API format
-	apiAssoc, err := a.convertCommonAssociationCreateToAPI(association)
-	if err != nil {
-		return nil, err
-	}
+	apiAssoc := a.convertCommonAssociationCreateToAPI(association)
 
 	// Create request body
 	reqBody := api.SlurmdbV0044PostAssociationsJSONRequestBody{
@@ -280,10 +271,7 @@ func (a *AssociationAdapter) Update(ctx context.Context, associationID string, u
 	}
 
 	// Convert to API format and apply updates
-	apiAssoc, err := a.convertCommonAssociationUpdateToAPI(existingAssociation, update)
-	if err != nil {
-		return err
-	}
+	apiAssoc := a.convertCommonAssociationUpdateToAPI(existingAssociation)
 
 	// Create request body
 	reqBody := api.SlurmdbV0044PostAssociationsJSONRequestBody{
@@ -373,7 +361,7 @@ func (a *AssociationAdapter) validateAssociationUpdate(update *types.Association
 }
 
 // Simplified converter methods for association management
-func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0044Assoc) (*types.Association, error) {
+func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0044Assoc) *types.Association {
 	association := &types.Association{}
 	if apiAssociation.Account != nil {
 		association.AccountName = *apiAssociation.Account
@@ -391,10 +379,10 @@ func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0
 		association.ID = strconv.Itoa(int(*apiAssociation.Id))
 	}
 	// TODO: Add more field conversions as needed
-	return association, nil
+	return association
 }
 
-func (a *AssociationAdapter) convertCommonAssociationCreateToAPI(create *types.AssociationCreate) (*api.V0044Assoc, error) {
+func (a *AssociationAdapter) convertCommonAssociationCreateToAPI(create *types.AssociationCreate) *api.V0044Assoc {
 	apiAssociation := &api.V0044Assoc{}
 	apiAssociation.Account = &create.AccountName
 	apiAssociation.User = create.UserName
@@ -403,10 +391,10 @@ func (a *AssociationAdapter) convertCommonAssociationCreateToAPI(create *types.A
 		apiAssociation.Partition = &create.Partition
 	}
 	// TODO: Add more field conversions as needed
-	return apiAssociation, nil
+	return apiAssociation
 }
 
-func (a *AssociationAdapter) convertCommonAssociationUpdateToAPI(existing *types.Association, update *types.AssociationUpdate) (*api.V0044Assoc, error) {
+func (a *AssociationAdapter) convertCommonAssociationUpdateToAPI(existing *types.Association) *api.V0044Assoc {
 	apiAssociation := &api.V0044Assoc{}
 	apiAssociation.Account = &existing.AccountName
 	apiAssociation.User = existing.UserName
@@ -415,7 +403,7 @@ func (a *AssociationAdapter) convertCommonAssociationUpdateToAPI(existing *types
 		apiAssociation.Partition = &existing.Partition
 	}
 	// TODO: Add more field conversions as needed
-	return apiAssociation, nil
+	return apiAssociation
 }
 
 // getDefaultClusterName returns the default cluster name

@@ -379,11 +379,6 @@ linters:
         text: do not pass a nil Context
       - linters:
           - unparam
-        path: ^internal/adapters/v0_0_4[0-4]/
-        # TODO: Fix 19 unparam issues in adapter converters
-        # Error returns that are always nil need to be removed from converter function signatures
-      - linters:
-          - unparam
         path: ^internal/api/.*/.*_manager_impl\.go$
         # TODO: Fix 100+ unparam issues across API layer manager converters
         # Error returns that are always nil need to be removed from converter functions

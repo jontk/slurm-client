@@ -88,10 +88,7 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 	// Convert the response to common types - SlurmV0044GetJobs returns V0044JobInfo
 	jobList := make([]types.Job, 0, len(resp.JSON200.Jobs))
 	for _, apiJobInfo := range resp.JSON200.Jobs {
-		job, err := a.convertAPIJobToCommon(apiJobInfo)
-		if err != nil {
-			return nil, a.HandleConversionError(err, apiJobInfo.JobId)
-		}
+		job := a.convertAPIJobToCommon(apiJobInfo)
 		jobList = append(jobList, *job)
 	}
 
@@ -180,10 +177,7 @@ func (a *JobAdapter) Get(ctx context.Context, jobID int32) (*types.Job, error) {
 	}
 
 	// Convert the first job (should be the only one)
-	job, err := a.convertAPIJobToCommon(resp.JSON200.Jobs[0])
-	if err != nil {
-		return nil, a.HandleConversionError(err, jobID)
-	}
+	job := a.convertAPIJobToCommon(resp.JSON200.Jobs[0])
 
 	return job, nil
 }
@@ -202,10 +196,7 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 	}
 
 	// Convert to API format
-	apiJob, err := a.convertCommonJobCreateToAPI(job)
-	if err != nil {
-		return nil, err
-	}
+	apiJob := a.convertCommonJobCreateToAPI(job)
 
 	// Create request body - V0044JobDescMsg format
 	reqBody := api.V0044JobDescMsg{
@@ -368,10 +359,7 @@ func (a *JobAdapter) Update(ctx context.Context, jobID int32, update *types.JobU
 	}
 
 	// Convert to API format and apply updates
-	apiJob, err := a.convertCommonJobUpdateToAPI(existingJob, update)
-	if err != nil {
-		return err
-	}
+	apiJob := a.convertCommonJobUpdateToAPI(existingJob, update)
 
 	// Create request body for job update - V0044JobDescMsg format
 	reqBody := api.V0044JobDescMsg{
@@ -835,7 +823,7 @@ func (a *JobAdapter) validateJobNotifyRequest(req *types.JobNotifyRequest) error
 }
 
 // Simplified converter methods for job management
-func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0044JobInfo) (*types.Job, error) {
+func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0044JobInfo) *types.Job {
 	job := &types.Job{}
 	if apiJob.JobId != nil {
 		job.JobID = *apiJob.JobId
@@ -856,10 +844,10 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0044JobInfo) (*types.Job,
 		job.GroupID = *apiJob.GroupId
 	}
 	// TODO: Add more field conversions as needed
-	return job, nil
+	return job
 }
 
-func (a *JobAdapter) convertCommonJobCreateToAPI(create *types.JobCreate) (*api.V0044Job, error) {
+func (a *JobAdapter) convertCommonJobCreateToAPI(create *types.JobCreate) *api.V0044Job {
 	apiJob := &api.V0044Job{}
 
 	// Set required fields with proper pointers
@@ -907,10 +895,10 @@ func (a *JobAdapter) convertCommonJobCreateToAPI(create *types.JobCreate) (*api.
 		}
 	}
 
-	return apiJob, nil
+	return apiJob
 }
 
-func (a *JobAdapter) convertCommonJobUpdateToAPI(existing *types.Job, update *types.JobUpdate) (*api.V0044Job, error) {
+func (a *JobAdapter) convertCommonJobUpdateToAPI(existing *types.Job, update *types.JobUpdate) *api.V0044Job {
 	apiJob := &api.V0044Job{}
 	apiJob.JobId = &existing.JobID
 	if existing.Name != "" {
@@ -933,7 +921,7 @@ func (a *JobAdapter) convertCommonJobUpdateToAPI(existing *types.Job, update *ty
 		apiJob.Partition = update.Partition
 	}
 	// TODO: Add more field conversions as needed
-	return apiJob, nil
+	return apiJob
 }
 
 // applyClientSideFilters applies filters that the API doesn't support
@@ -1049,10 +1037,7 @@ func (a *JobAdapter) Allocate(ctx context.Context, req *types.JobAllocateRequest
 	}
 
 	// Convert common allocation request to API request
-	apiReq, err := a.convertCommonJobAllocateToAPI(req)
-	if err != nil {
-		return nil, a.WrapError(err, "failed to convert allocation request")
-	}
+	apiReq := a.convertCommonJobAllocateToAPI(req)
 
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmV0044PostJobAllocateWithResponse(ctx, *apiReq)
@@ -1099,7 +1084,7 @@ func (a *JobAdapter) validateJobAllocateRequest(req *types.JobAllocateRequest) e
 }
 
 // convertCommonJobAllocateToAPI converts common allocation request to API request
-func (a *JobAdapter) convertCommonJobAllocateToAPI(req *types.JobAllocateRequest) (*api.V0044JobAllocReq, error) {
+func (a *JobAdapter) convertCommonJobAllocateToAPI(req *types.JobAllocateRequest) *api.V0044JobAllocReq {
 	// Create the job description message
 	jobDesc := &api.V0044JobDescMsg{}
 
@@ -1126,7 +1111,7 @@ func (a *JobAdapter) convertCommonJobAllocateToAPI(req *types.JobAllocateRequest
 	// The V0044JobDescMsg has a very complex structure with many nested fields
 	// For now, we only set the basic fields to get compilation working
 
-	return apiReq, nil
+	return apiReq
 }
 
 // convertAPIJobAllocateResponseToCommon converts API allocation response to common response

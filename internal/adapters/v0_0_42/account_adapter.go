@@ -232,10 +232,7 @@ func (a *AccountAdapter) CreateAssociation(ctx context.Context, req *types.Accou
 	}
 
 	// Convert common request to API request structure
-	apiReq, err := a.convertAccountAssociationRequestToAPI(req)
-	if err != nil {
-		return nil, a.WrapError(err, "failed to convert association request")
-	}
+	apiReq := a.convertAccountAssociationRequestToAPI(req)
 
 	// Call the API
 	resp, err := a.client.SlurmdbV0042PostAccountsAssociationWithResponse(ctx, *apiReq)
@@ -258,7 +255,7 @@ func (a *AccountAdapter) CreateAssociation(ctx context.Context, req *types.Accou
 }
 
 // convertAccountAssociationRequestToAPI converts common request to API structure
-func (a *AccountAdapter) convertAccountAssociationRequestToAPI(req *types.AccountAssociationRequest) (*api.V0042OpenapiAccountsAddCondResp, error) {
+func (a *AccountAdapter) convertAccountAssociationRequestToAPI(req *types.AccountAssociationRequest) *api.V0042OpenapiAccountsAddCondResp {
 	// Create accounts list from string slice
 	accounts := make(api.V0042StringList, len(req.Accounts))
 	copy(accounts, req.Accounts)
@@ -300,7 +297,7 @@ func (a *AccountAdapter) convertAccountAssociationRequestToAPI(req *types.Accoun
 		AssociationCondition: assocCond,
 	}
 
-	return apiReq, nil
+	return apiReq
 }
 
 // convertAccountAssociationResponseToCommon converts API response to common type

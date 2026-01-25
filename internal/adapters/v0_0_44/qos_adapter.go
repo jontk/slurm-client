@@ -80,10 +80,7 @@ func (a *QoSAdapter) List(ctx context.Context, opts *types.QoSListOptions) (*typ
 	// Convert the response to common types
 	qosList := make([]types.QoS, 0, len(resp.JSON200.Qos))
 	for _, apiQos := range resp.JSON200.Qos {
-		qos, err := a.convertAPIQoSToCommon(apiQos)
-		if err != nil {
-			return nil, a.HandleConversionError(err, apiQos.Name)
-		}
+		qos := a.convertAPIQoSToCommon(apiQos)
 		qosList = append(qosList, *qos)
 	}
 
@@ -172,10 +169,7 @@ func (a *QoSAdapter) Get(ctx context.Context, qosName string) (*types.QoS, error
 	}
 
 	// Convert the first QoS (should be the only one)
-	qos, err := a.convertAPIQoSToCommon(resp.JSON200.Qos[0])
-	if err != nil {
-		return nil, a.HandleConversionError(err, qosName)
-	}
+	qos := a.convertAPIQoSToCommon(resp.JSON200.Qos[0])
 
 	return qos, nil
 }
@@ -260,10 +254,7 @@ func (a *QoSAdapter) Create(ctx context.Context, qos *types.QoSCreate) (*types.Q
 	}
 
 	// Convert to API format
-	apiQoS, err := a.convertCommonQoSCreateToAPI(qos)
-	if err != nil {
-		return nil, err
-	}
+	apiQoS := a.convertCommonQoSCreateToAPI(qos)
 
 	// Create request body
 	reqBody := api.SlurmdbV0044PostQosJSONRequestBody{
@@ -379,10 +370,7 @@ func (a *QoSAdapter) Update(ctx context.Context, qosName string, update *types.Q
 	}
 
 	// Convert to API format and apply updates
-	apiQoS, err := a.convertCommonQoSUpdateToAPI(existingQoS, update)
-	if err != nil {
-		return err
-	}
+	apiQoS := a.convertCommonQoSUpdateToAPI(existingQoS, update)
 
 	// Create request body
 	reqBody := api.SlurmdbV0044PostQosJSONRequestBody{

@@ -83,10 +83,7 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 	// Convert the response to common types
 	reservationList := make([]types.Reservation, 0, len(resp.JSON200.Reservations))
 	for _, apiReservation := range resp.JSON200.Reservations {
-		reservation, err := a.convertAPIReservationToCommon(apiReservation)
-		if err != nil {
-			return nil, a.HandleConversionError(err, apiReservation.Name)
-		}
+		reservation := a.convertAPIReservationToCommon(apiReservation)
 
 		// Apply client-side filtering if needed
 		if opts != nil && len(opts.Names) > 0 {
