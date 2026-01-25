@@ -86,30 +86,39 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 		reservation := a.convertAPIReservationToCommon(apiReservation)
 
 		// Apply client-side filtering if needed
-		if opts != nil && len(opts.Names) > 0 {
-			found := false
-			for _, name := range opts.Names {
-				if reservation.Name == name {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
+		if !a.reservationPassesNameFilter(reservation, opts) {
+			continue
 		}
 
 		reservationList = append(reservationList, *reservation)
 	}
 
 	// Apply pagination
+	return a.paginateReservationList(reservationList, opts), nil
+}
+
+// reservationPassesNameFilter checks if a reservation passes the name filter
+func (a *ReservationAdapter) reservationPassesNameFilter(reservation *types.Reservation, opts *types.ReservationListOptions) bool {
+	if opts == nil || len(opts.Names) == 0 {
+		return true
+	}
+
+	for _, name := range opts.Names {
+		if reservation.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+// paginateReservationList applies pagination to a reservation list
+func (a *ReservationAdapter) paginateReservationList(reservationList []types.Reservation, opts *types.ReservationListOptions) *types.ReservationList {
 	listOpts := base.ListOptions{}
 	if opts != nil {
 		listOpts.Limit = opts.Limit
 		listOpts.Offset = opts.Offset
 	}
 
-	// Apply pagination
 	start := listOpts.Offset
 	if start < 0 {
 		start = 0
@@ -118,7 +127,7 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 		return &types.ReservationList{
 			Reservations: []types.Reservation{},
 			Total:        len(reservationList),
-		}, nil
+		}
 	}
 
 	end := len(reservationList)
@@ -132,7 +141,7 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 	return &types.ReservationList{
 		Reservations: reservationList[start:end],
 		Total:        len(reservationList),
-	}, nil
+	}
 }
 
 // Get retrieves a specific reservation by name
