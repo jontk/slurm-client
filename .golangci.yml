@@ -115,11 +115,11 @@ linters:
     staticcheck:
       checks:
         - all
-        - -SA9003   # Empty branch - placeholder branches reserved for future implementation
-        - -ST1003   # Package naming - version packages use underscores to match SLURM API versions
-        - -QF1001   # De Morgan's law - readability preference
-        - -QF1003   # Tagged switch - style preference
-        - -QF1008   # Embedded field selector - intentional for clarity
+        - -SA9003   # Empty branch - placeholder branches reserved for future implementation (27 violations)
+        - -ST1003   # Package naming - version packages use underscores to match SLURM API versions (255 violations)
+        - -QF1001   # De Morgan's law - readability preference (3 violations)
+        - -QF1003   # Tagged switch - style preference (4 violations)
+        - -QF1008   # Embedded field selector - intentional for clarity (9 violations)
     unparam:
       check-exported: false
     usestdlibvars:
