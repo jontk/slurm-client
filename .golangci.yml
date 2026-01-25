@@ -45,6 +45,16 @@ linters:
           deny:
             - pkg: github.com/pkg/errors
               desc: Use standard library errors package or fmt.Errorf with %w
+            - pkg: io/ioutil
+              desc: io/ioutil is deprecated as of Go 1.16; use io or os packages directly
+            - pkg: golang.org/x/net/context
+              desc: Use standard library context package instead of golang.org/x/net/context
+        mainAndNonTest:
+          deny:
+            - pkg: github.com/stretchr/testify/assert
+              desc: Use require instead of assert for better test failure diagnostics
+          files:
+            - "!$test"
     dogsled:
       max-blank-identifiers: 2
     dupl:
@@ -202,6 +212,9 @@ linters:
           - unused
           - nilnil
         path: test_helpers\.go
+      - linters:
+          - depguard
+        path: (test_helpers\.go|^tests/|^benchmarks/)
       - linters:
           - funlen
           - gocognit
