@@ -57,19 +57,21 @@ func (a *UserAdapter) convertAPIUserToCommon(apiUser interface{}) (*types.User, 
 		if assocData, ok := v.([]interface{}); ok {
 			userAssocs := make([]types.UserAssociation, 0, len(assocData))
 			for _, a := range assocData {
-				if assoc, ok := a.(map[string]interface{}); ok {
-					userAssoc := types.UserAssociation{}
-					if acc, ok := assoc["account"].(string); ok {
-						userAssoc.AccountName = acc
-					}
-					if cl, ok := assoc["cluster"].(string); ok {
-						userAssoc.Cluster = cl
-					}
-					if part, ok := assoc["partition"].(string); ok {
-						userAssoc.Partition = part
-					}
-					userAssocs = append(userAssocs, userAssoc)
+				assoc, ok := a.(map[string]interface{})
+				if !ok {
+					continue
 				}
+				userAssoc := types.UserAssociation{}
+				if acc, ok := assoc["account"].(string); ok {
+					userAssoc.AccountName = acc
+				}
+				if cl, ok := assoc["cluster"].(string); ok {
+					userAssoc.Cluster = cl
+				}
+				if part, ok := assoc["partition"].(string); ok {
+					userAssoc.Partition = part
+				}
+				userAssocs = append(userAssocs, userAssoc)
 			}
 			user.Associations = userAssocs
 		}

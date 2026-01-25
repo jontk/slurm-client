@@ -648,64 +648,65 @@ func (u *UserManagerImpl) ValidateUserAccountAccess(ctx context.Context, userNam
 	// Find the specific association
 	for _, assoc := range resp.JSON200.Associations {
 		// Check if this association matches our user and account
-		if assoc.User == userName &&
-			assoc.Account != nil && *assoc.Account == accountName {
-			validation.HasAccess = true
-			validation.AccessLevel = "user" // Default access level
-
-			// Check if user is a coordinator
-			if assoc.IsDefault != nil && *assoc.IsDefault {
-				validation.Permissions = append(validation.Permissions, "default")
-			}
-
-			// Set access level based on flags
-			if assoc.Flags != nil && len(*assoc.Flags) > 0 {
-				for _, flag := range *assoc.Flags {
-					switch flag {
-					case V0043AssocFlagsDELETED:
-						validation.HasAccess = false
-						validation.Reason = "Association is deleted"
-					default:
-						// Other flags don't affect access
-					}
-				}
-			}
-
-			// Basic user permissions (since admin level is not available in association)
-			validation.Permissions = append(validation.Permissions, "view", "submit")
-
-			// Check for any restrictions
-			if assoc.Max != nil && assoc.Max.Jobs != nil {
-				if assoc.Max.Jobs.Active != nil && assoc.Max.Jobs.Active.Number != nil {
-					maxJobs := *assoc.Max.Jobs.Active.Number
-					if maxJobs == 0 {
-						validation.Restrictions = append(validation.Restrictions, "no_job_submission")
-						validation.HasAccess = false
-						validation.Reason = "Job submission disabled for this association"
-					} else {
-						validation.Restrictions = append(validation.Restrictions, fmt.Sprintf("max_jobs:%d", maxJobs))
-					}
-				}
-			}
-
-			// Create association details
-			validation.Association = &interfaces.UserAccountAssociation{
-				UserName:    userName,
-				AccountName: accountName,
-				IsActive:    validation.HasAccess,
-				IsDefault:   assoc.IsDefault != nil && *assoc.IsDefault,
-			}
-
-			if assoc.Cluster != nil {
-				validation.Association.Cluster = *assoc.Cluster
-			}
-			if assoc.Partition != nil {
-				validation.Association.Partition = *assoc.Partition
-			}
-
-			// Found valid association
-			break
+		if assoc.User != userName ||
+			assoc.Account == nil || *assoc.Account != accountName {
+			continue
 		}
+		validation.HasAccess = true
+		validation.AccessLevel = "user" // Default access level
+
+		// Check if user is a coordinator
+		if assoc.IsDefault != nil && *assoc.IsDefault {
+			validation.Permissions = append(validation.Permissions, "default")
+		}
+
+		// Set access level based on flags
+		if assoc.Flags != nil && len(*assoc.Flags) > 0 {
+			for _, flag := range *assoc.Flags {
+				switch flag {
+				case V0043AssocFlagsDELETED:
+					validation.HasAccess = false
+					validation.Reason = "Association is deleted"
+				default:
+					// Other flags don't affect access
+				}
+			}
+		}
+
+		// Basic user permissions (since admin level is not available in association)
+		validation.Permissions = append(validation.Permissions, "view", "submit")
+
+		// Check for any restrictions
+		if assoc.Max != nil && assoc.Max.Jobs != nil {
+			if assoc.Max.Jobs.Active != nil && assoc.Max.Jobs.Active.Number != nil {
+				maxJobs := *assoc.Max.Jobs.Active.Number
+				if maxJobs == 0 {
+					validation.Restrictions = append(validation.Restrictions, "no_job_submission")
+					validation.HasAccess = false
+					validation.Reason = "Job submission disabled for this association"
+				} else {
+					validation.Restrictions = append(validation.Restrictions, fmt.Sprintf("max_jobs:%d", maxJobs))
+				}
+			}
+		}
+
+		// Create association details
+		validation.Association = &interfaces.UserAccountAssociation{
+			UserName:    userName,
+			AccountName: accountName,
+			IsActive:    validation.HasAccess,
+			IsDefault:   assoc.IsDefault != nil && *assoc.IsDefault,
+		}
+
+		if assoc.Cluster != nil {
+			validation.Association.Cluster = *assoc.Cluster
+		}
+		if assoc.Partition != nil {
+			validation.Association.Partition = *assoc.Partition
+		}
+
+		// Found valid association
+		break
 	}
 
 	if !validation.HasAccess && validation.Reason == "" {
