@@ -83,10 +83,7 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 	// Convert the response to common types
 	nodeList := make([]types.Node, 0, len(resp.JSON200.Nodes))
 	for _, apiNode := range resp.JSON200.Nodes {
-		node, err := a.convertAPINodeToCommon(apiNode)
-		if err != nil {
-			return nil, a.HandleConversionError(err, apiNode.Name)
-		}
+		node := a.convertAPINodeToCommon(apiNode)
 		nodeList = append(nodeList, *node)
 	}
 
@@ -175,10 +172,7 @@ func (a *NodeAdapter) Get(ctx context.Context, nodeName string) (*types.Node, er
 	}
 
 	// Convert the first node (should be the only one)
-	node, err := a.convertAPINodeToCommon(resp.JSON200.Nodes[0])
-	if err != nil {
-		return nil, a.HandleConversionError(err, nodeName)
-	}
+	node := a.convertAPINodeToCommon(resp.JSON200.Nodes[0])
 
 	return node, nil
 }
@@ -206,10 +200,7 @@ func (a *NodeAdapter) Update(ctx context.Context, nodeName string, update *types
 	}
 
 	// Convert to API format and apply updates
-	apiNode, err := a.convertCommonNodeUpdateToAPI(existingNode, update)
-	if err != nil {
-		return err
-	}
+	apiNode := a.convertCommonNodeUpdateToAPI(existingNode, update)
 
 	// Create request body - convert Node to UpdateNodeMsg
 	reqBody := api.SlurmV0043PostNodeJSONRequestBody{
