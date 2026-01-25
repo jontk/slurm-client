@@ -25,6 +25,75 @@ func NewReservationBaseManager(version string) *ReservationBaseManager {
 }
 
 // ValidateReservationCreate validates reservation creation data
+// validateReservationTimeConstraints validates time-related fields
+func (m *ReservationBaseManager) validateReservationTimeConstraints(reservation *types.ReservationCreate) error {
+	if reservation.StartTime.IsZero() {
+		return errors.NewValidationError(
+			errors.ErrorCodeValidationFailed,
+			"Start time is required",
+			"reservation.StartTime", reservation.StartTime, nil,
+		)
+	}
+	if reservation.Duration == 0 && (reservation.EndTime == nil || reservation.EndTime.IsZero()) {
+		return errors.NewValidationError(
+			errors.ErrorCodeValidationFailed,
+			"Either duration or end time must be specified",
+			"reservation.Duration", reservation.Duration, nil,
+		)
+	}
+	if reservation.Duration > 0 && reservation.EndTime != nil && !reservation.EndTime.IsZero() {
+		expectedEndTime := reservation.StartTime.Add(time.Duration(reservation.Duration) * time.Minute)
+		if !expectedEndTime.Equal(*reservation.EndTime) {
+			return errors.NewValidationError(
+				errors.ErrorCodeValidationFailed,
+				"Duration and end time are inconsistent",
+				"reservation.Duration", reservation.Duration, nil,
+			)
+		}
+	}
+	if reservation.EndTime != nil && !reservation.EndTime.IsZero() && reservation.EndTime.Before(reservation.StartTime) {
+		return errors.NewValidationError(
+			errors.ErrorCodeValidationFailed,
+			"End time cannot be before start time",
+			"reservation.EndTime", reservation.EndTime, nil,
+		)
+	}
+	return nil
+}
+
+// validateReservationNumericFields validates numeric field constraints
+func (m *ReservationBaseManager) validateReservationNumericFields(reservation *types.ReservationCreate) error {
+	if err := m.ValidateNonNegative(int(reservation.CoreCount), "reservation.CoreCount"); err != nil {
+		return err
+	}
+	if err := m.ValidateNonNegative(int(reservation.NodeCount), "reservation.NodeCount"); err != nil {
+		return err
+	}
+	if err := m.ValidateNonNegative(int(reservation.MaxStartDelay), "reservation.MaxStartDelay"); err != nil {
+		return err
+	}
+	if reservation.Watts < 0 {
+		return errors.NewValidationError(
+			errors.ErrorCodeValidationFailed,
+			"Watts must be non-negative",
+			"reservation.Watts", reservation.Watts, nil,
+		)
+	}
+	return nil
+}
+
+// validateReservationResources validates account/user/group requirements
+func (m *ReservationBaseManager) validateReservationResources(reservation *types.ReservationCreate) error {
+	if len(reservation.Accounts) == 0 && len(reservation.Users) == 0 && len(reservation.Groups) == 0 {
+		return errors.NewValidationError(
+			errors.ErrorCodeValidationFailed,
+			"At least one of accounts, users, or groups must be specified",
+			"reservation", reservation, nil,
+		)
+	}
+	return nil
+}
+
 func (m *ReservationBaseManager) ValidateReservationCreate(reservation *types.ReservationCreate) error {
 	if reservation == nil {
 		return errors.NewValidationError(
@@ -39,73 +108,18 @@ func (m *ReservationBaseManager) ValidateReservationCreate(reservation *types.Re
 	}
 
 	// Validate time constraints
-	if reservation.StartTime.IsZero() {
-		return errors.NewValidationError(
-			errors.ErrorCodeValidationFailed,
-			"Start time is required",
-			"reservation.StartTime", reservation.StartTime, nil,
-		)
-	}
-
-	// Validate duration or end time
-	if reservation.Duration == 0 && (reservation.EndTime == nil || reservation.EndTime.IsZero()) {
-		return errors.NewValidationError(
-			errors.ErrorCodeValidationFailed,
-			"Either duration or end time must be specified",
-			"reservation.Duration", reservation.Duration, nil,
-		)
-	}
-
-	// If both duration and end time are provided, validate consistency
-	if reservation.Duration > 0 && reservation.EndTime != nil && !reservation.EndTime.IsZero() {
-		expectedEndTime := reservation.StartTime.Add(time.Duration(reservation.Duration) * time.Minute)
-		if !expectedEndTime.Equal(*reservation.EndTime) {
-			return errors.NewValidationError(
-				errors.ErrorCodeValidationFailed,
-				"Duration and end time are inconsistent",
-				"reservation.Duration", reservation.Duration, nil,
-			)
-		}
-	}
-
-	// Validate end time is after start time
-	if reservation.EndTime != nil && !reservation.EndTime.IsZero() {
-		if reservation.EndTime.Before(reservation.StartTime) {
-			return errors.NewValidationError(
-				errors.ErrorCodeValidationFailed,
-				"End time cannot be before start time",
-				"reservation.EndTime", reservation.EndTime, nil,
-			)
-		}
+	if err := m.validateReservationTimeConstraints(reservation); err != nil {
+		return err
 	}
 
 	// Validate numeric fields
-	if err := m.ValidateNonNegative(int(reservation.CoreCount), "reservation.CoreCount"); err != nil {
-		return err
-	}
-	if err := m.ValidateNonNegative(int(reservation.NodeCount), "reservation.NodeCount"); err != nil {
-		return err
-	}
-	if err := m.ValidateNonNegative(int(reservation.MaxStartDelay), "reservation.MaxStartDelay"); err != nil {
+	if err := m.validateReservationNumericFields(reservation); err != nil {
 		return err
 	}
 
-	// Validate watts if provided
-	if reservation.Watts < 0 {
-		return errors.NewValidationError(
-			errors.ErrorCodeValidationFailed,
-			"Watts must be non-negative",
-			"reservation.Watts", reservation.Watts, nil,
-		)
-	}
-
-	// Validate at least one of accounts, users, or groups is specified
-	if len(reservation.Accounts) == 0 && len(reservation.Users) == 0 && len(reservation.Groups) == 0 {
-		return errors.NewValidationError(
-			errors.ErrorCodeValidationFailed,
-			"At least one of accounts, users, or groups must be specified",
-			"reservation", reservation, nil,
-		)
+	// Validate resource requirements
+	if err := m.validateReservationResources(reservation); err != nil {
+		return err
 	}
 
 	// Validate flags if provided
