@@ -378,7 +378,11 @@ func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssociation api.V0
 	if apiAssociation.Id != nil {
 		association.ID = strconv.Itoa(int(*apiAssociation.Id))
 	}
-	// TODO: Add more field conversions as needed
+	// Shares - SharesRaw field used for fairshare calculation
+	if apiAssociation.SharesRaw != nil {
+		association.SharesRaw = *apiAssociation.SharesRaw
+	}
+	// TODO: Add more field conversions as needed (Priority, DefaultQoS, QoSList, MaxWallDuration, MaxTRESPerJob, etc.)
 	return association
 }
 

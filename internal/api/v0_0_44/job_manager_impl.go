@@ -356,17 +356,17 @@ func (m *JobManagerImpl) convertJobToInterface(job *V0044JobInfo) *interfaces.Jo
 		result.WorkingDir = *job.CurrentWorkingDirectory
 	}
 
-	// Resource information
-	if job.Cpus != nil && job.Cpus.Number != nil {
+	// Resource information - CPUs (NoValStruct)
+	if job.Cpus != nil && job.Cpus.Set != nil && *job.Cpus.Set && job.Cpus.Number != nil {
 		result.CPUs = int(*job.Cpus.Number)
 	}
 
-	// Memory handling (could be per node or per CPU)
-	if job.MemoryPerNode != nil && job.MemoryPerNode.Number != nil {
-		result.Memory = int(*job.MemoryPerNode.Number) // Already in MB, interfaces expect MB
-	} else if job.MemoryPerCpu != nil && job.MemoryPerCpu.Number != nil && job.Cpus != nil && job.Cpus.Number != nil {
+	// Memory handling (convert MB to bytes for consistency) - NoValStruct
+	if job.MemoryPerNode != nil && job.MemoryPerNode.Set != nil && *job.MemoryPerNode.Set && job.MemoryPerNode.Number != nil {
+		result.Memory = int(*job.MemoryPerNode.Number) * 1024 * 1024 // Convert MB to bytes
+	} else if job.MemoryPerCpu != nil && job.MemoryPerCpu.Set != nil && *job.MemoryPerCpu.Set && job.MemoryPerCpu.Number != nil && job.Cpus != nil && job.Cpus.Number != nil {
 		totalMemory := int(*job.MemoryPerCpu.Number) * int(*job.Cpus.Number)
-		result.Memory = totalMemory // MB
+		result.Memory = totalMemory * 1024 * 1024 // Convert MB to bytes
 	}
 
 	// Nodes handling - extract node count from string if possible
@@ -374,21 +374,25 @@ func (m *JobManagerImpl) convertJobToInterface(job *V0044JobInfo) *interfaces.Jo
 		result.Nodes = []string{*job.Nodes}
 	}
 
-	if job.TimeLimit != nil && job.TimeLimit.Number != nil {
+	// Time limit (in minutes) - NoValStruct
+	if job.TimeLimit != nil && job.TimeLimit.Set != nil && *job.TimeLimit.Set && job.TimeLimit.Number != nil {
 		result.TimeLimit = int(*job.TimeLimit.Number)
 	}
 
-	// Time information
-	if job.SubmitTime != nil && job.SubmitTime.Number != nil {
+	// Time information - NoValStruct fields with validation
+	// Submit time
+	if job.SubmitTime != nil && job.SubmitTime.Set != nil && *job.SubmitTime.Set && job.SubmitTime.Number != nil {
 		result.SubmitTime = time.Unix(*job.SubmitTime.Number, 0)
 	}
 
-	if job.StartTime != nil && job.StartTime.Number != nil {
+	// Start time (validate > 0 to avoid epoch zero)
+	if job.StartTime != nil && job.StartTime.Set != nil && *job.StartTime.Set && job.StartTime.Number != nil && *job.StartTime.Number > 0 {
 		startTime := time.Unix(*job.StartTime.Number, 0)
 		result.StartTime = &startTime
 	}
 
-	if job.EndTime != nil && job.EndTime.Number != nil {
+	// End time (validate > 0 to avoid epoch zero)
+	if job.EndTime != nil && job.EndTime.Set != nil && *job.EndTime.Set && job.EndTime.Number != nil && *job.EndTime.Number > 0 {
 		endTime := time.Unix(*job.EndTime.Number, 0)
 		result.EndTime = &endTime
 	}
@@ -398,7 +402,22 @@ func (m *JobManagerImpl) convertJobToInterface(job *V0044JobInfo) *interfaces.Jo
 		result.Command = *job.Command
 	}
 
-	// Environment would need to be parsed if available in v0.0.44
+	// Environment variables - Initialize empty map since not directly available in JobInfo
+	result.Environment = make(map[string]string)
+
+	// Initialize metadata
+	result.Metadata = make(map[string]interface{})
+
+	// Add additional metadata from API response
+	if job.Account != nil {
+		result.Metadata["account"] = *job.Account
+	}
+	if job.AdminComment != nil {
+		result.Metadata["admin_comment"] = *job.AdminComment
+	}
+	if job.AllocatingNode != nil {
+		result.Metadata["allocating_node"] = *job.AllocatingNode
+	}
 
 	return result
 }

@@ -101,10 +101,49 @@ func (a *StandaloneAdapter) GetTRES(ctx context.Context) (*types.TRESList, error
 		return nil, err
 	}
 
-	// Note: SLURM v0.0.44 doesn't have a direct TRES endpoint
-	// Return empty list for now
+	resp, err := a.client.SlurmdbV0044GetTresWithResponse(ctx)
+	if err != nil {
+		return nil, a.HandleAPIError(err)
+	}
+
+	// Use common response error handling
+	var apiErrors *api.V0044OpenapiErrors
+	if resp.JSON200 != nil {
+		apiErrors = resp.JSON200.Errors
+	}
+
+	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.44"); err != nil {
+		return nil, err
+	}
+
+	// Check for unexpected response format
+	if err := a.CheckNilResponse(resp.JSON200, "Get TRES"); err != nil {
+		return nil, err
+	}
+
+	// Convert API TRES to common types
+	tresList := make([]types.TRES, 0, len(resp.JSON200.TRES))
+	for _, apiTres := range resp.JSON200.TRES {
+		tres := types.TRES{}
+
+		if apiTres.Id != nil {
+			tres.ID = int(*apiTres.Id)
+		}
+		// Type is not a pointer in v0.0.44
+		tres.Type = apiTres.Type
+		if apiTres.Name != nil {
+			tres.Name = *apiTres.Name
+		}
+		if apiTres.Count != nil {
+			tres.Count = *apiTres.Count
+		}
+
+		tresList = append(tresList, tres)
+	}
+
 	return &types.TRESList{
-		TRES: []types.TRES{},
+		TRES: tresList,
 	}, nil
 }
 
@@ -135,10 +174,76 @@ func (a *StandaloneAdapter) GetShares(ctx context.Context, opts *types.GetShares
 		return nil, err
 	}
 
-	// Note: SLURM v0.0.44 doesn't have a direct shares endpoint
-	// Return empty list for now
+	// Build query parameters
+	params := &api.SlurmV0044GetSharesParams{}
+	if opts != nil {
+		if len(opts.Users) > 0 {
+			params.Users = &opts.Users[0] // API takes single user
+		}
+		if len(opts.Accounts) > 0 {
+			params.Accounts = &opts.Accounts[0] // API takes single account
+		}
+	}
+
+	resp, err := a.client.SlurmV0044GetSharesWithResponse(ctx, params)
+	if err != nil {
+		return nil, a.HandleAPIError(err)
+	}
+
+	// Use common response error handling
+	var apiErrors *api.V0044OpenapiErrors
+	if resp.JSON200 != nil {
+		apiErrors = resp.JSON200.Errors
+	}
+
+	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.44"); err != nil {
+		return nil, err
+	}
+
+	// Check for unexpected response format
+	if err := a.CheckNilResponse(resp.JSON200, "Get Shares"); err != nil {
+		return nil, err
+	}
+
+	// Handle nil shares list
+	if resp.JSON200.Shares.Shares == nil {
+		return &types.SharesList{Shares: []types.Share{}}, nil
+	}
+
+	// Convert API shares to common types
+	shares := make([]types.Share, 0, len(*resp.JSON200.Shares.Shares))
+	for _, apiShare := range *resp.JSON200.Shares.Shares {
+		share := types.Share{}
+
+		if apiShare.Name != nil {
+			// This could be account or user name
+			share.Account = *apiShare.Name
+		}
+		if apiShare.Partition != nil {
+			share.Partition = *apiShare.Partition
+		}
+
+		// Convert share numbers using the NoValStruct pattern
+		if apiShare.Shares != nil && apiShare.Shares.Number != nil {
+			share.RawShares = int(*apiShare.Shares.Number)
+		}
+		if apiShare.Usage != nil {
+			share.RawUsage = *apiShare.Usage
+		}
+		if apiShare.Fairshare != nil && apiShare.Fairshare.Level != nil && apiShare.Fairshare.Level.Number != nil {
+			share.FairshareLevel = *apiShare.Fairshare.Level.Number
+		}
+		if apiShare.SharesNormalized != nil && apiShare.SharesNormalized.Number != nil {
+			// SharesNormalized.Number is float64, convert to int
+			share.FairshareShares = int(*apiShare.SharesNormalized.Number)
+		}
+
+		shares = append(shares, share)
+	}
+
 	return &types.SharesList{
-		Shares: []types.Share{},
+		Shares: shares,
 	}, nil
 }
 
