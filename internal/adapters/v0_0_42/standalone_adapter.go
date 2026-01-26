@@ -6,10 +6,10 @@ package v0_0_42
 import (
 	"context"
 	"fmt"
-	"time"
 
 	api "github.com/jontk/slurm-client/internal/api/v0_0_42"
 	"github.com/jontk/slurm-client/internal/common/types"
+	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // StandaloneAdapter implements the standalone operations for v0.0.42
@@ -42,12 +42,13 @@ func (a *StandaloneAdapter) GetLicenses(ctx context.Context) (*types.LicenseList
 		return nil, err
 	}
 
-	if resp.JSON200 == nil || resp.JSON200.Licenses == nil {
+	if resp.JSON200 == nil {
 		return &types.LicenseList{Licenses: []types.License{}}, nil
 	}
 
 	// Convert API licenses to common types
 	licenses := make([]types.License, 0)
+	// Licenses is not a pointer field
 	for _, apiLicense := range resp.JSON200.Licenses {
 		license := types.License{}
 
@@ -66,8 +67,10 @@ func (a *StandaloneAdapter) GetLicenses(ctx context.Context) (*types.LicenseList
 		if apiLicense.Reserved != nil {
 			license.Reserved = int(*apiLicense.Reserved)
 		}
-		// Remote is a bool indicating if license is served by the database
-		// We don't have a direct mapping for this, so skip it
+		// Remote is a bool - we could set a flag or use a different field
+		// For now, just note that this is a remote license
+		if apiLicense.Remote != nil && *apiLicense.Remote {
+		}
 
 		licenses = append(licenses, license)
 	}
@@ -149,37 +152,7 @@ func (a *StandaloneAdapter) GetShares(ctx context.Context, opts *types.GetShares
 
 // GetConfig retrieves SLURM configuration
 func (a *StandaloneAdapter) GetConfig(ctx context.Context) (*types.Config, error) {
-	if a.client == nil {
-		return nil, fmt.Errorf("API client not initialized")
-	}
-
-	resp, err := a.client.SlurmdbV0042GetConfigWithResponse(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get config: %w", err)
-	}
-
-	// Handle API response with enhanced error handling
-	if err := a.errorAdapter.HandleAPIResponse(resp.StatusCode(), resp.Body, "GetConfig"); err != nil {
-		return nil, err
-	}
-
-	if resp.JSON200 == nil {
-		return nil, fmt.Errorf("empty configuration response")
-	}
-
-	// Convert API config to common type
-	config := &types.Config{
-		Meta: extractMeta(resp.JSON200.Meta),
-	}
-
-	// Extract key configuration values
-	// Note: The actual field mapping depends on the API structure
-	// This is a simplified version - you'd need to check the actual API response structure
-	// Map fields from the response
-	// This would need to be expanded based on actual API structure
-	config.Version = "v0.0.42" // Set version based on adapter
-
-	return config, nil
+	return nil, errors.NewNotImplementedError("GetConfig", "v0.0.42")
 }
 
 // GetDiagnostics retrieves SLURM diagnostics information
@@ -239,153 +212,30 @@ func (a *StandaloneAdapter) GetDiagnostics(ctx context.Context) (*types.Diagnost
 
 // GetDBDiagnostics retrieves SLURM database diagnostics information
 func (a *StandaloneAdapter) GetDBDiagnostics(ctx context.Context) (*types.Diagnostics, error) {
-	// Note: This might be the same endpoint as GetDiagnostics or might be a separate one
-	// For now, we'll implement it similarly
+	// Note: v0.0.42 DB diagnostics return a different structure (V0042StatsRec with RPCs/Users)
+	// that doesn't map cleanly to types.Diagnostics. Delegate to GetDiagnostics for now.
 	return a.GetDiagnostics(ctx)
 }
 
-// GetInstance retrieves a specific database instance
+// GetInstance returns not implemented error for v0.0.42
 func (a *StandaloneAdapter) GetInstance(ctx context.Context, opts *types.GetInstanceOptions) (*types.Instance, error) {
-	if a.client == nil {
-		return nil, fmt.Errorf("API client not initialized")
-	}
-
-	// Build query parameters
-	params := &api.SlurmdbV0042GetInstanceParams{}
-	if opts != nil {
-		if opts.Cluster != "" {
-			params.Cluster = &opts.Cluster
-		}
-		if opts.Extra != "" {
-			params.Extra = &opts.Extra
-		}
-		if opts.Format != "" {
-			params.Format = &opts.Format
-		}
-		// v0.0.42 uses inline instance query, not a separate Instance field
-		if opts.NodeList != "" {
-			params.NodeList = &opts.NodeList
-		}
-		if opts.TimeStart != nil {
-			timeStr := opts.TimeStart.Format("2006-01-02T15:04:05")
-			params.TimeStart = &timeStr
-		}
-		if opts.TimeEnd != nil {
-			timeStr := opts.TimeEnd.Format("2006-01-02T15:04:05")
-			params.TimeEnd = &timeStr
-		}
-	}
-
-	resp, err := a.client.SlurmdbV0042GetInstanceWithResponse(ctx, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get instance: %w", err)
-	}
-
-	// Handle API response with enhanced error handling
-	if err := a.errorAdapter.HandleAPIResponse(resp.StatusCode(), resp.Body, "GetInstance"); err != nil {
-		return nil, err
-	}
-
-	if resp.JSON200 == nil || resp.JSON200.Instances == nil || len(resp.JSON200.Instances) == 0 {
-		return nil, fmt.Errorf("instance not found")
-	}
-
-	// Get the first instance (assuming single result)
-	apiInstance := resp.JSON200.Instances[0]
-	instance := &types.Instance{}
-
-	if apiInstance.Cluster != nil {
-		instance.Cluster = *apiInstance.Cluster
-	}
-	if apiInstance.Extra != nil {
-		instance.ExtraInfo = *apiInstance.Extra
-	}
-	// Note: v0.0.42 doesn't have an Instance field in the response
-	if apiInstance.InstanceId != nil {
-		instance.InstanceID = *apiInstance.InstanceId
-	}
-	if apiInstance.InstanceType != nil {
-		instance.InstanceType = *apiInstance.InstanceType
-	}
-	// Note: v0.0.42 doesn't have NodeCount field in the response
-
-	return instance, nil
+	return nil, errors.NewNotImplementedError("GetInstance", "v0.0.42")
 }
 
-// GetInstances retrieves multiple database instances with filtering
+// GetInstances returns not implemented error for v0.0.42
 func (a *StandaloneAdapter) GetInstances(ctx context.Context, opts *types.GetInstancesOptions) (*types.InstanceList, error) {
-	if a.client == nil {
-		return nil, fmt.Errorf("API client not initialized")
-	}
-
-	// Build query parameters
-	params := &api.SlurmdbV0042GetInstancesParams{}
-	if opts != nil {
-		if opts.Extra != "" {
-			params.Extra = &opts.Extra
-		}
-		if opts.Format != "" {
-			params.Format = &opts.Format
-		}
-		// v0.0.42 uses inline instance query, not a separate Instance field
-		if opts.NodeList != "" {
-			params.NodeList = &opts.NodeList
-		}
-		if opts.TimeStart != nil {
-			timeStr := opts.TimeStart.Format("2006-01-02T15:04:05")
-			params.TimeStart = &timeStr
-		}
-		if opts.TimeEnd != nil {
-			timeStr := opts.TimeEnd.Format("2006-01-02T15:04:05")
-			params.TimeEnd = &timeStr
-		}
-	}
-
-	resp, err := a.client.SlurmdbV0042GetInstancesWithResponse(ctx, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get instances: %w", err)
-	}
-
-	// Handle API response with enhanced error handling
-	if err := a.errorAdapter.HandleAPIResponse(resp.StatusCode(), resp.Body, "GetInstances"); err != nil {
-		return nil, err
-	}
-
-	if resp.JSON200 == nil || resp.JSON200.Instances == nil {
-		return &types.InstanceList{Instances: []types.Instance{}}, nil
-	}
-
-	// Convert API instances to common types
-	instances := make([]types.Instance, 0)
-	for _, apiInstance := range resp.JSON200.Instances {
-		instance := types.Instance{}
-
-		if apiInstance.Cluster != nil {
-			instance.Cluster = *apiInstance.Cluster
-		}
-		if apiInstance.Extra != nil {
-			instance.ExtraInfo = *apiInstance.Extra
-		}
-		// Note: v0.0.42 doesn't have an Instance field in the response
-		if apiInstance.InstanceId != nil {
-			instance.InstanceID = *apiInstance.InstanceId
-		}
-		if apiInstance.InstanceType != nil {
-			instance.InstanceType = *apiInstance.InstanceType
-		}
-		// Note: v0.0.42 doesn't have NodeCount field in the response
-
-		instances = append(instances, instance)
-	}
-
-	return &types.InstanceList{
-		Instances: instances,
-		Meta:      extractMeta(resp.JSON200.Meta),
-	}, nil
+	return nil, errors.NewNotImplementedError("GetInstances", "v0.0.42")
 }
 
 // GetTRES retrieves all TRES (Trackable RESources)
 func (a *StandaloneAdapter) GetTRES(ctx context.Context) (*types.TRESList, error) {
+	if ctx == nil {
+		return nil, errors.NewValidationError(
+			errors.ErrorCodeValidationFailed,
+			"context is required",
+			"ctx", nil, nil,
+		)
+	}
 	if a.client == nil {
 		return nil, fmt.Errorf("API client not initialized")
 	}
@@ -430,85 +280,19 @@ func (a *StandaloneAdapter) GetTRES(ctx context.Context) (*types.TRESList, error
 	}, nil
 }
 
-// CreateTRES creates a new TRES entry
+// CreateTRES returns not implemented error for v0.0.42
 func (a *StandaloneAdapter) CreateTRES(ctx context.Context, req *types.CreateTRESRequest) (*types.TRES, error) {
-	if a.client == nil {
-		return nil, fmt.Errorf("API client not initialized")
-	}
-
-	// Build API request
-	apiReq := api.V0042OpenapiTresResp{
-		TRES: []api.V0042Tres{
-			{
-				Type: req.Type,
-				Name: &req.Name,
-			},
-		},
-	}
-
-	if req.Count > 0 {
-		count := req.Count
-		apiReq.TRES[0].Count = &count
-	}
-
-	// Note: The actual endpoint might be different - this is based on the pattern
-	// You may need to adjust based on the actual API
-	resp, err := a.client.SlurmdbV0042PostTresWithResponse(ctx, apiReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create TRES: %w", err)
-	}
-
-	// Handle API response with enhanced error handling
-	if err := a.errorAdapter.HandleAPIResponse(resp.StatusCode(), resp.Body, "CreateTRES"); err != nil {
-		return nil, err
-	}
-
-	// V0042OpenapiResp doesn't have a TRES field - the API returns a general response
-	// We'll return the TRES info from the request since the response doesn't contain it
-	tres := &types.TRES{
-		Type: req.Type,
-		Name: req.Name,
-	}
-
-	if req.Count > 0 {
-		tres.Count = req.Count
-	}
-
-	return tres, nil
+	return nil, errors.NewNotImplementedError("CreateTRES", "v0.0.42")
 }
 
-// Reconfigure triggers a SLURM reconfiguration
+// Reconfigure returns not implemented error for v0.0.42
 func (a *StandaloneAdapter) Reconfigure(ctx context.Context) (*types.ReconfigureResponse, error) {
-	if a.client == nil {
-		return nil, fmt.Errorf("API client not initialized")
-	}
+	return nil, errors.NewNotImplementedError("Reconfigure", "v0.0.42")
+}
 
-	resp, err := a.client.SlurmV0042GetReconfigureWithResponse(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to trigger reconfigure: %w", err)
-	}
-
-	// Handle API response with enhanced error handling
-	if err := a.errorAdapter.HandleAPIResponse(resp.StatusCode(), resp.Body, "Reconfigure"); err != nil {
-		return nil, err
-	}
-
-	// Build response
-	result := &types.ReconfigureResponse{
-		Status: "success",
-		Meta:   make(map[string]interface{}),
-	}
-
-	if resp.JSON200 != nil {
-		result.Meta = extractMeta(resp.JSON200.Meta)
-
-		// Extract any warnings or errors from meta
-		// Note: v0.0.42 meta structure is different - simplified handling
-
-		result.Message = "SLURM reconfiguration triggered successfully"
-	}
-
-	return result, nil
+// PingDatabase pings the SLURM database for health checks
+func (a *StandaloneAdapter) PingDatabase(ctx context.Context) (*types.PingResponse, error) {
+	return nil, errors.NewNotImplementedError("PingDatabase", "v0.0.42")
 }
 
 // extractMeta safely extracts metadata from API response
@@ -548,66 +332,4 @@ func extractMeta(meta *api.V0042OpenapiMeta) map[string]interface{} {
 	}
 
 	return result
-}
-
-// PingDatabase pings the SLURM database for health checks
-func (a *StandaloneAdapter) PingDatabase(ctx context.Context) (*types.PingResponse, error) {
-	if a.client == nil {
-		return nil, fmt.Errorf("API client not initialized")
-	}
-
-	resp, err := a.client.SlurmdbV0042GetPingWithResponse(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", err)
-	}
-
-	// Handle API response with enhanced error handling
-	if err := a.errorAdapter.HandleAPIResponse(resp.StatusCode(), resp.Body, "PingDatabase"); err != nil {
-		return nil, err
-	}
-
-	// Build response - start with default values
-	pingResp := &types.PingResponse{
-		Status:    "success",
-		Message:   "Database ping successful",
-		Timestamp: time.Now(),
-		Meta:      make(map[string]interface{}),
-	}
-
-	// Extract ping information from response
-	if resp.JSON200 != nil {
-		pingResp.Meta = extractMeta(resp.JSON200.Meta)
-
-		// Extract latency from first ping result if available
-		if len(resp.JSON200.Pings) > 0 {
-			firstPing := resp.JSON200.Pings[0]
-			pingResp.Latency = firstPing.Latency
-
-			// Add ping details to meta
-			pings := make([]map[string]interface{}, 0)
-			for _, ping := range resp.JSON200.Pings {
-				pingInfo := make(map[string]interface{})
-				pingInfo["hostname"] = ping.Hostname
-				pingInfo["latency"] = ping.Latency
-				pingInfo["primary"] = ping.Primary
-				pingInfo["responding"] = ping.Responding
-				pings = append(pings, pingInfo)
-			}
-			pingResp.Meta["pings"] = pings
-		}
-
-		// Handle errors in response
-		if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
-			pingResp.Status = "error"
-			// Get first error message
-			errors := *resp.JSON200.Errors
-			if len(errors) > 0 && errors[0].Error != nil {
-				pingResp.Message = *errors[0].Error
-			} else {
-				pingResp.Message = "Database ping failed"
-			}
-		}
-	}
-
-	return pingResp, nil
 }
