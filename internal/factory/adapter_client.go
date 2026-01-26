@@ -70,7 +70,7 @@ func NewAdapterClient(version string, config *interfaces.ClientConfig) (SlurmCli
 	case "v0.0.43":
 		client, err := v043api.NewClientWithResponses(config.BaseURL, v043api.WithHTTPClient(config.HTTPClient))
 		if err != nil {
-			return nil, fmt.Errorf("failed to create v0.0.43 client: %w", err)
+			return nil, fmt.Errorf("failed to create %s client: %w", version, err)
 		}
 		adapter := v043adapter.NewAdapter(client)
 		return &AdapterClient{
@@ -2267,7 +2267,7 @@ func convertDiagnosticsToInterface(diag *types.Diagnostics) *interfaces.Diagnost
 		ScheduleCycleMean:    float64(diag.ScheduleCycleMean),
 		BackfillCycleMax:     int(diag.BFCycleMax),
 		BackfillCycleLast:    diag.BFCycle,
-		BackfillCycleTotal:   int64(diag.BFCycleMean),
+		BackfillCycleTotal:   diag.BFCycleMean,
 		BackfillCycleCounter: diag.BFBackfilledJobs,
 		BackfillCycleMean:    float64(diag.BFCycleMean),
 		BfBackfilledJobs:     diag.BFBackfilledJobs,
@@ -2351,7 +2351,7 @@ func convertTRESToInterface(t *types.TRES) *interfaces.TRES {
 		ID:       uint64(t.ID),
 		Type:     t.Type,
 		Name:     t.Name,
-		Count:    int64(t.Count),
+		Count:    t.Count,
 		Created:  time.Now(),
 		Modified: time.Now(),
 	}

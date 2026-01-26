@@ -188,64 +188,91 @@ func (a *InfoAdapter) Stats(ctx context.Context) (*types.ClusterStats, error) {
 
 	stats := &types.ClusterStats{}
 
-	// Extract statistics from diagnostic response
-	// Job statistics
-	if resp.JSON200.Statistics.JobsSubmitted != nil {
-		stats.TotalJobs = int(*resp.JSON200.Statistics.JobsSubmitted)
-	}
+	// Extract job statistics from diagnostic response
+	a.extractJobStats(resp.JSON200.Statistics, stats)
 
-	if resp.JSON200.Statistics.JobsPending != nil {
-		stats.PendingJobs = int(*resp.JSON200.Statistics.JobsPending)
-	}
-
-	if resp.JSON200.Statistics.JobsRunning != nil {
-		stats.RunningJobs = int(*resp.JSON200.Statistics.JobsRunning)
-	}
-
-	if resp.JSON200.Statistics.JobsCompleted != nil {
-		stats.CompletedJobs = int(*resp.JSON200.Statistics.JobsCompleted)
-	}
-
-	// Get node statistics by querying the nodes endpoint
-	nodesResp, err := a.client.SlurmV0042GetNodesWithResponse(ctx, nil)
-	if err == nil && nodesResp.StatusCode() == 200 && nodesResp.JSON200 != nil {
-		// Count nodes and CPUs by state
-		for _, node := range nodesResp.JSON200.Nodes {
-			stats.TotalNodes++
-
-			// Count CPUs
-			if node.Cpus != nil {
-				stats.TotalCPUs += int(*node.Cpus)
-			}
-
-			// Check node state
-			if node.State != nil && len(*node.State) > 0 {
-				state := string((*node.State)[0])
-				switch {
-				case strings.Contains(strings.ToLower(state), "idle"):
-					stats.IdleNodes++
-					if node.Cpus != nil {
-						stats.IdleCPUs += int(*node.Cpus)
-					}
-				case strings.Contains(strings.ToLower(state), "alloc") ||
-					strings.Contains(strings.ToLower(state), "mixed"):
-					stats.AllocatedNodes++
-					// For allocated/mixed nodes, we'd need more info to get exact CPU allocation
-					// This is a simplified approach
-					if node.Cpus != nil && strings.Contains(strings.ToLower(state), "alloc") {
-						stats.AllocatedCPUs += int(*node.Cpus)
-					}
-				}
-			}
-		}
-
-		// Calculate idle CPUs if not fully allocated
-		if stats.IdleCPUs == 0 && stats.TotalCPUs > 0 {
-			stats.IdleCPUs = stats.TotalCPUs - stats.AllocatedCPUs
-		}
-	}
+	// Get and process node statistics
+	a.enrichStatsWithNodeData(ctx, stats)
 
 	return stats, nil
+}
+
+// extractJobStats extracts job statistics from diagnostic response
+func (a *InfoAdapter) extractJobStats(statistics api.V0042StatsMsg, stats *types.ClusterStats) {
+	if statistics.JobsSubmitted != nil {
+		stats.TotalJobs = int(*statistics.JobsSubmitted)
+	}
+
+	if statistics.JobsPending != nil {
+		stats.PendingJobs = int(*statistics.JobsPending)
+	}
+
+	if statistics.JobsRunning != nil {
+		stats.RunningJobs = int(*statistics.JobsRunning)
+	}
+
+	if statistics.JobsCompleted != nil {
+		stats.CompletedJobs = int(*statistics.JobsCompleted)
+	}
+}
+
+// enrichStatsWithNodeData retrieves and processes node statistics
+func (a *InfoAdapter) enrichStatsWithNodeData(ctx context.Context, stats *types.ClusterStats) {
+	// Get node statistics by querying the nodes endpoint
+	nodesResp, err := a.client.SlurmV0042GetNodesWithResponse(ctx, nil)
+	if err != nil || nodesResp.StatusCode() != 200 || nodesResp.JSON200 == nil {
+		return
+	}
+
+	// Process nodes and accumulate statistics
+	for _, node := range nodesResp.JSON200.Nodes {
+		a.processNodeForStats(node, stats)
+	}
+
+	// Calculate idle CPUs if not fully allocated
+	if stats.IdleCPUs == 0 && stats.TotalCPUs > 0 {
+		stats.IdleCPUs = stats.TotalCPUs - stats.AllocatedCPUs
+	}
+}
+
+// processNodeForStats updates cluster stats based on a single node
+func (a *InfoAdapter) processNodeForStats(node api.V0042Node, stats *types.ClusterStats) {
+	stats.TotalNodes++
+
+	// Count CPUs
+	if node.Cpus != nil {
+		stats.TotalCPUs += int(*node.Cpus)
+	}
+
+	// Process node state and update statistics
+	if node.State == nil || len(*node.State) == 0 {
+		return
+	}
+
+	state := (*node.State)[0]
+	a.updateStatsForNodeState(state, node, stats)
+}
+
+// updateStatsForNodeState updates statistics based on node state
+func (a *InfoAdapter) updateStatsForNodeState(state string, node api.V0042Node, stats *types.ClusterStats) {
+	lowercaseState := strings.ToLower(state)
+
+	if strings.Contains(lowercaseState, "idle") {
+		stats.IdleNodes++
+		if node.Cpus != nil {
+			stats.IdleCPUs += int(*node.Cpus)
+		}
+		return
+	}
+
+	if strings.Contains(lowercaseState, "alloc") || strings.Contains(lowercaseState, "mixed") {
+		stats.AllocatedNodes++
+		// For allocated/mixed nodes, we'd need more info to get exact CPU allocation
+		// This is a simplified approach
+		if node.Cpus != nil && strings.Contains(lowercaseState, "alloc") {
+			stats.AllocatedCPUs += int(*node.Cpus)
+		}
+	}
 }
 
 // Version retrieves API version information

@@ -68,28 +68,41 @@ func (a *InfoAdapter) Get(ctx context.Context) (*types.ClusterInfo, error) {
 		APIVersion: "v0.0.44", // Current API version
 	}
 
-	if pingResp.JSON200.Meta != nil && pingResp.JSON200.Meta.Slurm != nil {
-		if pingResp.JSON200.Meta.Slurm.Version != nil {
-			if pingResp.JSON200.Meta.Slurm.Version.Major != nil &&
-				pingResp.JSON200.Meta.Slurm.Version.Minor != nil &&
-				pingResp.JSON200.Meta.Slurm.Version.Micro != nil {
+	// Extract cluster metadata from ping response
+	a.extractClusterMetadata(pingResp.JSON200, clusterInfo)
+
+	// Try to get additional diagnostic information
+	a.addDiagnosticInfo(ctx, clusterInfo)
+
+	return clusterInfo, nil
+}
+
+// extractClusterMetadata extracts metadata from ping response
+func (a *InfoAdapter) extractClusterMetadata(pingResp *api.V0044OpenapiPingArrayResp, clusterInfo *types.ClusterInfo) {
+	if pingResp.Meta != nil && pingResp.Meta.Slurm != nil {
+		if pingResp.Meta.Slurm.Version != nil {
+			if pingResp.Meta.Slurm.Version.Major != nil &&
+				pingResp.Meta.Slurm.Version.Minor != nil &&
+				pingResp.Meta.Slurm.Version.Micro != nil {
 				clusterInfo.Version = fmt.Sprintf("%s.%s.%s",
-					*pingResp.JSON200.Meta.Slurm.Version.Major,
-					*pingResp.JSON200.Meta.Slurm.Version.Minor,
-					*pingResp.JSON200.Meta.Slurm.Version.Micro)
+					*pingResp.Meta.Slurm.Version.Major,
+					*pingResp.Meta.Slurm.Version.Minor,
+					*pingResp.Meta.Slurm.Version.Micro)
 			}
 		}
 
-		if pingResp.JSON200.Meta.Slurm.Release != nil {
-			clusterInfo.Release = *pingResp.JSON200.Meta.Slurm.Release
+		if pingResp.Meta.Slurm.Release != nil {
+			clusterInfo.Release = *pingResp.Meta.Slurm.Release
 		}
 
-		if pingResp.JSON200.Meta.Slurm.Cluster != nil {
-			clusterInfo.ClusterName = *pingResp.JSON200.Meta.Slurm.Cluster
+		if pingResp.Meta.Slurm.Cluster != nil {
+			clusterInfo.ClusterName = *pingResp.Meta.Slurm.Cluster
 		}
 	}
+}
 
-	// Try to get additional diagnostic information
+// addDiagnosticInfo adds diagnostic information to cluster info
+func (a *InfoAdapter) addDiagnosticInfo(ctx context.Context, clusterInfo *types.ClusterInfo) {
 	diagResp, diagErr := a.client.SlurmV0044GetDiagWithResponse(ctx)
 	if diagErr == nil && diagResp.StatusCode() == 200 && diagResp.JSON200 != nil &&
 		(diagResp.JSON200.Errors == nil || len(*diagResp.JSON200.Errors) == 0) {
@@ -99,8 +112,6 @@ func (a *InfoAdapter) Get(ctx context.Context) (*types.ClusterInfo, error) {
 			clusterInfo.Uptime = int(*diagResp.JSON200.Statistics.ServerThreadCount)
 		}
 	}
-
-	return clusterInfo, nil
 }
 
 // Ping tests connectivity to the cluster
@@ -213,55 +224,41 @@ func (a *InfoAdapter) Stats(ctx context.Context) (*types.ClusterStats, error) {
 
 	stats := &types.ClusterStats{}
 
-	// Extract statistics from diagnostic response
-	// Job statistics
-	if resp.JSON200.Statistics.JobsSubmitted != nil {
-		stats.TotalJobs = int(*resp.JSON200.Statistics.JobsSubmitted)
-	}
-
-	if resp.JSON200.Statistics.JobsPending != nil {
-		stats.PendingJobs = int(*resp.JSON200.Statistics.JobsPending)
-	}
-
-	if resp.JSON200.Statistics.JobsRunning != nil {
-		stats.RunningJobs = int(*resp.JSON200.Statistics.JobsRunning)
-	}
-
-	if resp.JSON200.Statistics.JobsCompleted != nil {
-		stats.CompletedJobs = int(*resp.JSON200.Statistics.JobsCompleted)
-	}
+	// Extract job statistics from diagnostic response
+	a.extractJobStats(resp.JSON200, stats)
 
 	// Get node statistics by querying the nodes endpoint
+	a.enrichStatsWithNodeData(ctx, stats)
+
+	return stats, nil
+}
+
+// extractJobStats extracts job statistics from diagnostic response
+func (a *InfoAdapter) extractJobStats(diagResp *api.V0044OpenapiDiagResp, stats *types.ClusterStats) {
+	if diagResp.Statistics.JobsSubmitted != nil {
+		stats.TotalJobs = int(*diagResp.Statistics.JobsSubmitted)
+	}
+
+	if diagResp.Statistics.JobsPending != nil {
+		stats.PendingJobs = int(*diagResp.Statistics.JobsPending)
+	}
+
+	if diagResp.Statistics.JobsRunning != nil {
+		stats.RunningJobs = int(*diagResp.Statistics.JobsRunning)
+	}
+
+	if diagResp.Statistics.JobsCompleted != nil {
+		stats.CompletedJobs = int(*diagResp.Statistics.JobsCompleted)
+	}
+}
+
+// enrichStatsWithNodeData adds node statistics to cluster stats
+func (a *InfoAdapter) enrichStatsWithNodeData(ctx context.Context, stats *types.ClusterStats) {
 	nodesResp, err := a.client.SlurmV0044GetNodesWithResponse(ctx, nil)
 	if err == nil && nodesResp.StatusCode() == 200 && nodesResp.JSON200 != nil {
 		// Count nodes and CPUs by state
 		for _, node := range nodesResp.JSON200.Nodes {
-			stats.TotalNodes++
-
-			// Count CPUs
-			if node.Cpus != nil {
-				stats.TotalCPUs += int(*node.Cpus)
-			}
-
-			// Check node state
-			if node.State != nil && len(*node.State) > 0 {
-				state := string((*node.State)[0])
-				switch {
-				case strings.Contains(strings.ToLower(state), "idle"):
-					stats.IdleNodes++
-					if node.Cpus != nil {
-						stats.IdleCPUs += int(*node.Cpus)
-					}
-				case strings.Contains(strings.ToLower(state), "alloc") ||
-					strings.Contains(strings.ToLower(state), "mixed"):
-					stats.AllocatedNodes++
-					// For allocated/mixed nodes, we'd need more info to get exact CPU allocation
-					// This is a simplified approach
-					if node.Cpus != nil && strings.Contains(strings.ToLower(state), "alloc") {
-						stats.AllocatedCPUs += int(*node.Cpus)
-					}
-				}
-			}
+			a.processNodeForStats(node, stats)
 		}
 
 		// Calculate idle CPUs if not fully allocated
@@ -269,8 +266,42 @@ func (a *InfoAdapter) Stats(ctx context.Context) (*types.ClusterStats, error) {
 			stats.IdleCPUs = stats.TotalCPUs - stats.AllocatedCPUs
 		}
 	}
+}
 
-	return stats, nil
+// processNodeForStats processes a single node and updates stats
+func (a *InfoAdapter) processNodeForStats(node api.V0044Node, stats *types.ClusterStats) {
+	stats.TotalNodes++
+
+	// Count CPUs
+	if node.Cpus != nil {
+		stats.TotalCPUs += int(*node.Cpus)
+	}
+
+	// Check node state and update statistics
+	a.updateStatsForNodeState(node, stats)
+}
+
+// updateStatsForNodeState updates statistics based on node state
+func (a *InfoAdapter) updateStatsForNodeState(node api.V0044Node, stats *types.ClusterStats) {
+	if node.State != nil && len(*node.State) > 0 {
+		state := string((*node.State)[0])
+		stateLower := strings.ToLower(state)
+
+		switch {
+		case strings.Contains(stateLower, "idle"):
+			stats.IdleNodes++
+			if node.Cpus != nil {
+				stats.IdleCPUs += int(*node.Cpus)
+			}
+		case strings.Contains(stateLower, "alloc") || strings.Contains(stateLower, "mixed"):
+			stats.AllocatedNodes++
+			// For allocated/mixed nodes, we'd need more info to get exact CPU allocation
+			// This is a simplified approach
+			if node.Cpus != nil && strings.Contains(stateLower, "alloc") {
+				stats.AllocatedCPUs += int(*node.Cpus)
+			}
+		}
+	}
 }
 
 // Version retrieves API version information

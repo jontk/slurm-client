@@ -188,64 +188,90 @@ func (a *InfoAdapter) Stats(ctx context.Context) (*types.ClusterStats, error) {
 
 	stats := &types.ClusterStats{}
 
-	// Extract statistics from diagnostic response
-	// Job statistics
-	if resp.JSON200.Statistics.JobsSubmitted != nil {
-		stats.TotalJobs = int(*resp.JSON200.Statistics.JobsSubmitted)
-	}
-
-	if resp.JSON200.Statistics.JobsPending != nil {
-		stats.PendingJobs = int(*resp.JSON200.Statistics.JobsPending)
-	}
-
-	if resp.JSON200.Statistics.JobsRunning != nil {
-		stats.RunningJobs = int(*resp.JSON200.Statistics.JobsRunning)
-	}
-
-	if resp.JSON200.Statistics.JobsCompleted != nil {
-		stats.CompletedJobs = int(*resp.JSON200.Statistics.JobsCompleted)
-	}
+	// Extract job statistics from diagnostic response
+	a.extractJobStats(resp.JSON200, stats)
 
 	// Get node statistics by querying the nodes endpoint
 	nodesResp, err := a.client.SlurmV0040GetNodesWithResponse(ctx, nil)
 	if err == nil && nodesResp.StatusCode() == 200 && nodesResp.JSON200 != nil {
-		// Count nodes and CPUs by state
-		for _, node := range nodesResp.JSON200.Nodes {
-			stats.TotalNodes++
-
-			// Count CPUs
-			if node.Cpus != nil {
-				stats.TotalCPUs += int(*node.Cpus)
-			}
-
-			// Check node state
-			if node.State != nil && len(*node.State) > 0 {
-				state := string((*node.State)[0])
-				switch {
-				case strings.Contains(strings.ToLower(state), "idle"):
-					stats.IdleNodes++
-					if node.Cpus != nil {
-						stats.IdleCPUs += int(*node.Cpus)
-					}
-				case strings.Contains(strings.ToLower(state), "alloc") ||
-					strings.Contains(strings.ToLower(state), "mixed"):
-					stats.AllocatedNodes++
-					// For allocated/mixed nodes, we'd need more info to get exact CPU allocation
-					// This is a simplified approach
-					if node.Cpus != nil && strings.Contains(strings.ToLower(state), "alloc") {
-						stats.AllocatedCPUs += int(*node.Cpus)
-					}
-				}
-			}
-		}
-
-		// Calculate idle CPUs if not fully allocated
-		if stats.IdleCPUs == 0 && stats.TotalCPUs > 0 {
-			stats.IdleCPUs = stats.TotalCPUs - stats.AllocatedCPUs
-		}
+		a.extractNodeStats(nodesResp.JSON200, stats)
 	}
 
 	return stats, nil
+}
+
+// extractJobStats extracts job-related statistics from diagnostic response
+func (a *InfoAdapter) extractJobStats(diag *api.V0040OpenapiDiagResp, stats *types.ClusterStats) {
+	if diag.Statistics.JobsSubmitted != nil {
+		stats.TotalJobs = int(*diag.Statistics.JobsSubmitted)
+	}
+
+	if diag.Statistics.JobsPending != nil {
+		stats.PendingJobs = int(*diag.Statistics.JobsPending)
+	}
+
+	if diag.Statistics.JobsRunning != nil {
+		stats.RunningJobs = int(*diag.Statistics.JobsRunning)
+	}
+
+	if diag.Statistics.JobsCompleted != nil {
+		stats.CompletedJobs = int(*diag.Statistics.JobsCompleted)
+	}
+}
+
+// extractNodeStats extracts node-related statistics from nodes response
+func (a *InfoAdapter) extractNodeStats(nodes *api.V0040OpenapiNodesResp, stats *types.ClusterStats) {
+	for _, node := range nodes.Nodes {
+		stats.TotalNodes++
+
+		// Count total CPUs
+		if node.Cpus != nil {
+			stats.TotalCPUs += int(*node.Cpus)
+		}
+
+		// Update stats based on node state
+		a.updateNodeStateStats(node, stats)
+	}
+
+	// Calculate idle CPUs if not fully allocated
+	if stats.IdleCPUs == 0 && stats.TotalCPUs > 0 {
+		stats.IdleCPUs = stats.TotalCPUs - stats.AllocatedCPUs
+	}
+}
+
+// updateNodeStateStats updates stats based on node state
+func (a *InfoAdapter) updateNodeStateStats(node api.V0040Node, stats *types.ClusterStats) {
+	if node.State == nil || len(*node.State) == 0 {
+		return
+	}
+
+	stateKeyword := strings.ToLower((*node.State)[0])
+
+	if a.isNodeInState(stateKeyword, "idle") {
+		stats.IdleNodes++
+		if node.Cpus != nil {
+			stats.IdleCPUs += int(*node.Cpus)
+		}
+		return
+	}
+
+	if a.isNodeAllocated(stateKeyword) {
+		stats.AllocatedNodes++
+		if node.Cpus != nil && strings.Contains(stateKeyword, "alloc") {
+			stats.AllocatedCPUs += int(*node.Cpus)
+		}
+	}
+}
+
+// isNodeInState checks if the node state contains the specified keyword
+func (a *InfoAdapter) isNodeInState(stateKeyword, keyword string) bool {
+	return strings.Contains(stateKeyword, keyword)
+}
+
+// isNodeAllocated checks if the node is allocated or mixed
+func (a *InfoAdapter) isNodeAllocated(stateKeyword string) bool {
+	return strings.Contains(stateKeyword, "alloc") ||
+		strings.Contains(stateKeyword, "mixed")
 }
 
 // Version retrieves API version information
