@@ -22,6 +22,7 @@ type VersionAdapter interface {
 	GetAssociationManager() AssociationAdapter
 	GetWCKeyManager() WCKeyAdapter
 	GetClusterManager() ClusterAdapter
+	GetInfoManager() InfoAdapter
 
 	// Standalone operations (non-CRUD)
 	GetStandaloneManager() StandaloneAdapter
@@ -168,4 +169,22 @@ type ClusterAdapter interface {
 	Get(ctx context.Context, clusterName string) (*types.Cluster, error)
 	Create(ctx context.Context, cluster *types.ClusterCreate) (*types.ClusterCreateResponse, error)
 	Delete(ctx context.Context, clusterName string) error
+}
+
+// InfoAdapter defines the interface for cluster information operations across versions
+type InfoAdapter interface {
+	// Get retrieves cluster information
+	Get(ctx context.Context) (*types.ClusterInfo, error)
+
+	// Ping tests connectivity to the cluster
+	Ping(ctx context.Context) error
+
+	// PingDatabase tests connectivity to the SLURM database
+	PingDatabase(ctx context.Context) error
+
+	// Stats retrieves cluster statistics
+	Stats(ctx context.Context) (*types.ClusterStats, error)
+
+	// Version retrieves API version information
+	Version(ctx context.Context) (*types.APIVersion, error)
 }

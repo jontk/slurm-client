@@ -4,12 +4,8 @@
 package v0_0_40
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/jontk/slurm-client/internal/adapters/common"
 	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
-	"github.com/jontk/slurm-client/internal/common/types"
 )
 
 // Adapter implements the VersionAdapter interface for API version v0.0.40
@@ -25,6 +21,9 @@ type Adapter struct {
 	reservationAdapter *ReservationAdapter
 	associationAdapter *AssociationAdapter
 	standaloneAdapter  *StandaloneAdapter
+	wcKeyAdapter       *WCKeyAdapter
+	clusterAdapter     *ClusterAdapter
+	infoAdapter        *InfoAdapter
 }
 
 // NewAdapter creates a new v0.0.40 adapter
@@ -41,6 +40,9 @@ func NewAdapter(client *api.ClientWithResponses) *Adapter {
 		reservationAdapter: NewReservationAdapter(client),
 		associationAdapter: NewAssociationAdapter(client),
 		standaloneAdapter:  NewStandaloneAdapter(client),
+		wcKeyAdapter:       NewWCKeyAdapter(client),
+		clusterAdapter:     NewClusterAdapter(client),
+		infoAdapter:        NewInfoAdapter(client),
 	}
 }
 
@@ -96,30 +98,15 @@ func (a *Adapter) GetStandaloneManager() common.StandaloneAdapter {
 
 // GetClusterManager returns the Cluster adapter for this version
 func (a *Adapter) GetClusterManager() common.ClusterAdapter {
-	// TODO: Implement cluster management for v0.0.40
-	return &NotImplementedClusterAdapter{}
+	return a.clusterAdapter
 }
 
-// NotImplementedClusterAdapter provides stub implementation for versions that don't have cluster management
-type NotImplementedClusterAdapter struct{}
-
-func (n *NotImplementedClusterAdapter) List(_ context.Context, _ *types.ClusterListOptions) (*types.ClusterList, error) {
-	return nil, fmt.Errorf("cluster management not implemented for this API version")
-}
-
-func (n *NotImplementedClusterAdapter) Get(_ context.Context, _ string) (*types.Cluster, error) {
-	return nil, fmt.Errorf("cluster management not implemented for this API version")
-}
-
-func (n *NotImplementedClusterAdapter) Create(_ context.Context, _ *types.ClusterCreate) (*types.ClusterCreateResponse, error) {
-	return nil, fmt.Errorf("cluster management not implemented for this API version")
-}
-
-func (n *NotImplementedClusterAdapter) Delete(_ context.Context, _ string) error {
-	return fmt.Errorf("cluster management not implemented for this API version")
-}
-
-// GetWCKeyManager returns nil as WCKey management is not supported in v0.0.40
+// GetWCKeyManager returns the WCKey adapter for this version
 func (a *Adapter) GetWCKeyManager() common.WCKeyAdapter {
-	return nil
+	return a.wcKeyAdapter
+}
+
+// GetInfoManager returns the Info adapter for this version
+func (a *Adapter) GetInfoManager() common.InfoAdapter {
+	return a.infoAdapter
 }

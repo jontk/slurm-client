@@ -116,8 +116,10 @@ func (c *AdapterClient) Partitions() interfaces.PartitionManager {
 
 // Info returns the InfoManager
 func (c *AdapterClient) Info() interfaces.InfoManager {
-	// For now, return a basic implementation
-	return &adapterInfoManager{version: c.version}
+	return &adapterInfoManager{
+		adapter: c.adapter.GetInfoManager(),
+		version: c.version,
+	}
 }
 
 // Reservations returns the ReservationManager
@@ -166,52 +168,136 @@ func (c *AdapterClient) Close() error {
 
 // GetLicenses retrieves license information
 func (c *AdapterClient) GetLicenses(ctx context.Context) (*interfaces.LicenseList, error) {
-	return nil, fmt.Errorf("GetLicenses not implemented in adapter")
+	standaloneManager := c.adapter.GetStandaloneManager()
+	if standaloneManager == nil {
+		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
+	}
+	result, err := standaloneManager.GetLicenses(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return convertLicenseListToInterface(result), nil
 }
 
 // GetShares retrieves fairshare information with optional filtering
 func (c *AdapterClient) GetShares(ctx context.Context, opts *interfaces.GetSharesOptions) (*interfaces.SharesList, error) {
-	return nil, fmt.Errorf("GetShares not implemented in adapter")
+	standaloneManager := c.adapter.GetStandaloneManager()
+	if standaloneManager == nil {
+		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
+	}
+	typesOpts := convertGetSharesOptionsToTypes(opts)
+	result, err := standaloneManager.GetShares(ctx, typesOpts)
+	if err != nil {
+		return nil, err
+	}
+	return convertSharesListToInterface(result), nil
 }
 
 // GetConfig retrieves SLURM configuration
 func (c *AdapterClient) GetConfig(ctx context.Context) (*interfaces.Config, error) {
-	return nil, fmt.Errorf("GetConfig not implemented in adapter")
+	standaloneManager := c.adapter.GetStandaloneManager()
+	if standaloneManager == nil {
+		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
+	}
+	result, err := standaloneManager.GetConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return convertConfigToInterface(result), nil
 }
 
 // GetDiagnostics retrieves SLURM diagnostics information
 func (c *AdapterClient) GetDiagnostics(ctx context.Context) (*interfaces.Diagnostics, error) {
-	return nil, fmt.Errorf("GetDiagnostics not implemented in adapter")
+	standaloneManager := c.adapter.GetStandaloneManager()
+	if standaloneManager == nil {
+		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
+	}
+	result, err := standaloneManager.GetDiagnostics(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return convertDiagnosticsToInterface(result), nil
 }
 
 // GetDBDiagnostics retrieves SLURM database diagnostics information
 func (c *AdapterClient) GetDBDiagnostics(ctx context.Context) (*interfaces.Diagnostics, error) {
-	return nil, fmt.Errorf("GetDBDiagnostics not implemented in adapter")
+	standaloneManager := c.adapter.GetStandaloneManager()
+	if standaloneManager == nil {
+		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
+	}
+	result, err := standaloneManager.GetDBDiagnostics(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return convertDiagnosticsToInterface(result), nil
 }
 
 // GetInstance retrieves a specific database instance
 func (c *AdapterClient) GetInstance(ctx context.Context, opts *interfaces.GetInstanceOptions) (*interfaces.Instance, error) {
-	return nil, fmt.Errorf("GetInstance not implemented in adapter")
+	standaloneManager := c.adapter.GetStandaloneManager()
+	if standaloneManager == nil {
+		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
+	}
+	typesOpts := convertGetInstanceOptionsToTypes(opts)
+	result, err := standaloneManager.GetInstance(ctx, typesOpts)
+	if err != nil {
+		return nil, err
+	}
+	return convertInstanceToInterface(result), nil
 }
 
 // GetInstances retrieves multiple database instances with filtering
 func (c *AdapterClient) GetInstances(ctx context.Context, opts *interfaces.GetInstancesOptions) (*interfaces.InstanceList, error) {
-	return nil, fmt.Errorf("GetInstances not implemented in adapter")
+	standaloneManager := c.adapter.GetStandaloneManager()
+	if standaloneManager == nil {
+		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
+	}
+	typesOpts := convertGetInstancesOptionsToTypes(opts)
+	result, err := standaloneManager.GetInstances(ctx, typesOpts)
+	if err != nil {
+		return nil, err
+	}
+	return convertInstanceListToInterface(result), nil
 }
 
 // GetTRES retrieves all TRES (Trackable RESources)
 func (c *AdapterClient) GetTRES(ctx context.Context) (*interfaces.TRESList, error) {
-	return nil, fmt.Errorf("GetTRES not implemented in adapter")
+	standaloneManager := c.adapter.GetStandaloneManager()
+	if standaloneManager == nil {
+		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
+	}
+	result, err := standaloneManager.GetTRES(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return convertTRESListToInterface(result), nil
 }
 
 // CreateTRES creates a new TRES entry
 func (c *AdapterClient) CreateTRES(ctx context.Context, req *interfaces.CreateTRESRequest) (*interfaces.TRES, error) {
-	return nil, fmt.Errorf("CreateTRES not implemented in adapter")
+	standaloneManager := c.adapter.GetStandaloneManager()
+	if standaloneManager == nil {
+		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
+	}
+	typesReq := convertCreateTRESRequestToTypes(req)
+	result, err := standaloneManager.CreateTRES(ctx, typesReq)
+	if err != nil {
+		return nil, err
+	}
+	return convertTRESToInterface(result), nil
 }
 
 // Reconfigure triggers a SLURM reconfiguration
 func (c *AdapterClient) Reconfigure(ctx context.Context) (*interfaces.ReconfigureResponse, error) {
-	return nil, fmt.Errorf("Reconfigure not implemented in adapter")
+	standaloneManager := c.adapter.GetStandaloneManager()
+	if standaloneManager == nil {
+		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
+	}
+	result, err := standaloneManager.Reconfigure(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return convertReconfigureResponseToInterface(result), nil
 }
 
 // Manager wrappers to convert between common.types and interfaces types
@@ -1034,38 +1120,86 @@ func convertQoSToInterface(qos types.QoS) interfaces.QoS {
 	}
 }
 
-// adapterInfoManager provides basic info operations
+// adapterInfoManager provides info operations via the adapter
 type adapterInfoManager struct {
+	adapter common.InfoAdapter
 	version string
 }
 
 func (m *adapterInfoManager) Ping(ctx context.Context) error {
-	// Basic ping - always succeeds if we get here
-	return nil
+	return m.adapter.Ping(ctx)
 }
 
 func (m *adapterInfoManager) Get(ctx context.Context) (*interfaces.ClusterInfo, error) {
-	// Not implemented
-	return nil, fmt.Errorf("cluster info not implemented in adapter")
+	result, err := m.adapter.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return convertTypesClusterInfoToInterface(result), nil
 }
 
 func (m *adapterInfoManager) Stats(ctx context.Context) (*interfaces.ClusterStats, error) {
-	// Not implemented
-	return nil, fmt.Errorf("cluster stats not implemented in adapter")
+	result, err := m.adapter.Stats(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return convertTypesClusterStatsToInterface(result), nil
 }
 
 func (m *adapterInfoManager) Version(ctx context.Context) (*interfaces.APIVersion, error) {
-	return &interfaces.APIVersion{
-		Version:     m.version,
-		Release:     "stable",
-		Description: "SLURM REST API",
-		Deprecated:  false,
-	}, nil
+	result, err := m.adapter.Version(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return convertTypesAPIVersionToInterface(result), nil
 }
 
-// PingDatabase tests connectivity to the SLURM database (not supported by legacy adapters)
 func (m *adapterInfoManager) PingDatabase(ctx context.Context) error {
-	return fmt.Errorf("database ping not supported by legacy adapters")
+	return m.adapter.PingDatabase(ctx)
+}
+
+// Type converters for Info types
+func convertTypesClusterInfoToInterface(t *types.ClusterInfo) *interfaces.ClusterInfo {
+	if t == nil {
+		return nil
+	}
+	return &interfaces.ClusterInfo{
+		ClusterName: t.ClusterName,
+		Version:     t.Version,
+		Release:     t.Release,
+		APIVersion:  t.APIVersion,
+		Uptime:      t.Uptime,
+	}
+}
+
+func convertTypesClusterStatsToInterface(t *types.ClusterStats) *interfaces.ClusterStats {
+	if t == nil {
+		return nil
+	}
+	return &interfaces.ClusterStats{
+		TotalNodes:     t.TotalNodes,
+		IdleNodes:      t.IdleNodes,
+		AllocatedNodes: t.AllocatedNodes,
+		TotalCPUs:      t.TotalCPUs,
+		IdleCPUs:       t.IdleCPUs,
+		AllocatedCPUs:  t.AllocatedCPUs,
+		TotalJobs:      t.TotalJobs,
+		RunningJobs:    t.RunningJobs,
+		PendingJobs:    t.PendingJobs,
+		CompletedJobs:  t.CompletedJobs,
+	}
+}
+
+func convertTypesAPIVersionToInterface(t *types.APIVersion) *interfaces.APIVersion {
+	if t == nil {
+		return nil
+	}
+	return &interfaces.APIVersion{
+		Version:     t.Version,
+		Release:     t.Release,
+		Description: t.Description,
+		Deprecated:  t.Deprecated,
+	}
 }
 
 // Other manager implementations...
@@ -2013,4 +2147,306 @@ func (m *adapterWCKeyManager) Update(ctx context.Context, wckeyName, user, clust
 
 func (m *adapterWCKeyManager) Delete(ctx context.Context, wckeyID string) error {
 	return m.adapter.Delete(ctx, wckeyID)
+}
+
+// === Type Conversion Helpers for Standalone Operations ===
+
+// convertLicenseListToInterface converts types.LicenseList to interfaces.LicenseList
+func convertLicenseListToInterface(list *types.LicenseList) *interfaces.LicenseList {
+	if list == nil {
+		return nil
+	}
+
+	interfaceLicenses := make([]interfaces.License, len(list.Licenses))
+	for i, license := range list.Licenses {
+		interfaceLicenses[i] = interfaces.License{
+			Name:       license.Name,
+			Total:      license.Total,
+			Used:       license.Used,
+			Available:  license.Free,
+			Reserved:   license.Reserved,
+			Remote:     license.RemoteUsed > 0,
+			LastUpdate: time.Now(),
+			Percent:    calculatePercentage(license.Used, license.Total),
+		}
+	}
+
+	return &interfaces.LicenseList{
+		Licenses: interfaceLicenses,
+		Meta:     list.Meta,
+	}
+}
+
+// convertSharesListToInterface converts types.SharesList to interfaces.SharesList
+func convertSharesListToInterface(list *types.SharesList) *interfaces.SharesList {
+	if list == nil {
+		return nil
+	}
+
+	interfaceShares := make([]interfaces.Share, len(list.Shares))
+	for i, share := range list.Shares {
+		interfaceShares[i] = interfaces.Share{
+			Name:        share.Account,
+			User:        share.User,
+			Account:     share.Account,
+			Cluster:     share.Cluster,
+			Partition:   share.Partition,
+			Shares:      share.FairshareShares,
+			RawShares:   share.RawShares,
+			NormShares:  share.NormalizedShares,
+			RawUsage:    int(share.RawUsage),
+			NormUsage:   share.NormalizedUsage,
+			EffectUsage: share.EffectiveUsage,
+			FairShare:   share.FairshareLevel,
+			LevelFS:     share.FairshareLevel,
+			Priority:    0, // Not available in types.Share
+			Level:       0, // Not available in types.Share
+			LastUpdate:  time.Now(),
+		}
+	}
+
+	return &interfaces.SharesList{
+		Shares: interfaceShares,
+		Meta:   list.Meta,
+	}
+}
+
+// convertConfigToInterface converts types.Config to interfaces.Config
+func convertConfigToInterface(cfg *types.Config) *interfaces.Config {
+	if cfg == nil {
+		return nil
+	}
+
+	controlMachine := ""
+	if len(cfg.ControlMachine) > 0 {
+		controlMachine = cfg.ControlMachine[0]
+	}
+
+	return &interfaces.Config{
+		AccountingStorageType: cfg.AccountingStorageType,
+		AccountingStorageHost: cfg.AccountingStorageHost,
+		AccountingStoragePort: cfg.AccountingStoragePort,
+		AccountingStorageUser: cfg.AccountingStorageUser,
+		ClusterName:           cfg.ClusterName,
+		ControlMachine:        controlMachine,
+		BackupController:      cfg.BackupController,
+		MaxJobCount:           cfg.MaxJobCount,
+		SlurmUser:             cfg.SlurmUser,
+		SlurmctldLogFile:      cfg.SlurmctldLogFile,
+		SlurmdLogFile:         cfg.SlurmdLogFile,
+		StateSaveLocation:     cfg.StateSaveLocation,
+		PluginDir:             cfg.PluginDir,
+		Version:               cfg.Version,
+		Parameters:            cfg.Meta,
+	}
+}
+
+// convertDiagnosticsToInterface converts types.Diagnostics to interfaces.Diagnostics
+func convertDiagnosticsToInterface(diag *types.Diagnostics) *interfaces.Diagnostics {
+	if diag == nil {
+		return nil
+	}
+
+	return &interfaces.Diagnostics{
+		DataCollected:        diag.DataCollected,
+		ReqTime:              diag.ReqTime,
+		ReqTimeStart:         diag.ReqTimeStart,
+		ServerThreadCount:    diag.ServerThreadCount,
+		AgentCount:           diag.AgentCount,
+		AgentThreadCount:     diag.AgentThreadCount,
+		DBDAgentCount:        diag.DBDAgentCount,
+		JobsSubmitted:        diag.JobsSubmitted,
+		JobsStarted:          diag.JobsStarted,
+		JobsCompleted:        diag.JobsCompleted,
+		JobsCanceled:         diag.JobsCanceled,
+		JobsFailed:           diag.JobsFailed,
+		ScheduleCycleMax:     int(diag.ScheduleCycleMax),
+		ScheduleCycleLast:    int(diag.ScheduleCycleLast),
+		ScheduleCycleTotal:   diag.ScheduleCycleSum,
+		ScheduleCycleCounter: diag.ScheduleCycleCounter,
+		ScheduleCycleMean:    float64(diag.ScheduleCycleMean),
+		BackfillCycleMax:     int(diag.BFCycleMax),
+		BackfillCycleLast:    diag.BFCycle,
+		BackfillCycleTotal:   int64(diag.BFCycleMean),
+		BackfillCycleCounter: diag.BFBackfilledJobs,
+		BackfillCycleMean:    float64(diag.BFCycleMean),
+		BfBackfilledJobs:     diag.BFBackfilledJobs,
+		BfQueueLen:           diag.BFQueueLen,
+		BfQueueLenSum:        int64(diag.BFQueueLenSum),
+		BfWhenLastCycle:      diag.BFWhenLastCycle.Unix(),
+		BfActive:             diag.BFActive,
+		PendingRPCs:          diag.RPCsQueued,
+	}
+}
+
+// convertInstanceToInterface converts types.Instance to interfaces.Instance
+func convertInstanceToInterface(inst *types.Instance) *interfaces.Instance {
+	if inst == nil {
+		return nil
+	}
+
+	timeEnd := int64(0)
+	if !inst.TimeEnd.IsZero() {
+		timeEnd = inst.TimeEnd.Unix()
+	}
+
+	timeStart := int64(0)
+	if !inst.TimeStart.IsZero() {
+		timeStart = inst.TimeStart.Unix()
+	}
+
+	return &interfaces.Instance{
+		Cluster:   inst.Cluster,
+		ExtraInfo: inst.ExtraInfo,
+		Instance:  inst.Instance,
+		NodeName:  "", // Not available in types.Instance
+		TimeEnd:   timeEnd,
+		TimeStart: timeStart,
+		Created:   inst.TimeStart,
+		Modified:  inst.TimeEnd,
+	}
+}
+
+// convertInstanceListToInterface converts types.InstanceList to interfaces.InstanceList
+func convertInstanceListToInterface(list *types.InstanceList) *interfaces.InstanceList {
+	if list == nil {
+		return nil
+	}
+
+	interfaceInstances := make([]interfaces.Instance, len(list.Instances))
+	for i, instance := range list.Instances {
+		interfaceInstances[i] = *convertInstanceToInterface(&instance)
+	}
+
+	return &interfaces.InstanceList{
+		Instances: interfaceInstances,
+		Meta:      list.Meta,
+	}
+}
+
+// convertTRESListToInterface converts types.TRESList to interfaces.TRESList
+func convertTRESListToInterface(list *types.TRESList) *interfaces.TRESList {
+	if list == nil {
+		return nil
+	}
+
+	interfaceTRES := make([]interfaces.TRES, len(list.TRES))
+	for i, tres := range list.TRES {
+		interfaceTRES[i] = *convertTRESToInterface(&tres)
+	}
+
+	return &interfaces.TRESList{
+		TRES: interfaceTRES,
+		Meta: list.Meta,
+	}
+}
+
+// convertTRESToInterface converts types.TRES to interfaces.TRES
+func convertTRESToInterface(t *types.TRES) *interfaces.TRES {
+	if t == nil {
+		return nil
+	}
+
+	return &interfaces.TRES{
+		ID:       uint64(t.ID),
+		Type:     t.Type,
+		Name:     t.Name,
+		Count:    int64(t.Count),
+		Created:  time.Now(),
+		Modified: time.Now(),
+	}
+}
+
+// convertReconfigureResponseToInterface converts types.ReconfigureResponse to interfaces.ReconfigureResponse
+func convertReconfigureResponseToInterface(resp *types.ReconfigureResponse) *interfaces.ReconfigureResponse {
+	if resp == nil {
+		return nil
+	}
+
+	return &interfaces.ReconfigureResponse{
+		Status:   resp.Status,
+		Message:  resp.Message,
+		Warnings: resp.Warnings,
+		Errors:   resp.Errors,
+		Meta:     resp.Meta,
+	}
+}
+
+// === Input Conversion Helpers ===
+
+// convertGetSharesOptionsToTypes converts interfaces.GetSharesOptions to types.GetSharesOptions
+func convertGetSharesOptionsToTypes(opts *interfaces.GetSharesOptions) *types.GetSharesOptions {
+	if opts == nil {
+		return nil
+	}
+
+	return &types.GetSharesOptions{
+		Users:     opts.Users,
+		Accounts:  opts.Accounts,
+		Clusters:  opts.Clusters,
+	}
+}
+
+// convertGetInstanceOptionsToTypes converts interfaces.GetInstanceOptions to types.GetInstanceOptions
+func convertGetInstanceOptionsToTypes(opts *interfaces.GetInstanceOptions) *types.GetInstanceOptions {
+	if opts == nil {
+		return nil
+	}
+
+	// Convert NodeList []string to comma-separated string
+	nodeList := ""
+	if len(opts.NodeList) > 0 {
+		nodeList = strings.Join(opts.NodeList, ",")
+	}
+
+	return &types.GetInstanceOptions{
+		Cluster:   opts.Cluster,
+		Extra:     opts.Extra,
+		Instance:  opts.Instance,
+		NodeList:  nodeList,
+		TimeStart: opts.TimeStart,
+		TimeEnd:   opts.TimeEnd,
+	}
+}
+
+// convertGetInstancesOptionsToTypes converts interfaces.GetInstancesOptions to types.GetInstancesOptions
+func convertGetInstancesOptionsToTypes(opts *interfaces.GetInstancesOptions) *types.GetInstancesOptions {
+	if opts == nil {
+		return nil
+	}
+
+	// Convert NodeList []string to comma-separated string
+	nodeList := ""
+	if len(opts.NodeList) > 0 {
+		nodeList = strings.Join(opts.NodeList, ",")
+	}
+
+	return &types.GetInstancesOptions{
+		Clusters:  opts.Clusters,
+		Extra:     opts.Extra,
+		NodeList:  nodeList,
+		TimeStart: opts.TimeStart,
+		TimeEnd:   opts.TimeEnd,
+	}
+}
+
+// convertCreateTRESRequestToTypes converts interfaces.CreateTRESRequest to types.CreateTRESRequest
+func convertCreateTRESRequestToTypes(req *interfaces.CreateTRESRequest) *types.CreateTRESRequest {
+	if req == nil {
+		return nil
+	}
+
+	return &types.CreateTRESRequest{
+		Type:        req.Type,
+		Name:        req.Name,
+		Description: req.Description,
+	}
+}
+
+// calculatePercentage calculates percentage with safe division
+func calculatePercentage(used, total int) float64 {
+	if total == 0 {
+		return 0.0
+	}
+	return float64(used) / float64(total) * 100.0
 }
