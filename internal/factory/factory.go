@@ -457,7 +457,7 @@ func (f *ClientFactory) createV0_0_44Client(ctx context.Context) (SlurmClient, e
 		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
 	}
 
-	// Always use adapters for v0.0.44 as they are now implemented
+	// Use adapters for v0.0.44 as they are now implemented
 	config := &interfaces.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
