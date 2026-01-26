@@ -98,35 +98,57 @@ func (a *Adapter) GetStandaloneManager() common.StandaloneAdapter {
 
 // GetClusterManager returns the Cluster adapter for this version
 func (a *Adapter) GetClusterManager() common.ClusterAdapter {
-	// TODO: Implement cluster management for v0.0.41
-	return &NotImplementedClusterAdapter{}
+	// v0.0.41 has different API schema structure (inline anonymous types)
+	// TODO: Implement custom v0.0.41-specific cluster adapter
+	return &notImplementedClusterAdapter{}
 }
 
-// NotImplementedClusterAdapter provides stub implementation for versions that don't have cluster management
-type NotImplementedClusterAdapter struct{}
-
-func (n *NotImplementedClusterAdapter) List(_ context.Context, _ *types.ClusterListOptions) (*types.ClusterList, error) {
-	return nil, fmt.Errorf("cluster management not implemented for this API version")
-}
-
-func (n *NotImplementedClusterAdapter) Get(_ context.Context, _ string) (*types.Cluster, error) {
-	return nil, fmt.Errorf("cluster management not implemented for this API version")
-}
-
-func (n *NotImplementedClusterAdapter) Create(_ context.Context, _ *types.ClusterCreate) (*types.ClusterCreateResponse, error) {
-	return nil, fmt.Errorf("cluster management not implemented for this API version")
-}
-
-func (n *NotImplementedClusterAdapter) Delete(_ context.Context, _ string) error {
-	return fmt.Errorf("cluster management not implemented for this API version")
-}
-
-// GetWCKeyManager returns nil as WCKey management is not supported in v0.0.41
+// GetWCKeyManager returns the WCKey adapter for this version
 func (a *Adapter) GetWCKeyManager() common.WCKeyAdapter {
-	return nil
+	// v0.0.41 has different API schema structure (inline anonymous types)
+	// TODO: Implement custom v0.0.41-specific wckey adapter
+	return &notImplementedWCKeyAdapter{}
 }
 
 // GetInfoManager returns the Info adapter for this version
 func (a *Adapter) GetInfoManager() common.InfoAdapter {
 	return a.infoAdapter
+}
+
+// notImplementedClusterAdapter provides stub for v0.0.41 which has different API schema
+type notImplementedClusterAdapter struct{}
+
+func (n *notImplementedClusterAdapter) List(_ context.Context, _ *types.ClusterListOptions) (*types.ClusterList, error) {
+	return nil, fmt.Errorf("cluster management not yet implemented for v0.0.41 (API schema limitation)")
+}
+
+func (n *notImplementedClusterAdapter) Get(_ context.Context, _ string) (*types.Cluster, error) {
+	return nil, fmt.Errorf("cluster management not yet implemented for v0.0.41 (API schema limitation)")
+}
+
+func (n *notImplementedClusterAdapter) Create(_ context.Context, _ *types.ClusterCreate) (*types.ClusterCreateResponse, error) {
+	return nil, fmt.Errorf("cluster management not yet implemented for v0.0.41 (API schema limitation)")
+}
+
+func (n *notImplementedClusterAdapter) Delete(_ context.Context, _ string) error {
+	return fmt.Errorf("cluster management not yet implemented for v0.0.41 (API schema limitation)")
+}
+
+// notImplementedWCKeyAdapter provides stub for v0.0.41 which has different API schema
+type notImplementedWCKeyAdapter struct{}
+
+func (n *notImplementedWCKeyAdapter) List(_ context.Context, _ *types.WCKeyListOptions) (*types.WCKeyList, error) {
+	return nil, fmt.Errorf("wckey management not yet implemented for v0.0.41 (API schema limitation)")
+}
+
+func (n *notImplementedWCKeyAdapter) Get(_ context.Context, _ string) (*types.WCKey, error) {
+	return nil, fmt.Errorf("wckey management not yet implemented for v0.0.41 (API schema limitation)")
+}
+
+func (n *notImplementedWCKeyAdapter) Create(_ context.Context, _ *types.WCKeyCreate) (*types.WCKeyCreateResponse, error) {
+	return nil, fmt.Errorf("wckey management not yet implemented for v0.0.41 (API schema limitation)")
+}
+
+func (n *notImplementedWCKeyAdapter) Delete(_ context.Context, _ string) error {
+	return fmt.Errorf("wckey management not yet implemented for v0.0.41 (API schema limitation)")
 }
