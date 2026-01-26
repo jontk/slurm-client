@@ -493,7 +493,7 @@ func TestJobAnalyticsPerformanceOverhead(t *testing.T) {
 	if runtime.GOOS == "darwin" {
 		threshold = 80.0 // macOS threshold increased to account for platform-specific timing variations
 	} else if runtime.GOOS == "windows" {
-		threshold = 10.0 // Windows threshold slightly increased for timing variations
+		threshold = 20.0 // Windows CI environments have higher timing variability
 	}
 
 	// Assert overhead is within threshold

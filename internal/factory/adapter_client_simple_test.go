@@ -25,6 +25,7 @@ type testVersionAdapter struct {
 	associationAdapter common.AssociationAdapter
 	qosAdapter         common.QoSAdapter
 	userAdapter        common.UserAdapter
+	infoAdapter        common.InfoAdapter
 }
 
 func (t *testVersionAdapter) GetVersion() string {
@@ -73,6 +74,10 @@ func (t *testVersionAdapter) GetWCKeyManager() common.WCKeyAdapter {
 
 func (t *testVersionAdapter) GetClusterManager() common.ClusterAdapter {
 	return nil
+}
+
+func (t *testVersionAdapter) GetInfoManager() common.InfoAdapter {
+	return t.infoAdapter
 }
 
 // Mock standalone adapter

@@ -411,6 +411,10 @@ linters:
           - goheader
         path: (\.pb\.go|\.gen\.go|/wrapper\.go$|/client\.go$|/managers\.go$)  # Generated files
       - linters:
+          - goconst
+        path: internal/factory/
+        text: "v0\\.0\\.43"  # Version strings in factory switches should not be constants
+      - linters:
           - goheader
         path: vendor/  # Third-party dependencies
     paths:
