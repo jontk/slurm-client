@@ -2347,8 +2347,14 @@ func convertTRESToInterface(t *types.TRES) *interfaces.TRES {
 		return nil
 	}
 
+	// Safe conversion: TRES IDs in SLURM are always non-negative
+	var id uint64
+	if t.ID >= 0 {
+		id = uint64(t.ID) //nolint:gosec // G115: TRES IDs are always non-negative in SLURM
+	}
+
 	return &interfaces.TRES{
-		ID:       uint64(t.ID),
+		ID:       id,
 		Type:     t.Type,
 		Name:     t.Name,
 		Count:    t.Count,
