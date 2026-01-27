@@ -23,6 +23,7 @@ import (
 	v043api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 	v044api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 	"github.com/jontk/slurm-client/internal/common/types"
+	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // AdapterClient wraps a version-specific adapter to implement the SlurmClient interface
@@ -1158,6 +1159,9 @@ func (m *adapterInfoManager) Get(ctx context.Context) (*interfaces.ClusterInfo, 
 	if err != nil {
 		return nil, err
 	}
+	if result == nil {
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, "cluster info not found")
+	}
 	return convertTypesClusterInfoToInterface(result), nil
 }
 
@@ -1629,6 +1633,11 @@ func (m *adapterReservationManager) Get(ctx context.Context, reservationName str
 		return nil, err
 	}
 
+	// Check if result is nil before dereferencing
+	if result == nil {
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("reservation %s not found", reservationName))
+	}
+
 	// Convert result
 	reservation := convertReservationToInterface(*result)
 	return &reservation, nil
@@ -1787,6 +1796,11 @@ func (m *adapterAssociationManager) Get(ctx context.Context, opts *interfaces.Ge
 	result, err := m.adapter.Get(ctx, associationID)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before dereferencing
+	if result == nil {
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("association %s not found", associationID))
 	}
 
 	// Convert result
@@ -2294,6 +2308,11 @@ func (m *adapterWCKeyManager) Get(ctx context.Context, wckeyName, user, cluster 
 	result, err := m.adapter.Get(ctx, wcKeyID)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before accessing fields
+	if result == nil {
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("WCKey %s not found", wcKeyID))
 	}
 
 	return &interfaces.WCKey{
