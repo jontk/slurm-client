@@ -326,6 +326,14 @@ func (m *adapterJobManager) List(ctx context.Context, opts *interfaces.ListJobsO
 		return nil, err
 	}
 
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.JobList{
+			Jobs:  []interfaces.Job{},
+			Total: 0,
+		}, nil
+	}
+
 	// Convert result
 	jobList := &interfaces.JobList{
 		Jobs:  make([]interfaces.Job, 0, len(result.Jobs)),
@@ -726,6 +734,14 @@ func (m *adapterNodeManager) List(ctx context.Context, opts *interfaces.ListNode
 		return nil, err
 	}
 
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.NodeList{
+			Nodes: []interfaces.Node{},
+			Total: 0,
+		}, nil
+	}
+
 	// Convert result
 	nodeList := &interfaces.NodeList{
 		Nodes: make([]interfaces.Node, 0, len(result.Nodes)),
@@ -868,6 +884,14 @@ func (m *adapterPartitionManager) List(ctx context.Context, opts *interfaces.Lis
 	result, err := m.adapter.List(ctx, adapterOpts)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.PartitionList{
+			Partitions: []interfaces.Partition{},
+			Total:      0,
+		}, nil
 	}
 
 	// Convert result
@@ -1221,6 +1245,14 @@ func (m *adapterQoSManager) List(ctx context.Context, opts *interfaces.ListQoSOp
 		return nil, err
 	}
 
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.QoSList{
+			QoS:   []interfaces.QoS{},
+			Total: 0,
+		}, nil
+	}
+
 	// Convert result
 	qosList := &interfaces.QoSList{
 		QoS:   make([]interfaces.QoS, 0, len(result.QoS)),
@@ -1298,6 +1330,14 @@ func (m *adapterAccountManager) List(ctx context.Context, opts *interfaces.ListA
 	result, err := m.adapter.List(ctx, adapterOpts)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.AccountList{
+			Accounts: []interfaces.Account{},
+			Total:    0,
+		}, nil
 	}
 
 	// Convert result
@@ -1420,6 +1460,14 @@ func (m *adapterUserManager) List(ctx context.Context, opts *interfaces.ListUser
 	result, err := m.adapter.List(ctx, adapterOpts)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.UserList{
+			Users: []interfaces.User{},
+			Total: 0,
+		}, nil
 	}
 
 	// Convert result
@@ -1551,6 +1599,14 @@ func (m *adapterReservationManager) List(ctx context.Context, opts *interfaces.L
 	result, err := m.adapter.List(ctx, adapterOpts)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.ReservationList{
+			Reservations: []interfaces.Reservation{},
+			Total:        0,
+		}, nil
 	}
 
 	// Convert result
@@ -1687,6 +1743,14 @@ func (m *adapterAssociationManager) List(ctx context.Context, opts *interfaces.L
 	result, err := m.adapter.List(ctx, adapterOpts)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.AssociationList{
+			Associations: []*interfaces.Association{},
+			Total:        0,
+		}, nil
 	}
 
 	// Convert result
@@ -2083,6 +2147,14 @@ func (m *adapterClusterManager) List(ctx context.Context, opts *interfaces.ListC
 		return nil, err
 	}
 
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.ClusterList{
+			Clusters: []*interfaces.Cluster{},
+			Total:    0,
+		}, nil
+	}
+
 	// Convert result
 	clusterList := &interfaces.ClusterList{
 		Clusters: make([]*interfaces.Cluster, 0, len(result.Clusters)),
@@ -2189,6 +2261,14 @@ func (m *adapterWCKeyManager) List(ctx context.Context, opts *interfaces.WCKeyLi
 	result, err := m.adapter.List(ctx, adapterOpts)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.WCKeyList{
+			WCKeys: []interfaces.WCKey{},
+			Total:  0,
+		}, nil
 	}
 
 	// Convert result
