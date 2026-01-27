@@ -23,6 +23,7 @@ import (
 	v043api "github.com/jontk/slurm-client/internal/api/v0_0_43"
 	v044api "github.com/jontk/slurm-client/internal/api/v0_0_44"
 	"github.com/jontk/slurm-client/internal/common/types"
+	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // AdapterClient wraps a version-specific adapter to implement the SlurmClient interface
@@ -324,6 +325,14 @@ func (m *adapterJobManager) List(ctx context.Context, opts *interfaces.ListJobsO
 	result, err := m.adapter.List(ctx, adapterOpts)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.JobList{
+			Jobs:  []interfaces.Job{},
+			Total: 0,
+		}, nil
 	}
 
 	// Convert result
@@ -726,6 +735,14 @@ func (m *adapterNodeManager) List(ctx context.Context, opts *interfaces.ListNode
 		return nil, err
 	}
 
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.NodeList{
+			Nodes: []interfaces.Node{},
+			Total: 0,
+		}, nil
+	}
+
 	// Convert result
 	nodeList := &interfaces.NodeList{
 		Nodes: make([]interfaces.Node, 0, len(result.Nodes)),
@@ -868,6 +885,14 @@ func (m *adapterPartitionManager) List(ctx context.Context, opts *interfaces.Lis
 	result, err := m.adapter.List(ctx, adapterOpts)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.PartitionList{
+			Partitions: []interfaces.Partition{},
+			Total:      0,
+		}, nil
 	}
 
 	// Convert result
@@ -1134,6 +1159,9 @@ func (m *adapterInfoManager) Get(ctx context.Context) (*interfaces.ClusterInfo, 
 	if err != nil {
 		return nil, err
 	}
+	if result == nil {
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, "cluster info not found")
+	}
 	return convertTypesClusterInfoToInterface(result), nil
 }
 
@@ -1221,6 +1249,14 @@ func (m *adapterQoSManager) List(ctx context.Context, opts *interfaces.ListQoSOp
 		return nil, err
 	}
 
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.QoSList{
+			QoS:   []interfaces.QoS{},
+			Total: 0,
+		}, nil
+	}
+
 	// Convert result
 	qosList := &interfaces.QoSList{
 		QoS:   make([]interfaces.QoS, 0, len(result.QoS)),
@@ -1298,6 +1334,14 @@ func (m *adapterAccountManager) List(ctx context.Context, opts *interfaces.ListA
 	result, err := m.adapter.List(ctx, adapterOpts)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.AccountList{
+			Accounts: []interfaces.Account{},
+			Total:    0,
+		}, nil
 	}
 
 	// Convert result
@@ -1420,6 +1464,14 @@ func (m *adapterUserManager) List(ctx context.Context, opts *interfaces.ListUser
 	result, err := m.adapter.List(ctx, adapterOpts)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.UserList{
+			Users: []interfaces.User{},
+			Total: 0,
+		}, nil
 	}
 
 	// Convert result
@@ -1553,6 +1605,14 @@ func (m *adapterReservationManager) List(ctx context.Context, opts *interfaces.L
 		return nil, err
 	}
 
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.ReservationList{
+			Reservations: []interfaces.Reservation{},
+			Total:        0,
+		}, nil
+	}
+
 	// Convert result
 	reservationList := &interfaces.ReservationList{
 		Reservations: make([]interfaces.Reservation, 0, len(result.Reservations)),
@@ -1571,6 +1631,11 @@ func (m *adapterReservationManager) Get(ctx context.Context, reservationName str
 	result, err := m.adapter.Get(ctx, reservationName)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before dereferencing
+	if result == nil {
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("reservation %s not found", reservationName))
 	}
 
 	// Convert result
@@ -1689,6 +1754,14 @@ func (m *adapterAssociationManager) List(ctx context.Context, opts *interfaces.L
 		return nil, err
 	}
 
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.AssociationList{
+			Associations: []*interfaces.Association{},
+			Total:        0,
+		}, nil
+	}
+
 	// Convert result
 	associationList := &interfaces.AssociationList{
 		Associations: make([]*interfaces.Association, 0, len(result.Associations)),
@@ -1723,6 +1796,11 @@ func (m *adapterAssociationManager) Get(ctx context.Context, opts *interfaces.Ge
 	result, err := m.adapter.Get(ctx, associationID)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before dereferencing
+	if result == nil {
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("association %s not found", associationID))
 	}
 
 	// Convert result
@@ -2083,6 +2161,14 @@ func (m *adapterClusterManager) List(ctx context.Context, opts *interfaces.ListC
 		return nil, err
 	}
 
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.ClusterList{
+			Clusters: []*interfaces.Cluster{},
+			Total:    0,
+		}, nil
+	}
+
 	// Convert result
 	clusterList := &interfaces.ClusterList{
 		Clusters: make([]*interfaces.Cluster, 0, len(result.Clusters)),
@@ -2191,6 +2277,14 @@ func (m *adapterWCKeyManager) List(ctx context.Context, opts *interfaces.WCKeyLi
 		return nil, err
 	}
 
+	// Check if result is nil before accessing it
+	if result == nil {
+		return &interfaces.WCKeyList{
+			WCKeys: []interfaces.WCKey{},
+			Total:  0,
+		}, nil
+	}
+
 	// Convert result
 	wckeys := make([]interfaces.WCKey, 0, len(result.WCKeys))
 	for _, wckey := range result.WCKeys {
@@ -2214,6 +2308,11 @@ func (m *adapterWCKeyManager) Get(ctx context.Context, wckeyName, user, cluster 
 	result, err := m.adapter.Get(ctx, wcKeyID)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if result is nil before accessing fields
+	if result == nil {
+		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("WCKey %s not found", wcKeyID))
 	}
 
 	return &interfaces.WCKey{
