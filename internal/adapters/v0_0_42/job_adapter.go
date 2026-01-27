@@ -598,6 +598,24 @@ func (a *JobAdapter) convertAPIJobToCommon(apiJob api.V0042JobInfo) (*types.Job,
 		job.Command = *apiJob.Command
 	}
 
+	// Exit code - ProcessExitCodeVerbose structure (critical for performance metrics)
+	if apiJob.ExitCode != nil && apiJob.ExitCode.ReturnCode != nil &&
+		apiJob.ExitCode.ReturnCode.Set != nil && *apiJob.ExitCode.ReturnCode.Set &&
+		apiJob.ExitCode.ReturnCode.Number != nil {
+		job.ExitCode = *apiJob.ExitCode.ReturnCode.Number
+	}
+
+	// Memory handling - use ResourceRequests for proper structure
+	// MemoryPerNode (NoValStruct, in MB - convert to bytes)
+	if apiJob.MemoryPerNode != nil && apiJob.MemoryPerNode.Set != nil &&
+		*apiJob.MemoryPerNode.Set && apiJob.MemoryPerNode.Number != nil {
+		job.ResourceRequests.Memory = int64(*apiJob.MemoryPerNode.Number) * 1024 * 1024 // MB to bytes
+	} else if apiJob.MemoryPerCpu != nil && apiJob.MemoryPerCpu.Set != nil &&
+		*apiJob.MemoryPerCpu.Set && apiJob.MemoryPerCpu.Number != nil {
+		// MemoryPerCPU (NoValStruct, in MB - convert to bytes)
+		job.ResourceRequests.MemoryPerCPU = int64(*apiJob.MemoryPerCpu.Number) * 1024 * 1024 // MB to bytes
+	}
+
 	return job, nil
 }
 
