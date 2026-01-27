@@ -7,13 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-01-26
+## [0.2.0] - 2026-01-27
 
 ### Added
 - **Adapter Pattern Completion**: InfoAdapter implementation across all API versions (v0.0.40-v0.0.44)
   - Complete InfoManager with real API calls (Get, Ping, PingDatabase, Stats, Version)
   - Proper error handling and type conversions for all versions
   - Eliminated hybrid wrapper/adapter approach in v0.0.44
+- **Performance Testing Infrastructure**: Nightly validation workflow (#74)
+  - Removed benchmarks from PR CI to eliminate flaky failures
+  - Added nightly performance validation workflow (4 AM UTC)
+  - Smoke tests for catastrophic regression detection (30s threshold)
+  - Platform-agnostic approach without macOS-specific skips
 - **Standalone Operations**: Full support for standalone SLURM operations (v0.0.40/v0.0.42)
   - Licenses management
   - TRES (Trackable RESources)
@@ -48,10 +53,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Code Quality**: Reduced cyclomatic complexity thresholds from 50 to 25 to 20
   - Extracted helper methods across multiple adapters
   - Improved code readability and maintainability
-- **Test Thresholds**: Adjusted platform-specific performance thresholds
-  - Windows performance test threshold increased from 10% to 20% for CI variability
+- **Performance Testing Strategy**: Restructured to prevent flaky CI failures (#74)
+  - Removed benchmarks from PR workflow entirely
+  - Converted timing assertions to data-collection only
+  - Benchmarks now run exclusively via nightly validation
+  - Reduced CI time and resource usage on every PR
 
 ### Fixed
+- **Critical Bug**: Fixed nil pointer dereferences in all adapter List methods (#71)
+  - JobAdapter, NodeAdapter, PartitionAdapter, AccountAdapter, UserAdapter
+  - QOSAdapter, ReservationAdapter, LicenseAdapter, TRESAdapter
+  - ShareAdapter, DiagnosticsAdapter, WCKeyAdapter, ClusterAdapter
+  - All adapters now properly check for nil slices before conversion
 - **Code Quality**: Fixed 7 cyclomatic complexity violations by extracting helper methods
   - v0.0.40-42: InfoAdapter.Stats() reduced from complexity 25 to 6
   - v0.0.43-44: InfoAdapter.Get() reduced from 21 to 7, Stats() reduced from 26 to 7
@@ -66,6 +79,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI Failures**: Resolved staticcheck and gosec warnings
   - Fixed unused linter directives
   - Added safe integer overflow checks
+- **Performance Tests**: Eliminated flaky timing-based test failures (#74, #70)
+  - Removed platform-specific thresholds (macOS 150% overhead)
+  - Tests now report metrics without failing on timing variability
+  - Smoke tests catch only catastrophic regressions (>10x slower)
 
 ## [0.1.0] - 2026-01-20
 
