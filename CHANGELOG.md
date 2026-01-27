@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-01-27
+
+### Fixed
+- **Go Module Availability**: Re-released as v0.2.1 to ensure Go module proxy has correct version
+  - The v0.2.0 tag was force-pushed multiple times during release troubleshooting
+  - Go module proxy (proxy.golang.org) cached the initial version and didn't update
+  - v0.2.1 is identical to v0.2.0 content but ensures users get all features via `go get`
+  - All v0.2.0 features are included, particularly WithUseAdapters() API
+
 ## [0.2.0] - 2026-01-27
 
 ### Added
