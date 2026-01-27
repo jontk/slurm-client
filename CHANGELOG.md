@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-01-26
+## [0.2.0] - 2026-01-27
 
 ### Added
 - **Adapter Pattern Completion**: InfoAdapter implementation across all API versions (v0.0.40-v0.0.44)
@@ -22,6 +22,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **New Adapters**: Additional resource management for v0.0.40
   - WCKeyAdapter - WCKey management
   - ClusterAdapter - Cluster management
+- **v0.0.42 Adapter Completion**: Full standalone feature implementation (#69)
+  - Licenses adapter with proper field mapping
+  - TRES adapter with complete type conversions
+  - Shares adapter with fairshare calculations
+  - Diagnostics adapter with 19 diagnostic fields
+  - Accounts, Users, Associations adapters
+  - WCKey and Cluster adapters
+- **Public API Enhancement**: Exposed WithUseAdapters() option (#69)
+  - Allows users to opt-in to adapter pattern for all versions
+  - Provides choice between wrapper and adapter implementations
 - **Linting Infrastructure**: Comprehensive code quality governance
   - goheader configuration for SPDX Apache-2.0 license enforcement
   - depguard rules for deprecated packages
@@ -52,6 +62,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Windows performance test threshold increased from 10% to 20% for CI variability
 
 ### Fixed
+- **Critical Nil Pointer Bugs**: Fixed 14 nil pointer dereference vulnerabilities in adapter methods (#71)
+  - Added nil checks to all 10 List methods (Jobs, Nodes, Partitions, QoS, Accounts, Users, Reservations, Associations, Clusters, WCKeys)
+  - Added nil checks to 4 Get methods (Info, Reservation, Association, WCKey)
+  - Prevents segfaults when adapters return nil results (e.g., auth failures)
+  - Returns empty lists or ErrorCodeResourceNotFound instead of crashing
+  - Critical fix for slurm-exporter and other observability tools
+- **Test Stability**: Fixed flaky macOS CI tests (#70)
+  - Skip analytics overhead compliance tests on macOS due to timing inconsistencies
+  - Tests were randomly failing different subtests (utilization, efficiency, performance)
+  - macOS runners have variable scheduling and thermal throttling
+  - Tests continue running on Linux/Windows where timing is stable
 - **Code Quality**: Fixed 7 cyclomatic complexity violations by extracting helper methods
   - v0.0.40-42: InfoAdapter.Stats() reduced from complexity 25 to 6
   - v0.0.43-44: InfoAdapter.Get() reduced from 21 to 7, Stats() reduced from 26 to 7
