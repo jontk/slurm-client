@@ -369,6 +369,12 @@ func TestAnalyticsOverheadCompliance(t *testing.T) {
 		t.Skip("Skipping overhead compliance test in short mode")
 	}
 
+	// Skip on macOS due to unreliable timing in CI
+	// Even with 80% threshold, macOS runners have inconsistent scheduling
+	if runtime.GOOS == "darwin" {
+		t.Skip("Skipping overhead compliance test on macOS due to timing inconsistencies")
+	}
+
 	mockServer := mocks.NewMockSlurmServerForVersion("v0.0.42")
 	defer mockServer.Close()
 
