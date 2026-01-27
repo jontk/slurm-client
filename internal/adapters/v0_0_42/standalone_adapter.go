@@ -204,6 +204,48 @@ func (a *StandaloneAdapter) GetDiagnostics(ctx context.Context) (*types.Diagnost
 		diag.JobsRunning = int(*stats.JobsRunning)
 	}
 
+	// Backfill scheduler metrics
+	if stats.BfCycleCounter != nil {
+		diag.BFCycle = int(*stats.BfCycleCounter)
+	}
+	if stats.BfCycleMean != nil {
+		diag.BFCycleMean = int64(*stats.BfCycleMean)
+	}
+	if stats.BfCycleMax != nil {
+		diag.BFCycleMax = int64(*stats.BfCycleMax)
+	}
+	if stats.BfCycleLast != nil {
+		diag.BFCycleMean = int64(*stats.BfCycleLast) // Store last in a mean-like field
+	}
+
+	// Schedule cycle metrics
+	if stats.ScheduleCycleTotal != nil {
+		diag.ScheduleCycleCounter = int(*stats.ScheduleCycleTotal)
+	}
+	if stats.ScheduleCycleMean != nil {
+		diag.ScheduleCycleMean = int64(*stats.ScheduleCycleMean)
+	}
+	if stats.ScheduleCycleMax != nil {
+		diag.ScheduleCycleMax = int64(*stats.ScheduleCycleMax)
+	}
+	if stats.ScheduleCycleLast != nil {
+		diag.ScheduleCycleLast = int64(*stats.ScheduleCycleLast)
+	}
+
+	// Agent and thread metrics
+	if stats.AgentCount != nil {
+		diag.AgentCount = int(*stats.AgentCount)
+	}
+	if stats.AgentThreadCount != nil {
+		diag.AgentThreadCount = int(*stats.AgentThreadCount)
+	}
+	if stats.DbdAgentQueueSize != nil {
+		diag.DBDAgentCount = int(*stats.DbdAgentQueueSize)
+	}
+	if stats.ServerThreadCount != nil {
+		diag.ServerThreadCount = int(*stats.ServerThreadCount)
+	}
+
 	// RPC statistics
 	// Note: v0.0.42 doesn't have RPC statistics in the same structure
 
