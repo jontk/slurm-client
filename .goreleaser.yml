@@ -63,11 +63,12 @@ checksum:
   algorithm: sha256
 
 # SBOM (Software Bill of Materials) configuration
-sboms:
-  - id: archive
-    artifacts: archive
-    documents:
-      - "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}.sbom.json"
+# Temporarily disabled due to syft version compatibility issues
+# sboms:
+#   - id: archive
+#     artifacts: archive
+#     documents:
+#       - "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}.sbom.json"
 
 # Code signing configuration
 signs:
