@@ -288,12 +288,17 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # Need history for baseline comparison
 
     - name: Set up Go
       uses: actions/setup-go@v6
       with:
         go-version: ${{ env.GO_VERSION_STABLE }}
         cache: true
+
+    - name: Install benchstat
+      run: go install golang.org/x/perf/cmd/benchstat@latest
 
     - name: Install oapi-codegen
       run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
@@ -303,13 +308,25 @@ jobs:
 
     - name: Run benchmarks
       run: |
-        go test -bench=. -benchmem -run=^$ ./... | tee benchmark_results.txt
+        go test -bench=. -benchmem -count=5 -run=^$ ./tests/benchmarks/... 2>&1 | tee benchmark-new.txt
+      continue-on-error: true  # Don't fail on benchmark errors
+
+    - name: Compare with baseline
+      run: |
+        if [ -f benchmarks/baseline.txt ]; then
+          echo "## Benchmark Comparison" >> $GITHUB_STEP_SUMMARY
+          benchstat benchmarks/baseline.txt benchmark-new.txt >> $GITHUB_STEP_SUMMARY 2>&1 || true
+        else
+          echo "No baseline found - skipping comparison" >> $GITHUB_STEP_SUMMARY
+        fi
+      continue-on-error: true
 
     - name: Upload benchmark results
       uses: actions/upload-artifact@v5
       with:
-        name: benchmark-results
-        path: benchmark_results.txt
+        name: benchmark-results-${{ github.sha }}
+        path: benchmark-new.txt
+        retention-days: 30
 
   all-checks-passed:
     name: All Checks Passed

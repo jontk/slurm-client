@@ -1,20 +1,151 @@
-# github.com/jontk/slurm-client/benchmarks [github.com/jontk/slurm-client/benchmarks.test]
-benchmarks/auth_bench_test.go:19:6: ta.Apply undefined (type *auth.TokenAuth has no field or method Apply)
-benchmarks/auth_bench_test.go:24:14: undefined: auth.NewAPIKeyAuth
-benchmarks/auth_bench_test.go:39:6: ba.Apply undefined (type *auth.BasicAuth has no field or method Apply)
-benchmarks/auth_bench_test.go:44:16: undefined: auth.Chain
-benchmarks/auth_bench_test.go:46:8: undefined: auth.NewAPIKeyAuth
-benchmarks/errors_bench_test.go:19:4: too many arguments in call to errors.NewSlurmError
-	have ("github.com/jontk/slurm-client/pkg/errors".ErrorCode, string, map[string]interface{})
-	want ("github.com/jontk/slurm-client/pkg/errors".ErrorCode, string)
-benchmarks/errors_bench_test.go:32:37: too many arguments in call to errors.WrapError
-	have (error, unknown type)
-	want (error)
-benchmarks/errors_bench_test.go:32:44: undefined: errors.ErrorCodeTimeout
-benchmarks/errors_bench_test.go:40:3: too many arguments in call to errors.NewSlurmError
-	have ("github.com/jontk/slurm-client/pkg/errors".ErrorCode, string, nil)
-	want ("github.com/jontk/slurm-client/pkg/errors".ErrorCode, string)
-benchmarks/errors_bench_test.go:45:14: undefined: errors.IsErrorCode
-benchmarks/errors_bench_test.go:45:14: too many errors
-FAIL	github.com/jontk/slurm-client/benchmarks [build failed]
-FAIL
+goos: linux
+goarch: amd64
+pkg: github.com/jontk/slurm-client/tests/benchmarks
+cpu: AMD Ryzen 5 5600X 6-Core Processor             
+BenchmarkJobAnalyticsOverhead/Baseline_JobGet-12      	2026/01/27 20:58:47 Mock SLURM API: GET /slurm/v0.0.42/job/1001
+BenchmarkJobAnalyticsOverhead/Baseline_JobGet-12      	2026/01/27 20:58:48 Mock SLURM API: GET /slurm/v0.0.42/job/1001
+BenchmarkJobAnalyticsOverhead/Baseline_JobGet-12      	2026/01/27 20:58:49 Mock SLURM API: GET /slurm/v0.0.42/job/1001
+BenchmarkJobAnalyticsOverhead/Baseline_JobGet-12      	2026/01/27 20:58:51 Mock SLURM API: GET /slurm/v0.0.42/job/1001
+BenchmarkJobAnalyticsOverhead/Baseline_JobGet-12      	2026/01/27 20:58:52 Mock SLURM API: GET /slurm/v0.0.42/job/1001
+BenchmarkJobAnalyticsOverhead/Analytics_Utilization-12         	2026/01/27 20:58:53 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkJobAnalyticsOverhead/Analytics_Utilization-12         	2026/01/27 20:58:54 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkJobAnalyticsOverhead/Analytics_Utilization-12         	2026/01/27 20:58:55 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkJobAnalyticsOverhead/Analytics_Utilization-12         	2026/01/27 20:58:57 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkJobAnalyticsOverhead/Analytics_Utilization-12         	2026/01/27 20:58:58 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkJobAnalyticsOverhead/Analytics_Efficiency-12          	2026/01/27 20:58:59 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkJobAnalyticsOverhead/Analytics_Efficiency-12          	2026/01/27 20:59:00 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkJobAnalyticsOverhead/Analytics_Efficiency-12          	2026/01/27 20:59:01 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkJobAnalyticsOverhead/Analytics_Efficiency-12          	2026/01/27 20:59:02 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkJobAnalyticsOverhead/Analytics_Efficiency-12          	2026/01/27 20:59:04 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkJobAnalyticsOverhead/Analytics_Performance-12         	2026/01/27 20:59:06 Mock SLURM API: GET /slurm/v0.0.42/job/1001/performance
+BenchmarkJobAnalyticsOverhead/Analytics_Performance-12         	2026/01/27 20:59:07 Mock SLURM API: GET /slurm/v0.0.42/job/1001/performance
+BenchmarkJobAnalyticsOverhead/Analytics_Performance-12         	2026/01/27 20:59:08 Mock SLURM API: GET /slurm/v0.0.42/job/1001/performance
+BenchmarkJobAnalyticsOverhead/Analytics_Performance-12         	2026/01/27 20:59:09 Mock SLURM API: GET /slurm/v0.0.42/job/1001/performance
+BenchmarkJobAnalyticsOverhead/Analytics_Performance-12         	2026/01/27 20:59:11 Mock SLURM API: GET /slurm/v0.0.42/job/1001/performance
+BenchmarkJobAnalyticsOverhead/Analytics_LiveMetrics-12         	2026/01/27 20:59:12 Mock SLURM API: GET /slurm/v0.0.42/job/1001/live_metrics
+BenchmarkJobAnalyticsOverhead/Analytics_LiveMetrics-12         	2026/01/27 20:59:13 Mock SLURM API: GET /slurm/v0.0.42/job/1001/live_metrics
+BenchmarkJobAnalyticsOverhead/Analytics_LiveMetrics-12         	2026/01/27 20:59:14 Mock SLURM API: GET /slurm/v0.0.42/job/1001/live_metrics
+BenchmarkJobAnalyticsOverhead/Analytics_LiveMetrics-12         	2026/01/27 20:59:15 Mock SLURM API: GET /slurm/v0.0.42/job/1001/live_metrics
+BenchmarkJobAnalyticsOverhead/Analytics_LiveMetrics-12         	2026/01/27 20:59:17 Mock SLURM API: GET /slurm/v0.0.42/job/1001/live_metrics
+BenchmarkJobAnalyticsOverhead/Analytics_ResourceTrends-12      	2026/01/27 20:59:18 Mock SLURM API: GET /slurm/v0.0.42/job/1001/resource_trends
+BenchmarkJobAnalyticsOverhead/Analytics_ResourceTrends-12      	2026/01/27 20:59:19 Mock SLURM API: GET /slurm/v0.0.42/job/1001/resource_trends
+BenchmarkJobAnalyticsOverhead/Analytics_ResourceTrends-12      	2026/01/27 20:59:20 Mock SLURM API: GET /slurm/v0.0.42/job/1001/resource_trends
+BenchmarkJobAnalyticsOverhead/Analytics_ResourceTrends-12      	2026/01/27 20:59:21 Mock SLURM API: GET /slurm/v0.0.42/job/1001/resource_trends
+BenchmarkJobAnalyticsOverhead/Analytics_ResourceTrends-12      	2026/01/27 20:59:22 Mock SLURM API: GET /slurm/v0.0.42/job/1001/resource_trends
+BenchmarkAnalyticsCollectionOverhead/Single_UtilizationCall-12 	2026/01/27 20:59:24 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsCollectionOverhead/Single_UtilizationCall-12 	2026/01/27 20:59:25 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsCollectionOverhead/Single_UtilizationCall-12 	2026/01/27 20:59:26 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsCollectionOverhead/Single_UtilizationCall-12 	2026/01/27 20:59:27 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsCollectionOverhead/Single_UtilizationCall-12 	2026/01/27 20:59:28 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsCollectionOverhead/Complete_JobAnalytics-12  	2026/01/27 20:59:29 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsCollectionOverhead/Complete_JobAnalytics-12  	2026/01/27 20:59:31 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsCollectionOverhead/Complete_JobAnalytics-12  	2026/01/27 20:59:32 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsCollectionOverhead/Complete_JobAnalytics-12  	2026/01/27 20:59:34 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsCollectionOverhead/Complete_JobAnalytics-12  	2026/01/27 20:59:36 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsCollectionOverhead/Parallel_JobAnalytics-12  	2026/01/27 20:59:37 Mock SLURM API: GET /slurm/v0.0.42/job/1001/performance
+BenchmarkAnalyticsCollectionOverhead/Parallel_JobAnalytics-12  	2026/01/27 20:59:38 Mock SLURM API: GET /slurm/v0.0.42/job/1001/live_metrics
+BenchmarkAnalyticsCollectionOverhead/Parallel_JobAnalytics-12  	2026/01/27 20:59:39 Mock SLURM API: GET /slurm/v0.0.42/job/1001/performance
+BenchmarkAnalyticsCollectionOverhead/Parallel_JobAnalytics-12  	2026/01/27 20:59:41 Mock SLURM API: GET /slurm/v0.0.42/job/1001/performance
+BenchmarkAnalyticsCollectionOverhead/Parallel_JobAnalytics-12  	2026/01/27 20:59:42 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkAnalyticsMemoryUsage/Memory_UtilizationAnalytics-12   	2026/01/27 20:59:43 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsMemoryUsage/Memory_UtilizationAnalytics-12   	2026/01/27 20:59:45 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsMemoryUsage/Memory_UtilizationAnalytics-12   	2026/01/27 20:59:47 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsMemoryUsage/Memory_UtilizationAnalytics-12   	2026/01/27 20:59:49 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsMemoryUsage/Memory_UtilizationAnalytics-12   	2026/01/27 20:59:51 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsMemoryUsage/Memory_EfficiencyAnalytics-12    	2026/01/27 20:59:53 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkAnalyticsMemoryUsage/Memory_EfficiencyAnalytics-12    	2026/01/27 20:59:55 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkAnalyticsMemoryUsage/Memory_EfficiencyAnalytics-12    	2026/01/27 20:59:57 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkAnalyticsMemoryUsage/Memory_EfficiencyAnalytics-12    	2026/01/27 20:59:59 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkAnalyticsMemoryUsage/Memory_EfficiencyAnalytics-12    	2026/01/27 21:00:01 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkAnalyticsMemoryUsage/Memory_PerformanceAnalytics-12   	2026/01/27 21:00:03 Mock SLURM API: GET /slurm/v0.0.42/job/1001/performance
+BenchmarkAnalyticsMemoryUsage/Memory_PerformanceAnalytics-12   	2026/01/27 21:00:05 Mock SLURM API: GET /slurm/v0.0.42/job/1001/performance
+BenchmarkAnalyticsMemoryUsage/Memory_PerformanceAnalytics-12   	2026/01/27 21:00:07 Mock SLURM API: GET /slurm/v0.0.42/job/1001/performance
+BenchmarkAnalyticsMemoryUsage/Memory_PerformanceAnalytics-12   	2026/01/27 21:00:09 Mock SLURM API: GET /slurm/v0.0.42/job/1001/performance
+BenchmarkAnalyticsMemoryUsage/Memory_PerformanceAnalytics-12   	2026/01/27 21:00:11 Mock SLURM API: GET /slurm/v0.0.42/job/1001/performance
+BenchmarkAnalyticsConcurrentLoad/Concurrent_1_Analytics-12     	2026/01/27 21:00:13 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_1_Analytics-12     	2026/01/27 21:00:15 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_1_Analytics-12     	2026/01/27 21:00:18 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_1_Analytics-12     	2026/01/27 21:00:21 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_1_Analytics-12     	2026/01/27 21:00:23 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_5_Analytics-12     	2026/01/27 21:00:25 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_5_Analytics-12     	2026/01/27 21:00:27 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_5_Analytics-12     	2026/01/27 21:00:29 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_5_Analytics-12     	2026/01/27 21:00:32 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_5_Analytics-12     	2026/01/27 21:00:33 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_10_Analytics-12    	2026/01/27 21:00:36 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_10_Analytics-12    	2026/01/27 21:00:38 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_10_Analytics-12    	2026/01/27 21:00:40 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_10_Analytics-12    	2026/01/27 21:00:42 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_10_Analytics-12    	2026/01/27 21:00:44 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_25_Analytics-12    	2026/01/27 21:00:46 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_25_Analytics-12    	2026/01/27 21:00:48 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_25_Analytics-12    	2026/01/27 21:00:50 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_25_Analytics-12    	2026/01/27 21:00:52 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_25_Analytics-12    	2026/01/27 21:00:54 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_50_Analytics-12    	2026/01/27 21:00:56 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_50_Analytics-12    	2026/01/27 21:00:58 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_50_Analytics-12    	2026/01/27 21:01:00 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_50_Analytics-12    	2026/01/27 21:01:02 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_50_Analytics-12    	2026/01/27 21:01:04 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_100_Analytics-12   	2026/01/27 21:01:06 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_100_Analytics-12   	2026/01/27 21:01:08 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_100_Analytics-12   	2026/01/27 21:01:10 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_100_Analytics-12   	2026/01/27 21:01:12 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsConcurrentLoad/Concurrent_100_Analytics-12   	2026/01/27 21:01:14 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsLatencyDistribution/Latency_Distribution-12  	2026/01/27 21:01:16 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsLatencyDistribution/Latency_Distribution-12  	2026/01/27 21:01:17 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsLatencyDistribution/Latency_Distribution-12  	2026/01/27 21:01:18 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsLatencyDistribution/Latency_Distribution-12  	2026/01/27 21:01:20 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsLatencyDistribution/Latency_Distribution-12  	2026/01/27 21:01:21 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.40-12         	2026/01/27 21:01:22 Mock SLURM API: GET /slurm/v0.0.40/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.40-12         	2026/01/27 21:01:23 Mock SLURM API: GET /slurm/v0.0.40/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.40-12         	2026/01/27 21:01:25 Mock SLURM API: GET /slurm/v0.0.40/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.40-12         	2026/01/27 21:01:26 Mock SLURM API: GET /slurm/v0.0.40/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.40-12         	2026/01/27 21:01:27 Mock SLURM API: GET /slurm/v0.0.40/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.41-12         	2026/01/27 21:01:28 Mock SLURM API: GET /slurm/v0.0.41/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.41-12         	2026/01/27 21:01:29 Mock SLURM API: GET /slurm/v0.0.41/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.41-12         	2026/01/27 21:01:31 Mock SLURM API: GET /slurm/v0.0.41/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.41-12         	2026/01/27 21:01:32 Mock SLURM API: GET /slurm/v0.0.41/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.41-12         	2026/01/27 21:01:33 Mock SLURM API: GET /slurm/v0.0.41/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.42-12         	2026/01/27 21:01:34 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.42-12         	2026/01/27 21:01:36 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.42-12         	2026/01/27 21:01:37 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.42-12         	2026/01/27 21:01:38 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.42-12         	2026/01/27 21:01:39 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.43-12         	2026/01/27 21:01:40 Mock SLURM API: GET /slurm/v0.0.43/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.43-12         	2026/01/27 21:01:42 Mock SLURM API: GET /slurm/v0.0.43/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.43-12         	2026/01/27 21:01:43 Mock SLURM API: GET /slurm/v0.0.43/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.43-12         	2026/01/27 21:01:44 Mock SLURM API: GET /slurm/v0.0.43/job/1001/utilization
+BenchmarkAnalyticsVersionComparison/Version_v0.0.43-12         	2026/01/27 21:01:45 Mock SLURM API: GET /slurm/v0.0.43/job/1001/utilization
+BenchmarkAnalyticsDataProcessing/Raw_Request-12                	2026/01/27 21:01:46 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsDataProcessing/Raw_Request-12                	2026/01/27 21:01:47 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsDataProcessing/Raw_Request-12                	2026/01/27 21:01:49 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsDataProcessing/Raw_Request-12                	2026/01/27 21:01:50 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsDataProcessing/Raw_Request-12                	2026/01/27 21:01:51 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsDataProcessing/With_JSON_Parsing-12          	2026/01/27 21:01:52 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsDataProcessing/With_JSON_Parsing-12          	2026/01/27 21:01:54 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsDataProcessing/With_JSON_Parsing-12          	2026/01/27 21:01:56 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsDataProcessing/With_JSON_Parsing-12          	2026/01/27 21:01:59 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsDataProcessing/With_JSON_Parsing-12          	2026/01/27 21:02:01 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkAnalyticsDataProcessing/With_Full_Processing-12       	2026/01/27 21:02:03 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkAnalyticsDataProcessing/With_Full_Processing-12       	2026/01/27 21:02:05 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkAnalyticsDataProcessing/With_Full_Processing-12       	2026/01/27 21:02:07 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkAnalyticsDataProcessing/With_Full_Processing-12       	2026/01/27 21:02:09 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkAnalyticsDataProcessing/With_Full_Processing-12       	2026/01/27 21:02:11 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkMockServerAnalyticsOverhead/Baseline_JobGet-12        	2026/01/27 21:02:13 Mock SLURM API: GET /slurm/v0.0.42/job/1001
+BenchmarkMockServerAnalyticsOverhead/Baseline_JobGet-12        	2026/01/27 21:02:15 Mock SLURM API: GET /slurm/v0.0.42/job/1001
+BenchmarkMockServerAnalyticsOverhead/Baseline_JobGet-12        	2026/01/27 21:02:16 Mock SLURM API: GET /slurm/v0.0.42/job/1001
+BenchmarkMockServerAnalyticsOverhead/Baseline_JobGet-12        	2026/01/27 21:02:17 Mock SLURM API: GET /slurm/v0.0.42/job/1001
+BenchmarkMockServerAnalyticsOverhead/Baseline_JobGet-12        	2026/01/27 21:02:18 Mock SLURM API: GET /slurm/v0.0.42/job/1001
+BenchmarkMockServerAnalyticsOverhead/Analytics_Utilization-12  	2026/01/27 21:02:20 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkMockServerAnalyticsOverhead/Analytics_Utilization-12  	2026/01/27 21:02:21 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkMockServerAnalyticsOverhead/Analytics_Utilization-12  	2026/01/27 21:02:22 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkMockServerAnalyticsOverhead/Analytics_Utilization-12  	2026/01/27 21:02:23 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkMockServerAnalyticsOverhead/Analytics_Utilization-12  	2026/01/27 21:02:24 Mock SLURM API: GET /slurm/v0.0.42/job/1001/utilization
+BenchmarkMockServerAnalyticsOverhead/Analytics_Efficiency-12   	2026/01/27 21:02:26 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkMockServerAnalyticsOverhead/Analytics_Efficiency-12   	2026/01/27 21:02:27 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkMockServerAnalyticsOverhead/Analytics_Efficiency-12   	2026/01/27 21:02:28 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkMockServerAnalyticsOverhead/Analytics_Efficiency-12   	2026/01/27 21:02:29 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkMockServerAnalyticsOverhead/Analytics_Efficiency-12   	2026/01/27 21:02:31 Mock SLURM API: GET /slurm/v0.0.42/job/1001/efficiency
+BenchmarkMockServerAnalyticsOverhead/Analytics_Performance-12  	2026/01/27 21:02:32 Mock SLURM API: GET /slurm/v0.0.42/job/1001/performance
+BenchmarkMockServerAnalyticsOverhead/Analytics_Performance-12  	2026/
