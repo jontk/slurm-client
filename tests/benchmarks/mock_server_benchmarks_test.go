@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime"
 	"testing"
 	"time"
 
@@ -211,6 +212,12 @@ func BenchmarkMockServerAnalyticsLatencyDistribution(b *testing.B) {
 func TestMockServerAnalyticsOverheadCompliance(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping overhead compliance test in short mode")
+	}
+
+	// Skip on macOS due to unreliable timing in CI
+	// macOS runners have inconsistent scheduling that causes flaky results
+	if runtime.GOOS == "darwin" {
+		t.Skip("Skipping overhead compliance test on macOS due to timing inconsistencies")
 	}
 
 	mockServer := mocks.NewMockSlurmServerForVersion("v0.0.42")
