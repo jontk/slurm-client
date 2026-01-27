@@ -280,37 +280,6 @@ jobs:
           echo "No integration tests found"
         fi
 
-  benchmarks:
-    name: Benchmarks
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-
-    - name: Set up Go
-      uses: actions/setup-go@v6
-      with:
-        go-version: ${{ env.GO_VERSION_STABLE }}
-        cache: true
-
-    - name: Install oapi-codegen
-      run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
-
-    - name: Generate mock builders
-      run: make generate-mocks
-
-    - name: Run benchmarks
-      run: |
-        go test -bench=. -benchmem -run=^$ ./... | tee benchmark_results.txt
-
-    - name: Upload benchmark results
-      uses: actions/upload-artifact@v5
-      with:
-        name: benchmark-results
-        path: benchmark_results.txt
-
   all-checks-passed:
     name: All Checks Passed
     needs: [test, lint, staticcheck, build, license-check, module-check]
