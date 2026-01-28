@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-01-28
+
+### Fixed
+- **Release Workflow**: Fixed documentation update job failing with duplicate Authorization headers (#81)
+  - Added `persist-credentials: false` to checkout action in update-documentation job
+  - Prevents conflict between checkout's git auth config and create-pull-request's auth
+  - Resolves 400 error that occurred even after removing explicit token parameter
+
 ## [0.2.1] - 2026-01-27
 
 ### Fixed
