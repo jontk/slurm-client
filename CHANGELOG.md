@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-01-28
+
+### Fixed
+- **Release Workflow**: Added missing pull-requests write permission (#83)
+  - Documentation update job needs `pull-requests: write` to create PRs
+  - Fixes "Resource not accessible by integration" error when creating documentation PRs
+  - Completes the fix started in #81 for documentation update automation
+
 ## [0.2.2] - 2026-01-28
 
 ### Fixed
