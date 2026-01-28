@@ -17,6 +17,7 @@ on:
 permissions:
   contents: write
   packages: write
+  pull-requests: write  # Required for documentation update PRs
   id-token: write  # Required for cosign keyless signing
 
 jobs:
