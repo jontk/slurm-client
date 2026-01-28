@@ -168,3 +168,9 @@ AGENTS.md
 # Planning documents (local only)
 plan/
 
+# Root-level compiled binaries (should not be committed)
+/efficiency-monitoring
+/generate_mocks
+/job-analytics
+/test-wrapper
+
