@@ -311,8 +311,14 @@ func (m *adapterJobManager) List(ctx context.Context, opts *interfaces.ListJobsO
 	// Convert options
 	adapterOpts := &types.JobListOptions{}
 	if opts != nil {
-		adapterOpts.Users = []string{opts.UserID}         // Convert UserID to array
-		adapterOpts.Partitions = []string{opts.Partition} // Convert Partition to array
+		// Only add UserID if non-empty (avoid creating slice with single empty string)
+		if opts.UserID != "" {
+			adapterOpts.Users = []string{opts.UserID}
+		}
+		// Only add Partition if non-empty (avoid creating slice with single empty string)
+		if opts.Partition != "" {
+			adapterOpts.Partitions = []string{opts.Partition}
+		}
 		adapterOpts.Limit = opts.Limit
 		adapterOpts.Offset = opts.Offset
 		// Convert states

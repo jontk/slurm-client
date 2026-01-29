@@ -60,11 +60,18 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 		// Store filter options for client-side filtering
 	}
 
+	// DEBUG: Log the request details
+	fmt.Printf("[DEBUG JobAdapter] Calling SlurmV0044GetJobsWithResponse with params: %+v\n", params)
+
 	// Call the generated OpenAPI client for current job queries
 	resp, err := a.client.SlurmV0044GetJobsWithResponse(ctx, params)
 	if err != nil {
+		fmt.Printf("[DEBUG JobAdapter] API call failed with error: %v\n", err)
 		return nil, a.HandleAPIError(err)
 	}
+
+	// DEBUG: Log the response status
+	fmt.Printf("[DEBUG JobAdapter] API response status: %d\n", resp.StatusCode())
 
 	// Use common response error handling
 	var apiErrors *api.V0044OpenapiErrors
@@ -79,11 +86,16 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 
 	// Check for unexpected response format
 	if err := a.CheckNilResponse(resp.JSON200, "List Jobs"); err != nil {
+		fmt.Printf("[DEBUG JobAdapter] CheckNilResponse failed for JSON200: %v\n", err)
 		return nil, err
 	}
 	if err := a.CheckNilResponse(resp.JSON200.Jobs, "List Jobs - jobs field"); err != nil {
+		fmt.Printf("[DEBUG JobAdapter] CheckNilResponse failed for Jobs field: %v\n", err)
 		return nil, err
 	}
+
+	// DEBUG: Log the response data
+	fmt.Printf("[DEBUG JobAdapter] Response contains %d jobs\n", len(resp.JSON200.Jobs))
 
 	// Convert the response to common types - SlurmV0044GetJobs returns V0044JobInfo
 	jobList := make([]types.Job, 0, len(resp.JSON200.Jobs))
@@ -94,7 +106,11 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 
 	// Apply client-side filtering since API has limited filter support
 	if opts != nil {
+		fmt.Printf("[DEBUG JobAdapter] Before applyClientSideFilters: %d jobs\n", len(jobList))
+		fmt.Printf("[DEBUG JobAdapter] Filter options: Accounts=%v, Users=%v, States=%v, Partitions=%v, JobIDs=%v, JobNames=%v\n",
+			opts.Accounts, opts.Users, opts.States, opts.Partitions, opts.JobIDs, opts.JobNames)
 		jobList = a.applyClientSideFilters(jobList, opts)
+		fmt.Printf("[DEBUG JobAdapter] After applyClientSideFilters: %d jobs\n", len(jobList))
 	}
 
 	// Apply pagination
@@ -1054,7 +1070,9 @@ func (a *JobAdapter) matchesStateFilter(job types.Job, states []types.JobState) 
 
 // matchesPartitionFilter checks if a job matches the partition filter
 func (a *JobAdapter) matchesPartitionFilter(job types.Job, partitions []string) bool {
+	fmt.Printf("[DEBUG partitionFilter] partitions=%v (len=%d, nil=%v), job.Partition=%q\n", partitions, len(partitions), partitions == nil, job.Partition)
 	if len(partitions) == 0 {
+		fmt.Printf("[DEBUG partitionFilter] Empty partitions filter, returning true\n")
 		return true
 	}
 	for _, partition := range partitions {
@@ -1062,6 +1080,7 @@ func (a *JobAdapter) matchesPartitionFilter(job types.Job, partitions []string) 
 			return true
 		}
 	}
+	fmt.Printf("[DEBUG partitionFilter] No match found, returning false\n")
 	return false
 }
 
@@ -1098,13 +1117,20 @@ func (a *JobAdapter) applyClientSideFilters(jobs []types.Job, opts *types.JobLis
 
 	filtered := make([]types.Job, 0, len(jobs))
 
-	for _, job := range jobs {
-		if a.matchesAccountFilter(job, opts.Accounts) &&
-			a.matchesUserFilter(job, opts.Users) &&
-			a.matchesStateFilter(job, opts.States) &&
-			a.matchesPartitionFilter(job, opts.Partitions) &&
-			a.matchesJobIDFilter(job, opts.JobIDs) &&
-			a.matchesJobNameFilter(job, opts.JobNames) {
+	for i, job := range jobs {
+		accMatch := a.matchesAccountFilter(job, opts.Accounts)
+		userMatch := a.matchesUserFilter(job, opts.Users)
+		stateMatch := a.matchesStateFilter(job, opts.States)
+		partMatch := a.matchesPartitionFilter(job, opts.Partitions)
+		idMatch := a.matchesJobIDFilter(job, opts.JobIDs)
+		nameMatch := a.matchesJobNameFilter(job, opts.JobNames)
+
+		if i < 3 {  // Log details for first 3 jobs
+			fmt.Printf("[DEBUG JobAdapter] Job %d filter results: Account=%v, User=%v, State=%v, Partition=%v, ID=%v, Name=%v\n",
+				i, accMatch, userMatch, stateMatch, partMatch, idMatch, nameMatch)
+		}
+
+		if accMatch && userMatch && stateMatch && partMatch && idMatch && nameMatch {
 			filtered = append(filtered, job)
 		}
 	}
