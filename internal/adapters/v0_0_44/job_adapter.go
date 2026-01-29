@@ -798,10 +798,7 @@ func (a *JobAdapter) validateJobCreate(job *types.JobCreate) error {
 	if job.Command == "" && job.Script == "" {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "either command or script is required", "job", job, nil)
 	}
-	// Account is required for SLURM v0.0.44 job submission
-	if job.Account == "" {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account is required for job submission in SLURM v0.0.44", "account", job.Account, nil)
-	}
+	// Account validation removed - API will handle if it's required
 	return nil
 }
 
