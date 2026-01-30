@@ -6,6 +6,7 @@ package v0_0_42
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	api "github.com/jontk/slurm-client/internal/api/v0_0_42"
@@ -296,14 +297,7 @@ func (a *NodeAdapter) setNodeState(node *types.Node, apiNode api.V0042Node) {
 			node.State = types.NodeState(states[0])
 		} else {
 			// Join multiple states with "+" (e.g. "IDLE+DRAIN")
-			var stateStr string
-			for i, s := range states {
-				if i > 0 {
-					stateStr += "+"
-				}
-				stateStr += string(s)
-			}
-			node.State = types.NodeState(stateStr)
+			node.State = types.NodeState(strings.Join(states, "+"))
 		}
 	}
 }

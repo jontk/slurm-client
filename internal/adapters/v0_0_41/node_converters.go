@@ -60,17 +60,14 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode interface{}) (*types.Node, 
 				}
 			} else {
 				// Join multiple states with "+"
-				var stateStr string
-				for i, s := range states {
+				stateStrings := make([]string, 0, len(states))
+				for _, s := range states {
 					if state, ok := s.(string); ok {
-						if i > 0 {
-							stateStr += "+"
-						}
-						stateStr += state
+						stateStrings = append(stateStrings, state)
 					}
 				}
-				if stateStr != "" {
-					node.State = types.NodeState(stateStr)
+				if len(stateStrings) > 0 {
+					node.State = types.NodeState(strings.Join(stateStrings, "+"))
 				}
 			}
 		}

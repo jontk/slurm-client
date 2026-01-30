@@ -4,6 +4,7 @@
 package v0_0_44
 
 import (
+	"strings"
 	"time"
 
 	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
@@ -141,14 +142,11 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0044Node) *types.Node 
 			node.State = types.NodeState(states[0])
 		} else {
 			// Join multiple states with "+" (e.g. "IDLE+DRAIN")
-			var stateStr string
+			stateStrings := make([]string, len(states))
 			for i, s := range states {
-				if i > 0 {
-					stateStr += "+"
-				}
-				stateStr += string(s)
+				stateStrings[i] = string(s)
 			}
-			node.State = types.NodeState(stateStr)
+			node.State = types.NodeState(strings.Join(stateStrings, "+"))
 		}
 	}
 	// StateFlags not available in v0_0_43

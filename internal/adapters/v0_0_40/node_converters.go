@@ -40,14 +40,11 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0040Node) *types.Node 
 			node.State = types.NodeState(strings.ToUpper(states[0]))
 		} else {
 			// Join multiple states with "+" (e.g. "IDLE+DRAIN")
-			var stateStr string
+			stateStrings := make([]string, len(states))
 			for i, s := range states {
-				if i > 0 {
-					stateStr += "+"
-				}
-				stateStr += strings.ToUpper(s)
+				stateStrings[i] = strings.ToUpper(s)
 			}
-			node.State = types.NodeState(stateStr)
+			node.State = types.NodeState(strings.Join(stateStrings, "+"))
 		}
 	}
 
