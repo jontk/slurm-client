@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-01-30
+
+### Fixed
+- **Job Filtering**: Fixed empty partition filter blocking all jobs (#86)
+  - Empty partition/user filter strings were creating arrays like `[""]` instead of empty arrays
+  - Jobs now show correctly in listings when filter parameters are empty
+  - Fixed in job_adapter.go and adapter_client.go
+- **Node State Handling**: Preserve all node state flags when converting API response (#86)
+  - Multi-valued node state arrays were being truncated to first element only
+  - DRAIN flags were lost, causing drained nodes to appear as idle
+  - Now concatenates all state elements with "+" separator (e.g. "IDLE+DRAIN")
+  - Fixed across all SLURM API versions (v0.0.40 through v0.0.44)
+- **Job Submission**: Removed overly strict account validation for job submission (#86)
+  - Job creation was blocking on missing account field unnecessarily
+  - Now lets SLURM API handle account requirements
+- **Job Field Mapping**: Fixed incorrect Command field mapping from API response (#86)
+  - Command field from API is typically null/empty for most jobs
+  - Removed Command field mapping, kept WorkingDirectory field with explanatory comment
+- **Code Quality**: Replaced string concatenation in loops with strings.Join (#86)
+  - Fixed 5 linter warnings (4x perfsprint concatenation-loop, 1x unconvert)
+  - Improved performance for state concatenation across all node adapters
+
+### Added
+- **Node Updates**: Include State and Reason fields in node update requests (#86)
+  - Enables proper node state management and drain operations
+  - Node update operations now support changing state and providing reasons
+- **User Management**: Extract AdminLevel from user API response (#86)
+  - User objects now include complete admin level information
+  - Enables proper user permission management
+- **Job Information**: Expose UserName field from SLURM API (#86)
+  - Job listings now show actual username instead of just user ID
+  - Improves job visibility and management
+
+### Changed
+- **Debug Output**: Removed debug printf statements from job_adapter (#86)
+  - Cleaner production code without debug noise
+
 ## [0.2.3] - 2026-01-28
 
 ### Fixed
