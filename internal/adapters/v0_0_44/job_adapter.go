@@ -782,10 +782,7 @@ func (a *JobAdapter) validateJobCreate(job *types.JobCreate) error {
 	if job.Command == "" && job.Script == "" {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "either command or script is required", "job", job, nil)
 	}
-	// Account is required for SLURM v0.0.44 job submission
-	if job.Account == "" {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account is required for job submission in SLURM v0.0.44", "account", job.Account, nil)
-	}
+	// Account validation removed - API will handle if it's required
 	return nil
 }
 
@@ -874,6 +871,12 @@ func (a *JobAdapter) setBasicJobFields(job *types.Job, apiJob api.V0044JobInfo) 
 	}
 	if apiJob.GroupId != nil {
 		job.GroupID = *apiJob.GroupId
+	}
+	// Note: Command field in API returns null for most jobs
+	// The script/command contents are usually empty in the job query response
+	// They would need to be fetched separately or populated from submission records
+	if apiJob.CurrentWorkingDirectory != nil {
+		job.WorkingDirectory = *apiJob.CurrentWorkingDirectory
 	}
 }
 
@@ -1099,12 +1102,14 @@ func (a *JobAdapter) applyClientSideFilters(jobs []types.Job, opts *types.JobLis
 	filtered := make([]types.Job, 0, len(jobs))
 
 	for _, job := range jobs {
-		if a.matchesAccountFilter(job, opts.Accounts) &&
-			a.matchesUserFilter(job, opts.Users) &&
-			a.matchesStateFilter(job, opts.States) &&
-			a.matchesPartitionFilter(job, opts.Partitions) &&
-			a.matchesJobIDFilter(job, opts.JobIDs) &&
-			a.matchesJobNameFilter(job, opts.JobNames) {
+		accMatch := a.matchesAccountFilter(job, opts.Accounts)
+		userMatch := a.matchesUserFilter(job, opts.Users)
+		stateMatch := a.matchesStateFilter(job, opts.States)
+		partMatch := a.matchesPartitionFilter(job, opts.Partitions)
+		idMatch := a.matchesJobIDFilter(job, opts.JobIDs)
+		nameMatch := a.matchesJobNameFilter(job, opts.JobNames)
+
+		if accMatch && userMatch && stateMatch && partMatch && idMatch && nameMatch {
 			filtered = append(filtered, job)
 		}
 	}

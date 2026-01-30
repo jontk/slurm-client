@@ -114,6 +114,11 @@ func (m *JobManagerImpl) List(ctx context.Context, opts *interfaces.ListJobsOpti
 				job.UserID = strconv.FormatInt(int64(*apiJob.UserId), 10)
 			}
 
+			// User name
+			if apiJob.UserName != nil {
+				job.UserName = *apiJob.UserName
+			}
+
 			// Group ID
 			if apiJob.GroupId != nil {
 				job.GroupID = strconv.FormatInt(int64(*apiJob.GroupId), 10)

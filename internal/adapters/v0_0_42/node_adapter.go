@@ -6,6 +6,7 @@ package v0_0_42
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	api "github.com/jontk/slurm-client/internal/api/v0_0_42"
@@ -288,8 +289,16 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0042Node) (*types.Node
 
 // setNodeState sets the node state from the API node
 func (a *NodeAdapter) setNodeState(node *types.Node, apiNode api.V0042Node) {
+	// SLURM API returns state as an array (e.g. ["IDLE", "DRAIN"])
+	// Concatenate all states with "+" to preserve all flags (e.g. "IDLE+DRAIN")
 	if apiNode.State != nil && len(*apiNode.State) > 0 {
-		node.State = types.NodeState((*apiNode.State)[0])
+		states := *apiNode.State
+		if len(states) == 1 {
+			node.State = types.NodeState(states[0])
+		} else {
+			// Join multiple states with "+" (e.g. "IDLE+DRAIN")
+			node.State = types.NodeState(strings.Join(states, "+"))
+		}
 	}
 }
 

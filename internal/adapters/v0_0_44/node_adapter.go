@@ -212,6 +212,17 @@ func (a *NodeAdapter) Update(ctx context.Context, nodeName string, update *types
 	if apiNode.Gres != nil {
 		reqBody.Gres = apiNode.Gres
 	}
+	if apiNode.Reason != nil {
+		reqBody.Reason = apiNode.Reason
+	}
+	if apiNode.State != nil {
+		// Convert V0044NodeState to V0044UpdateNodeMsgState
+		updateStates := make([]api.V0044UpdateNodeMsgState, len(*apiNode.State))
+		for i, state := range *apiNode.State {
+			updateStates[i] = api.V0044UpdateNodeMsgState(state)
+		}
+		reqBody.State = &updateStates
+	}
 
 	// Call the generated OpenAPI client (POST is used for updates in SLURM API)
 	resp, err := a.client.SlurmV0044PostNodeWithResponse(ctx, existingNode.Name, reqBody)

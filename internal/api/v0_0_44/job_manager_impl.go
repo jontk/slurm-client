@@ -344,6 +344,10 @@ func (m *JobManagerImpl) convertJobToInterface(job *V0044JobInfo) *interfaces.Jo
 		result.UserID = strconv.Itoa(int(*job.UserId))
 	}
 
+	if job.UserName != nil {
+		result.UserName = *job.UserName
+	}
+
 	if job.JobState != nil && len(*job.JobState) > 0 {
 		result.State = string((*job.JobState)[0])
 	}

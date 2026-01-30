@@ -4,6 +4,7 @@
 package v0_0_44
 
 import (
+	"strings"
 	"time"
 
 	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
@@ -133,14 +134,26 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode api.V0044Node) *types.Node 
 	}
 
 	// State information
+	// SLURM API returns state as an array (e.g. ["IDLE", "DRAIN"])
+	// Concatenate all states with "+" to preserve all flags (e.g. "IDLE+DRAIN")
 	if apiNode.State != nil && len(*apiNode.State) > 0 {
-		node.State = types.NodeState((*apiNode.State)[0])
+		states := *apiNode.State
+		if len(states) == 1 {
+			node.State = types.NodeState(states[0])
+		} else {
+			// Join multiple states with "+" (e.g. "IDLE+DRAIN")
+			stateStrings := make([]string, len(states))
+			for i, s := range states {
+				stateStrings[i] = string(s)
+			}
+			node.State = types.NodeState(strings.Join(stateStrings, "+"))
+		}
 	}
 	// StateFlags not available in v0_0_43
 	if apiNode.NextStateAfterReboot != nil && len(*apiNode.NextStateAfterReboot) > 0 {
 		node.NextStateAfterReboot = types.NodeState((*apiNode.NextStateAfterReboot)[0])
 	}
-	// NextStateAfterRebootFlags not available in v0_0_43
+	// NextStateAfterRebootFlags not available in v0_0_44
 
 	// Reason information
 	if apiNode.Reason != nil {

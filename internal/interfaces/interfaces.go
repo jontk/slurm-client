@@ -303,6 +303,7 @@ type Job struct {
 	ID          string                 `json:"id"`
 	Name        string                 `json:"name"`
 	UserID      string                 `json:"user_id"`
+	UserName    string                 `json:"user_name"`
 	GroupID     string                 `json:"group_id"`
 	State       string                 `json:"state"`
 	Partition   string                 `json:"partition"`

@@ -134,6 +134,11 @@ func convertAPIJobToInterface(apiJob V0043JobInfo) *interfaces.Job {
 		job.UserID = strconv.FormatInt(int64(*apiJob.UserId), 10)
 	}
 
+	// User name
+	if apiJob.UserName != nil {
+		job.UserName = *apiJob.UserName
+	}
+
 	// Group ID - simple int32 pointer
 	if apiJob.GroupId != nil {
 		job.GroupID = strconv.FormatInt(int64(*apiJob.GroupId), 10)
