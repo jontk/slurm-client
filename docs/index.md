@@ -272,7 +272,7 @@ Or install a specific version:
 
 ```bash
 # Install a specific release
-go get github.com/jontk/slurm-client@v0.2.3
+go get github.com/jontk/slurm-client@v0.2.4
 
 # Or use a version constraint in go.mod
 require github.com/jontk/slurm-client v0.1.0

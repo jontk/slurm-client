@@ -131,7 +131,7 @@ Once the tag is pushed:
 1. Check GitHub Actions workflow completed successfully
 2. Verify GitHub Release was created: https://github.com/jontk/slurm-client/releases
 3. Download and test binaries for at least one platform
-4. Verify `go get github.com/jontk/slurm-client@v0.2.3` works
+4. Verify `go get github.com/jontk/slurm-client@v0.2.4` works
 
 #### 6. Announce Release
 
