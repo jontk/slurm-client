@@ -335,6 +335,22 @@ func (a *UserAdapter) convertAPIUserToCommon(apiUser api.V0043User) *types.User 
 		// Note: DefaultQoS is not available in V0043User, only WCKey
 	}
 
+	// Handle administrator level
+	if apiUser.AdministratorLevel != nil && len(*apiUser.AdministratorLevel) > 0 {
+		// Take the first admin level (typically there's only one)
+		adminLevel := (*apiUser.AdministratorLevel)[0]
+		switch adminLevel {
+		case api.V0043UserAdministratorLevelAdministrator:
+			user.AdminLevel = types.AdminLevelAdministrator
+		case api.V0043UserAdministratorLevelOperator:
+			user.AdminLevel = types.AdminLevelOperator
+		case api.V0043UserAdministratorLevelNone, api.V0043UserAdministratorLevelNotSet:
+			user.AdminLevel = types.AdminLevelNone
+		default:
+			user.AdminLevel = types.AdminLevelNone
+		}
+	}
+
 	// Handle flags if present
 	if apiUser.Flags != nil {
 		for _, flag := range *apiUser.Flags {
