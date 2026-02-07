@@ -28,17 +28,18 @@ The SLURM REST API Client Library provides a unified interface for interacting w
 import (
     "context"
     slurm "github.com/jontk/slurm-client"
-    "github.com/jontk/slurm-client/pkg/client/factory"
+    "github.com/jontk/slurm-client/pkg/auth"
 )
 
 // Create client
-config := &slurm.ClientConfig{
-    BaseURL: "http://slurm-host:6820",
-}
-client, err := factory.NewClient(config)
+client, err := slurm.NewClient(context.Background(),
+    slurm.WithBaseURL("http://slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("your-token")),
+)
 if err != nil {
     panic(err)
 }
+defer client.Close()
 
 // Use the API
 ctx := context.Background()
@@ -106,19 +107,18 @@ The client supports multiple authentication methods:
 
 ### Token Authentication
 ```go
-config.Authentication = &slurm.AuthConfig{
-    Type:  "token",
-    Token: "your-jwt-token",
-}
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("http://slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("your-jwt-token")),
+)
 ```
 
 ### Basic Authentication
 ```go
-config.Authentication = &slurm.AuthConfig{
-    Type:     "basic",
-    Username: "username",
-    Password: "password",
-}
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("http://slurm-host:6820"),
+    slurm.WithAuth(auth.NewBasicAuth("username", "password")),
+)
 ```
 
 ## Versioning
@@ -126,26 +126,30 @@ config.Authentication = &slurm.AuthConfig{
 The client automatically handles API version differences. You can specify a version or let it auto-detect:
 
 ```go
-// Auto-detect
-config := &slurm.ClientConfig{
-    BaseURL: "http://slurm-host:6820",
-}
+// Auto-detect (recommended)
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("http://slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("token")),
+)
 
 // Specific version
-config := &slurm.ClientConfig{
-    BaseURL: "http://slurm-host:6820",
-    Version: "v0.0.43",
-}
+client, err := slurm.NewClientWithVersion(ctx, "v0.0.43",
+    slurm.WithBaseURL("http://slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("token")),
+)
 ```
 
 ## Rate Limiting
 
-The client includes built-in rate limiting:
+The client includes built-in rate limiting and retry logic. Configure with client options:
 
 ```go
-config.RequestConfig = &slurm.RequestConfig{
-    RateLimit: 100, // requests per second
-}
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("http://slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("token")),
+    slurm.WithTimeout(30*time.Second),
+    slurm.WithMaxRetries(3),
+)
 ```
 
 ## See Also

@@ -8,9 +8,9 @@ This document outlines the support policy for different SLURM REST API versions 
 |-------------|---------------|--------------|-------------|-------|
 | v0.0.44     | 24.11.x       | **Active**   | -           | Latest version, full feature support |
 | v0.0.43     | 24.05.x       | **Active**   | -           | Full feature support |
-| v0.0.42     | 23.11.x       | Maintenance  | 2026-06-01  | Security fixes only |
-| v0.0.41     | 23.02.x       | Deprecated   | 2025-06-01  | Removed in next major version |
-| v0.0.40     | 22.05.x       | Deprecated   | 2025-06-01  | Removed in next major version |
+| v0.0.42     | 23.11.x       | Maintenance  | 2026-12-01  | Security fixes only |
+| v0.0.41     | 23.02.x       | Deprecated   | EOL         | Removed in next major version |
+| v0.0.40     | 22.05.x       | Deprecated   | EOL         | Removed in next major version |
 
 ## Support Tier Definitions
 
@@ -83,8 +83,8 @@ If you're using a deprecated API version (v0.0.40 or v0.0.41), we recommend upgr
 ## Support Timeline
 
 ```
-2025-06-01: v0.0.40 and v0.0.41 reach End of Life
-2026-06-01: v0.0.42 reaches End of Life
+2025-06-01: v0.0.40 and v0.0.41 reached End of Life (EOL)
+2026-12-01: v0.0.42 planned End of Life
 ```
 
 ## Getting Help
