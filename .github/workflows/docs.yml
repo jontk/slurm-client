@@ -139,6 +139,7 @@ jobs:
           --exclude 'https://www\.sigstore\.dev/.*'
           --exclude 'https://rekor\.sigstore\.dev/.*'
           --exclude 'https://www\.contributor-covenant\.org/.*'
+          --exclude 'https://slurm\.schedmd\.com/.*'
           './**/*.md'
         fail: true
 
