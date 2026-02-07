@@ -283,5 +283,5 @@ go build ./...
 ## See Also
 
 - [API Documentation](../api/README.md)
-- [Code Generation](./CODE_GENERATION.md)
+- [Code Generation](../CODE_GENERATION.md)
 - [Contributing Guide](../development/CONTRIBUTING.md)

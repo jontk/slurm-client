@@ -191,7 +191,7 @@ When new SLURM REST API versions are released, the library follows this deprecat
 - v0.0.42 moves to **Best-effort**
 - v0.0.41, v0.0.40 marked **Deprecated**
 
-**Current Status (as of 2026-01-19):**
+**Current Status (as of 2026-02-07):**
 - **Supported:** v0.0.44, v0.0.43, v0.0.42 (full support, regular updates)
 - **Best-effort:** v0.0.41, v0.0.40 (minimal maintenance, use at your own risk)
 
@@ -260,10 +260,9 @@ import (
     "fmt"
     "log"
 
-    "github.com/jontk/slurm-client"
+    slurm "github.com/jontk/slurm-client"
     "github.com/jontk/slurm-client/pkg/auth"
     "github.com/jontk/slurm-client/pkg/errors"
-    "github.com/jontk/slurm-client/internal/interfaces"
 )
 
 func main() {
@@ -279,7 +278,7 @@ func main() {
     defer client.Close()
 
     // List running jobs with structured error handling
-    jobs, err := client.Jobs().List(context.Background(), &interfaces.ListJobsOptions{
+    jobs, err := client.Jobs().List(context.Background(), &slurm.ListJobsOptions{
         States: []string{"RUNNING"},
         Limit:  10,
     })
@@ -301,7 +300,7 @@ func main() {
     fmt.Printf("Found %d running jobs\\n", len(jobs.Jobs))
 
     // Submit a job with comprehensive error handling
-    submission := &interfaces.JobSubmission{
+    submission := &slurm.JobSubmission{
         Name:      "test-job",
         Script:    "#!/bin/bash\\necho 'Hello, SLURM!'",
         Partition: "compute",
@@ -430,7 +429,7 @@ client, err := slurm.NewClient(
 
 ```go
 // List jobs with advanced filtering
-jobs, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
+jobs, err := client.Jobs().List(ctx, &slurm.ListJobsOptions{
     UserID:    "username",
     States:    []string{"RUNNING", "PENDING"},
     Partition: "compute",
@@ -447,7 +446,7 @@ if err != nil {
 }
 
 // Submit job with comprehensive validation
-response, err := client.Jobs().Submit(ctx, &interfaces.JobSubmission{
+response, err := client.Jobs().Submit(ctx, &slurm.JobSubmission{
     Name:        "my-job",
     Script:      "#!/bin/bash\\necho 'Hello World'",
     Partition:   "compute",
@@ -467,7 +466,7 @@ err := client.Jobs().Cancel(ctx, "12345")
 
 ```go
 // List nodes with filtering
-nodes, err := client.Nodes().List(ctx, &interfaces.ListNodesOptions{
+nodes, err := client.Nodes().List(ctx, &slurm.ListNodesOptions{
     States:    []string{"IDLE", "ALLOCATED"},
     Partition: "compute",
     Features:  []string{"gpu", "ssd"},
@@ -556,7 +555,7 @@ for _, res := range reservations.Reservations {
 }
 
 // Create a reservation
-newReservation := &interfaces.ReservationCreate{
+newReservation := &slurm.ReservationCreate{
     Name:      "maintenance-window",
     StartTime: time.Now().Add(24 * time.Hour),
     Duration:  4 * 3600, // 4 hours
@@ -573,7 +572,7 @@ if err != nil {
 }
 
 // Update a reservation
-update := &interfaces.ReservationUpdate{
+update := &slurm.ReservationUpdate{
     EndTime: &newEndTime,
     Users:   []string{"admin", "operator"},
 }
@@ -612,7 +611,7 @@ for _, qos := range qosList.QoS {
 }
 
 // Create a new QoS
-newQoS := &interfaces.QoSCreate{
+newQoS := &slurm.QoSCreate{
     Name:               "high-priority",
     Description:        "High priority for critical jobs",
     Priority:           10000,
@@ -635,7 +634,7 @@ if err != nil {
 
 // Update a QoS
 newPriority := 15000
-update := &interfaces.QoSUpdate{
+update := &slurm.QoSUpdate{
     Priority:    &newPriority,
     Description: &"Updated high priority QoS",
 }
@@ -739,7 +738,7 @@ if client.Accounts() == nil {
 }
 
 // List all accounts with hierarchy
-accountList, err := client.Accounts().List(ctx, &interfaces.ListAccountsOptions{
+accountList, err := client.Accounts().List(ctx, &slurm.ListAccountsOptions{
     WithAssociations: true,
     WithCoordinators: true,
 })
@@ -754,7 +753,7 @@ for _, account := range accountList.Accounts {
 }
 
 // Create an account hierarchy
-rootAccount := &interfaces.AccountCreate{
+rootAccount := &slurm.AccountCreate{
     Name:               "research-dept",
     Description:        "Research Department",
     Organization:       "ACME Corp",
@@ -785,7 +784,7 @@ if err != nil {
 }
 
 // Create a sub-account
-subAccount := &interfaces.AccountCreate{
+subAccount := &slurm.AccountCreate{
     Name:               "ml-project",
     Description:        "Machine Learning Project",
     ParentAccount:      "research-dept",
@@ -803,7 +802,7 @@ if err != nil {
 
 // Update account limits
 newMaxJobs := 200
-update := &interfaces.AccountUpdate{
+update := &slurm.AccountUpdate{
     MaxJobs:     &newMaxJobs,
     Description: stringPtr("ML Project - Expanded Resources"),
     MaxTRES: map[string]int{

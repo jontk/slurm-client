@@ -91,23 +91,21 @@ for _, node := range nodes.Nodes {
 
 ```go
 // Create job submission request
-jobReq := &interfaces.JobSubmitRequest{
-    Script: "#!/bin/bash\nsleep 60",
-    Job: interfaces.JobDescriptor{
-        Name:      "test-job",
-        Partition: "compute",
-        Nodes:     1,
-        CPUs:      4,
-    },
+jobReq := &slurm.JobSubmission{
+    Name:      "test-job",
+    Script:    "#!/bin/bash\nsleep 60",
+    Partition: "compute",
+    Nodes:     1,
+    CPUs:      4,
 }
 
 // Submit the job
-jobID, err := client.Jobs().Submit(ctx, jobReq)
+response, err := client.Jobs().Submit(ctx, jobReq)
 if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("Submitted job ID: %d\n", jobID)
+fmt.Printf("Submitted job ID: %s\n", response.JobID)
 ```
 
 ## Using Filters
@@ -116,9 +114,9 @@ Many list operations support filters:
 
 ```go
 // List only running jobs for a specific user
-filter := &interfaces.JobFilter{
+filter := &slurm.ListJobsOptions{
     States: []string{"RUNNING"},
-    Users:  []uint32{1000},
+    UserID: "username",
 }
 
 jobs, err := client.Jobs().List(ctx, filter)
@@ -129,6 +127,10 @@ jobs, err := client.Jobs().List(ctx, filter)
 The library provides structured error handling:
 
 ```go
+import (
+    "github.com/jontk/slurm-client/pkg/errors"
+)
+
 jobs, err := client.Jobs().List(ctx, nil)
 if err != nil {
     // Check for specific error types
@@ -182,7 +184,7 @@ import (
     "log"
     "time"
 
-    "github.com/jontk/slurm-client"
+    slurm "github.com/jontk/slurm-client"
     "github.com/jontk/slurm-client/pkg/auth"
 )
 
@@ -194,7 +196,6 @@ func main() {
     client, err := slurm.NewClient(ctx,
         slurm.WithBaseURL("https://your-slurm-host:6820"),
         slurm.WithAuth(auth.NewTokenAuth("your-jwt-token")),
-        slurm.WithRetry(retry.NewExponentialBackoff(3, time.Second)),
     )
     if err != nil {
         log.Fatal(err)

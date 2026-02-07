@@ -8,54 +8,46 @@ This guide covers all configuration options for the SLURM REST API Client Librar
 
 ```go
 import (
+    "context"
     slurm "github.com/jontk/slurm-client"
-    "github.com/jontk/slurm-client/pkg/client/factory"
+    "github.com/jontk/slurm-client/pkg/auth"
 )
 
-config := &slurm.ClientConfig{
-    BaseURL: "http://your-slurm-host:6820",
-    Version: "v0.0.43", // Optional - auto-detected if not specified
-}
-
-client, err := factory.NewClient(config)
+// Basic client with auto-detected version
+client, err := slurm.NewClient(context.Background(),
+    slurm.WithBaseURL("http://your-slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("your-token")),
+)
 ```
 
 ### Full Configuration Options
 
 ```go
-config := &slurm.ClientConfig{
-    // Required
-    BaseURL: "http://your-slurm-host:6820",
+import (
+    "net/http"
+    "time"
+    slurm "github.com/jontk/slurm-client"
+    "github.com/jontk/slurm-client/pkg/auth"
+)
 
-    // Optional - API version (auto-detected if not specified)
-    Version: "v0.0.43",
-
-    // Optional - Custom HTTP client
-    HTTPClient: &http.Client{
-        Timeout: 30 * time.Second,
-        Transport: &http.Transport{
-            MaxIdleConns:        100,
-            MaxIdleConnsPerHost: 10,
-            IdleConnTimeout:     90 * time.Second,
-        },
-    },
-
-    // Optional - Authentication configuration
-    Authentication: &slurm.AuthConfig{
-        Type:     "token",  // "token", "basic", or "munge"
-        Token:    "your-jwt-token",
-        Username: "your-username",
-        Password: "your-password",
-    },
-
-    // Optional - Request configuration
-    RequestConfig: &slurm.RequestConfig{
-        Timeout:     30 * time.Second,
-        MaxRetries:  3,
-        RetryDelay:  time.Second,
-        RateLimit:   100, // requests per second
+// Custom HTTP client for advanced configuration
+httpClient := &http.Client{
+    Timeout: 30 * time.Second,
+    Transport: &http.Transport{
+        MaxIdleConns:        100,
+        MaxIdleConnsPerHost: 10,
+        IdleConnTimeout:     90 * time.Second,
     },
 }
+
+// Create client with all options
+client, err := slurm.NewClient(context.Background(),
+    slurm.WithBaseURL("http://your-slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("your-jwt-token")),
+    slurm.WithHTTPClient(httpClient),
+    slurm.WithTimeout(30*time.Second),
+    slurm.WithMaxRetries(3),
+)
 ```
 
 ## Authentication Options
@@ -63,29 +55,30 @@ config := &slurm.ClientConfig{
 ### Token Authentication (JWT)
 
 ```go
-config.Authentication = &slurm.AuthConfig{
-    Type:  "token",
-    Token: "eyJhbGciOiJIUzI1NiIs...", // Your JWT token
-}
+import "github.com/jontk/slurm-client/pkg/auth"
+
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("http://your-slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("eyJhbGciOiJIUzI1NiIs...")),
+)
 ```
 
 ### Basic Authentication
 
 ```go
-config.Authentication = &slurm.AuthConfig{
-    Type:     "basic",
-    Username: "slurm-user",
-    Password: "secure-password",
-}
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("http://your-slurm-host:6820"),
+    slurm.WithAuth(auth.NewBasicAuth("slurm-user", "secure-password")),
+)
 ```
 
-### Munge Authentication
+### No Authentication
 
 ```go
-config.Authentication = &slurm.AuthConfig{
-    Type: "munge",
-    // Munge credentials are handled by the system
-}
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("http://your-slurm-host:6820"),
+    slurm.WithAuth(auth.NewNoAuth()),
+)
 ```
 
 ### Custom Authentication
@@ -111,15 +104,16 @@ func (t *customAuthTransport) RoundTrip(req *http.Request) (*http.Response, erro
 
 ## Version Configuration
 
-### Auto-Detection
+### Auto-Detection (Recommended)
 
 Let the client automatically detect the API version:
 
 ```go
-config := &slurm.ClientConfig{
-    BaseURL: "http://your-slurm-host:6820",
-    // Version is not specified - will be auto-detected
-}
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("http://your-slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("token")),
+    // Version is auto-detected
+)
 ```
 
 ### Manual Version Selection
@@ -127,7 +121,11 @@ config := &slurm.ClientConfig{
 Specify a specific API version:
 
 ```go
-config.Version = "v0.0.43" // Supported: v0.0.40, v0.0.41, v0.0.42, v0.0.43
+client, err := slurm.NewClientWithVersion(ctx, "v0.0.43",
+    slurm.WithBaseURL("http://your-slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("token")),
+)
+// Supported: v0.0.40, v0.0.41, v0.0.42, v0.0.43, v0.0.44
 ```
 
 ### Version Compatibility
@@ -152,10 +150,16 @@ transport := &http.Transport{
     DisableKeepAlives:   false,
 }
 
-config.HTTPClient = &http.Client{
+httpClient := &http.Client{
     Transport: transport,
     Timeout:   30 * time.Second,
 }
+
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("http://your-slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("token")),
+    slurm.WithHTTPClient(httpClient),
+)
 ```
 
 ### Proxy Configuration
@@ -163,11 +167,17 @@ config.HTTPClient = &http.Client{
 ```go
 proxyURL, _ := url.Parse("http://proxy.example.com:8080")
 
-config.HTTPClient = &http.Client{
+httpClient := &http.Client{
     Transport: &http.Transport{
         Proxy: http.ProxyURL(proxyURL),
     },
 }
+
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("http://your-slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("token")),
+    slurm.WithHTTPClient(httpClient),
+)
 ```
 
 ### TLS Configuration
@@ -178,26 +188,30 @@ tlsConfig := &tls.Config{
     // Add certificates if needed
 }
 
-config.HTTPClient = &http.Client{
+httpClient := &http.Client{
     Transport: &http.Transport{
         TLSClientConfig: tlsConfig,
     },
 }
+
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("https://your-slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("token")),
+    slurm.WithHTTPClient(httpClient),
+)
 ```
 
 ### Timeouts
 
 ```go
-config.RequestConfig = &slurm.RequestConfig{
-    Timeout: 30 * time.Second, // Overall request timeout
-}
+// Set global timeout for all requests
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("http://your-slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("token")),
+    slurm.WithTimeout(30*time.Second),
+)
 
-// Or via HTTP client
-config.HTTPClient = &http.Client{
-    Timeout: 30 * time.Second,
-}
-
-// Context-based timeouts
+// Or use context-based timeouts for individual requests
 ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 defer cancel()
 jobs, err := client.Jobs().List(ctx, nil)
@@ -206,25 +220,13 @@ jobs, err := client.Jobs().List(ctx, nil)
 ### Retry Configuration
 
 ```go
-config.RequestConfig = &slurm.RequestConfig{
-    MaxRetries:  3,
-    RetryDelay:  time.Second,
-    RetryPolicy: func(resp *http.Response, err error) bool {
-        // Custom retry logic
-        if err != nil {
-            return true // Retry on network errors
-        }
-        return resp.StatusCode >= 500 // Retry on server errors
-    },
-}
-```
-
-### Rate Limiting
-
-```go
-config.RequestConfig = &slurm.RequestConfig{
-    RateLimit: 100, // Max 100 requests per second
-}
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("http://your-slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("token")),
+    slurm.WithMaxRetries(3),
+    slurm.WithRetryWaitMin(1*time.Second),
+    slurm.WithRetryWaitMax(30*time.Second),
+)
 ```
 
 ## Environment Variables
@@ -252,19 +254,16 @@ Loading from environment:
 import (
     "os"
     slurm "github.com/jontk/slurm-client"
+    "github.com/jontk/slurm-client/pkg/auth"
 )
 
-config := &slurm.ClientConfig{
-    BaseURL: os.Getenv("SLURM_API_URL"),
-    Version: os.Getenv("SLURM_API_VERSION"),
-}
+baseURL := os.Getenv("SLURM_API_URL")
+token := os.Getenv("SLURM_API_TOKEN")
 
-if authType := os.Getenv("SLURM_API_AUTH_TYPE"); authType != "" {
-    config.Authentication = &slurm.AuthConfig{
-        Type:  authType,
-        Token: os.Getenv("SLURM_API_TOKEN"),
-    }
-}
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL(baseURL),
+    slurm.WithAuth(auth.NewTokenAuth(token)),
+)
 ```
 
 ## Configuration Files
@@ -289,11 +288,13 @@ slurm:
 
 ```go
 import (
+    "context"
     slurm "github.com/jontk/slurm-client"
+    "github.com/jontk/slurm-client/pkg/auth"
     "github.com/spf13/viper"
 )
 
-func LoadConfig() (*slurm.ClientConfig, error) {
+func LoadConfig(ctx context.Context) (slurm.Client, error) {
     viper.SetConfigFile("config.yaml")
     viper.SetEnvPrefix("SLURM")
     viper.AutomaticEnv()
@@ -302,19 +303,13 @@ func LoadConfig() (*slurm.ClientConfig, error) {
         return nil, err
     }
 
-    config := &slurm.ClientConfig{
-        BaseURL: viper.GetString("api.url"),
-        Version: viper.GetString("api.version"),
-    }
+    baseURL := viper.GetString("api.url")
+    token := viper.GetString("auth.token")
 
-    if viper.IsSet("auth.type") {
-        config.Authentication = &slurm.AuthConfig{
-            Type:  viper.GetString("auth.type"),
-            Token: viper.GetString("auth.token"),
-        }
-    }
-
-    return config, nil
+    return slurm.NewClient(ctx,
+        slurm.WithBaseURL(baseURL),
+        slurm.WithAuth(auth.NewTokenAuth(token)),
+    )
 }
 ```
 
@@ -335,15 +330,12 @@ if os.Getenv("SLURM_CLIENT_DEBUG") == "true" {
 ### Custom Logger
 
 ```go
-type Logger interface {
-    Debug(args ...interface{})
-    Info(args ...interface{})
-    Warn(args ...interface{})
-    Error(args ...interface{})
-}
-
-// Set custom logger
-client.SetLogger(customLogger)
+// Enable debug mode for verbose logging
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("http://your-slurm-host:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("token")),
+    slurm.WithDebug(true),
+)
 ```
 
 ## Best Practices
