@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	slurm "github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
+	pkgslurm types "github.com/jontk/slurm-client/api"
 	"github.com/spf13/cobra"
 )
 
@@ -157,6 +157,77 @@ func printOutput(data interface{}) error {
 	}
 }
 
+// Helper functions for safe pointer access
+func safeInt32(p *int32) int32 {
+	if p != nil {
+		return *p
+	}
+	return 0
+}
+
+func safeUint32(p *uint32) uint32 {
+	if p != nil {
+		return *p
+	}
+	return 0
+}
+
+func safeString(p *string) string {
+	if p != nil {
+		return *p
+	}
+	return ""
+}
+
+func safeJobState(states []pkgslurm.JobState) string {
+	if len(states) > 0 {
+		return string(states[0])
+	}
+	return ""
+}
+
+func safeInt64(p *int64) int64 {
+	if p != nil {
+		return *p
+	}
+	return 0
+}
+
+func safePartitionState(partition *slurm.Partition) string {
+	if partition.Partition != nil && len(partition.Partition.State) > 0 {
+		return string(partition.Partition.State[0])
+	}
+	return ""
+}
+
+func safeTotalNodes(partition *slurm.Partition) int32 {
+	if partition.Nodes != nil && partition.Nodes.Total != nil {
+		return *partition.Nodes.Total
+	}
+	return 0
+}
+
+func safeTotalCPUs(partition *slurm.Partition) int32 {
+	if partition.CPUs != nil && partition.CPUs.Total != nil {
+		return *partition.CPUs.Total
+	}
+	return 0
+}
+
+func safeMaxTime(partition *slurm.Partition) uint32 {
+	if partition.Maximums != nil && partition.Maximums.Time != nil {
+		return *partition.Maximums.Time
+	}
+	return 0
+}
+
+func safeDefaultTime(partition *slurm.Partition) uint32 {
+	if partition.Defaults != nil && partition.Defaults.Time != nil {
+		return *partition.Defaults.Time
+	}
+	return 0
+}
+
 // Jobs command
 var jobsCmd = &cobra.Command{
 	Use:   "jobs",
@@ -180,7 +251,7 @@ var jobsListCmd = &cobra.Command{
 		limit, _ := cmd.Flags().GetInt("limit")
 
 		// Create options
-		opts := &interfaces.ListJobsOptions{
+		opts := &slurm.ListJobsOptions{
 			UserID:    userID,
 			States:    states,
 			Partition: partition,
@@ -199,8 +270,12 @@ var jobsListCmd = &cobra.Command{
 			fmt.Printf("%-10s %-20s %-15s %-10s %-15s\n", "JOB ID", "NAME", "USER", "STATE", "PARTITION")
 			fmt.Println(strings.Repeat("-", 75))
 			for _, job := range jobList.Jobs {
-				fmt.Printf("%-10s %-20s %-15s %-10s %-15s\n",
-					job.ID, job.Name, job.UserID, job.State, job.Partition)
+				fmt.Printf("%-10d %-20s %-15d %-10s %-15s\n",
+					safeInt32(job.JobID),
+					safeString(job.Name),
+					safeInt32(job.UserID),
+					safeJobState(job.JobState),
+					safeString(job.Partition))
 			}
 			fmt.Printf("\nTotal: %d jobs\n", jobList.Total)
 		} else {
@@ -227,18 +302,20 @@ var jobsGetCmd = &cobra.Command{
 		}
 
 		if outputFmt == "table" {
-			fmt.Printf("Job ID:      %s\n", job.ID)
-			fmt.Printf("Name:        %s\n", job.Name)
-			fmt.Printf("User:        %s\n", job.UserID)
-			fmt.Printf("State:       %s\n", job.State)
-			fmt.Printf("Partition:   %s\n", job.Partition)
-			fmt.Printf("CPUs:        %d\n", job.CPUs)
-			fmt.Printf("Memory:      %d MB\n", job.Memory)
-			fmt.Printf("Time Limit:  %d minutes\n", job.TimeLimit)
+			fmt.Printf("Job ID:      %d\n", safeInt32(job.JobID))
+			fmt.Printf("Name:        %s\n", safeString(job.Name))
+			fmt.Printf("User:        %d\n", safeInt32(job.UserID))
+			fmt.Printf("State:       %s\n", safeJobState(job.JobState))
+			fmt.Printf("Partition:   %s\n", safeString(job.Partition))
+			fmt.Printf("CPUs:        %d\n", safeUint32(job.CPUs))
+			if job.MemoryPerNode != nil {
+				fmt.Printf("Memory:      %d MB\n", *job.MemoryPerNode)
+			}
+			fmt.Printf("Time Limit:  %d minutes\n", safeUint32(job.TimeLimit))
 			if !job.SubmitTime.IsZero() {
 				fmt.Printf("Submit Time: %s\n", job.SubmitTime.Format(time.DateTime))
 			}
-			if job.StartTime != nil {
+			if !job.StartTime.IsZero() {
 				fmt.Printf("Start Time:  %s\n", job.StartTime.Format(time.DateTime))
 			}
 		} else {
@@ -302,7 +379,7 @@ var nodesListCmd = &cobra.Command{
 		partition, _ := cmd.Flags().GetString("partition")
 
 		// Create options
-		opts := &interfaces.ListNodesOptions{
+		opts := &slurm.ListNodesOptions{
 			States:    states,
 			Partition: partition,
 		}
@@ -323,8 +400,13 @@ var nodesListCmd = &cobra.Command{
 				if len(partitions) > 30 {
 					partitions = partitions[:27] + "..."
 				}
+				// Note: node.State is a slice, using first element if available
+				state := ""
+				if len(node.State) > 0 {
+					state = string(node.State[0])
+				}
 				fmt.Printf("%-20s %-15s %-10d %-10d %-30s\n",
-					node.Name, node.State, node.CPUs, node.Memory, partitions)
+					safeString(node.Name), state, safeInt32(node.CPUs), safeInt64(node.RealMemory), partitions)
 			}
 			fmt.Printf("\nTotal: %d nodes\n", nodeList.Total)
 		} else {
@@ -351,17 +433,21 @@ var nodesGetCmd = &cobra.Command{
 		}
 
 		if outputFmt == "table" {
-			fmt.Printf("Node Name:     %s\n", node.Name)
-			fmt.Printf("State:         %s\n", node.State)
-			fmt.Printf("CPUs:          %d\n", node.CPUs)
-			fmt.Printf("Memory:        %d MB\n", node.Memory)
-			fmt.Printf("Architecture:  %s\n", node.Architecture)
+			state := ""
+			if len(node.State) > 0 {
+				state = string(node.State[0])
+			}
+			fmt.Printf("Node Name:     %s\n", safeString(node.Name))
+			fmt.Printf("State:         %s\n", state)
+			fmt.Printf("CPUs:          %d\n", safeInt32(node.CPUs))
+			fmt.Printf("Memory:        %d MB\n", safeInt64(node.RealMemory))
+			fmt.Printf("Architecture:  %s\n", safeString(node.Architecture))
 			fmt.Printf("Partitions:    %s\n", strings.Join(node.Partitions, ", "))
 			if len(node.Features) > 0 {
 				fmt.Printf("Features:      %s\n", strings.Join(node.Features, ", "))
 			}
-			if node.Reason != "" {
-				fmt.Printf("Reason:        %s\n", node.Reason)
+			if node.Reason != nil && *node.Reason != "" {
+				fmt.Printf("Reason:        %s\n", *node.Reason)
 			}
 		} else {
 			printOutput(node)
@@ -399,7 +485,7 @@ var partitionsListCmd = &cobra.Command{
 		states, _ := cmd.Flags().GetStringSlice("states")
 
 		// Create options
-		opts := &interfaces.ListPartitionsOptions{
+		opts := &slurm.ListPartitionsOptions{
 			States: states,
 		}
 
@@ -417,8 +503,12 @@ var partitionsListCmd = &cobra.Command{
 			fmt.Println(strings.Repeat("-", 85))
 			for _, partition := range partitionList.Partitions {
 				fmt.Printf("%-20s %-10s %-10d %-10d %-15d %-15d\n",
-					partition.Name, partition.State, partition.TotalNodes,
-					partition.TotalCPUs, partition.MaxTime, partition.DefaultTime)
+					safeString(partition.Name),
+					safePartitionState(&partition),
+					safeTotalNodes(&partition),
+					safeTotalCPUs(&partition),
+					safeMaxTime(&partition),
+					safeDefaultTime(&partition))
 			}
 			fmt.Printf("\nTotal: %d partitions\n", partitionList.Total)
 		} else {
@@ -490,7 +580,7 @@ var submitCmd = &cobra.Command{
 		}
 
 		// Create job submission
-		job := &interfaces.JobSubmission{
+		job := &slurm.JobSubmission{
 			Name:       name,
 			Command:    command,
 			Partition:  partition,
@@ -508,7 +598,7 @@ var submitCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Job submitted successfully!\n")
-		fmt.Printf("Job ID: %s\n", resp.JobID)
+		fmt.Printf("Job ID: %d\n", resp.JobId)
 	},
 }
 

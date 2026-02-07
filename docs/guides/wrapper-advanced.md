@@ -1,6 +1,17 @@
-# Advanced Wrapper Pattern Usage
+# ⚠️ DEPRECATED
 
-> ⚠️ **Advanced Users Only**: The wrapper pattern provides direct access to version-specific APIs. Most users should use the [Adapter Pattern](../README.md#quick-start-recommended-approach) instead.
+**This documentation is deprecated and will be removed in a future version.**
+
+The wrapper pattern described here has been superseded by the adapter pattern. Please refer to:
+- [Architecture Guide](./ARCHITECTURE.md) for current architecture
+- [Configuration Guide](./configuration.md) for client setup
+- [API Documentation](../api/README.md) for API usage
+
+---
+
+# Advanced Wrapper Usage (Deprecated)
+
+> ⚠️ **Advanced Users Only**: The wrapper pattern provides direct access to version-specific APIs. Most users should use the [Adapter Pattern](../index.md#quick-start-recommended-approach) instead.
 
 ## When to Use the Wrapper Pattern
 

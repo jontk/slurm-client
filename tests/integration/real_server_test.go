@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -14,7 +17,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	"github.com/jontk/slurm-client/pkg/errors"
@@ -39,7 +42,7 @@ func (suite *RealServerTestSuite) SetupSuite() {
 	// Get configuration from environment
 	suite.serverURL = os.Getenv("SLURM_SERVER_URL")
 	if suite.serverURL == "" {
-		suite.serverURL = "http://rocky9:6820"
+		suite.serverURL = "http://localhost
 	}
 
 	// Get API version from environment or use default
@@ -143,7 +146,7 @@ func (suite *RealServerTestSuite) TestListNodes() {
 	suite.T().Logf("Found %d nodes", len(nodes.Nodes))
 	for i, node := range nodes.Nodes {
 		if i < 5 { // Log first 5 nodes
-			suite.T().Logf("  Node %d: Name=%s, State=%s, CPUs=%d", i+1, node.Name, node.State, node.CPUs)
+			suite.T().Logf("  Node %d: Name=%s, State=%s, CPUs=%d", i+1, node.Name, node.State, node.Cpus)
 		}
 	}
 }
@@ -236,7 +239,7 @@ func (suite *RealServerTestSuite) TestJobSubmission() {
 		Script:    "#!/bin/bash\necho 'Hello from Go SLURM client test'\nhostname\ndate\nsleep 30",
 		Partition: "debug", // Using debug partition which exists on the test server
 		Nodes:     1,
-		CPUs:      1,
+		Cpus:      1,
 		TimeLimit: 5, // 5 minutes
 	}
 
@@ -298,9 +301,9 @@ func (suite *RealServerTestSuite) TestGetStats() {
 	suite.T().Logf("    Idle Nodes: %d", stats.IdleNodes)
 	suite.T().Logf("    Allocated Nodes: %d", stats.AllocatedNodes)
 	suite.T().Logf("  CPU Statistics:")
-	suite.T().Logf("    Total CPUs: %d", stats.TotalCPUs)
-	suite.T().Logf("    Idle CPUs: %d", stats.IdleCPUs)
-	suite.T().Logf("    Allocated CPUs: %d", stats.AllocatedCPUs)
+	suite.T().Logf("    Total Cpus: %d", stats.TotalCPUs)
+	suite.T().Logf("    Idle Cpus: %d", stats.IdleCPUs)
+	suite.T().Logf("    Allocated Cpus: %d", stats.AllocatedCPUs)
 	suite.T().Logf("  Job Statistics:")
 	suite.T().Logf("    Total Jobs: %d", stats.TotalJobs)
 	suite.T().Logf("    Running Jobs: %d", stats.RunningJobs)

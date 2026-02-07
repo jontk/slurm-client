@@ -1,16 +1,24 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
+// NOTE: Tests updated for api/ package type changes.
+// Job struct fields: ID->JobID (*int32), Cpus->CPUs (*uint32), Memory->MemoryPerNode (*uint64)
+
 package analytics
 
 import (
 	"testing"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// Helper functions for pointer types
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(u uint32) *uint32 { return &u }
+func ptrUint64(u uint64) *uint64 { return &u }
 
 func TestDefaultResourceWeights(t *testing.T) {
 	weights := DefaultResourceWeights()
@@ -49,12 +57,12 @@ func TestCalculateCPUEfficiency(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		analytics *interfaces.CPUAnalytics
+		analytics *types.CPUAnalytics
 		expected  float64
 	}{
 		{
 			name: "high utilization",
-			analytics: &interfaces.CPUAnalytics{
+			analytics: &types.CPUAnalytics{
 				AllocatedCores:     16,
 				UsedCores:          14.4,
 				UtilizationPercent: 90.0,
@@ -64,7 +72,7 @@ func TestCalculateCPUEfficiency(t *testing.T) {
 		},
 		{
 			name: "with oversubscription",
-			analytics: &interfaces.CPUAnalytics{
+			analytics: &types.CPUAnalytics{
 				AllocatedCores:     16,
 				UsedCores:          14.4,
 				UtilizationPercent: 90.0,
@@ -74,7 +82,7 @@ func TestCalculateCPUEfficiency(t *testing.T) {
 		},
 		{
 			name: "with thermal throttling",
-			analytics: &interfaces.CPUAnalytics{
+			analytics: &types.CPUAnalytics{
 				AllocatedCores:        16,
 				UsedCores:             12.8,
 				UtilizationPercent:    80.0,
@@ -84,7 +92,7 @@ func TestCalculateCPUEfficiency(t *testing.T) {
 		},
 		{
 			name: "with frequency scaling",
-			analytics: &interfaces.CPUAnalytics{
+			analytics: &types.CPUAnalytics{
 				AllocatedCores:     16,
 				UsedCores:          12.8,
 				UtilizationPercent: 80.0,
@@ -108,12 +116,12 @@ func TestCalculateMemoryEfficiency(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		analytics *interfaces.MemoryAnalytics
+		analytics *types.MemoryAnalytics
 		expected  float64
 	}{
 		{
 			name: "high utilization no issues",
-			analytics: &interfaces.MemoryAnalytics{
+			analytics: &types.MemoryAnalytics{
 				AllocatedBytes:     64 * 1024 * 1024 * 1024,
 				UsedBytes:          56 * 1024 * 1024 * 1024,
 				UtilizationPercent: 87.5,
@@ -123,7 +131,7 @@ func TestCalculateMemoryEfficiency(t *testing.T) {
 		},
 		{
 			name: "high utilization no swap",
-			analytics: &interfaces.MemoryAnalytics{
+			analytics: &types.MemoryAnalytics{
 				AllocatedBytes:     64 * 1024 * 1024 * 1024,
 				UsedBytes:          56 * 1024 * 1024 * 1024,
 				UtilizationPercent: 87.5,
@@ -132,7 +140,7 @@ func TestCalculateMemoryEfficiency(t *testing.T) {
 		},
 		{
 			name: "moderate utilization",
-			analytics: &interfaces.MemoryAnalytics{
+			analytics: &types.MemoryAnalytics{
 				AllocatedBytes:     64 * 1024 * 1024 * 1024,
 				UsedBytes:          48 * 1024 * 1024 * 1024,
 				UtilizationPercent: 75.0,
@@ -141,11 +149,11 @@ func TestCalculateMemoryEfficiency(t *testing.T) {
 		},
 		{
 			name: "with good NUMA locality",
-			analytics: &interfaces.MemoryAnalytics{
+			analytics: &types.MemoryAnalytics{
 				AllocatedBytes:     64 * 1024 * 1024 * 1024,
 				UsedBytes:          48 * 1024 * 1024 * 1024,
 				UtilizationPercent: 75.0,
-				NUMANodes: []interfaces.NUMANodeMetrics{
+				NUMANodes: []types.NUMANodeMetrics{
 					{LocalAccesses: 95.0},
 					{LocalAccesses: 93.0},
 				},
@@ -167,20 +175,20 @@ func TestCalculateGPUEfficiency(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		utilization *interfaces.GPUUtilization
+		utilization *types.GPUUtilization
 		expected    float64
 	}{
 		{
 			name: "single GPU high utilization",
-			utilization: &interfaces.GPUUtilization{
+			utilization: &types.GPUUtilization{
 				DeviceCount: 1,
-				OverallUtilization: &interfaces.ResourceUtilization{
+				OverallUtilization: &types.ResourceUtilization{
 					Percentage: 85.0,
 				},
-				Devices: []interfaces.GPUDeviceUtilization{
+				Devices: []types.GPUDeviceUtilization{
 					{
-						Utilization:       &interfaces.ResourceUtilization{Percentage: 85.0},
-						MemoryUtilization: &interfaces.ResourceUtilization{Percentage: 90.0},
+						Utilization:       &types.ResourceUtilization{Percentage: 85.0},
+						MemoryUtilization: &types.ResourceUtilization{Percentage: 90.0},
 					},
 				},
 			},
@@ -188,27 +196,27 @@ func TestCalculateGPUEfficiency(t *testing.T) {
 		},
 		{
 			name: "multiple GPUs with imbalance",
-			utilization: &interfaces.GPUUtilization{
+			utilization: &types.GPUUtilization{
 				DeviceCount: 4,
-				OverallUtilization: &interfaces.ResourceUtilization{
+				OverallUtilization: &types.ResourceUtilization{
 					Percentage: 70.0,
 				},
-				Devices: []interfaces.GPUDeviceUtilization{
+				Devices: []types.GPUDeviceUtilization{
 					{
-						Utilization:       &interfaces.ResourceUtilization{Percentage: 90.0},
-						MemoryUtilization: &interfaces.ResourceUtilization{Percentage: 85.0},
+						Utilization:       &types.ResourceUtilization{Percentage: 90.0},
+						MemoryUtilization: &types.ResourceUtilization{Percentage: 85.0},
 					},
 					{
-						Utilization:       &interfaces.ResourceUtilization{Percentage: 80.0},
-						MemoryUtilization: &interfaces.ResourceUtilization{Percentage: 75.0},
+						Utilization:       &types.ResourceUtilization{Percentage: 80.0},
+						MemoryUtilization: &types.ResourceUtilization{Percentage: 75.0},
 					},
 					{
-						Utilization:       &interfaces.ResourceUtilization{Percentage: 60.0},
-						MemoryUtilization: &interfaces.ResourceUtilization{Percentage: 65.0},
+						Utilization:       &types.ResourceUtilization{Percentage: 60.0},
+						MemoryUtilization: &types.ResourceUtilization{Percentage: 65.0},
 					},
 					{
-						Utilization:       &interfaces.ResourceUtilization{Percentage: 40.0}, // Underutilized
-						MemoryUtilization: &interfaces.ResourceUtilization{Percentage: 45.0},
+						Utilization:       &types.ResourceUtilization{Percentage: 40.0}, // Underutilized
+						MemoryUtilization: &types.ResourceUtilization{Percentage: 45.0},
 					},
 				},
 			},
@@ -229,12 +237,12 @@ func TestCalculateIOEfficiency(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		analytics *interfaces.IOAnalytics
+		analytics *types.IOAnalytics
 		expected  float64
 	}{
 		{
 			name: "balanced read/write",
-			analytics: &interfaces.IOAnalytics{
+			analytics: &types.IOAnalytics{
 				AverageReadBandwidth:  500.0,
 				AverageWriteBandwidth: 250.0,
 				ReadOperations:        10000,
@@ -247,7 +255,7 @@ func TestCalculateIOEfficiency(t *testing.T) {
 		},
 		{
 			name: "high IO wait",
-			analytics: &interfaces.IOAnalytics{
+			analytics: &types.IOAnalytics{
 				AverageReadBandwidth:  500.0,
 				AverageWriteBandwidth: 250.0,
 				ReadOperations:        10000,
@@ -260,7 +268,7 @@ func TestCalculateIOEfficiency(t *testing.T) {
 		},
 		{
 			name: "with device metrics",
-			analytics: &interfaces.IOAnalytics{
+			analytics: &types.IOAnalytics{
 				AverageReadBandwidth:  300.0,
 				AverageWriteBandwidth: 150.0,
 				ReadOperations:        10000,
@@ -283,19 +291,19 @@ func TestCalculateOverallEfficiency(t *testing.T) {
 	calc := NewEfficiencyCalculator()
 
 	// Create sample analytics data
-	cpuAnalytics := &interfaces.CPUAnalytics{
+	cpuAnalytics := &types.CPUAnalytics{
 		AllocatedCores:     16,
 		UsedCores:          12.8,
 		UtilizationPercent: 80.0,
 	}
 
-	memoryAnalytics := &interfaces.MemoryAnalytics{
+	memoryAnalytics := &types.MemoryAnalytics{
 		AllocatedBytes:     64 * 1024 * 1024 * 1024,
 		UsedBytes:          48 * 1024 * 1024 * 1024,
 		UtilizationPercent: 75.0,
 	}
 
-	ioAnalytics := &interfaces.IOAnalytics{
+	ioAnalytics := &types.IOAnalytics{
 		AverageReadBandwidth:  400.0,
 		AverageWriteBandwidth: 200.0,
 		ReadOperations:        10000,
@@ -303,9 +311,9 @@ func TestCalculateOverallEfficiency(t *testing.T) {
 		UtilizationPercent:    40.0,
 	}
 
-	gpuUtilization := &interfaces.GPUUtilization{
+	gpuUtilization := &types.GPUUtilization{
 		DeviceCount: 2,
-		OverallUtilization: &interfaces.ResourceUtilization{
+		OverallUtilization: &types.ResourceUtilization{
 			Percentage: 85.0,
 		},
 	}
@@ -326,22 +334,22 @@ func TestCalculateOverallEfficiency(t *testing.T) {
 func TestCalculateResourceWaste(t *testing.T) {
 	calc := NewEfficiencyCalculator()
 
-	job := &interfaces.Job{
-		ID:     "test-job",
-		CPUs:   16,
-		Memory: 64 * 1024 * 1024 * 1024,
+	job := &types.Job{
+		JobID:         ptrInt32(12345),
+		CPUs:          ptrUint32(16),
+		MemoryPerNode: ptrUint64(64 * 1024), // 64GB in MB
 	}
 
-	analytics := &interfaces.JobComprehensiveAnalytics{
-		CPUAnalytics: &interfaces.CPUAnalytics{
+	analytics := &types.JobComprehensiveAnalytics{
+		CPUAnalytics: &types.CPUAnalytics{
 			AllocatedCores: 16,
 			UsedCores:      10.0,
 		},
-		MemoryAnalytics: &interfaces.MemoryAnalytics{
+		MemoryAnalytics: &types.MemoryAnalytics{
 			AllocatedBytes: 64 * 1024 * 1024 * 1024,
 			UsedBytes:      40 * 1024 * 1024 * 1024,
 		},
-		IOAnalytics: &interfaces.IOAnalytics{
+		IOAnalytics: &types.IOAnalytics{
 			UtilizationPercent: 75.0,
 		},
 		OverallEfficiency: 60.0,
@@ -369,25 +377,25 @@ func TestCalculateResourceWaste(t *testing.T) {
 func TestGenerateOptimizationRecommendations(t *testing.T) {
 	calc := NewEfficiencyCalculator()
 
-	job := &interfaces.Job{
-		ID:     "test-job",
-		CPUs:   16,
-		Memory: 64 * 1024 * 1024 * 1024,
+	job := &types.Job{
+		JobID:         ptrInt32(12345),
+		CPUs:          ptrUint32(16),
+		MemoryPerNode: ptrUint64(64 * 1024), // 64GB in MB
 	}
 
-	analytics := &interfaces.JobComprehensiveAnalytics{
-		CPUAnalytics: &interfaces.CPUAnalytics{
+	analytics := &types.JobComprehensiveAnalytics{
+		CPUAnalytics: &types.CPUAnalytics{
 			AllocatedCores:        16,
 			UsedCores:             6.4,
 			UtilizationPercent:    40.0, // Low utilization
 			ThermalThrottleEvents: 200,  // Some throttling
 		},
-		MemoryAnalytics: &interfaces.MemoryAnalytics{
+		MemoryAnalytics: &types.MemoryAnalytics{
 			AllocatedBytes:     64 * 1024 * 1024 * 1024,
 			UsedBytes:          20 * 1024 * 1024 * 1024,
 			UtilizationPercent: 31.25, // Very low utilization
 		},
-		IOAnalytics: &interfaces.IOAnalytics{
+		IOAnalytics: &types.IOAnalytics{
 			UtilizationPercent: 25.0, // Lower to trigger I/O optimization recommendation
 			ReadBytes:          1000000,
 			WriteBytes:         1000000,
@@ -443,7 +451,7 @@ func TestCalculateCoreUtilizationVariance(t *testing.T) {
 	calc := NewEfficiencyCalculator()
 
 	// Test balanced cores
-	balancedCores := []interfaces.CPUCoreMetric{
+	balancedCores := []types.CPUCoreMetric{
 		{CoreID: 0, Utilization: 80.0},
 		{CoreID: 1, Utilization: 82.0},
 		{CoreID: 2, Utilization: 78.0},
@@ -454,7 +462,7 @@ func TestCalculateCoreUtilizationVariance(t *testing.T) {
 	assert.Less(t, variance, 5.0) // Low variance
 
 	// Test imbalanced cores
-	imbalancedCores := []interfaces.CPUCoreMetric{
+	imbalancedCores := []types.CPUCoreMetric{
 		{CoreID: 0, Utilization: 95.0},
 		{CoreID: 1, Utilization: 90.0},
 		{CoreID: 2, Utilization: 20.0},

@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package common
 
 import (
@@ -17,7 +16,6 @@ func TestConvertTRESListToString(t *testing.T) {
 	int64Ptr := func(i int64) *int64 { return &i }
 	int32Ptr := func(i int32) *int32 { return &i }
 	intPtr := func(i int) *int { return &i }
-
 	tests := []struct {
 		name  string
 		input []struct {
@@ -91,7 +89,6 @@ func TestConvertTRESListToString(t *testing.T) {
 			expected: "mem=1024",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ConvertTRESListToString(tt.input)
@@ -104,7 +101,6 @@ func TestConvertTRESListToString(t *testing.T) {
 func TestConvertTRESListToStringSimple(t *testing.T) {
 	strPtr := func(s string) *string { return &s }
 	int64Ptr := func(i int64) *int64 { return &i }
-
 	tests := []struct {
 		name  string
 		input []struct {
@@ -156,7 +152,6 @@ func TestConvertTRESListToStringSimple(t *testing.T) {
 			expected: "cpu=4,gpu=2",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ConvertTRESListToStringSimple(tt.input)
@@ -208,7 +203,6 @@ func TestFormatDurationForSlurm(t *testing.T) {
 			expected: "72:45:30",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := FormatDurationForSlurm(tt.duration)
@@ -223,7 +217,6 @@ func TestParseNumberField(t *testing.T) {
 	int64Val := int64(100)
 	intVal := 50
 	float64Val := 75.5
-
 	tests := []struct {
 		name     string
 		input    interface{}
@@ -297,7 +290,6 @@ func TestParseNumberField(t *testing.T) {
 			expectOK: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, ok := ParseNumberField(tt.input)
@@ -315,7 +307,6 @@ func TestParseNumberField64(t *testing.T) {
 	int64Val := int64(100)
 	intVal := 50
 	float64Val := 75.5
-
 	tests := []struct {
 		name     string
 		input    interface{}
@@ -395,7 +386,6 @@ func TestParseNumberField64(t *testing.T) {
 			expectOK: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, ok := ParseNumberField64(tt.input)
@@ -411,7 +401,6 @@ func TestParseNumberField64(t *testing.T) {
 func BenchmarkConvertTRESListToString(b *testing.B) {
 	strPtr := func(s string) *string { return &s }
 	int64Ptr := func(i int64) *int64 { return &i }
-
 	tresList := []struct {
 		Type  *string     `json:"type,omitempty"`
 		Value interface{} `json:"value,omitempty"`
@@ -420,34 +409,27 @@ func BenchmarkConvertTRESListToString(b *testing.B) {
 		{Type: strPtr("mem"), Value: int64Ptr(1024)},
 		{Type: strPtr("gpu"), Value: int64Ptr(2)},
 	}
-
 	b.ResetTimer()
 	for range b.N {
 		ConvertTRESListToString(tresList)
 	}
 }
-
 func BenchmarkFormatDurationForSlurm(b *testing.B) {
 	duration := 2*time.Hour + 15*time.Minute + 45*time.Second
-
 	b.ResetTimer()
 	for range b.N {
 		FormatDurationForSlurm(duration)
 	}
 }
-
 func BenchmarkParseNumberField(b *testing.B) {
 	value := int64(12345)
-
 	b.ResetTimer()
 	for range b.N {
 		ParseNumberField(value)
 	}
 }
-
 func BenchmarkParseNumberField64(b *testing.B) {
 	value := int64(12345)
-
 	b.ResetTimer()
 	for range b.N {
 		ParseNumberField64(value)

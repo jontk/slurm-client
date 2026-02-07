@@ -1,13 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_41
 
 import (
 	"context"
 	"testing"
 
-	"github.com/jontk/slurm-client/internal/managers/base"
+	adapterbase "github.com/jontk/slurm-client/internal/adapters/base"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,12 +15,10 @@ import (
 // are not implemented in the current v0_0_41 adapter interface.
 // The v0_0_41 API uses inline struct definitions rather than
 // separate V0041Account types, and many expected methods don't exist.
-
 func TestAccountAdapter_ValidateContext(t *testing.T) {
 	adapter := &AccountAdapter{
-		BaseManager: base.NewBaseManager("v0.0.41", "Account"),
+		BaseManager: adapterbase.NewBaseManager("v0.0.41", "Account"),
 	}
-
 	tests := []struct {
 		name    string
 		ctx     context.Context
@@ -40,7 +37,6 @@ func TestAccountAdapter_ValidateContext(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := adapter.ValidateContext(tt.ctx)

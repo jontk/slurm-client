@@ -8,8 +8,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	slurm "github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -106,7 +105,7 @@ func testV40Features(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Testing v0.0.40 features:")
 
 	// v0.0.40 uses minimum_switches in job submission
-	job := &interfaces.JobSubmission{
+	job := &slurm.JobSubmission{
 		Name:      "v40-test",
 		Command:   "echo 'Testing v0.0.40'",
 		Partition: "compute",
@@ -123,12 +122,12 @@ func testV40Features(ctx context.Context, client slurm.SlurmClient) {
 	if err != nil {
 		log.Printf("  Job submission failed: %v", err)
 	} else {
-		fmt.Printf("  Job submitted with ID: %s\n", resp.JobID)
+		fmt.Printf("  Job submitted with ID: %s\n", fmt.Sprintf("%d", resp.JobId))
 		fmt.Println("  Note: Uses 'minimum_switches' field")
 	}
 
 	// List jobs with v0.0.40 specific options
-	jobs, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
+	jobs, err := client.Jobs().List(ctx, &slurm.ListJobsOptions{
 		States: []string{"RUNNING", "PENDING"},
 		Limit:  5,
 	})
@@ -144,7 +143,7 @@ func testV41Features(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Testing v0.0.41 features:")
 
 	// v0.0.41 renamed minimum_switches to required_switches
-	job := &interfaces.JobSubmission{
+	job := &slurm.JobSubmission{
 		Name:      "v41-test",
 		Command:   "echo 'Testing v0.0.41'",
 		Partition: "compute",
@@ -161,12 +160,12 @@ func testV41Features(ctx context.Context, client slurm.SlurmClient) {
 	if err != nil {
 		log.Printf("  Job submission failed: %v", err)
 	} else {
-		fmt.Printf("  Job submitted with ID: %s\n", resp.JobID)
+		fmt.Printf("  Job submitted with ID: %s\n", fmt.Sprintf("%d", resp.JobId))
 		fmt.Println("  Note: Uses 'required_switches' field (renamed from minimum_switches)")
 	}
 
 	// v0.0.41 has extended node information
-	nodes, err := client.Nodes().List(ctx, &interfaces.ListNodesOptions{
+	nodes, err := client.Nodes().List(ctx, &slurm.ListNodesOptions{
 		States: []string{"IDLE"},
 		Limit:  3,
 	})
@@ -185,7 +184,7 @@ func testV42Features(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Testing v0.0.42 features (stable version):")
 
 	// v0.0.42 removed exclusive and oversubscribe from job outputs
-	job := &interfaces.JobSubmission{
+	job := &slurm.JobSubmission{
 		Name:      "v42-test",
 		Command:   "echo 'Testing v0.0.42 stable'",
 		Partition: "compute",
@@ -203,7 +202,7 @@ func testV42Features(ctx context.Context, client slurm.SlurmClient) {
 	if err != nil {
 		log.Printf("  Job submission failed: %v", err)
 	} else {
-		fmt.Printf("  Job submitted with ID: %s\n", resp.JobID)
+		fmt.Printf("  Job submitted with ID: %s\n", fmt.Sprintf("%d", resp.JobId))
 		fmt.Println("  Note: 'exclusive' and 'oversubscribe' removed from outputs")
 	}
 
@@ -229,7 +228,7 @@ func testV43Features(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Testing v0.0.43 features (latest version):")
 
 	// v0.0.43 adds reservation management support
-	job := &interfaces.JobSubmission{
+	job := &slurm.JobSubmission{
 		Name:      "v43-test",
 		Command:   "echo 'Testing v0.0.43 latest'",
 		Partition: "compute",
@@ -246,7 +245,7 @@ func testV43Features(ctx context.Context, client slurm.SlurmClient) {
 	if err != nil {
 		log.Printf("  Job submission failed: %v", err)
 	} else {
-		fmt.Printf("  Job submitted with ID: %s\n", resp.JobID)
+		fmt.Printf("  Job submitted with ID: %s\n", fmt.Sprintf("%d", resp.JobId))
 		fmt.Println("  Note: Includes reservation management support")
 	}
 
@@ -286,7 +285,7 @@ func handleBreakingChanges(ctx context.Context, cfg *config.Config, auth auth.Pr
 	}
 
 	// Create job submission based on version
-	job := &interfaces.JobSubmission{
+	job := &slurm.JobSubmission{
 		Name:      "cross-version-job",
 		Command:   "echo 'Cross-version compatible job'",
 		Partition: "compute",
@@ -313,7 +312,7 @@ func handleBreakingChanges(ctx context.Context, cfg *config.Config, auth auth.Pr
 		return
 	}
 
-	fmt.Printf("Successfully submitted cross-version job: %s\n", resp.JobID)
+	fmt.Printf("Successfully submitted cross-version job: %s\n", fmt.Sprintf("%d", resp.JobId))
 }
 
 // checkVersionCompatibility shows how to check version compatibility

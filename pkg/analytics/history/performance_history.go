@@ -10,7 +10,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/pkg/analytics"
 )
 
@@ -29,10 +29,10 @@ func NewPerformanceHistoryTracker() *PerformanceHistoryTracker {
 // GetJobPerformanceHistory retrieves historical performance data for a job
 func (pht *PerformanceHistoryTracker) GetJobPerformanceHistory(
 	_ context.Context,
-	job *interfaces.Job,
-	samples []interfaces.JobComprehensiveAnalytics,
-	opts *interfaces.PerformanceHistoryOptions,
-) (*interfaces.JobPerformanceHistory, error) {
+	job *types.Job,
+	samples []types.JobComprehensiveAnalytics,
+	opts *types.PerformanceHistoryOptions,
+) (*types.JobPerformanceHistory, error) {
 	if job == nil {
 		return nil, fmt.Errorf("job cannot be nil")
 	}
@@ -58,7 +58,7 @@ func (pht *PerformanceHistoryTracker) GetJobPerformanceHistory(
 	statistics := pht.calculatePerformanceStatistics(filteredSamples)
 
 	// Analyze trends if requested
-	var trends *interfaces.PerformanceTrendAnalysis
+	var trends *types.PerformanceTrendAnalysis
 	if opts == nil || opts.IncludeTrends {
 		trends = pht.analyzeTrends(timeSeriesData)
 	}
@@ -66,21 +66,19 @@ func (pht *PerformanceHistoryTracker) GetJobPerformanceHistory(
 	// Detect anomalies
 	anomalies := pht.detectAnomalies(timeSeriesData, statistics)
 
-	return &interfaces.JobPerformanceHistory{
-		JobID:   job.ID,
-		JobName: job.Name,
-		StartTime: func() time.Time {
-			if job.StartTime != nil {
-				return *job.StartTime
-			}
-			return time.Time{}
-		}(),
-		EndTime: func() time.Time {
-			if job.EndTime != nil {
-				return *job.EndTime
-			}
-			return time.Time{}
-		}(),
+	jobName := ""
+	if job.Name != nil {
+		jobName = *job.Name
+	}
+	jobID := int32(0)
+	if job.JobID != nil {
+		jobID = *job.JobID
+	}
+	return &types.JobPerformanceHistory{
+		JobID:          fmt.Sprintf("%d", jobID),
+		JobName:        jobName,
+		StartTime:      job.StartTime,
+		EndTime:        job.EndTime,
 		TimeSeriesData: timeSeriesData,
 		Statistics:     statistics,
 		Trends:         trends,
@@ -90,14 +88,14 @@ func (pht *PerformanceHistoryTracker) GetJobPerformanceHistory(
 
 // filterSamplesByTimeRange filters samples based on time range options
 func (pht *PerformanceHistoryTracker) filterSamplesByTimeRange(
-	samples []interfaces.JobComprehensiveAnalytics,
-	opts *interfaces.PerformanceHistoryOptions,
-) []interfaces.JobComprehensiveAnalytics {
+	samples []types.JobComprehensiveAnalytics,
+	opts *types.PerformanceHistoryOptions,
+) []types.JobComprehensiveAnalytics {
 	if opts == nil || (opts.StartTime == nil && opts.EndTime == nil) {
 		return samples
 	}
 
-	var filtered []interfaces.JobComprehensiveAnalytics
+	var filtered []types.JobComprehensiveAnalytics
 	for _, sample := range samples {
 		if opts.StartTime != nil && sample.StartTime.Before(*opts.StartTime) {
 			continue
@@ -112,10 +110,10 @@ func (pht *PerformanceHistoryTracker) filterSamplesByTimeRange(
 
 // createTimeSeriesData creates time series data from analytics samples
 func (pht *PerformanceHistoryTracker) createTimeSeriesData(
-	samples []interfaces.JobComprehensiveAnalytics,
-	opts *interfaces.PerformanceHistoryOptions,
-) []interfaces.PerformanceSnapshot {
-	var snapshots []interfaces.PerformanceSnapshot
+	samples []types.JobComprehensiveAnalytics,
+	opts *types.PerformanceHistoryOptions,
+) []types.PerformanceSnapshot {
+	var snapshots []types.PerformanceSnapshot
 
 	// Determine interval
 	interval := pht.determineInterval(samples, opts)
@@ -138,8 +136,8 @@ func (pht *PerformanceHistoryTracker) createTimeSeriesData(
 
 // determineInterval determines the appropriate interval for time series data
 func (pht *PerformanceHistoryTracker) determineInterval(
-	samples []interfaces.JobComprehensiveAnalytics,
-	opts *interfaces.PerformanceHistoryOptions,
+	samples []types.JobComprehensiveAnalytics,
+	opts *types.PerformanceHistoryOptions,
 ) time.Duration {
 	if opts != nil && opts.Interval != "" {
 		switch opts.Interval {
@@ -172,15 +170,15 @@ func (pht *PerformanceHistoryTracker) determineInterval(
 
 // groupSamplesByInterval groups samples into time intervals
 func (pht *PerformanceHistoryTracker) groupSamplesByInterval(
-	samples []interfaces.JobComprehensiveAnalytics,
+	samples []types.JobComprehensiveAnalytics,
 	interval time.Duration,
-) [][]interfaces.JobComprehensiveAnalytics {
+) [][]types.JobComprehensiveAnalytics {
 	if len(samples) == 0 {
 		return nil
 	}
 
-	var groups [][]interfaces.JobComprehensiveAnalytics
-	var currentGroup []interfaces.JobComprehensiveAnalytics
+	var groups [][]types.JobComprehensiveAnalytics
+	var currentGroup []types.JobComprehensiveAnalytics
 
 	baseTime := samples[0].StartTime.Truncate(interval)
 	currentTime := baseTime
@@ -193,7 +191,7 @@ func (pht *PerformanceHistoryTracker) groupSamplesByInterval(
 			if len(currentGroup) > 0 {
 				groups = append(groups, currentGroup)
 			}
-			currentGroup = []interfaces.JobComprehensiveAnalytics{sample}
+			currentGroup = []types.JobComprehensiveAnalytics{sample}
 			currentTime = sampleTime
 		} else {
 			// Add to current group
@@ -211,8 +209,8 @@ func (pht *PerformanceHistoryTracker) groupSamplesByInterval(
 
 // createSnapshot creates a performance snapshot from a group of samples
 func (pht *PerformanceHistoryTracker) createSnapshot(
-	group []interfaces.JobComprehensiveAnalytics,
-) interfaces.PerformanceSnapshot {
+	group []types.JobComprehensiveAnalytics,
+) types.PerformanceSnapshot {
 	// Calculate averages for the interval
 	var (
 		cpuSum    float64
@@ -245,7 +243,7 @@ func (pht *PerformanceHistoryTracker) createSnapshot(
 		count++
 	}
 
-	return interfaces.PerformanceSnapshot{
+	return types.PerformanceSnapshot{
 		Timestamp:         timestamp,
 		CPUUtilization:    cpuSum / count,
 		MemoryUtilization: memSum / count,
@@ -259,8 +257,8 @@ func (pht *PerformanceHistoryTracker) createSnapshot(
 
 // calculatePerformanceStatistics calculates aggregate statistics
 func (pht *PerformanceHistoryTracker) calculatePerformanceStatistics(
-	samples []interfaces.JobComprehensiveAnalytics,
-) interfaces.PerformanceStatistics {
+	samples []types.JobComprehensiveAnalytics,
+) types.PerformanceStatistics {
 	// Preallocate slices with known capacity
 	cpuValues := make([]float64, 0, len(samples))
 	memValues := make([]float64, 0, len(samples))
@@ -280,7 +278,7 @@ func (pht *PerformanceHistoryTracker) calculatePerformanceStatistics(
 		effValues = append(effValues, sample.OverallEfficiency)
 	}
 
-	return interfaces.PerformanceStatistics{
+	return types.PerformanceStatistics{
 		AverageCPU:        pht.mean(cpuValues),
 		AverageMemory:     pht.mean(memValues),
 		AverageIO:         pht.mean(ioValues),
@@ -299,8 +297,8 @@ func (pht *PerformanceHistoryTracker) calculatePerformanceStatistics(
 
 // analyzeTrends analyzes performance trends
 func (pht *PerformanceHistoryTracker) analyzeTrends(
-	snapshots []interfaces.PerformanceSnapshot,
-) *interfaces.PerformanceTrendAnalysis {
+	snapshots []types.PerformanceSnapshot,
+) *types.PerformanceTrendAnalysis {
 	if len(snapshots) < 2 {
 		return nil
 	}
@@ -344,7 +342,7 @@ func (pht *PerformanceHistoryTracker) analyzeTrends(
 		predictedRuntime = time.Duration(runtimeHours) * time.Hour
 	}
 
-	return &interfaces.PerformanceTrendAnalysis{
+	return &types.PerformanceTrendAnalysis{
 		CPUTrend:         cpuTrend,
 		MemoryTrend:      memTrend,
 		IOTrend:          ioTrend,
@@ -356,9 +354,9 @@ func (pht *PerformanceHistoryTracker) analyzeTrends(
 }
 
 // calculateTrend calculates trend information for a metric
-func (pht *PerformanceHistoryTracker) calculateTrend(x, y []float64) interfaces.TrendInfo {
+func (pht *PerformanceHistoryTracker) calculateTrend(x, y []float64) types.TrendInfo {
 	if len(x) != len(y) || len(x) < 2 {
-		return interfaces.TrendInfo{
+		return types.TrendInfo{
 			Direction:  "stable",
 			Slope:      0,
 			Confidence: 0,
@@ -380,7 +378,7 @@ func (pht *PerformanceHistoryTracker) calculateTrend(x, y []float64) interfaces.
 	// Calculate slope
 	denominator := n*sumX2 - sumX*sumX
 	if denominator == 0 {
-		return interfaces.TrendInfo{
+		return types.TrendInfo{
 			Direction:  "stable",
 			Slope:      0,
 			Confidence: 0,
@@ -420,7 +418,7 @@ func (pht *PerformanceHistoryTracker) calculateTrend(x, y []float64) interfaces.
 		}
 	}
 
-	return interfaces.TrendInfo{
+	return types.TrendInfo{
 		Direction:  direction,
 		Slope:      slope,
 		Confidence: math.Max(0, confidence),
@@ -430,10 +428,10 @@ func (pht *PerformanceHistoryTracker) calculateTrend(x, y []float64) interfaces.
 
 // detectAnomalies detects anomalies in performance data
 func (pht *PerformanceHistoryTracker) detectAnomalies(
-	snapshots []interfaces.PerformanceSnapshot,
-	stats interfaces.PerformanceStatistics,
-) []interfaces.PerformanceAnomaly {
-	anomalies := make([]interfaces.PerformanceAnomaly, 0)
+	snapshots []types.PerformanceSnapshot,
+	stats types.PerformanceStatistics,
+) []types.PerformanceAnomaly {
+	anomalies := make([]types.PerformanceAnomaly, 0)
 
 	// Define thresholds
 	cpuThreshold := stats.StdDevCPU * 2
@@ -445,7 +443,7 @@ func (pht *PerformanceHistoryTracker) detectAnomalies(
 		cpuDev := math.Abs(snapshot.CPUUtilization - stats.AverageCPU)
 		if cpuDev > cpuThreshold && cpuThreshold > 0 {
 			severity := pht.calculateAnomalySeverity(cpuDev, cpuThreshold)
-			anomalies = append(anomalies, interfaces.PerformanceAnomaly{
+			anomalies = append(anomalies, types.PerformanceAnomaly{
 				Timestamp:   snapshot.Timestamp,
 				Type:        pht.getAnomalyType(snapshot.CPUUtilization, stats.AverageCPU),
 				Metric:      "cpu",
@@ -461,7 +459,7 @@ func (pht *PerformanceHistoryTracker) detectAnomalies(
 		memDev := math.Abs(snapshot.MemoryUtilization - stats.AverageMemory)
 		if memDev > memThreshold && memThreshold > 0 {
 			severity := pht.calculateAnomalySeverity(memDev, memThreshold)
-			anomalies = append(anomalies, interfaces.PerformanceAnomaly{
+			anomalies = append(anomalies, types.PerformanceAnomaly{
 				Timestamp:   snapshot.Timestamp,
 				Type:        pht.getAnomalyType(snapshot.MemoryUtilization, stats.AverageMemory),
 				Metric:      "memory",
@@ -477,7 +475,7 @@ func (pht *PerformanceHistoryTracker) detectAnomalies(
 		ioDev := math.Abs(snapshot.IOBandwidth - stats.AverageIO)
 		if ioDev > ioThreshold && ioThreshold > 0 {
 			severity := pht.calculateAnomalySeverity(ioDev, ioThreshold)
-			anomalies = append(anomalies, interfaces.PerformanceAnomaly{
+			anomalies = append(anomalies, types.PerformanceAnomaly{
 				Timestamp:   snapshot.Timestamp,
 				Type:        pht.getAnomalyType(snapshot.IOBandwidth, stats.AverageIO),
 				Metric:      "io",
@@ -491,7 +489,7 @@ func (pht *PerformanceHistoryTracker) detectAnomalies(
 
 		// Check efficiency drops
 		if snapshot.Efficiency < stats.AverageEfficiency*0.7 {
-			anomalies = append(anomalies, interfaces.PerformanceAnomaly{
+			anomalies = append(anomalies, types.PerformanceAnomaly{
 				Timestamp:   snapshot.Timestamp,
 				Type:        "drop",
 				Metric:      "efficiency",

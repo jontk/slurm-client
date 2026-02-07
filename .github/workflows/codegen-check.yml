@@ -1,0 +1,54 @@
+name: Codegen Verification
+
+on:
+  pull_request:
+    paths:
+      - 'tools/codegen/**'
+      - 'internal/api/**'
+      - 'internal/common/types/**'
+      - '.github/workflows/codegen-check.yml'
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'tools/codegen/**'
+      - 'internal/api/**'
+      - 'internal/common/types/**'
+
+jobs:
+  verify-converters:
+    name: Verify Generated Converters
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Generate converters
+        run: make generate-converters
+
+      - name: Check for uncommitted changes
+        run: |
+          if [[ -n $(git status --porcelain internal/adapters/*/*.gen.go) ]]; then
+            echo "❌ Generated converter files are out of sync!"
+            echo ""
+            echo "The following files have uncommitted changes:"
+            git status --porcelain internal/adapters/*/*.gen.go
+            echo ""
+            echo "Please run 'make generate-converters' locally and commit the changes."
+            echo ""
+            echo "Diff:"
+            git diff internal/adapters/*/*.gen.go
+            exit 1
+          fi
+          echo "✅ Generated converters are up to date"
+
+      - name: Verify generated code compiles
+        run: go build ./internal/adapters/...

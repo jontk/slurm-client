@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_44
 
 import (
@@ -8,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
-	"github.com/jontk/slurm-client/internal/common/types"
+	types "github.com/jontk/slurm-client/api"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_44"
 )
 
 // TRESUtils provides utilities for working with TRES (Trackable RESources)
@@ -25,25 +24,24 @@ func (u *TRESUtils) ConvertAPITRESToCommon(apiTresList api.V0044TresList) []type
 	if apiTresList == nil {
 		return []types.TRES{}
 	}
-
 	tresList := make([]types.TRES, 0, len(apiTresList))
 	for _, apiTres := range apiTresList {
-		tres := types.TRES{}
-
-		if apiTres.Id != nil {
-			tres.ID = int(*apiTres.Id)
+		tres := types.TRES{
+			Type: apiTres.Type,
 		}
-		tres.Type = apiTres.Type
+		if apiTres.Id != nil {
+			id := int32(*apiTres.Id)
+			tres.ID = &id
+		}
 		if apiTres.Name != nil {
-			tres.Name = *apiTres.Name
+			name := *apiTres.Name
+			tres.Name = &name
 		}
 		if apiTres.Count != nil {
-			tres.Count = *apiTres.Count
+			tres.Count = apiTres.Count
 		}
-
 		tresList = append(tresList, tres)
 	}
-
 	return tresList
 }
 
@@ -52,27 +50,23 @@ func (u *TRESUtils) ConvertCommonTRESToAPI(tresList []types.TRES) api.V0044TresL
 	if len(tresList) == 0 {
 		return api.V0044TresList{}
 	}
-
 	apiTresList := make(api.V0044TresList, 0, len(tresList))
 	for _, tres := range tresList {
 		apiTres := api.V0044Tres{
 			Type: tres.Type,
 		}
-
-		if tres.ID != 0 {
-			id := int32(tres.ID)
+		if tres.ID != nil && *tres.ID != 0 {
+			id := int32(*tres.ID)
 			apiTres.Id = &id
 		}
-		if tres.Name != "" {
-			apiTres.Name = &tres.Name
+		if tres.Name != nil && *tres.Name != "" {
+			apiTres.Name = tres.Name
 		}
-		if tres.Count != 0 {
-			apiTres.Count = &tres.Count
+		if tres.Count != nil && *tres.Count != 0 {
+			apiTres.Count = tres.Count
 		}
-
 		apiTresList = append(apiTresList, apiTres)
 	}
-
 	return apiTresList
 }
 
@@ -81,43 +75,35 @@ func (u *TRESUtils) ParseTRESString(tresStr string) ([]types.TRES, error) {
 	if tresStr == "" {
 		return []types.TRES{}, nil
 	}
-
 	tresList := []types.TRES{}
 	parts := strings.Split(tresStr, ",")
-
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
 		if part == "" {
 			continue
 		}
-
 		keyValue := strings.SplitN(part, "=", 2)
 		if len(keyValue) != 2 {
 			return nil, fmt.Errorf("invalid TRES format: %s", part)
 		}
-
 		tresType := strings.TrimSpace(keyValue[0])
 		countStr := strings.TrimSpace(keyValue[1])
-
 		tres := types.TRES{
 			Type: tresType,
 		}
-
 		// Handle different count formats
 		count, err := u.parseCountValue(countStr)
 		if err != nil {
 			return nil, fmt.Errorf("invalid TRES count for %s: %w", tresType, err)
 		}
-		tres.Count = count
-
+		tres.Count = &count
 		// Set name if it's not a basic type
 		if !u.isBasicTRESType(tresType) {
-			tres.Name = tresType
+			name := tresType
+			tres.Name = &name
 		}
-
 		tresList = append(tresList, tres)
 	}
-
 	return tresList, nil
 }
 
@@ -126,18 +112,20 @@ func (u *TRESUtils) FormatTRESString(tresList []types.TRES) string {
 	if len(tresList) == 0 {
 		return ""
 	}
-
 	parts := make([]string, 0, len(tresList))
 	for _, tres := range tresList {
 		var part string
-		if tres.Name != "" && tres.Name != tres.Type {
-			part = fmt.Sprintf("%s=%d", tres.Name, tres.Count)
+		count := int64(0)
+		if tres.Count != nil {
+			count = *tres.Count
+		}
+		if tres.Name != nil && *tres.Name != "" && *tres.Name != tres.Type {
+			part = fmt.Sprintf("%s=%d", *tres.Name, count)
 		} else {
-			part = fmt.Sprintf("%s=%d", tres.Type, tres.Count)
+			part = fmt.Sprintf("%s=%d", tres.Type, count)
 		}
 		parts = append(parts, part)
 	}
-
 	return strings.Join(parts, ",")
 }
 
@@ -154,13 +142,17 @@ func (u *TRESUtils) ExtractTRESByType(tresList []types.TRES, tresType string) *t
 // ExtractResourceLimits extracts common resource limits from TRES list
 func (u *TRESUtils) ExtractResourceLimits(tresList []types.TRES) (cpus int64, memory int64, nodes int64) {
 	for _, tres := range tresList {
+		count := int64(0)
+		if tres.Count != nil {
+			count = *tres.Count
+		}
 		switch strings.ToLower(tres.Type) {
 		case "cpu":
-			cpus = tres.Count
+			cpus = count
 		case "mem", "memory":
-			memory = tres.Count
+			memory = count
 		case "node":
-			nodes = tres.Count
+			nodes = count
 		}
 	}
 	return cpus, memory, nodes
@@ -169,26 +161,27 @@ func (u *TRESUtils) ExtractResourceLimits(tresList []types.TRES) (cpus int64, me
 // BuildTRESFromLimits builds a TRES list from resource limits
 func (u *TRESUtils) BuildTRESFromLimits(cpus, memory, nodes int64) []types.TRES {
 	tresList := []types.TRES{}
-
 	if cpus > 0 {
+		cpuCount := cpus
 		tresList = append(tresList, types.TRES{
 			Type:  "cpu",
-			Count: cpus,
+			Count: &cpuCount,
 		})
 	}
 	if memory > 0 {
+		memCount := memory
 		tresList = append(tresList, types.TRES{
 			Type:  "mem",
-			Count: memory,
+			Count: &memCount,
 		})
 	}
 	if nodes > 0 {
+		nodeCount := nodes
 		tresList = append(tresList, types.TRES{
 			Type:  "node",
-			Count: nodes,
+			Count: &nodeCount,
 		})
 	}
-
 	return tresList
 }
 
@@ -197,21 +190,17 @@ func (u *TRESUtils) MergeTRESLists(lists ...[]types.TRES) []types.TRES {
 	if len(lists) == 0 {
 		return []types.TRES{}
 	}
-
 	tresMap := make(map[string]types.TRES)
-
 	for _, list := range lists {
 		for _, tres := range list {
 			key := u.getTRESKey(tres)
 			tresMap[key] = tres
 		}
 	}
-
 	result := make([]types.TRES, 0, len(tresMap))
 	for _, tres := range tresMap {
 		result = append(result, tres)
 	}
-
 	return result
 }
 
@@ -220,7 +209,7 @@ func (u *TRESUtils) ValidateTRES(tres types.TRES) error {
 	if tres.Type == "" {
 		return fmt.Errorf("TRES type is required")
 	}
-	if tres.Count < 0 {
+	if tres.Count != nil && *tres.Count < 0 {
 		return fmt.Errorf("TRES count cannot be negative")
 	}
 	return nil
@@ -229,32 +218,26 @@ func (u *TRESUtils) ValidateTRES(tres types.TRES) error {
 // validateTRESList validates a list of TRES entries
 func (u *TRESUtils) ValidateTRESList(tresList []types.TRES) error {
 	seen := make(map[string]bool)
-
 	for _, tres := range tresList {
 		if err := u.ValidateTRES(tres); err != nil {
 			return err
 		}
-
 		key := u.getTRESKey(tres)
 		if seen[key] {
 			return fmt.Errorf("duplicate TRES entry: %s", key)
 		}
 		seen[key] = true
 	}
-
 	return nil
 }
 
 // Private helper functions
-
 // parseCountValue parses various count value formats (e.g., "4", "8G", "1024M")
 func (u *TRESUtils) parseCountValue(countStr string) (int64, error) {
 	countStr = strings.ToUpper(strings.TrimSpace(countStr))
-
 	if countStr == "" {
 		return 0, nil
 	}
-
 	// Handle suffix multipliers
 	multiplier := int64(1)
 	if len(countStr) > 1 {
@@ -274,12 +257,10 @@ func (u *TRESUtils) parseCountValue(countStr string) (int64, error) {
 			countStr = countStr[:len(countStr)-1]
 		}
 	}
-
 	count, err := strconv.ParseInt(countStr, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("invalid count value: %s", countStr)
 	}
-
 	return count * multiplier, nil
 }
 
@@ -296,8 +277,8 @@ func (u *TRESUtils) isBasicTRESType(tresType string) bool {
 
 // getTRESKey generates a unique key for a TRES entry
 func (u *TRESUtils) getTRESKey(tres types.TRES) string {
-	if tres.Name != "" && tres.Name != tres.Type {
-		return fmt.Sprintf("%s:%s", tres.Type, tres.Name)
+	if tres.Name != nil && *tres.Name != "" && *tres.Name != tres.Type {
+		return fmt.Sprintf("%s:%s", tres.Type, *tres.Name)
 	}
 	return tres.Type
 }

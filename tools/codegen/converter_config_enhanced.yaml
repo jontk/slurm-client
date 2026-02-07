@@ -1,0 +1,1118 @@
+# Enhanced Converter Configuration
+# Supports automatic pattern detection and custom helper functions
+
+# Global settings
+generation:
+  auto_detect_patterns: true
+  generate_tests: true
+  output_suffix: ".gen.go"
+  skip_fields:
+    - "_*"  # Skip internal fields starting with underscore
+
+# Common field name transformations (API -> Common)
+field_transforms:
+  Id: ID
+  JobId: JobID
+  UserId: UserID
+  GroupId: GroupID
+  Cpus: CPUs
+  CpuBinding: CPUBinding
+  CpuLoad: CPULoad
+  Gres: GRES
+  GresDrained: GRESDrained
+  GresUsed: GRESUsed
+  Tres: TRES
+  TresUsed: TRESUsed
+  Qos: QoS
+  Mcs: MCS
+  McsLabel: MCSLabel
+
+# Per-version configurations
+versions:
+  v0_0_44:
+    api_package: "github.com/jontk/slurm-client/internal/api/v0_0_44"
+    api_prefix: "V0044"
+
+    # Entity mappings
+    entities:
+      Node:
+        api_type: V0044Node
+        common_type: Node
+        update_type: NodeUpdate
+        # Most fields auto-detected, only specify exceptions
+        update_fields:
+          # Skip fields that need manual conversion
+          ResumeAfter:
+            pattern: skip
+          Extra:
+            pattern: skip
+          Features:
+            pattern: skip
+          ActiveFeatures:
+            pattern: skip
+        custom_fields:
+          # Time conversions
+          BootTime:
+            pattern: time_novalnumber
+            api_type: "*V0044Uint64NoValStruct"
+            common_type: "time.Time"
+          LastBusy:
+            pattern: time_novalnumber
+            api_type: "*V0044Uint64NoValStruct"
+            common_type: "time.Time"
+          ReasonChangedAt:
+            pattern: time_novalnumber
+            api_type: "*V0044Uint64NoValStruct"
+            common_type: "time.Time"
+          SlurmdStartTime:
+            pattern: time_novalnumber
+            api_type: "*V0044Uint64NoValStruct"
+            common_type: "time.Time"
+
+          # ResumeAfter is special - converts time to uint64
+          ResumeAfter:
+            pattern: custom
+            helper: convertResumeAfter
+            api_type: "*V0044Uint64NoValStruct"
+            common_type: "*uint64"
+
+          # Nested struct
+          Energy:
+            pattern: custom
+            helper: convertNodeEnergy
+            api_type: "*V0044AcctGatherEnergy"
+            common_type: "*NodeEnergy"
+
+          # State arrays - convert enum slices
+          State:
+            pattern: state_enum_slice
+            api_type: "*[]V0044NodeState"
+            common_type: "[]NodeState"
+            common_elem_type: "NodeState"
+          NextStateAfterReboot:
+            pattern: state_enum_slice
+            api_type: "*[]V0044NodeNextStateAfterReboot"
+            common_type: "[]NodeState"
+            common_elem_type: "NodeState"
+          CertFlags:
+            pattern: skip
+
+          # Complex map types
+          ExternalSensors:
+            pattern: skip
+          Power:
+            pattern: skip
+
+          # Pointer slice dereference
+          Features:
+            pattern: ptr_slice_deref
+            api_type: "*[]string"
+            common_type: "[]string"
+          ActiveFeatures:
+            pattern: ptr_slice_deref
+            api_type: "*[]string"
+            common_type: "[]string"
+          Partitions:
+            pattern: ptr_slice_deref
+            api_type: "*[]string"
+            common_type: "[]string"
+
+      Account:
+        api_type: V0044Account
+        common_type: Account
+        create_type: AccountCreate
+        update_type: AccountUpdate
+        custom_fields:
+          Associations:
+            pattern: custom
+            helper: convertAssocShortSlice
+            api_type: "*V0044AssocShortList"
+            common_type: "[]AssocShort"
+          Coordinators:
+            pattern: coord_slice
+            api_type: "*[]V0044Coord"
+            common_type: "[]Coord"
+          Flags:
+            pattern: account_flags
+            api_type: "*[]V0044AccountFlags"
+            common_type: "[]AccountFlagsValue"
+
+      Job:
+        api_type: V0044JobInfo
+        common_type: Job
+        # Note: Job create/update use V0044JobDescMsg with complex field conversions
+        # Manual implementations exist in job_converters_extra.go
+        # create_type: JobCreate
+        # create_api_type: V0044JobDescMsg
+        # update_type: JobUpdate
+        # update_api_type: V0044JobDescMsg
+        custom_fields:
+          JobState:
+            pattern: enum_slice
+            api_type: "*[]V0044JobInfoJobState"
+            common_type: "[]JobState"
+            common_elem_type: "JobState"
+          StartTime:
+            pattern: time_novalnumber
+            api_type: "*V0044Uint64NoValStruct"
+            common_type: "*time.Time"
+          EndTime:
+            pattern: time_novalnumber
+            api_type: "*V0044Uint64NoValStruct"
+            common_type: "*time.Time"
+          SubmitTime:
+            pattern: time_novalnumber
+            api_type: "*V0044Uint64NoValStruct"
+            common_type: "*time.Time"
+          # Complex fields requiring manual conversion
+          DerivedExitCode:
+            pattern: skip
+          ExitCode:
+            pattern: skip
+          Flags:
+            pattern: skip
+          JobResources:
+            pattern: skip
+          MailType:
+            pattern: skip
+          Power:
+            pattern: skip
+          PriorityByPartition:
+            pattern: skip
+          Profile:
+            pattern: skip
+          Shared:
+            pattern: skip
+          StepId:
+            pattern: skip
+
+      QoS:
+        api_type: V0044Qos
+        common_type: QoS
+        create_type: QoSCreate
+        update_type: QoSUpdate
+        custom_fields:
+          # NoValStruct unwrapping
+          Priority:
+            pattern: novalnumber_uint32
+            api_type: "*V0044Uint32NoValStruct"
+            common_type: "*uint32"
+          UsageFactor:
+            pattern: novalnumber_float64
+            api_type: "*V0044Float64NoValStruct"
+            common_type: "*float64"
+          UsageThreshold:
+            pattern: novalnumber_float64
+            api_type: "*V0044Float64NoValStruct"
+            common_type: "*float64"
+
+          # Enum slices
+          Flags:
+            pattern: enum_slice
+            api_type: "*[]V0044QosFlags"
+            common_type: "[]QoSFlagsValue"
+
+          # Deeply nested structures - skip for now (too complex for auto-generation)
+          Limits:
+            pattern: skip
+          Preempt:
+            pattern: skip
+
+      Association:
+        api_type: V0044Assoc
+        common_type: Association
+        create_type: AssociationCreate
+        update_type: AssociationUpdate
+        custom_fields:
+          # Skip complex anonymous struct fields
+          Accounting:
+            pattern: skip
+          Default:
+            pattern: skip
+          Flags:
+            pattern: skip
+          Max:
+            pattern: skip
+          Min:
+            pattern: skip
+
+      Partition:
+        api_type: V0044PartitionInfo
+        common_type: Partition
+        custom_fields:
+          # Complex nested struct fields
+          Accounts:
+            pattern: skip
+          Cpus:
+            pattern: skip
+          CPUs:
+            pattern: skip
+          Defaults:
+            pattern: skip
+          Groups:
+            pattern: skip
+          Maximums:
+            pattern: skip
+          Minimums:
+            pattern: skip
+          Flags:
+            pattern: skip
+          Nodes:
+            pattern: skip
+          TRES:
+            pattern: skip
+          Partition:
+            pattern: skip
+          Priority:
+            pattern: skip
+          QoS:
+            pattern: skip
+          SelectType:
+            pattern: skip
+          SuspendTime:
+            pattern: skip
+          Timeouts:
+            pattern: skip
+
+      Reservation:
+        api_type: V0044ReservationInfo
+        common_type: Reservation
+        # Note: Reservation create/update use V0044ReservationDescMsg
+        # Manual implementations exist in reservation_converters_extra.go with proper field handling
+        # create_type: ReservationCreate
+        # create_api_type: V0044ReservationDescMsg
+        # update_type: ReservationUpdate
+        # update_api_type: V0044ReservationDescMsg
+        custom_fields:
+          CoreSpecializations:
+            pattern: skip
+          Flags:
+            pattern: skip
+          PurgeCompleted:
+            pattern: skip
+
+      User:
+        api_type: V0044User
+        common_type: User
+        create_type: UserCreate
+        update_type: UserUpdate
+        custom_fields:
+          AdministratorLevel:
+            pattern: skip
+          Associations:
+            pattern: skip
+          Coordinators:
+            pattern: skip
+          Default:
+            pattern: skip
+          Flags:
+            pattern: skip
+          Wckeys:
+            pattern: skip
+        # Skip WCKeys in create/update since it requires complex WckeyList structure
+        create_fields:
+          WCKeys:
+            pattern: skip
+        update_fields:
+          WCKeys:
+            pattern: skip
+
+      WCKey:
+        api_type: V0044Wckey
+        common_type: WCKey
+        create_type: WCKeyCreate
+        custom_fields:
+          Accounting:
+            pattern: skip
+          Flags:
+            pattern: skip
+
+      Cluster:
+        api_type: V0044ClusterRec
+        common_type: Cluster
+        create_type: ClusterCreate
+        update_type: ClusterUpdate
+        custom_fields:
+          # Skip complex anonymous struct fields
+          Associations:
+            pattern: skip
+          Controller:
+            pattern: skip
+          Flags:
+            pattern: skip
+          TRES:
+            pattern: skip
+
+  # Other versions - use same config as v0_0_44 for now
+  v0_0_43:
+    api_package: "github.com/jontk/slurm-client/internal/api/v0_0_43"
+    api_prefix: "V0043"
+    entities:
+      Node:
+        api_type: V0043Node
+        common_type: Node
+        update_type: NodeUpdate
+        update_fields:
+          # Skip fields that need manual conversion
+          ResumeAfter:
+            pattern: skip
+          Extra:
+            pattern: skip
+          Features:
+            pattern: skip
+          ActiveFeatures:
+            pattern: skip
+        custom_fields:
+          # State arrays - convert enum slices
+          State:
+            pattern: state_enum_slice
+            api_type: "*[]V0043NodeState"
+            common_type: "[]NodeState"
+            common_elem_type: "NodeState"
+          NextStateAfterReboot:
+            pattern: state_enum_slice
+            api_type: "*[]V0043NodeNextStateAfterReboot"
+            common_type: "[]NodeState"
+            common_elem_type: "NodeState"
+          # Complex fields requiring manual conversion
+          CertFlags:
+            pattern: skip
+          Energy:
+            pattern: skip
+          ExternalSensors:
+            pattern: skip
+          Power:
+            pattern: skip
+      Account:
+        api_type: V0043Account
+        common_type: Account
+        create_type: AccountCreate
+        update_type: AccountUpdate
+        custom_fields:
+          Associations:
+            pattern: custom
+            helper: convertAssocShortSlice
+            api_type: "*V0043AssocShortList"
+            common_type: "[]AssocShort"
+          Coordinators:
+            pattern: coord_slice
+            api_type: "*[]V0043Coord"
+            common_type: "[]Coord"
+          Flags:
+            pattern: account_flags
+            api_type: "*[]V0043AccountFlags"
+            common_type: "[]AccountFlagsValue"
+      Job:
+        api_type: V0043JobInfo
+        common_type: Job
+        # Note: Job create/update use V0043JobDescMsg with complex field conversions
+        # Manual implementations exist in job_converters_extra.go
+        # create_type: JobCreate
+        # create_api_type: V0043JobDescMsg
+        # update_type: JobUpdate
+        # update_api_type: V0043JobDescMsg
+        custom_fields:
+          # Complex fields requiring manual conversion
+          DerivedExitCode:
+            pattern: skip
+          ExitCode:
+            pattern: skip
+          Flags:
+            pattern: skip
+          JobResources:
+            pattern: skip
+          JobState:
+            pattern: skip  # V0043JobInfoJobState enum requires manual conversion
+          MailType:
+            pattern: skip
+          Power:
+            pattern: skip
+          PriorityByPartition:
+            pattern: skip
+          Profile:
+            pattern: skip
+          Shared:
+            pattern: skip
+        # Create-specific fields to skip (type mismatches between common and API)
+        create_fields:
+          ClusterFeatures:
+            pattern: skip
+          Features:
+            pattern: skip
+          Deadline:
+            pattern: skip
+          MaxNodes:
+            pattern: skip
+          MinNodes:
+            pattern: skip
+          MaxCpus:
+            pattern: skip
+          MinCpus:
+            pattern: skip
+          CpusPerTask:
+            pattern: skip
+          Network:
+            pattern: skip
+          Open_mode:
+            pattern: skip
+          Profile:
+            pattern: skip
+          Shared:
+            pattern: skip
+      QoS:
+        api_type: V0043Qos
+        common_type: QoS
+        create_type: QoSCreate
+        update_type: QoSUpdate
+        custom_fields:
+          Flags:
+            pattern: skip
+          Limits:
+            pattern: skip
+          Preempt:
+            pattern: skip
+      Association:
+        api_type: V0043Assoc
+        common_type: Association
+        create_type: AssociationCreate
+        update_type: AssociationUpdate
+        custom_fields:
+          Accounting:
+            pattern: skip
+          Default:
+            pattern: skip
+          Flags:
+            pattern: skip
+          Max:
+            pattern: skip
+          Min:
+            pattern: skip
+      Partition:
+        api_type: V0043PartitionInfo
+        common_type: Partition
+        custom_fields:
+          Accounts:
+            pattern: skip
+          CPUs:
+            pattern: skip
+          Defaults:
+            pattern: skip
+          Groups:
+            pattern: skip
+          Maximums:
+            pattern: skip
+          Minimums:
+            pattern: skip
+          Flags:
+            pattern: skip
+          Nodes:
+            pattern: skip
+          TRES:
+            pattern: skip
+          Partition:
+            pattern: skip
+          Priority:
+            pattern: skip
+          QoS:
+            pattern: skip
+          SelectType:
+            pattern: skip
+          SuspendTime:
+            pattern: skip
+          Timeouts:
+            pattern: skip
+      Reservation:
+        api_type: V0043ReservationInfo
+        common_type: Reservation
+        # Note: Reservation create/update use V0043ReservationDescMsg
+        # Manual implementations exist in reservation_converters_extra.go
+        # create_type: ReservationCreate
+        # create_api_type: V0043ReservationDescMsg
+        # update_type: ReservationUpdate
+        # update_api_type: V0043ReservationDescMsg
+        custom_fields:
+          CoreSpecializations:
+            pattern: skip
+          Flags:
+            pattern: skip
+          PurgeCompleted:
+            pattern: skip
+      User:
+        api_type: V0043User
+        common_type: User
+        # Note: User write converters require manual implementation for v0.0.43
+        # Manual implementations exist in user_converters_extra.go with proper Default struct handling
+        # create_type: UserCreate
+        # update_type: UserUpdate
+        custom_fields:
+          AdministratorLevel:
+            pattern: skip
+          Associations:
+            pattern: skip
+          Coordinators:
+            pattern: skip
+          Default:
+            pattern: skip
+          Flags:
+            pattern: skip
+          Wckeys:
+            pattern: skip
+
+      WCKey:
+        api_type: V0043Wckey
+        common_type: WCKey
+        create_type: WCKeyCreate
+        custom_fields:
+          Accounting:
+            pattern: skip
+          Flags:
+            pattern: skip
+
+      Cluster:
+        api_type: V0043ClusterRec
+        common_type: Cluster
+        create_type: ClusterCreate
+        update_type: ClusterUpdate
+        custom_fields:
+          Associations:
+            pattern: skip
+          Controller:
+            pattern: skip
+          Flags:
+            pattern: skip
+          TRES:
+            pattern: skip
+
+  v0_0_42:
+    api_package: "github.com/jontk/slurm-client/internal/api/v0_0_42"
+    api_prefix: "V0042"
+    entities:
+      Node:
+        api_type: V0042Node
+        common_type: Node
+        update_type: NodeUpdate
+        update_fields:
+          # Skip fields that need manual conversion
+          ResumeAfter:
+            pattern: skip
+          Extra:
+            pattern: skip
+          Features:
+            pattern: skip
+          ActiveFeatures:
+            pattern: skip
+        custom_fields:
+          # State arrays - convert enum slices
+          State:
+            pattern: state_enum_slice
+            api_type: "*[]V0042NodeState"
+            common_type: "[]NodeState"
+            common_elem_type: "NodeState"
+          NextStateAfterReboot:
+            pattern: state_enum_slice
+            api_type: "*[]V0042NodeNextStateAfterReboot"
+            common_type: "[]NodeState"
+            common_elem_type: "NodeState"
+          # Complex fields requiring manual conversion
+          Energy:
+            pattern: skip
+          ExternalSensors:
+            pattern: skip
+          Power:
+            pattern: skip
+      Account:
+        api_type: V0042Account
+        common_type: Account
+        create_type: AccountCreate
+        update_type: AccountUpdate
+        custom_fields:
+          Associations:
+            pattern: custom
+            helper: convertAssocShortSlice
+            api_type: "*V0042AssocShortList"
+            common_type: "[]AssocShort"
+          Coordinators:
+            pattern: coord_slice
+            api_type: "*[]V0042Coord"
+            common_type: "[]Coord"
+          Flags:
+            pattern: account_flags
+            api_type: "*[]V0042AccountFlags"
+            common_type: "[]AccountFlagsValue"
+      Job:
+        api_type: V0042JobInfo
+        common_type: Job
+        # Note: Job create/update use V0042JobDescMsg with complex field conversions
+        # Manual implementations exist in job_converters_extra.go
+        # create_type: JobCreate
+        # create_api_type: V0042JobDescMsg
+        # update_type: JobUpdate
+        # update_api_type: V0042JobDescMsg
+        custom_fields:
+          # Complex fields requiring manual conversion
+          DerivedExitCode:
+            pattern: skip
+          ExitCode:
+            pattern: skip
+          Flags:
+            pattern: skip
+          JobResources:
+            pattern: skip
+          JobState:
+            pattern: skip  # V0042JobState = []string type alias, not compatible with []types.JobState
+          MailType:
+            pattern: skip
+          Power:
+            pattern: skip
+          PriorityByPartition:
+            pattern: skip
+          Profile:
+            pattern: skip
+          Shared:
+            pattern: skip
+        # Create-specific fields to skip (type mismatches between common and API)
+        create_fields:
+          ClusterFeatures:
+            pattern: skip
+          Features:
+            pattern: skip
+          Deadline:
+            pattern: skip
+          MaxNodes:
+            pattern: skip
+          MinNodes:
+            pattern: skip
+          MaxCpus:
+            pattern: skip
+          MinCpus:
+            pattern: skip
+          CpusPerTask:
+            pattern: skip
+          Network:
+            pattern: skip
+          Open_mode:
+            pattern: skip
+          Profile:
+            pattern: skip
+          Shared:
+            pattern: skip
+      QoS:
+        api_type: V0042Qos
+        common_type: QoS
+        create_type: QoSCreate
+        update_type: QoSUpdate
+        custom_fields:
+          Flags:
+            pattern: skip
+          Limits:
+            pattern: skip
+          Preempt:
+            pattern: skip
+      Association:
+        api_type: V0042Assoc
+        common_type: Association
+        create_type: AssociationCreate
+        update_type: AssociationUpdate
+        custom_fields:
+          Accounting:
+            pattern: skip
+          Default:
+            pattern: skip
+          Flags:
+            pattern: skip
+          Max:
+            pattern: skip
+          Min:
+            pattern: skip
+      Partition:
+        api_type: V0042PartitionInfo
+        common_type: Partition
+        custom_fields:
+          Accounts:
+            pattern: skip
+          CPUs:
+            pattern: skip
+          Defaults:
+            pattern: skip
+          Groups:
+            pattern: skip
+          Maximums:
+            pattern: skip
+          Minimums:
+            pattern: skip
+          Flags:
+            pattern: skip
+          Nodes:
+            pattern: skip
+          TRES:
+            pattern: skip
+          Partition:
+            pattern: skip
+          Priority:
+            pattern: skip
+          QoS:
+            pattern: skip
+          SelectType:
+            pattern: skip
+          SuspendTime:
+            pattern: skip
+          Timeouts:
+            pattern: skip
+      Reservation:
+        api_type: V0042ReservationInfo
+        common_type: Reservation
+        # Note: v0.0.42 API doesn't support reservation create/update operations
+        # create_type: ReservationCreate
+        # update_type: ReservationUpdate
+        custom_fields:
+          CoreSpecializations:
+            pattern: skip
+          Flags:
+            pattern: skip
+          PurgeCompleted:
+            pattern: skip
+      User:
+        api_type: V0042User
+        common_type: User
+        # Note: User write converters require manual implementation for v0.0.42
+        # Manual implementations exist in user_converters_extra.go with proper Default struct handling
+        # create_type: UserCreate
+        # update_type: UserUpdate
+        custom_fields:
+          AdministratorLevel:
+            pattern: skip
+          Associations:
+            pattern: skip
+          Coordinators:
+            pattern: skip
+          Default:
+            pattern: skip
+          Flags:
+            pattern: skip
+          Wckeys:
+            pattern: skip
+
+      WCKey:
+        api_type: V0042Wckey
+        common_type: WCKey
+        create_type: WCKeyCreate
+        custom_fields:
+          Accounting:
+            pattern: skip
+          Flags:
+            pattern: skip
+
+      Cluster:
+        api_type: V0042ClusterRec
+        common_type: Cluster
+        create_type: ClusterCreate
+        update_type: ClusterUpdate
+        custom_fields:
+          Associations:
+            pattern: skip
+          Controller:
+            pattern: skip
+          Flags:
+            pattern: skip
+          TRES:
+            pattern: skip
+
+  v0_0_41:
+    # DEPRECATED: v0.0.41 has manual converters. Skip code generation.
+    skip: true
+    api_package: "github.com/jontk/slurm-client/internal/api/v0_0_41"
+    api_prefix: "V0041"
+    entities:
+      Node:
+        api_type: V0041Node
+        common_type: Node
+      Account:
+        api_type: V0041Account
+        common_type: Account
+        custom_fields:
+          Associations:
+            pattern: custom
+            helper: convertAssocShortSlice
+            api_type: "*V0041AssocShortList"
+            common_type: "[]AssocShort"
+          Coordinators:
+            pattern: coord_slice
+            api_type: "*[]V0041Coord"
+            common_type: "[]Coord"
+          Flags:
+            pattern: account_flags
+            api_type: "*[]V0041AccountFlags"
+            common_type: "[]AccountFlagsValue"
+      Job:
+        api_type: V0041JobInfo
+        common_type: Job
+        custom_fields:
+          # Complex fields requiring manual conversion
+          DerivedExitCode:
+            pattern: skip
+          ExitCode:
+            pattern: skip
+          Flags:
+            pattern: skip
+          JobResources:
+            pattern: skip
+          MailType:
+            pattern: skip
+          Power:
+            pattern: skip
+          PriorityByPartition:
+            pattern: skip
+      QoS:
+        api_type: V0041Qos
+        common_type: QoS
+      Association:
+        api_type: V0041Assoc
+        common_type: Association
+        custom_fields:
+          Accounting:
+            pattern: skip
+          Default:
+            pattern: skip
+          Flags:
+            pattern: skip
+          Max:
+            pattern: skip
+          Min:
+            pattern: skip
+      Partition:
+        api_type: V0041PartitionInfo
+        common_type: Partition
+      Reservation:
+        api_type: V0041ReservationInfo
+        common_type: Reservation
+      User:
+        api_type: V0041User
+        common_type: User
+      Cluster:
+        api_type: V0041ClusterRec
+        common_type: Cluster
+        custom_fields:
+          Associations:
+            pattern: skip
+          Controller:
+            pattern: skip
+          Flags:
+            pattern: skip
+          TRES:
+            pattern: skip
+
+  v0_0_40:
+    # DEPRECATED: v0.0.40 is end-of-life (2025-06-01). Skip code generation.
+    # Manual converters are maintained for backward compatibility but may not compile
+    # with current common types. Use v0.0.42+ for active development.
+    skip: true
+    api_package: "github.com/jontk/slurm-client/internal/api/v0_0_40"
+    api_prefix: "V0040"
+    entities:
+      Node:
+        api_type: V0040Node
+        common_type: Node
+      Account:
+        api_type: V0040Account
+        common_type: Account
+        custom_fields:
+          Associations:
+            pattern: custom
+            helper: convertAssocShortSlice
+            api_type: "*V0040AssocShortList"
+            common_type: "[]AssocShort"
+          Coordinators:
+            pattern: coord_slice
+            api_type: "*[]V0040Coord"
+            common_type: "[]Coord"
+          Flags:
+            pattern: account_flags
+            api_type: "*[]V0040AccountFlags"
+            common_type: "[]AccountFlagsValue"
+      Job:
+        api_type: V0040JobInfo
+        common_type: Job
+        custom_fields:
+          # Complex fields requiring manual conversion
+          DerivedExitCode:
+            pattern: skip
+          ExitCode:
+            pattern: skip
+          Flags:
+            pattern: skip
+          JobResources:
+            pattern: skip
+          MailType:
+            pattern: skip
+          Power:
+            pattern: skip
+          PriorityByPartition:
+            pattern: skip
+      QoS:
+        api_type: V0040Qos
+        common_type: QoS
+      Association:
+        api_type: V0040Assoc
+        common_type: Association
+        custom_fields:
+          Accounting:
+            pattern: skip
+          Default:
+            pattern: skip
+          Flags:
+            pattern: skip
+          Max:
+            pattern: skip
+          Min:
+            pattern: skip
+      Partition:
+        api_type: V0040PartitionInfo
+        common_type: Partition
+      Reservation:
+        api_type: V0040ReservationInfo
+        common_type: Reservation
+      User:
+        api_type: V0040User
+        common_type: User
+      Cluster:
+        api_type: V0040ClusterRec
+        common_type: Cluster
+        custom_fields:
+          Associations:
+            pattern: skip
+          Controller:
+            pattern: skip
+          Flags:
+            pattern: skip
+          TRES:
+            pattern: skip
+
+# Conversion pattern templates
+patterns:
+  # Skip pattern for complex fields that need manual handling
+  skip:
+    description: "Skip field - needs manual implementation"
+    template: |
+      // {{.CommonField}} - SKIPPED: Complex type requiring manual conversion
+
+  # Simple patterns
+  simple_copy:
+    description: "Direct assignment of non-pointer fields"
+    template: |
+      result.{{.CommonField}} = apiObj.{{.APIField}}
+
+  simple_pointer_copy:
+    description: "Assignment of pointer fields with nil check"
+    template: |
+      if apiObj.{{.APIField}} != nil {
+          result.{{.CommonField}} = apiObj.{{.APIField}}
+      }
+
+  ptr_deref:
+    description: "Dereference pointer (*T -> T)"
+    template: |
+      if apiObj.{{.APIField}} != nil {
+          result.{{.CommonField}} = *apiObj.{{.APIField}}
+      }
+
+  ptr_slice_deref:
+    description: "Dereference slice pointer (*[]T -> []T)"
+    template: |
+      if apiObj.{{.APIField}} != nil {
+          result.{{.CommonField}} = *apiObj.{{.APIField}}
+      }
+
+  # NoValStruct patterns - uses CommonBaseType to cast to the correct target type
+  novalnumber_uint32:
+    description: "Extract numeric value from NoValStruct and cast to common type"
+    template: |
+      if apiObj.{{.APIField}} != nil && apiObj.{{.APIField}}.Set != nil && *apiObj.{{.APIField}}.Set && apiObj.{{.APIField}}.Number != nil {
+          val := {{.CommonBaseType}}(*apiObj.{{.APIField}}.Number)
+          result.{{.CommonField}} = &val
+      }
+
+  novalnumber_uint64:
+    description: "Extract numeric value from NoValStruct and cast to common type"
+    template: |
+      if apiObj.{{.APIField}} != nil && apiObj.{{.APIField}}.Set != nil && *apiObj.{{.APIField}}.Set && apiObj.{{.APIField}}.Number != nil {
+          val := {{.CommonBaseType}}(*apiObj.{{.APIField}}.Number)
+          result.{{.CommonField}} = &val
+      }
+
+  novalnumber_float64:
+    description: "Extract numeric value from NoValStruct and cast to common type"
+    template: |
+      if apiObj.{{.APIField}} != nil && apiObj.{{.APIField}}.Set != nil && *apiObj.{{.APIField}}.Set && apiObj.{{.APIField}}.Number != nil {
+          val := {{.CommonBaseType}}(*apiObj.{{.APIField}}.Number)
+          result.{{.CommonField}} = &val
+      }
+
+  time_novalnumber:
+    description: "Convert Unix timestamp NoValStruct to time.Time"
+    template: |
+      if apiObj.{{.APIField}} != nil && apiObj.{{.APIField}}.Number != nil && *apiObj.{{.APIField}}.Number > 0 {
+          timestamp := time.Unix(*apiObj.{{.APIField}}.Number, 0)
+          result.{{.CommonField}} = timestamp
+      }
+
+  # Slice patterns
+  enum_slice:
+    description: "Convert API enum slice to common enum slice"
+    template: |
+      if apiObj.{{.APIField}} != nil && len(*apiObj.{{.APIField}}) > 0 {
+          items := *apiObj.{{.APIField}}
+          converted := make([]types.{{.CommonElemType}}, len(items))
+          for i, item := range items {
+              converted[i] = types.{{.CommonElemType}}(string(item))
+          }
+          result.{{.CommonField}} = converted
+      }
+
+  state_enum_slice:
+    description: "Convert API state enum slice to common state slice"
+    template: |
+      if apiObj.{{.APIField}} != nil && len(*apiObj.{{.APIField}}) > 0 {
+          states := *apiObj.{{.APIField}}
+          result.{{.CommonField}} = make([]types.{{.CommonElemType}}, len(states))
+          for i, s := range states {
+              result.{{.CommonField}}[i] = types.{{.CommonElemType}}(string(s))
+          }
+      }
+
+  coord_slice:
+    description: "Convert API Coord slice to common Coord slice"
+    template: |
+      if apiObj.{{.APIField}} != nil && len(*apiObj.{{.APIField}}) > 0 {
+          coords := make([]types.Coord, len(*apiObj.{{.APIField}}))
+          for i, c := range *apiObj.{{.APIField}} {
+              coords[i] = types.Coord{Name: c.Name, Direct: c.Direct}
+          }
+          result.{{.CommonField}} = coords
+      }
+
+  account_flags:
+    description: "Convert account flags enum slice"
+    template: |
+      if apiObj.{{.APIField}} != nil {
+          flags := make([]types.AccountFlagsValue, len(*apiObj.{{.APIField}}))
+          for i, flag := range *apiObj.{{.APIField}} {
+              flags[i] = types.AccountFlagsValue(string(flag))
+          }
+          result.{{.CommonField}} = flags
+      }
+
+  # Nested structures
+  nested_struct:
+    description: "Convert nested struct using dedicated converter"
+    template: |
+      if apiObj.{{.APIField}} != nil {
+          result.{{.CommonField}} = {{.Converter}}(apiObj.{{.APIField}})
+      }
+
+  custom:
+    description: "Custom conversion logic using helper function"
+    template: |
+      // {{.APIField}} -> {{.CommonField}} (custom helper: {{.Helper}})
+      result.{{.CommonField}} = {{.Helper}}(apiObj.{{.APIField}})
+
+

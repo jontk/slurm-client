@@ -119,14 +119,19 @@ func main() {
 		if err != nil {
 			log.Printf("Failed to submit job: %v\n", err)
 		} else {
-			fmt.Printf("Submitted job with ID: %s\n", response.JobID)
+			jobID := fmt.Sprintf("%d", response.JobId)
+			fmt.Printf("Submitted job with ID: %s\n", jobID)
 
 			// Get job details
-			job, err := client42.Jobs().Get(ctx, response.JobID)
+			job, err := client42.Jobs().Get(ctx, jobID)
 			if err != nil {
 				log.Printf("Failed to get job details: %v\n", err)
 			} else {
-				fmt.Printf("Job state: %s\n", job.State)
+				var state string
+				if len(job.JobState) > 0 {
+					state = string(job.JobState[0])
+				}
+				fmt.Printf("Job state: %s\n", state)
 				fmt.Printf("Job submitted at: %s\n", job.SubmitTime.Format(time.RFC3339))
 			}
 		}

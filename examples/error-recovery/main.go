@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	slurm "github.com/jontk/slurm-client"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	"github.com/jontk/slurm-client/pkg/errors"
@@ -64,7 +64,7 @@ func demonstrateStructuredErrorHandling(ctx context.Context, cfg *config.Config,
 	defer client.Close()
 
 	// Example: Submit job with comprehensive error handling
-	job := &interfaces.JobSubmission{
+	job := &slurm.JobSubmission{
 		Name:      "error-test-job",
 		Command:   "echo 'Testing error handling'",
 		Partition: "invalid-partition", // Intentional error
@@ -79,11 +79,11 @@ func demonstrateStructuredErrorHandling(ctx context.Context, cfg *config.Config,
 		return
 	}
 
-	fmt.Printf("Job submitted successfully: %s\n", resp.JobID)
+	fmt.Printf("Job submitted successfully: %d\n", resp.JobId)
 }
 
 // handleJobSubmissionError demonstrates comprehensive error handling
-func handleJobSubmissionError(err error, job *interfaces.JobSubmission) {
+func handleJobSubmissionError(err error, job *slurm.JobSubmission) {
 	// Check if it's a SLURM error
 	var slurmErr *errors.SlurmError
 	if stderrors.As(err, &slurmErr) {
@@ -326,7 +326,7 @@ func demonstrateGracefulDegradation(ctx context.Context, cfg *config.Config, aut
 
 		// Level 2: Fall back to job list with filtering
 		fmt.Println("\nFalling back to job list...")
-		jobs, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
+		jobs, err := client.Jobs().List(ctx, &slurm.ListJobsOptions{
 			UserID: "current-user",
 			Limit:  10,
 		})
@@ -357,7 +357,8 @@ func demonstrateGracefulDegradation(ctx context.Context, cfg *config.Config, aut
 			fmt.Printf("Retrieved %d jobs from list\n", len(jobs.Jobs))
 			// Look for our job in the list
 			for _, j := range jobs.Jobs {
-				if j.ID == jobID {
+				// Convert JobID (int32) to string for comparison
+				if j.JobID != nil && fmt.Sprintf("%d", *j.JobID) == jobID {
 					fmt.Println("Found job in list!")
 					displayJobInfo(&j)
 					break
@@ -385,7 +386,7 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 	// Workflow: Submit job with automatic recovery
 	fmt.Println("Job submission with automatic recovery:")
 
-	job := &interfaces.JobSubmission{
+	job := &slurm.JobSubmission{
 		Name:      "recovery-test",
 		Command:   "python process.py",
 		Partition: "compute",
@@ -403,7 +404,7 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 
 		resp, err := client.Jobs().Submit(ctx, job)
 		if err == nil {
-			jobID = resp.JobID
+			jobID = fmt.Sprintf("%d", resp.JobId)
 			fmt.Printf("  Success! Job ID: %s\n", jobID)
 			break
 		}
@@ -480,14 +481,19 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 			continue
 		}
 
-		fmt.Printf("Job state: %s\n", jobInfo.State)
+		// Get job state from slice (if available)
+		var jobState string
+		if len(jobInfo.JobState) > 0 {
+			jobState = string(jobInfo.JobState[0])
+		}
+		fmt.Printf("Job state: %s\n", jobState)
 
-		if jobInfo.State == "COMPLETED" || jobInfo.State == "FAILED" {
-			if jobInfo.State == "FAILED" && jobInfo.ExitCode != 0 {
-				fmt.Printf("Job failed with exit code %d\n", jobInfo.ExitCode)
+		if jobState == "COMPLETED" || jobState == "FAILED" {
+			if jobState == "FAILED" && jobInfo.ExitCode != nil && jobInfo.ExitCode.ReturnCode != nil {
+				fmt.Printf("Job failed with exit code %d\n", *jobInfo.ExitCode.ReturnCode)
 
 				// Automatic resubmission for specific exit codes
-				if shouldResubmit(jobInfo.ExitCode) {
+				if shouldResubmit(int(*jobInfo.ExitCode.ReturnCode)) {
 					fmt.Println("Automatically resubmitting job...")
 					// Resubmit logic here
 				}
@@ -565,33 +571,70 @@ func (cb *circuitBreaker) recordSuccess() {
 }
 
 type cachedJob struct {
-	Job      *interfaces.Job
+	Job      *slurm.Job
 	CachedAt time.Time
 }
 
 func getCachedJobData(jobID string) *cachedJob {
 	// Simulate cached data retrieval
+	// Convert jobID string to int32
+	var jobIDInt int32
+	_, _ = fmt.Sscanf(jobID, "%d", &jobIDInt)
+
+	name := "cached-job"
+	partition := "compute"
+	cpus := uint32(4)
+	memPerNode := uint64(8192)
 	return &cachedJob{
-		Job: &interfaces.Job{
-			ID:        jobID,
-			Name:      "cached-job",
-			State:     "UNKNOWN",
-			Partition: "compute",
-			CPUs:      4,
-			Memory:    8192,
+		Job: &slurm.Job{
+			JobID:         &jobIDInt,
+			Name:          &name,
+			JobState:      []types.JobState{types.JobStatePending},
+			Partition:     &partition,
+			CPUs:          &cpus,
+			MemoryPerNode: &memPerNode,
 		},
 		CachedAt: time.Now().Add(-5 * time.Minute),
 	}
 }
 
-func displayJobInfo(job *interfaces.Job) {
+func displayJobInfo(job *slurm.Job) {
 	fmt.Printf("Job Details:\n")
-	fmt.Printf("  ID: %s\n", job.ID)
-	fmt.Printf("  Name: %s\n", job.Name)
-	fmt.Printf("  State: %s\n", job.State)
-	fmt.Printf("  Partition: %s\n", job.Partition)
-	fmt.Printf("  CPUs: %d\n", job.CPUs)
-	fmt.Printf("  Memory: %dGB\n", job.Memory/(1024*1024))
+	jobID := ""
+	if job.JobID != nil {
+		jobID = fmt.Sprintf("%d", *job.JobID)
+	}
+	fmt.Printf("  ID: %s\n", jobID)
+
+	name := ""
+	if job.Name != nil {
+		name = *job.Name
+	}
+	fmt.Printf("  Name: %s\n", name)
+
+	state := ""
+	if len(job.JobState) > 0 {
+		state = string(job.JobState[0])
+	}
+	fmt.Printf("  State: %s\n", state)
+
+	partition := ""
+	if job.Partition != nil {
+		partition = *job.Partition
+	}
+	fmt.Printf("  Partition: %s\n", partition)
+
+	cpus := uint32(0)
+	if job.CPUs != nil {
+		cpus = *job.CPUs
+	}
+	fmt.Printf("  CPUs: %d\n", cpus)
+
+	memPerNode := uint64(0)
+	if job.MemoryPerNode != nil {
+		memPerNode = *job.MemoryPerNode
+	}
+	fmt.Printf("  Memory: %dMB\n", memPerNode)
 }
 
 func simulateOperation(shouldFail bool) error {
@@ -601,7 +644,7 @@ func simulateOperation(shouldFail bool) error {
 	return nil
 }
 
-func submitToLocalQueue(job *interfaces.JobSubmission) {
+func submitToLocalQueue(job *slurm.JobSubmission) {
 	// Simulate local queue submission
 	fmt.Printf("Queuing job '%s' locally\n", job.Name)
 }

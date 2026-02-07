@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -9,7 +12,7 @@ import (
 	"os"
 	"testing"
 
-	v042 "github.com/jontk/slurm-client/internal/api/v0_0_42"
+	v042 "github.com/jontk/slurm-client/internal/openapi/v0_0_42"
 )
 
 // TestDirectAPIWithAuth tests the v0.0.42 API directly with proper authentication
@@ -29,7 +32,7 @@ func TestDirectAPIWithAuth(t *testing.T) {
 	}
 
 	// Create client with request editor for authentication
-	client, err := v042.NewClientWithResponses("http://rocky9:6820",
+	client, err := v042.NewClientWithResponses("http://localhost
 		v042.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
 			req.Header.Set("X-SLURM-USER-TOKEN", token)
 			return nil
@@ -90,7 +93,7 @@ func TestDirectAPIWithAuth(t *testing.T) {
 				if len(*node.State) > 0 {
 					state = (*node.State)[0]
 				}
-				t.Logf("  Node %s: %s (CPUs: %d)", *node.Name, state, *node.Cpus)
+				t.Logf("  Node %s: %s (Cpus: %d)", *node.Name, state, *node.Cpus)
 			}
 		}
 	})

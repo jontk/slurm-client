@@ -1,0 +1,181 @@
+# Type Generator Configuration
+# This file contains version-specific mappings for generating clean Go types
+# from SLURM OpenAPI specifications.
+
+# Default configuration (applies to all versions unless overridden)
+defaults:
+  # Fields that represent Unix timestamps (should be time.Time)
+  # Note: Duration fields like time_limit, grace_time are NOT timestamps
+  timestamp_fields:
+    - boot_time
+    - last_busy
+    - eligible_time
+    - end_time
+    - start_time
+    - submit_time
+    - deadline
+    - preempt_time
+    - suspend_time
+    - resume_time
+    - reason_changed_at
+    - slurmd_start_time
+    - tls_cert_last_renewal
+    - accrue_time
+    - resize_time
+    - last_sched_evaluation
+    - created_time
+    - modified_time
+    - creation_time
+    - preemptable_time
+
+  # Fields that look like timestamps but are actually durations (minutes/seconds)
+  duration_fields:
+    - time
+    - time_limit
+    - time_minimum
+    - grace_time
+    - pre_sus_time
+    - maximum_switch_wait_time
+    - total_time
+    - average_time
+    - gettimeofday_latency
+    - resume_timeout
+    - suspend_timeout
+
+  # Friendly name overrides (OpenAPI schema suffix -> Go type name)
+  # These handle collision avoidance and clearer naming
+  friendly_overrides:
+    assoc: Association
+    cluster_rec: Cluster
+    job_info: Job
+    partition_info: Partition
+    reservation_info: Reservation
+    acct_gather_energy: NodeEnergy
+    process_exit_code_verbose: ExitCode
+    slurm_step_id: StepID
+    part_prio: JobPartitionPriority
+    job_res: JobResources
+
+  # Patterns for types that should be unwrapped to primitives
+  primitive_unwrap_patterns:
+    uint32_no_val: uint32
+    uint64_no_val: uint64
+    uint16_no_val: uint16
+    int32_no_val: int32
+    float64_no_val: float64
+    csv_string: "[]string"
+    string_array: "[]string"
+    string_list: "[]string"
+    hostlist_string: "[]string"
+    hostlist: "[]string"
+
+  # Base entity schemas to generate (main SLURM resources)
+  base_entities:
+    job_info: Job
+    node: Node
+    account: Account
+    user: User
+    partition_info: Partition
+    qos: QoS
+    reservation_info: Reservation
+    assoc: Association
+    cluster_rec: Cluster
+
+  # Semantic enum type overrides
+  # Format: "type.field": EnumTypeName
+  # Allows multiple fields to share the same logical enum type
+  enum_type_overrides:
+    node.state: NodeState
+    node.next_state_after_reboot: NodeState
+    job.job_state: JobState
+    partition.state: PartitionState
+    # Write type overrides (use same enum as read types)
+    nodeupdate.state: NodeState
+
+  # Write entities (API -> common type mappings for create/update)
+  # Maps schema suffixes to user-friendly Go type names
+  write_entities:
+    job_desc_msg: JobCreate
+    reservation_desc_msg: ReservationCreate
+    update_node_msg: NodeUpdate
+
+  # Auxiliary types needed by write entities (nested types in write operations)
+  write_auxiliary_types:
+    cron_entry: CronEntry
+
+# Version-specific configurations
+# Each version can override any of the defaults above
+versions:
+  "0.0.44":
+    # Write entities for v0.0.44
+    write_entities:
+      job_desc_msg: JobCreate
+      reservation_desc_msg: ReservationCreate
+      update_node_msg: NodeUpdate
+
+    # Additional type unwraps specific to v0.0.44
+    type_unwrap:
+      # Primitive wrappers
+      uint32_no_val_struct: uint32
+      uint64_no_val_struct: uint64
+      uint16_no_val_struct: uint16
+      int32_no_val_struct: int32
+      float64_no_val_struct: float64
+      # Special types
+      csv_string: "[]string"
+      string_array: "[]string"
+      hostlist_string: "[]string"
+      hostlist: "[]string"
+      # List types
+      accounting_list: "[]Accounting"
+      assoc_short_list: "[]AssocShort"
+      coord_list: "[]Coord"
+      qos_string_id_list: "[]string"
+      tres_list: "[]TRES"
+      # Array type aliases
+      job_info_gres_detail: "[]string"
+      priority_by_partition: "[]JobPartitionPriority"
+      qos_preempt_list: "[]string"
+      job_res_nodes: "[]JobResNode"
+      reservation_info_core_spec: "[]ReservationCoreSpec"
+      wckey_list: "[]WCKey"
+      job_res_socket_array: "[]JobResSocket"
+      job_res_core_array: "[]JobResCore"
+
+    # Auxiliary types to generate (in addition to base entities)
+    auxiliary_types:
+      accounting: Accounting
+      assoc_short: AssocShort
+      coord: Coord
+      tres: TRES
+      job_res: JobResources
+      acct_gather_energy: NodeEnergy
+      process_exit_code_verbose: ExitCode
+      slurm_step_id: StepID
+      reservation_core_spec: ReservationCoreSpec
+      part_prio: JobPartitionPriority
+      wckey: WCKey
+      job_res_node: JobResNode
+      job_res_socket: JobResSocket
+      job_res_core: JobResCore
+
+  "0.0.43":
+    # v0.0.43 uses mostly the same mappings
+    # Add any version-specific overrides here
+    write_entities:
+      job_desc_msg: JobCreate
+
+  "0.0.42":
+    # v0.0.42 uses mostly the same mappings
+    write_entities:
+      job_desc_msg: JobCreate
+
+  "0.0.41":
+    # v0.0.41 uses mostly the same mappings
+    write_entities:
+      job_desc_msg: JobCreate
+
+  "0.0.40":
+    # v0.0.40 uses mostly the same mappings
+    write_entities:
+      job_desc_msg: JobCreate

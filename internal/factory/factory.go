@@ -11,11 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
-	v040 "github.com/jontk/slurm-client/internal/api/v0_0_40"
-	v041 "github.com/jontk/slurm-client/internal/api/v0_0_41"
-	v042 "github.com/jontk/slurm-client/internal/api/v0_0_42"
-	v043 "github.com/jontk/slurm-client/internal/api/v0_0_43"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/internal/versioning"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
@@ -36,19 +32,21 @@ type ClientFactory struct {
 
 	// Enhanced options for new features
 	enhanced *EnhancedOptions
-
-	// Use adapters instead of wrapper clients
-	useAdapters bool
 }
 
 // NewClientFactory creates a new client factory
 func NewClientFactory(options ...Option) (*ClientFactory, error) {
+	cfg := config.NewDefault()
 	factory := &ClientFactory{
-		config: config.NewDefault(),
+		config: cfg,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-		retryPolicy:   retry.NewHTTPExponentialBackoff(),
+		// Create retry policy using config values
+		retryPolicy: retry.NewHTTPExponentialBackoff().
+			WithMaxRetries(cfg.MaxRetries).
+			WithMinWaitTime(cfg.RetryWaitMin).
+			WithMaxWaitTime(cfg.RetryWaitMax),
 		compatibility: versioning.DefaultCompatibilityMatrix(),
 	}
 
@@ -62,7 +60,50 @@ func NewClientFactory(options ...Option) (*ClientFactory, error) {
 		factory.baseURL = factory.config.BaseURL
 	}
 
+	// Re-apply retry config if config was changed by options
+	if factory.config != cfg {
+		factory.retryPolicy = retry.NewHTTPExponentialBackoff().
+			WithMaxRetries(factory.config.MaxRetries).
+			WithMinWaitTime(factory.config.RetryWaitMin).
+			WithMaxWaitTime(factory.config.RetryWaitMax)
+	}
+
+	// Wire config fields to enhanced options
+	factory.applyConfigToEnhancedOptions()
+
 	return factory, nil
+}
+
+// applyConfigToEnhancedOptions applies pkg/config.Config fields to EnhancedOptions.
+// This ensures config fields like Timeout, UserAgent, MaxRetries, RetryPolicy are actually used.
+func (f *ClientFactory) applyConfigToEnhancedOptions() {
+	if f.config == nil {
+		return
+	}
+
+	// Initialize enhanced options if needed
+	if f.enhanced == nil {
+		f.enhanced = &EnhancedOptions{}
+	}
+
+	// Wire config fields to enhanced options (only if not already set)
+	if f.config.Timeout > 0 && f.enhanced.DefaultTimeout == 0 {
+		f.enhanced.DefaultTimeout = f.config.Timeout
+	}
+	if f.config.UserAgent != "" && f.enhanced.UserAgent == "" {
+		f.enhanced.UserAgent = f.config.UserAgent
+	}
+	if f.config.MaxRetries > 0 && f.enhanced.MaxRetries == 0 {
+		f.enhanced.MaxRetries = f.config.MaxRetries
+	}
+	if f.config.Debug {
+		f.enhanced.Debug = true
+	}
+
+	// Wire retry policy to enhanced options (this ensures retryPolicy is actually used)
+	if f.retryPolicy != nil && f.enhanced.RetryBackoff == nil {
+		f.enhanced.RetryBackoff = f.retryPolicy
+	}
 }
 
 // Option represents a configuration option for the ClientFactory
@@ -111,12 +152,14 @@ func WithBaseURL(baseURL string) Option {
 	}
 }
 
-// WithUseAdapters enables the use of adapter implementations instead of wrapper clients
-func WithUseAdapters(useAdapters bool) Option {
-	return func(f *ClientFactory) error {
-		f.useAdapters = useAdapters
-		return nil
+// SetTimeout modifies the timeout of the existing HTTP client without replacing it
+// This preserves TLS configuration and custom transport settings
+func (f *ClientFactory) SetTimeout(timeout time.Duration) error {
+	if f.httpClient == nil {
+		f.httpClient = &http.Client{}
 	}
+	f.httpClient.Timeout = timeout
+	return nil
 }
 
 // NewClient creates a new Slurm client with automatic version detection
@@ -128,6 +171,11 @@ func (f *ClientFactory) NewClient(ctx context.Context) (SlurmClient, error) {
 func (f *ClientFactory) NewClientWithVersion(ctx context.Context, version string) (SlurmClient, error) {
 	var targetVersion *versioning.APIVersion
 	var err error
+
+	// Use config.APIVersion if no version specified and config has one set
+	if version == "" && f.config.APIVersion != "" {
+		version = f.config.APIVersion
+	}
 
 	if version == "" {
 		// Auto-detect version
@@ -325,28 +373,21 @@ func (f *ClientFactory) createV0_0_40Client(ctx context.Context) (SlurmClient, e
 		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
 	}
 
-	// Check if adapters should be used
-	if f.useAdapters {
-		// Create adapter client config
-		config := &interfaces.ClientConfig{
-			BaseURL:    f.baseURL,
-			HTTPClient: httpClient,
-			APIKey:     "", // Not used when we have auth provider
-			Debug:      f.config.Debug,
-		}
-		return NewAdapterClient("v0.0.40", config)
-	}
-
-	// Create the wrapper client config
-	config := &interfaces.ClientConfig{
+	// Create adapter client config
+	config := &types.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
-		APIKey:     "", // Not used when we have auth provider
 		Debug:      f.config.Debug,
 	}
-
-	// Return the wrapper client
-	return v040.NewWrapperClient(config)
+	client, err := NewAdapterClient("v0.0.40", config)
+	if err != nil {
+		return nil, err
+	}
+	// Set the pool for proper cleanup on Close()
+	if ac, ok := client.(*AdapterClient); ok && f.enhanced != nil && f.enhanced.ConnectionPool != nil {
+		ac.SetPool(f.enhanced.ConnectionPool)
+	}
+	return client, nil
 }
 
 func (f *ClientFactory) createV0_0_41Client(ctx context.Context) (SlurmClient, error) {
@@ -358,28 +399,21 @@ func (f *ClientFactory) createV0_0_41Client(ctx context.Context) (SlurmClient, e
 		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
 	}
 
-	// Check if adapters should be used
-	if f.useAdapters {
-		// Create adapter client config
-		config := &interfaces.ClientConfig{
-			BaseURL:    f.baseURL,
-			HTTPClient: httpClient,
-			APIKey:     "", // Not used when we have auth provider
-			Debug:      f.config.Debug,
-		}
-		return NewAdapterClient("v0.0.41", config)
-	}
-
-	// Create the wrapper client config
-	config := &interfaces.ClientConfig{
+	// Create adapter client config
+	config := &types.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
-		APIKey:     "", // Not used when we have auth provider
 		Debug:      f.config.Debug,
 	}
-
-	// Return the wrapper client
-	return v041.NewWrapperClient(config)
+	client, err := NewAdapterClient("v0.0.41", config)
+	if err != nil {
+		return nil, err
+	}
+	// Set the pool for proper cleanup on Close()
+	if ac, ok := client.(*AdapterClient); ok && f.enhanced != nil && f.enhanced.ConnectionPool != nil {
+		ac.SetPool(f.enhanced.ConnectionPool)
+	}
+	return client, nil
 }
 
 func (f *ClientFactory) createV0_0_42Client(ctx context.Context) (SlurmClient, error) {
@@ -391,28 +425,21 @@ func (f *ClientFactory) createV0_0_42Client(ctx context.Context) (SlurmClient, e
 		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
 	}
 
-	// Check if adapters should be used
-	if f.useAdapters {
-		// Create adapter client config
-		config := &interfaces.ClientConfig{
-			BaseURL:    f.baseURL,
-			HTTPClient: httpClient,
-			APIKey:     "", // Not used when we have auth provider
-			Debug:      f.config.Debug,
-		}
-		return NewAdapterClient("v0.0.42", config)
-	}
-
-	// Create the wrapper client config
-	config := &interfaces.ClientConfig{
+	// Create adapter client config
+	config := &types.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
-		APIKey:     "", // Not used when we have auth provider
 		Debug:      f.config.Debug,
 	}
-
-	// Return the wrapper client
-	return v042.NewWrapperClient(config)
+	client, err := NewAdapterClient("v0.0.42", config)
+	if err != nil {
+		return nil, err
+	}
+	// Set the pool for proper cleanup on Close()
+	if ac, ok := client.(*AdapterClient); ok && f.enhanced != nil && f.enhanced.ConnectionPool != nil {
+		ac.SetPool(f.enhanced.ConnectionPool)
+	}
+	return client, nil
 }
 
 func (f *ClientFactory) createV0_0_43Client(ctx context.Context) (SlurmClient, error) {
@@ -424,28 +451,21 @@ func (f *ClientFactory) createV0_0_43Client(ctx context.Context) (SlurmClient, e
 		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
 	}
 
-	// Check if adapters should be used
-	if f.useAdapters {
-		// Create adapter client config
-		config := &interfaces.ClientConfig{
-			BaseURL:    f.baseURL,
-			HTTPClient: httpClient,
-			APIKey:     "", // Not used when we have auth provider
-			Debug:      f.config.Debug,
-		}
-		return NewAdapterClient("v0.0.43", config)
-	}
-
-	// Create the wrapper client config
-	config := &interfaces.ClientConfig{
+	// Create adapter client config
+	config := &types.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
-		APIKey:     "", // Not used when we have auth provider
 		Debug:      f.config.Debug,
 	}
-
-	// Return the wrapper client
-	return v043.NewWrapperClient(config)
+	client, err := NewAdapterClient("v0.0.43", config)
+	if err != nil {
+		return nil, err
+	}
+	// Set the pool for proper cleanup on Close()
+	if ac, ok := client.(*AdapterClient); ok && f.enhanced != nil && f.enhanced.ConnectionPool != nil {
+		ac.SetPool(f.enhanced.ConnectionPool)
+	}
+	return client, nil
 }
 
 func (f *ClientFactory) createV0_0_44Client(ctx context.Context) (SlurmClient, error) {
@@ -458,13 +478,20 @@ func (f *ClientFactory) createV0_0_44Client(ctx context.Context) (SlurmClient, e
 	}
 
 	// Use adapters for v0.0.44 as they are now implemented
-	config := &interfaces.ClientConfig{
+	config := &types.ClientConfig{
 		BaseURL:    f.baseURL,
 		HTTPClient: httpClient,
-		APIKey:     "", // Not used when we have auth provider
 		Debug:      f.config.Debug,
 	}
-	return NewAdapterClient("v0.0.44", config)
+	client, err := NewAdapterClient("v0.0.44", config)
+	if err != nil {
+		return nil, err
+	}
+	// Set the pool for proper cleanup on Close()
+	if ac, ok := client.(*AdapterClient); ok && f.enhanced != nil && f.enhanced.ConnectionPool != nil {
+		ac.SetPool(f.enhanced.ConnectionPool)
+	}
+	return client, nil
 }
 
 // extractVersionFromURL extracts version from a URL like "/slurm/v0.0.42/"

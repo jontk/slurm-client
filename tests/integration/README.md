@@ -86,7 +86,7 @@ export SLURM_REAL_SERVER_TEST=true
 
 # Or run directly with configuration
 export SLURM_REAL_SERVER_TEST=true
-export SLURM_SERVER_URL="http://rocky9:6820"
+export SLURM_SERVER_URL="http://localhost
 export SLURM_API_VERSION="v0.0.42"
 go test -v ./tests/integration -run TestRealServer
 ```
@@ -144,7 +144,7 @@ The `real_server_test.go` provides comprehensive testing against real SLURM REST
 
 ### Prerequisites
 
-1. Access to a SLURM REST API server (e.g., `rocky9:6820`)
+1. Access to a SLURM REST API server (e.g., `localhost
 2. SSH access to the server for JWT token generation
 3. Network connectivity to the API endpoint
 
@@ -153,9 +153,9 @@ The `real_server_test.go` provides comprehensive testing against real SLURM REST
 | Environment Variable | Default | Description |
 |---------------------|---------|-------------|
 | `SLURM_REAL_SERVER_TEST` | `false` | Must be `true` to enable real server tests |
-| `SLURM_SERVER_URL` | `http://rocky9:6820` | SLURM REST API endpoint |
+| `SLURM_SERVER_URL` | `http://localhost | SLURM REST API endpoint |
 | `SLURM_API_VERSION` | `v0.0.43` | API version (v0.0.43 is latest for SLURM 25.05) |
-| `SLURM_SSH_HOST` | `rocky9` | SSH host for token generation |
+| `SLURM_SSH_HOST` | `localhost | SSH host for token generation |
 | `SLURM_SSH_USER` | `root` | SSH user for token generation |
 | `SLURM_JWT_TOKEN` | (auto-fetched) | JWT token (optional, fetched via SSH if not provided) |
 
@@ -201,12 +201,12 @@ Real server tests validate:
 
 ```bash
 # Test SSH connectivity
-ssh -v root@rocky9 echo "OK"
+ssh -v root@localhost echo "OK"
 
 # Manually fetch a token
-TOKEN=$(ssh root@rocky9 'unset SLURM_JWT; /opt/slurm/current/bin/scontrol token' | grep SLURM_JWT | cut -d= -f2)
+TOKEN=$(ssh root@localhost 'unset SLURM_JWT; /opt/slurm/current/bin/scontrol token' | grep SLURM_JWT | cut -d= -f2)
 echo "Token: ${TOKEN:0:50}..."
 
 # Test API with curl
-curl -H X-SLURM-USER-TOKEN:$TOKEN -X GET 'http://rocky9:6820/slurm/v0.0.42/ping'
+curl -H X-SLURM-USER-TOKEN:$TOKEN -X GET 'http://localhost
 ```

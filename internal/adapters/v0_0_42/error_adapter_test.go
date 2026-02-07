@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_42
 
 import (
@@ -9,20 +8,17 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
-	api "github.com/jontk/slurm-client/internal/api/v0_0_42"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_42"
 	"github.com/jontk/slurm-client/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewErrorAdapter(t *testing.T) {
 	adapter := NewErrorAdapter()
 	assert.NotNil(t, adapter)
 }
-
 func TestErrorAdapter_HandleAPIResponse(t *testing.T) {
 	adapter := NewErrorAdapter()
-
 	tests := []struct {
 		name          string
 		statusCode    int
@@ -210,11 +206,9 @@ func TestErrorAdapter_HandleAPIResponse(t *testing.T) {
 			expectedInMsg: "SIMPLE_ERROR",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := adapter.HandleAPIResponse(tt.statusCode, tt.body, tt.operation)
-
 			if tt.expectedError {
 				assert.Error(t, err)
 				if tt.expectedInMsg != "" {
@@ -226,10 +220,8 @@ func TestErrorAdapter_HandleAPIResponse(t *testing.T) {
 		})
 	}
 }
-
 func TestErrorAdapter_ParseSlurmError(t *testing.T) {
 	adapter := NewErrorAdapter()
-
 	tests := []struct {
 		name          string
 		inputError    error
@@ -320,21 +312,17 @@ func TestErrorAdapter_ParseSlurmError(t *testing.T) {
 			expectedErrno: 0,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			code, message, errno := adapter.ParseSlurmError(tt.inputError)
-
 			assert.Equal(t, tt.expectedCode, code)
 			assert.Equal(t, tt.expectedMsg, message)
 			assert.Equal(t, tt.expectedErrno, errno)
 		})
 	}
 }
-
 func TestErrorAdapter_HandleAPIResponse_ErrorTypesValidation(t *testing.T) {
 	adapter := NewErrorAdapter()
-
 	tests := []struct {
 		name         string
 		statusCode   int
@@ -385,12 +373,10 @@ func TestErrorAdapter_HandleAPIResponse_ErrorTypesValidation(t *testing.T) {
 			expectedType: "*errors.SlurmError",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := adapter.HandleAPIResponse(tt.statusCode, tt.body, tt.operation)
 			assert.Error(t, err)
-
 			// Check the specific error type
 			switch tt.expectedType {
 			case "*errors.AuthenticationError":
@@ -406,10 +392,8 @@ func TestErrorAdapter_HandleAPIResponse_ErrorTypesValidation(t *testing.T) {
 		})
 	}
 }
-
 func TestErrorAdapter_HandleAPIResponse_StatusCodeRanges(t *testing.T) {
 	adapter := NewErrorAdapter()
-
 	successCodes := []int{200, 201, 202, 204, 299}
 	for _, code := range successCodes {
 		t.Run(fmt.Sprintf("success_code_%d", code), func(t *testing.T) {
@@ -417,7 +401,6 @@ func TestErrorAdapter_HandleAPIResponse_StatusCodeRanges(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
-
 	errorCodes := []int{300, 400, 401, 403, 404, 409, 422, 500, 502, 503, 600}
 	for _, code := range errorCodes {
 		t.Run(fmt.Sprintf("error_code_%d", code), func(t *testing.T) {
@@ -426,10 +409,8 @@ func TestErrorAdapter_HandleAPIResponse_StatusCodeRanges(t *testing.T) {
 		})
 	}
 }
-
 func TestErrorAdapter_HandleAPIResponse_ConcurrentAccess(t *testing.T) {
 	adapter := NewErrorAdapter()
-
 	// Test concurrent access to error handling (should be safe)
 	done := make(chan bool)
 	for i := range 10 {
@@ -438,11 +419,9 @@ func TestErrorAdapter_HandleAPIResponse_ConcurrentAccess(t *testing.T) {
 			done <- true
 		}(i)
 	}
-
 	for range 10 {
 		<-done
 	}
-
 	// If we get here without panic, concurrent access is safe
 	assert.True(t, true)
 }

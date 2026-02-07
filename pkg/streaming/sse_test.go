@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -72,18 +72,18 @@ func TestHandleSSE_UnknownStreamType(t *testing.T) {
 
 // Test HandleSSE for jobs stream
 func TestHandleSSE_JobsStream(t *testing.T) {
-	eventChan := make(chan interfaces.JobEvent, 2)
+	eventChan := make(chan types.JobEvent, 2)
 
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
 				// Send events synchronously before returning
-				eventChan <- interfaces.JobEvent{
-					Type:      "state_change",
-					JobID:     "123",
-					OldState:  "PENDING",
-					NewState:  "RUNNING",
-					Timestamp: time.Now(),
+				eventChan <- types.JobEvent{
+					EventType:     "state_change",
+					JobId:         123,
+					PreviousState: types.JobStatePending,
+					NewState:      types.JobStateRunning,
+					EventTime:     time.Now(),
 				}
 				close(eventChan)
 				return eventChan, nil
@@ -112,14 +112,14 @@ func TestHandleSSE_JobsStream(t *testing.T) {
 	assert.Contains(t, bodyStr, "event: connected")
 	assert.Contains(t, bodyStr, `"stream":"jobs"`)
 	assert.Contains(t, bodyStr, "event: job_event")
-	assert.Contains(t, bodyStr, `"job_id":"123"`)
+	assert.Contains(t, bodyStr, `"job_id":123`)
 }
 
 // Test HandleSSE for jobs stream with Watch error
 func TestHandleSSE_JobsStreamError(t *testing.T) {
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
 				return nil, fmt.Errorf("watch failed")
 			},
 		},
@@ -143,18 +143,18 @@ func TestHandleSSE_JobsStreamError(t *testing.T) {
 
 // Test HandleSSE for nodes stream
 func TestHandleSSE_NodesStream(t *testing.T) {
-	eventChan := make(chan interfaces.NodeEvent, 2)
+	eventChan := make(chan types.NodeEvent, 2)
 
 	client := &mockSlurmClient{
 		nodes: &mockNodeManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchNodesOptions) (<-chan interfaces.NodeEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchNodesOptions) (<-chan types.NodeEvent, error) {
 				// Send events synchronously before returning
-				eventChan <- interfaces.NodeEvent{
-					Type:      "state_change",
-					NodeName:  "node01",
-					OldState:  "IDLE",
-					NewState:  "ALLOCATED",
-					Timestamp: time.Now(),
+				eventChan <- types.NodeEvent{
+					EventType:     "state_change",
+					NodeName:      "node01",
+					PreviousState: types.NodeStateIdle,
+					NewState:      types.NodeStateAllocated,
+					EventTime:     time.Now(),
 				}
 				close(eventChan)
 				return eventChan, nil
@@ -187,18 +187,18 @@ func TestHandleSSE_NodesStream(t *testing.T) {
 
 // Test HandleSSE for partitions stream
 func TestHandleSSE_PartitionsStream(t *testing.T) {
-	eventChan := make(chan interfaces.PartitionEvent, 2)
+	eventChan := make(chan types.PartitionEvent, 2)
 
 	client := &mockSlurmClient{
 		partitions: &mockPartitionManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchPartitionsOptions) (<-chan interfaces.PartitionEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchPartitionsOptions) (<-chan types.PartitionEvent, error) {
 				// Send events synchronously before returning
-				eventChan <- interfaces.PartitionEvent{
-					Type:          "state_change",
+				eventChan <- types.PartitionEvent{
+					EventType:     "state_change",
 					PartitionName: "gpu",
-					OldState:      "UP",
-					NewState:      "DOWN",
-					Timestamp:     time.Now(),
+					PreviousState: types.PartitionStateUp,
+					NewState:      types.PartitionStateDown,
+					EventTime:     time.Now(),
 				}
 				close(eventChan)
 				return eventChan, nil
@@ -231,11 +231,11 @@ func TestHandleSSE_PartitionsStream(t *testing.T) {
 
 // Test context cancellation handling
 func TestHandleSSE_ContextCancellation(t *testing.T) {
-	eventChan := make(chan interfaces.JobEvent)
+	eventChan := make(chan types.JobEvent)
 
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
 				return eventChan, nil
 			},
 		},
@@ -268,11 +268,11 @@ func TestHandleSSE_ContextCancellation(t *testing.T) {
 
 // Test stream closed event
 func TestHandleSSE_StreamClosedEvent(t *testing.T) {
-	eventChan := make(chan interfaces.JobEvent)
+	eventChan := make(chan types.JobEvent)
 
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
 				// Close channel immediately to trigger stream_closed event
 				close(eventChan)
 				return eventChan, nil
@@ -559,11 +559,11 @@ func BenchmarkWriteSSEEvent(b *testing.B) {
 }
 
 func BenchmarkHandleSSE_JobsStream(b *testing.B) {
-	eventChan := make(chan interfaces.JobEvent, 100)
+	eventChan := make(chan types.JobEvent, 100)
 
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
 				return eventChan, nil
 			},
 		},

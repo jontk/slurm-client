@@ -9,7 +9,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 )
 
 // PerformanceAnalyzer provides methods for analyzing and comparing job performance
@@ -26,10 +26,10 @@ func NewPerformanceAnalyzer() *PerformanceAnalyzer {
 
 // JobPerformanceComparison represents the comparison between two jobs
 type JobPerformanceComparison struct {
-	JobA        *interfaces.Job
-	JobB        *interfaces.Job
-	AnalyticsA  *interfaces.JobComprehensiveAnalytics
-	AnalyticsB  *interfaces.JobComprehensiveAnalytics
+	JobA        *types.Job
+	JobB        *types.Job
+	AnalyticsA  *types.JobComprehensiveAnalytics
+	AnalyticsB  *types.JobComprehensiveAnalytics
 	Comparison  PerformanceMetrics
 	Differences ResourceDifferences
 	Winner      string // JobA ID, JobB ID, or "tie"
@@ -58,10 +58,10 @@ type ResourceDifferences struct {
 
 // CompareJobPerformance compares the performance of two jobs
 func (pa *PerformanceAnalyzer) CompareJobPerformance(
-	jobA *interfaces.Job,
-	analyticsA *interfaces.JobComprehensiveAnalytics,
-	jobB *interfaces.Job,
-	analyticsB *interfaces.JobComprehensiveAnalytics,
+	jobA *types.Job,
+	analyticsA *types.JobComprehensiveAnalytics,
+	jobB *types.Job,
+	analyticsB *types.JobComprehensiveAnalytics,
 ) (*JobPerformanceComparison, error) {
 	if jobA == nil || jobB == nil {
 		return nil, fmt.Errorf("both jobs must be provided")
@@ -94,10 +94,10 @@ func (pa *PerformanceAnalyzer) CompareJobPerformance(
 
 // calculatePerformanceMetrics calculates comparative metrics between two jobs
 func (pa *PerformanceAnalyzer) calculatePerformanceMetrics(
-	jobA *interfaces.Job,
-	analyticsA *interfaces.JobComprehensiveAnalytics,
-	jobB *interfaces.Job,
-	analyticsB *interfaces.JobComprehensiveAnalytics,
+	jobA *types.Job,
+	analyticsA *types.JobComprehensiveAnalytics,
+	jobB *types.Job,
+	analyticsB *types.JobComprehensiveAnalytics,
 ) PerformanceMetrics {
 	metrics := PerformanceMetrics{
 		ResourceWasteRatio: make(map[string]float64),
@@ -151,15 +151,28 @@ func (pa *PerformanceAnalyzer) calculatePerformanceMetrics(
 }
 
 // calculateResourceDifferences calculates the differences in resource allocation
-func (pa *PerformanceAnalyzer) calculateResourceDifferences(jobA, jobB *interfaces.Job) ResourceDifferences {
-	diffs := ResourceDifferences{
-		CPUDelta:      jobB.CPUs - jobA.CPUs,
-		MemoryDeltaGB: float64(jobB.Memory-jobA.Memory) / (1024 * 1024 * 1024),
+func (pa *PerformanceAnalyzer) calculateResourceDifferences(jobA, jobB *types.Job) ResourceDifferences {
+	cpuA := getJobCPUs(jobA)
+	cpuB := getJobCPUs(jobB)
+	memA := getJobMemoryBytes(jobA)
+	memB := getJobMemoryBytes(jobB)
+
+	// Calculate memory delta properly to avoid uint64 overflow
+	var memDeltaGB float64
+	if memB >= memA {
+		memDeltaGB = float64(memB-memA) / (1024 * 1024 * 1024)
+	} else {
+		memDeltaGB = -float64(memA-memB) / (1024 * 1024 * 1024)
 	}
 
-	// Check GPU allocation from metadata
-	gpuA, _ := jobA.Metadata["gpus"].(int)
-	gpuB, _ := jobB.Metadata["gpus"].(int)
+	diffs := ResourceDifferences{
+		CPUDelta:      int(cpuB) - int(cpuA),
+		MemoryDeltaGB: memDeltaGB,
+	}
+
+	// Check GPU allocation from GRES field
+	gpuA := parseGPUCount(getJobGres(jobA))
+	gpuB := parseGPUCount(getJobGres(jobB))
 	diffs.GPUDelta = gpuB - gpuA
 
 	runtimeA := pa.getJobRuntime(jobA)
@@ -208,19 +221,26 @@ func (pa *PerformanceAnalyzer) generateComparisonSummary(comparison *JobPerforma
 	metrics := comparison.Comparison
 	diffs := comparison.Differences
 
+	jobIdA := getJobIDFromJob(comparison.JobA)
+	jobIdB := getJobIDFromJob(comparison.JobB)
+	cpuA := getJobCPUs(comparison.JobA)
+	cpuB := getJobCPUs(comparison.JobB)
+	memA := getJobMemoryBytes(comparison.JobA)
+	memB := getJobMemoryBytes(comparison.JobB)
+
 	summary := "Job Performance Comparison:\n"
-	summary += fmt.Sprintf("Job A: %s vs Job B: %s\n\n", comparison.JobA.ID, comparison.JobB.ID)
+	summary += fmt.Sprintf("Job A: %d vs Job B: %d\n\n", jobIdA, jobIdB)
 
 	// Resource differences
 	summary += "Resource Allocation:\n"
 	summary += fmt.Sprintf("  CPU: A=%d cores, B=%d cores (diff: %+d)\n",
-		comparison.JobA.CPUs, comparison.JobB.CPUs, diffs.CPUDelta)
+		cpuA, cpuB, diffs.CPUDelta)
 	summary += fmt.Sprintf("  Memory: A=%.1fGB, B=%.1fGB (diff: %+.1fGB)\n",
-		float64(comparison.JobA.Memory)/(1024*1024*1024),
-		float64(comparison.JobB.Memory)/(1024*1024*1024),
+		float64(memA)/(1024*1024*1024),
+		float64(memB)/(1024*1024*1024),
 		diffs.MemoryDeltaGB)
-	gpuA, _ := comparison.JobA.Metadata["gpus"].(int)
-	gpuB, _ := comparison.JobB.Metadata["gpus"].(int)
+	gpuA := parseGPUCount(getJobGres(comparison.JobA))
+	gpuB := parseGPUCount(getJobGres(comparison.JobB))
 	if gpuA > 0 || gpuB > 0 {
 		summary += fmt.Sprintf("  GPU: A=%d, B=%d (diff: %+d)\n",
 			gpuA, gpuB, diffs.GPUDelta)
@@ -238,8 +258,8 @@ func (pa *PerformanceAnalyzer) generateComparisonSummary(comparison *JobPerforma
 		pa.betterOrWorse(metrics.OverallEfficiencyDelta))
 	summary += fmt.Sprintf("  CPU: %+.1f%%\n", metrics.CPUEfficiencyDelta)
 	summary += fmt.Sprintf("  Memory: %+.1f%%\n", metrics.MemoryEfficiencyDelta)
-	gpuA2, _ := comparison.JobA.Metadata["gpus"].(int)
-	gpuB2, _ := comparison.JobB.Metadata["gpus"].(int)
+	gpuA2 := parseGPUCount(getJobGres(comparison.JobA))
+	gpuB2 := parseGPUCount(getJobGres(comparison.JobB))
 	if gpuA2 > 0 || gpuB2 > 0 {
 		summary += fmt.Sprintf("  GPU: %+.1f%%\n", metrics.GPUEfficiencyDelta)
 	}
@@ -249,9 +269,9 @@ func (pa *PerformanceAnalyzer) generateComparisonSummary(comparison *JobPerforma
 	if winner == "tie" {
 		summary += "Result: Both jobs performed similarly\n"
 	} else if winner == "A" {
-		summary += fmt.Sprintf("Result: Job A (%s) performed better overall\n", comparison.JobA.ID)
+		summary += fmt.Sprintf("Result: Job A (%d) performed better overall\n", jobIdA)
 	} else {
-		summary += fmt.Sprintf("Result: Job B (%s) performed better overall\n", comparison.JobB.ID)
+		summary += fmt.Sprintf("Result: Job B (%d) performed better overall\n", jobIdB)
 	}
 
 	// Key insights
@@ -281,7 +301,7 @@ func (pa *PerformanceAnalyzer) generateComparisonSummary(comparison *JobPerforma
 
 // SimilarJobsAnalysis represents analysis of similar jobs
 type SimilarJobsAnalysis struct {
-	ReferenceJob     *interfaces.Job
+	ReferenceJob     *types.Job
 	SimilarJobs      []*SimilarJobResult
 	PerformanceStats PerformanceStatistics
 	BestPractices    []string
@@ -290,8 +310,8 @@ type SimilarJobsAnalysis struct {
 
 // SimilarJobResult represents a similar job and its comparison
 type SimilarJobResult struct {
-	Job             *interfaces.Job
-	Analytics       *interfaces.JobComprehensiveAnalytics
+	Job             *types.Job
+	Analytics       *types.JobComprehensiveAnalytics
 	SimilarityScore float64 // 0-1, higher is more similar
 	PerformanceRank int     // 1 is best
 	EfficiencyDelta float64 // vs reference job
@@ -320,11 +340,11 @@ type ResourceRecommendation struct {
 
 // GetSimilarJobsPerformance analyzes performance of similar jobs
 func (pa *PerformanceAnalyzer) GetSimilarJobsPerformance(
-	referenceJob *interfaces.Job,
-	referenceAnalytics *interfaces.JobComprehensiveAnalytics,
+	referenceJob *types.Job,
+	referenceAnalytics *types.JobComprehensiveAnalytics,
 	candidateJobs []struct {
-		Job       *interfaces.Job
-		Analytics *interfaces.JobComprehensiveAnalytics
+		Job       *types.Job
+		Analytics *types.JobComprehensiveAnalytics
 	},
 	similarityThreshold float64,
 ) (*SimilarJobsAnalysis, error) {
@@ -401,41 +421,69 @@ func (pa *PerformanceAnalyzer) GetSimilarJobsPerformance(
 }
 
 // calculateJobSimilarity calculates how similar two jobs are (0-1)
-func (pa *PerformanceAnalyzer) calculateJobSimilarity(jobA, jobB *interfaces.Job) float64 {
+func (pa *PerformanceAnalyzer) calculateJobSimilarity(jobA, jobB *types.Job) float64 {
 	similarity := 0.0
 	weights := 0.0
 
 	// Name similarity (10% weight)
-	if jobA.Name == jobB.Name {
+	nameA := ""
+	nameB := ""
+	if jobA != nil && jobA.Name != nil {
+		nameA = *jobA.Name
+	}
+	if jobB != nil && jobB.Name != nil {
+		nameB = *jobB.Name
+	}
+	if nameA == nameB {
 		similarity += 0.1
 	}
 	weights += 0.1
 
 	// User similarity (15% weight)
-	if jobA.UserID == jobB.UserID {
+	userIdA := int32(0)
+	userIdB := int32(0)
+	if jobA != nil && jobA.UserID != nil {
+		userIdA = *jobA.UserID
+	}
+	if jobB != nil && jobB.UserID != nil {
+		userIdB = *jobB.UserID
+	}
+	if userIdA == userIdB {
 		similarity += 0.15
 	}
 	weights += 0.15
 
 	// Partition similarity (15% weight)
-	if jobA.Partition == jobB.Partition {
+	partA := ""
+	partB := ""
+	if jobA != nil && jobA.Partition != nil {
+		partA = *jobA.Partition
+	}
+	if jobB != nil && jobB.Partition != nil {
+		partB = *jobB.Partition
+	}
+	if partA == partB {
 		similarity += 0.15
 	}
 	weights += 0.15
 
 	// CPU similarity (20% weight)
-	cpuRatio := float64(minInt(jobA.CPUs, jobB.CPUs)) / float64(maxInt(jobA.CPUs, jobB.CPUs))
+	cpuA := int(getJobCPUs(jobA))
+	cpuB := int(getJobCPUs(jobB))
+	cpuRatio := float64(minInt(cpuA, cpuB)) / float64(maxInt(cpuA, cpuB))
 	similarity += 0.2 * cpuRatio
 	weights += 0.2
 
 	// Memory similarity (20% weight)
-	memRatio := float64(minInt(jobA.Memory, jobB.Memory)) / float64(maxInt(jobA.Memory, jobB.Memory))
+	memA := int64(getJobMemoryBytes(jobA))
+	memB := int64(getJobMemoryBytes(jobB))
+	memRatio := float64(minInt64(memA, memB)) / float64(maxInt64(memA, memB))
 	similarity += 0.2 * memRatio
 	weights += 0.2
 
 	// GPU similarity (10% weight)
-	gpuA, _ := jobA.Metadata["gpus"].(int)
-	gpuB, _ := jobB.Metadata["gpus"].(int)
+	gpuA := parseGPUCount(getJobGres(jobA))
+	gpuB := parseGPUCount(getJobGres(jobB))
 	if gpuA == gpuB {
 		similarity += 0.1
 	} else if gpuA > 0 && gpuB > 0 {
@@ -522,9 +570,9 @@ func (pa *PerformanceAnalyzer) calculatePerformanceStatistics(similarJobs []*Sim
 	if len(similarJobs) > 0 {
 		bestJob := similarJobs[0] // Already sorted by efficiency
 		stats.OptimalResources = ResourceRecommendation{
-			CPUs:     bestJob.Job.CPUs,
-			MemoryGB: float64(bestJob.Job.Memory) / (1024 * 1024 * 1024),
-			GPUs:     func() int { gpus, _ := bestJob.Job.Metadata["gpus"].(int); return gpus }(),
+			CPUs:     int(getJobCPUs(bestJob.Job)),
+			MemoryGB: float64(getJobMemoryBytes(bestJob.Job)) / (1024 * 1024 * 1024),
+			GPUs:     parseGPUCount(getJobGres(bestJob.Job)),
 			Reasoning: fmt.Sprintf("Based on best performing similar job with %.1f%% efficiency",
 				stats.BestEfficiency),
 		}
@@ -549,8 +597,8 @@ func (pa *PerformanceAnalyzer) identifyBestPractices(similarJobs []*SimilarJobRe
 	avgCPUs := 0
 	avgMemoryGB := 0.0
 	for _, job := range topJobs {
-		avgCPUs += job.Job.CPUs
-		avgMemoryGB += float64(job.Job.Memory) / (1024 * 1024 * 1024)
+		avgCPUs += int(getJobCPUs(job.Job))
+		avgMemoryGB += float64(getJobMemoryBytes(job.Job)) / (1024 * 1024 * 1024)
 	}
 	avgCPUs /= topCount
 	avgMemoryGB /= float64(topCount)
@@ -603,26 +651,27 @@ func (pa *PerformanceAnalyzer) identifyBestPractices(similarJobs []*SimilarJobRe
 
 // generateRecommendations generates specific recommendations
 func (pa *PerformanceAnalyzer) generateRecommendations(
-	referenceJob *interfaces.Job,
-	referenceAnalytics *interfaces.JobComprehensiveAnalytics,
+	referenceJob *types.Job,
+	referenceAnalytics *types.JobComprehensiveAnalytics,
 	analysis *SimilarJobsAnalysis,
 ) []string {
 	recommendations := []string{}
 
 	// Compare to optimal resources
 	optimal := analysis.PerformanceStats.OptimalResources
+	refCpus := int(getJobCPUs(referenceJob))
+	refMemoryGB := float64(getJobMemoryBytes(referenceJob)) / (1024 * 1024 * 1024)
 
-	if referenceJob.CPUs > optimal.CPUs*2 {
+	if refCpus > optimal.CPUs*2 {
 		recommendations = append(recommendations, fmt.Sprintf(
 			"Consider reducing CPU allocation to %d cores (currently %d)",
-			optimal.CPUs, referenceJob.CPUs))
-	} else if referenceJob.CPUs < optimal.CPUs/2 {
+			optimal.CPUs, refCpus))
+	} else if refCpus < optimal.CPUs/2 {
 		recommendations = append(recommendations, fmt.Sprintf(
 			"Consider increasing CPU allocation to %d cores (currently %d)",
-			optimal.CPUs, referenceJob.CPUs))
+			optimal.CPUs, refCpus))
 	}
 
-	refMemoryGB := float64(referenceJob.Memory) / (1024 * 1024 * 1024)
 	if refMemoryGB > optimal.MemoryGB*2 {
 		recommendations = append(recommendations, fmt.Sprintf(
 			"Consider reducing memory allocation to %.1f GB (currently %.1f GB)",
@@ -666,19 +715,19 @@ func (pa *PerformanceAnalyzer) generateRecommendations(
 
 // Helper functions
 
-func (pa *PerformanceAnalyzer) getJobRuntime(job *interfaces.Job) time.Duration {
-	if job.StartTime == nil || job.EndTime == nil {
+func (pa *PerformanceAnalyzer) getJobRuntime(job *types.Job) time.Duration {
+	if job == nil || job.StartTime.IsZero() || job.EndTime.IsZero() {
 		return 0
 	}
-	return job.EndTime.Sub(*job.StartTime)
+	return job.EndTime.Sub(job.StartTime)
 }
 
-func (pa *PerformanceAnalyzer) calculateResourceCost(job *interfaces.Job, runtime time.Duration) float64 {
+func (pa *PerformanceAnalyzer) calculateResourceCost(job *types.Job, runtime time.Duration) float64 {
 	// Simple cost model: CPU-hours + Memory-GB-hours + GPU-hours
 	hours := runtime.Hours()
-	cpuCost := float64(job.CPUs) * hours
-	memoryCost := float64(job.Memory) / (1024 * 1024 * 1024) * hours * 0.1 // Memory is cheaper
-	gpuCount, _ := job.Metadata["gpus"].(int)
+	cpuCost := float64(getJobCPUs(job)) * hours
+	memoryCost := float64(getJobMemoryBytes(job)) / (1024 * 1024 * 1024) * hours * 0.1 // Memory is cheaper
+	gpuCount := parseGPUCount(getJobGres(job))
 	gpuCost := float64(gpuCount) * hours * 10.0 // GPUs are expensive
 
 	return cpuCost + memoryCost + gpuCost
@@ -754,6 +803,20 @@ func minInt(a, b int) int {
 }
 
 func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func minInt64(a, b int64) int64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func maxInt64(a, b int64) int64 {
 	if a > b {
 		return a
 	}

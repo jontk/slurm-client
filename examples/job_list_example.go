@@ -8,9 +8,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
 )
 
 func main() {
@@ -33,7 +33,7 @@ func main() {
 
 	// 1. Submit a new job
 	fmt.Println("=== Job Submission ===")
-	jobSubmission := &interfaces.JobSubmission{
+	jobSubmission := &slurm.JobSubmission{
 		Name:       "example-job",
 		Script:     "#!/bin/bash\necho 'Hello from Slurm!'\nsleep 30",
 		Partition:  "debug",
@@ -60,11 +60,11 @@ func main() {
 		if err != nil {
 			fmt.Printf("Expected error (no real server): %v\n", err)
 		} else {
-			fmt.Printf("Job %s: %s\n", job.ID, job.Name)
-			fmt.Printf("  State: %s\n", job.State)
-			fmt.Printf("  User: %s\n", job.UserID)
+			fmt.Printf("Job %v: %v\n", job.JobID, job.Name)
+			fmt.Printf("  State: %v\n", job.JobState)
+			fmt.Printf("  User: %v\n", job.UserID)
 			fmt.Printf("  CPUs: %d\n", job.CPUs)
-			fmt.Printf("  Memory: %d MB\n", job.Memory/(1024*1024))
+			fmt.Printf("  Memory: %d MB\n", *job.MemoryPerNode/(1024*1024))
 		}
 
 		// 3. List all jobs
@@ -75,13 +75,13 @@ func main() {
 		} else {
 			fmt.Printf("Found %d jobs:\n", jobList.Total)
 			for _, job := range jobList.Jobs {
-				fmt.Printf("- Job %s: %s (%s) - %s\n", job.ID, job.Name, job.UserID, job.State)
+				fmt.Printf("- Job %v: %v (%v) - %v\n", job.JobID, job.Name, job.UserID, job.JobState)
 			}
 		}
 
 		// 4. List jobs with filtering
 		fmt.Println("\n=== Filtered Job List ===")
-		filteredJobList, err := jobManager.List(ctx, &interfaces.ListJobsOptions{
+		filteredJobList, err := jobManager.List(ctx, &slurm.ListJobsOptions{
 			UserID: "1000",
 			States: []string{"RUNNING", "PENDING"},
 			Limit:  10,
@@ -91,7 +91,7 @@ func main() {
 		} else {
 			fmt.Printf("Found %d filtered jobs:\n", filteredJobList.Total)
 			for _, job := range filteredJobList.Jobs {
-				fmt.Printf("- Job %s: %s - %s\n", job.ID, job.Name, job.State)
+				fmt.Printf("- Job %v: %v - %v\n", job.JobID, job.Name, job.JobState)
 			}
 		}
 
@@ -108,19 +108,19 @@ func main() {
 	}
 
 	// If we get here, job submission was successful
-	fmt.Printf("Successfully submitted job %s\n", submitResp.JobID)
+	fmt.Printf("Successfully submitted job %s\n", strconv.Itoa(int(submitResp.JobId)))
 
 	// 2. Get the submitted job details
 	fmt.Println("\n=== Job Details ===")
-	job, err := jobManager.Get(ctx, submitResp.JobID)
+	job, err := jobManager.Get(ctx, strconv.Itoa(int(submitResp.JobId)))
 	if err != nil {
 		fmt.Printf("Failed to get job details: %v\n", err)
 	} else {
-		fmt.Printf("Job %s: %s\n", job.ID, job.Name)
-		fmt.Printf("  State: %s\n", job.State)
-		fmt.Printf("  User: %s\n", job.UserID)
+		fmt.Printf("Job %v: %v\n", job.JobID, job.Name)
+		fmt.Printf("  State: %v\n", job.JobState)
+		fmt.Printf("  User: %v\n", job.UserID)
 		fmt.Printf("  CPUs: %d\n", job.CPUs)
-		fmt.Printf("  Memory: %d MB\n", job.Memory/(1024*1024))
+		fmt.Printf("  Memory: %d MB\n", *job.MemoryPerNode/(1024*1024))
 	}
 
 	// 3. List all jobs
@@ -131,16 +131,16 @@ func main() {
 	} else {
 		fmt.Printf("Found %d jobs:\n", jobList.Total)
 		for _, job := range jobList.Jobs {
-			fmt.Printf("- Job %s: %s (%s) - %s\n", job.ID, job.Name, job.UserID, job.State)
+			fmt.Printf("- Job %v: %v (%v) - %v\n", job.JobID, job.Name, job.UserID, job.JobState)
 		}
 	}
 
 	// 4. Cancel the job (cleanup)
 	fmt.Println("\n=== Job Cancellation ===")
-	err = jobManager.Cancel(ctx, submitResp.JobID)
+	err = jobManager.Cancel(ctx, strconv.Itoa(int(submitResp.JobId)))
 	if err != nil {
 		fmt.Printf("Failed to cancel job: %v\n", err)
 	} else {
-		fmt.Printf("Successfully cancelled job %s\n", submitResp.JobID)
+		fmt.Printf("Successfully cancelled job %s\n", strconv.Itoa(int(submitResp.JobId)))
 	}
 }

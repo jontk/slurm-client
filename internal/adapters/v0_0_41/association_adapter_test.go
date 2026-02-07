@@ -1,26 +1,23 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_41
 
 import (
 	"context"
 	"testing"
 
-	"github.com/jontk/slurm-client/internal/managers/base"
+	adapterbase "github.com/jontk/slurm-client/internal/adapters/base"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // Removed most tests as the referenced field names (Account, User, MaxWallDuration)
 // don't match the current AssociationCreate interface which uses
-// AccountName, UserName, MaxWallTime instead.
-
+// Account, User, MaxWallTime instead.
 func TestAssociationAdapter_ValidateContext(t *testing.T) {
 	adapter := &AssociationAdapter{
-		BaseManager: base.NewBaseManager("v0.0.41", "Association"),
+		BaseManager: adapterbase.NewBaseManager("v0.0.41", "Association"),
 	}
-
 	tests := []struct {
 		name    string
 		ctx     context.Context
@@ -39,7 +36,6 @@ func TestAssociationAdapter_ValidateContext(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := adapter.ValidateContext(tt.ctx)

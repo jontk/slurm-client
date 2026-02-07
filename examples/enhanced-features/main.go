@@ -14,7 +14,6 @@ import (
 
 	"github.com/google/uuid"
 	slurm "github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
 	slurmctx "github.com/jontk/slurm-client/pkg/context"
 	"github.com/jontk/slurm-client/pkg/logging"
 	"github.com/jontk/slurm-client/pkg/metrics"
@@ -141,7 +140,7 @@ func main() {
 
 	// Test 2: List jobs with metrics tracking
 	fmt.Println("\n📌 Test 2: List jobs with metrics")
-	jobs, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
+	jobs, err := client.Jobs().List(ctx, &slurm.ListJobsOptions{
 		Limit: 10,
 	})
 	if err != nil {
@@ -152,7 +151,7 @@ func main() {
 
 	// Test 3: Node information with retry
 	fmt.Println("\n📌 Test 3: Get node info with retry")
-	nodes, err := client.Nodes().List(ctx, &interfaces.ListNodesOptions{
+	nodes, err := client.Nodes().List(ctx, &slurm.ListNodesOptions{
 		Limit: 5,
 	})
 	if err != nil {
@@ -199,7 +198,7 @@ func main() {
 	done := make(chan bool)
 	go func() {
 		fmt.Println("Starting long-running operation...")
-		_, err := client.Jobs().List(cancelCtx, &interfaces.ListJobsOptions{
+		_, err := client.Jobs().List(cancelCtx, &slurm.ListJobsOptions{
 			Limit: 1000,
 		})
 		if err != nil {

@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -15,7 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_43"
 )
 
 // TestPingWithRealServer tests basic connectivity to a real SLURM server
@@ -28,13 +31,13 @@ func TestPingWithRealServer(t *testing.T) {
 	// Get server configuration
 	serverURL := os.Getenv("SLURM_SERVER_URL")
 	if serverURL == "" {
-		serverURL = "http://rocky9:6820"
+		serverURL = "http://localhost
 	}
 
 	token := os.Getenv("SLURM_JWT_TOKEN")
 	if token == "" {
 		// Use the token you provided
-		token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTM3MzE3MjgsImlhdCI6MTc1MzcyOTkyOCwic3VuIjoicm9vdCJ9.7DGZd7hWhJQhkIx_0wMsKGM2rDipM27CGgaZFU1z_Ns"
+		token = "your-jwt-token-here"
 	}
 
 	// Create a transport that adds the token

@@ -15,7 +15,7 @@ import (
 	"github.com/gorilla/mux"
 
 	// Still used by submit/update/cancel handlers (not yet converted)
-	v0_0_40 "github.com/jontk/slurm-client/internal/api/v0_0_40"
+	v0_0_40 "github.com/jontk/slurm-client/internal/openapi/v0_0_40"
 
 	// Import generated builders for job creation
 	builderv0040 "github.com/jontk/slurm-client/tests/mocks/generated/v0_0_40"

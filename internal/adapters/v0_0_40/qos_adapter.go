@@ -1,30 +1,27 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_40
 
 import (
 	"context"
 
-	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
-	"github.com/jontk/slurm-client/internal/common/types"
-	"github.com/jontk/slurm-client/internal/managers/base"
+	types "github.com/jontk/slurm-client/api"
+	adapterbase "github.com/jontk/slurm-client/internal/adapters/base"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_40"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // QoSAdapter implements the QoSAdapter interface for v0.0.40
 type QoSAdapter struct {
-	*base.BaseManager
-	client  *api.ClientWithResponses
-	wrapper *api.WrapperClient
+	*adapterbase.BaseManager
+	client *api.ClientWithResponses
 }
 
 // NewQoSAdapter creates a new QoS adapter for v0.0.40
 func NewQoSAdapter(client *api.ClientWithResponses) *QoSAdapter {
 	return &QoSAdapter{
-		BaseManager: base.NewBaseManager("v0.0.40", "QoS"),
+		BaseManager: adapterbase.NewBaseManager("v0.0.40", "QoS"),
 		client:      client,
-		wrapper:     nil,
 	}
 }
 
@@ -34,7 +31,6 @@ func (a *QoSAdapter) List(ctx context.Context, opts *types.QoSListOptions) (*typ
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-
 	// v0.0.40 may not have QoS endpoints, return empty list for now
 	return &types.QoSList{
 		QoS:   []types.QoS{},
@@ -51,7 +47,6 @@ func (a *QoSAdapter) Get(ctx context.Context, qosName string) (*types.QoS, error
 	if err := a.ValidateResourceName(qosName, "QoS name"); err != nil {
 		return nil, err
 	}
-
 	// v0.0.40 may not have QoS endpoints
 	return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, "QoS '"+qosName+"' not found")
 }
@@ -62,7 +57,6 @@ func (a *QoSAdapter) Create(ctx context.Context, qos *types.QoSCreate) (*types.Q
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-
 	// v0.0.40 may not have QoS endpoints
 	return nil, errors.NewNotImplementedError("Create QoS", "v0.0.40")
 }
@@ -76,7 +70,6 @@ func (a *QoSAdapter) Update(ctx context.Context, qosName string, update *types.Q
 	if err := a.ValidateResourceName(qosName, "QoS name"); err != nil {
 		return err
 	}
-
 	// v0.0.40 may not have QoS endpoints
 	return errors.NewNotImplementedError("Update QoS", "v0.0.40")
 }
@@ -90,7 +83,6 @@ func (a *QoSAdapter) Delete(ctx context.Context, qosName string) error {
 	if err := a.ValidateResourceName(qosName, "QoS name"); err != nil {
 		return err
 	}
-
 	// v0.0.40 may not have QoS endpoints
 	return errors.NewNotImplementedError("Delete QoS", "v0.0.40")
 }

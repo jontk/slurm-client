@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -16,8 +19,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
-	"github.com/jontk/slurm-client/internal/common/types"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -70,7 +72,7 @@ func (suite *VersionCompatibilityTestSuite) SetupSuite() {
 	// Get server configuration
 	suite.serverURL = os.Getenv("SLURM_SERVER_URL")
 	if suite.serverURL == "" {
-		suite.serverURL = "http://rocky9:6820"
+		suite.serverURL = "http://localhost
 	}
 
 	// Get JWT token
@@ -289,7 +291,7 @@ func (suite *VersionCompatibilityTestSuite) TestAdvancedFeatureCompatibility() {
 				Script:    "#!/bin/bash\necho test",
 				Partition: "nonexistent",
 				Nodes:     1,
-				CPUs:      1,
+				Cpus:      1,
 				TimeLimit: 1,
 			}
 			_, err := client.Jobs().Submit(ctx, submission)

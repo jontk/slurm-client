@@ -7,33 +7,33 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/internal/adapters/common"
 	v040adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_40"
 	v041adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_41"
 	v042adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_42"
 	v043adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_43"
 	v044adapter "github.com/jontk/slurm-client/internal/adapters/v0_0_44"
-	v040api "github.com/jontk/slurm-client/internal/api/v0_0_40"
-	v041api "github.com/jontk/slurm-client/internal/api/v0_0_41"
-	v042api "github.com/jontk/slurm-client/internal/api/v0_0_42"
-	v043api "github.com/jontk/slurm-client/internal/api/v0_0_43"
-	v044api "github.com/jontk/slurm-client/internal/api/v0_0_44"
-	"github.com/jontk/slurm-client/internal/common/types"
+	v040api "github.com/jontk/slurm-client/internal/openapi/v0_0_40"
+	v041api "github.com/jontk/slurm-client/internal/openapi/v0_0_41"
+	v042api "github.com/jontk/slurm-client/internal/openapi/v0_0_42"
+	v043api "github.com/jontk/slurm-client/internal/openapi/v0_0_43"
+	v044api "github.com/jontk/slurm-client/internal/openapi/v0_0_44"
 	"github.com/jontk/slurm-client/pkg/errors"
+	"github.com/jontk/slurm-client/pkg/pool"
 )
 
 // AdapterClient wraps a version-specific adapter to implement the SlurmClient interface
 type AdapterClient struct {
 	adapter common.VersionAdapter
 	version string
+	pool    *pool.HTTPClientPool // optional connection pool for cleanup
 }
 
 // NewAdapterClient creates a new adapter-based client for the specified version
-func NewAdapterClient(version string, config *interfaces.ClientConfig) (SlurmClient, error) {
+func NewAdapterClient(version string, config *types.ClientConfig) (SlurmClient, error) {
 	switch version {
 	case "v0.0.40":
 		client, err := v040api.NewClientWithResponses(config.BaseURL, v040api.WithHTTPClient(config.HTTPClient))
@@ -100,23 +100,28 @@ func (c *AdapterClient) Version() string {
 	return c.version
 }
 
+// Capabilities returns the features supported by this client version
+func (c *AdapterClient) Capabilities() types.ClientCapabilities {
+	return c.adapter.GetCapabilities()
+}
+
 // Jobs returns the JobManager
-func (c *AdapterClient) Jobs() interfaces.JobManager {
+func (c *AdapterClient) Jobs() types.JobManager {
 	return &adapterJobManager{adapter: c.adapter.GetJobManager()}
 }
 
 // Nodes returns the NodeManager
-func (c *AdapterClient) Nodes() interfaces.NodeManager {
+func (c *AdapterClient) Nodes() types.NodeManager {
 	return &adapterNodeManager{adapter: c.adapter.GetNodeManager()}
 }
 
 // Partitions returns the PartitionManager
-func (c *AdapterClient) Partitions() interfaces.PartitionManager {
+func (c *AdapterClient) Partitions() types.PartitionManager {
 	return &adapterPartitionManager{adapter: c.adapter.GetPartitionManager()}
 }
 
 // Info returns the InfoManager
-func (c *AdapterClient) Info() interfaces.InfoManager {
+func (c *AdapterClient) Info() types.InfoManager {
 	return &adapterInfoManager{
 		adapter: c.adapter.GetInfoManager(),
 		version: c.version,
@@ -124,50 +129,71 @@ func (c *AdapterClient) Info() interfaces.InfoManager {
 }
 
 // Reservations returns the ReservationManager
-func (c *AdapterClient) Reservations() interfaces.ReservationManager {
+func (c *AdapterClient) Reservations() types.ReservationManager {
 	return &adapterReservationManager{adapter: c.adapter.GetReservationManager()}
 }
 
 // QoS returns the QoSManager
-func (c *AdapterClient) QoS() interfaces.QoSManager {
+func (c *AdapterClient) QoS() types.QoSManager {
 	return &adapterQoSManager{adapter: c.adapter.GetQoSManager()}
 }
 
 // Accounts returns the AccountManager
-func (c *AdapterClient) Accounts() interfaces.AccountManager {
-	return &adapterAccountManager{adapter: c.adapter.GetAccountManager()}
+func (c *AdapterClient) Accounts() types.AccountManager {
+	return &adapterAccountManager{
+		adapter:            c.adapter.GetAccountManager(),
+		associationAdapter: c.adapter.GetAssociationManager(),
+	}
 }
 
 // Users returns the UserManager
-func (c *AdapterClient) Users() interfaces.UserManager {
-	return &adapterUserManager{adapter: c.adapter.GetUserManager()}
+func (c *AdapterClient) Users() types.UserManager {
+	return &adapterUserManager{
+		adapter:            c.adapter.GetUserManager(),
+		accountAdapter:     c.adapter.GetAccountManager(),
+		associationAdapter: c.adapter.GetAssociationManager(),
+	}
 }
 
 // Clusters returns the ClusterManager
-func (c *AdapterClient) Clusters() interfaces.ClusterManager {
+func (c *AdapterClient) Clusters() types.ClusterManager {
 	return &adapterClusterManager{adapter: c.adapter.GetClusterManager()}
 }
 
 // Associations returns the AssociationManager
-func (c *AdapterClient) Associations() interfaces.AssociationManager {
+func (c *AdapterClient) Associations() types.AssociationManager {
 	return &adapterAssociationManager{adapter: c.adapter.GetAssociationManager()}
 }
 
 // WCKeys returns the WCKeyManager
-func (c *AdapterClient) WCKeys() interfaces.WCKeyManager {
+func (c *AdapterClient) WCKeys() types.WCKeyManager {
 	return &adapterWCKeyManager{adapter: c.adapter.GetWCKeyManager()}
 }
 
-// Close closes the client
-func (c *AdapterClient) Close() error {
-	// No resources to close
+// Analytics returns the AnalyticsManager (not implemented in current release)
+func (c *AdapterClient) Analytics() types.AnalyticsManager {
+	// Analytics is not yet implemented - this is a value-added feature
+	// that will compute insights from API data in future releases
 	return nil
+}
+
+// Close closes the client and releases any resources
+func (c *AdapterClient) Close() error {
+	if c.pool != nil {
+		return c.pool.Close()
+	}
+	return nil
+}
+
+// SetPool sets the connection pool for resource cleanup on Close
+func (c *AdapterClient) SetPool(p *pool.HTTPClientPool) {
+	c.pool = p
 }
 
 // === Standalone Operations ===
 
 // GetLicenses retrieves license information
-func (c *AdapterClient) GetLicenses(ctx context.Context) (*interfaces.LicenseList, error) {
+func (c *AdapterClient) GetLicenses(ctx context.Context) (*types.LicenseList, error) {
 	standaloneManager := c.adapter.GetStandaloneManager()
 	if standaloneManager == nil {
 		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
@@ -180,7 +206,7 @@ func (c *AdapterClient) GetLicenses(ctx context.Context) (*interfaces.LicenseLis
 }
 
 // GetShares retrieves fairshare information with optional filtering
-func (c *AdapterClient) GetShares(ctx context.Context, opts *interfaces.GetSharesOptions) (*interfaces.SharesList, error) {
+func (c *AdapterClient) GetShares(ctx context.Context, opts *types.GetSharesOptions) (*types.SharesList, error) {
 	standaloneManager := c.adapter.GetStandaloneManager()
 	if standaloneManager == nil {
 		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
@@ -194,7 +220,7 @@ func (c *AdapterClient) GetShares(ctx context.Context, opts *interfaces.GetShare
 }
 
 // GetConfig retrieves SLURM configuration
-func (c *AdapterClient) GetConfig(ctx context.Context) (*interfaces.Config, error) {
+func (c *AdapterClient) GetConfig(ctx context.Context) (*types.Config, error) {
 	standaloneManager := c.adapter.GetStandaloneManager()
 	if standaloneManager == nil {
 		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
@@ -207,7 +233,7 @@ func (c *AdapterClient) GetConfig(ctx context.Context) (*interfaces.Config, erro
 }
 
 // GetDiagnostics retrieves SLURM diagnostics information
-func (c *AdapterClient) GetDiagnostics(ctx context.Context) (*interfaces.Diagnostics, error) {
+func (c *AdapterClient) GetDiagnostics(ctx context.Context) (*types.Diagnostics, error) {
 	standaloneManager := c.adapter.GetStandaloneManager()
 	if standaloneManager == nil {
 		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
@@ -220,7 +246,7 @@ func (c *AdapterClient) GetDiagnostics(ctx context.Context) (*interfaces.Diagnos
 }
 
 // GetDBDiagnostics retrieves SLURM database diagnostics information
-func (c *AdapterClient) GetDBDiagnostics(ctx context.Context) (*interfaces.Diagnostics, error) {
+func (c *AdapterClient) GetDBDiagnostics(ctx context.Context) (*types.Diagnostics, error) {
 	standaloneManager := c.adapter.GetStandaloneManager()
 	if standaloneManager == nil {
 		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
@@ -233,7 +259,7 @@ func (c *AdapterClient) GetDBDiagnostics(ctx context.Context) (*interfaces.Diagn
 }
 
 // GetInstance retrieves a specific database instance
-func (c *AdapterClient) GetInstance(ctx context.Context, opts *interfaces.GetInstanceOptions) (*interfaces.Instance, error) {
+func (c *AdapterClient) GetInstance(ctx context.Context, opts *types.GetInstanceOptions) (*types.Instance, error) {
 	standaloneManager := c.adapter.GetStandaloneManager()
 	if standaloneManager == nil {
 		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
@@ -247,7 +273,7 @@ func (c *AdapterClient) GetInstance(ctx context.Context, opts *interfaces.GetIns
 }
 
 // GetInstances retrieves multiple database instances with filtering
-func (c *AdapterClient) GetInstances(ctx context.Context, opts *interfaces.GetInstancesOptions) (*interfaces.InstanceList, error) {
+func (c *AdapterClient) GetInstances(ctx context.Context, opts *types.GetInstancesOptions) (*types.InstanceList, error) {
 	standaloneManager := c.adapter.GetStandaloneManager()
 	if standaloneManager == nil {
 		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
@@ -261,7 +287,7 @@ func (c *AdapterClient) GetInstances(ctx context.Context, opts *interfaces.GetIn
 }
 
 // GetTRES retrieves all TRES (Trackable RESources)
-func (c *AdapterClient) GetTRES(ctx context.Context) (*interfaces.TRESList, error) {
+func (c *AdapterClient) GetTRES(ctx context.Context) (*types.TRESList, error) {
 	standaloneManager := c.adapter.GetStandaloneManager()
 	if standaloneManager == nil {
 		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
@@ -274,7 +300,7 @@ func (c *AdapterClient) GetTRES(ctx context.Context) (*interfaces.TRESList, erro
 }
 
 // CreateTRES creates a new TRES entry
-func (c *AdapterClient) CreateTRES(ctx context.Context, req *interfaces.CreateTRESRequest) (*interfaces.TRES, error) {
+func (c *AdapterClient) CreateTRES(ctx context.Context, req *types.CreateTRESRequest) (*types.TRES, error) {
 	standaloneManager := c.adapter.GetStandaloneManager()
 	if standaloneManager == nil {
 		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
@@ -288,7 +314,7 @@ func (c *AdapterClient) CreateTRES(ctx context.Context, req *interfaces.CreateTR
 }
 
 // Reconfigure triggers a SLURM reconfiguration
-func (c *AdapterClient) Reconfigure(ctx context.Context) (*interfaces.ReconfigureResponse, error) {
+func (c *AdapterClient) Reconfigure(ctx context.Context) (*types.ReconfigureResponse, error) {
 	standaloneManager := c.adapter.GetStandaloneManager()
 	if standaloneManager == nil {
 		return nil, fmt.Errorf("standalone operations not supported for version %s", c.version)
@@ -302,12 +328,12 @@ func (c *AdapterClient) Reconfigure(ctx context.Context) (*interfaces.Reconfigur
 
 // Manager wrappers to convert between common.types and interfaces types
 
-// adapterJobManager wraps a common.JobAdapter to implement interfaces.JobManager
+// adapterJobManager wraps a common.JobAdapter to implement types.JobManager
 type adapterJobManager struct {
 	adapter common.JobAdapter
 }
 
-func (m *adapterJobManager) List(ctx context.Context, opts *interfaces.ListJobsOptions) (*interfaces.JobList, error) {
+func (m *adapterJobManager) List(ctx context.Context, opts *types.ListJobsOptions) (*types.JobList, error) {
 	// Convert options
 	adapterOpts := &types.JobListOptions{}
 	if opts != nil {
@@ -335,58 +361,77 @@ func (m *adapterJobManager) List(ctx context.Context, opts *interfaces.ListJobsO
 
 	// Check if result is nil before accessing it
 	if result == nil {
-		return &interfaces.JobList{
-			Jobs:  []interfaces.Job{},
+		return &types.JobList{
+			Jobs:  []types.Job{},
 			Total: 0,
 		}, nil
 	}
 
 	// Convert result
-	jobList := &interfaces.JobList{
-		Jobs:  make([]interfaces.Job, 0, len(result.Jobs)),
+	jobList := &types.JobList{
+		Jobs:  append([]types.Job{}, result.Jobs...),
 		Total: len(result.Jobs), // Use actual count since Meta may not exist
-	}
-
-	for _, job := range result.Jobs {
-		jobList.Jobs = append(jobList.Jobs, convertJobToInterface(job))
 	}
 
 	return jobList, nil
 }
 
-func (m *adapterJobManager) Get(ctx context.Context, jobID string) (*interfaces.Job, error) {
+func (m *adapterJobManager) Get(ctx context.Context, jobID string) (*types.Job, error) {
 	// Convert string to int32 for adapter
 	jobIDInt, err := strconv.ParseInt(jobID, 10, 32)
 	if err != nil {
-		return nil, fmt.Errorf("invalid job ID: %w", err)
+		return nil, fmt.Errorf("invalid job JobId: %w", err)
 	}
 
 	job, err := m.adapter.Get(ctx, int32(jobIDInt))
 	if err != nil {
 		return nil, err
 	}
-	result := convertJobToInterface(*job)
-	return &result, nil
+	return job, nil
 }
 
-func (m *adapterJobManager) Submit(ctx context.Context, job *interfaces.JobSubmission) (*interfaces.JobSubmitResponse, error) {
-	// Convert submission - map from interfaces.JobSubmission to types.JobCreate
-	priority := int32(job.Priority)
+// Helper functions for creating pointers
+func ptrString(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }
+func ptrInt64(i int64) *int64    { return &i }
+
+// convertMapToEnvList converts map[string]string to []string in "KEY=VALUE" format
+func convertMapToEnvList(env map[string]string) []string {
+	if len(env) == 0 {
+		return nil
+	}
+	result := make([]string, 0, len(env))
+	for k, v := range env {
+		result = append(result, k+"="+v)
+	}
+	return result
+}
+
+func (m *adapterJobManager) Submit(ctx context.Context, job *types.JobSubmission) (*types.JobSubmitResponse, error) {
+	// Convert submission - map from types.JobSubmission to types.JobCreate
 	submission := &types.JobCreate{
-		Name:             job.Name,
-		Account:          job.Account,
-		Script:           job.Script,
-		Command:          job.Command,
-		Partition:        job.Partition,
-		CPUs:             int32(job.CPUs),
-		TimeLimit:        int32(job.TimeLimit),
-		WorkingDirectory: job.WorkingDir,
-		Environment:      job.Environment,
-		Nodes:            int32(job.Nodes),
-		Priority:         &priority,
-		ResourceRequests: types.ResourceRequests{
-			Memory: int64(job.Memory),
-		},
+		Name:                    ptrString(job.Name),
+		Account:                 ptrString(job.Account),
+		Script:                  ptrString(job.Script),
+		Partition:               ptrString(job.Partition),
+		MinimumCPUs:             ptrInt32(int32(job.CPUs)),
+		TimeLimit:               ptrUint32(uint32(job.TimeLimit)),
+		CurrentWorkingDirectory: ptrString(job.WorkingDir),
+		Environment:             convertMapToEnvList(job.Environment),
+		MinimumNodes:            ptrInt32(int32(job.Nodes)),
+		Priority:                ptrUint32(uint32(job.Priority)),
+	}
+
+	// Set memory if provided
+	if job.Memory > 0 {
+		submission.MemoryPerNode = func() *uint64 { v := uint64(job.Memory); return &v }()
 	}
 
 	// Call adapter
@@ -395,42 +440,27 @@ func (m *adapterJobManager) Submit(ctx context.Context, job *interfaces.JobSubmi
 		return nil, err
 	}
 
-	return &interfaces.JobSubmitResponse{
-		JobID: strconv.Itoa(int(resp.JobID)), // Convert int32 to string
+	return &types.JobSubmitResponse{
+		JobId: resp.JobId,
 	}, nil
 }
 
-func (m *adapterJobManager) Update(ctx context.Context, jobID string, update *interfaces.JobUpdate) error {
+func (m *adapterJobManager) Update(ctx context.Context, jobID string, update *types.JobUpdate) error {
 	// Convert string to int32 for adapter
 	jobIDInt, err := strconv.ParseInt(jobID, 10, 32)
 	if err != nil {
-		return fmt.Errorf("invalid job ID: %w", err)
+		return fmt.Errorf("invalid job JobId: %w", err)
 	}
-	// Convert update - only use available fields from interfaces.JobUpdate
-	adapterUpdate := &types.JobUpdate{
-		Name: update.Name,
-	}
-
-	// Convert time limit if present
-	if update.TimeLimit != nil {
-		timeLimit := int32(*update.TimeLimit)
-		adapterUpdate.TimeLimit = &timeLimit
-	}
-
-	// Convert priority if present
-	if update.Priority != nil {
-		priority := int32(*update.Priority)
-		adapterUpdate.Priority = &priority
-	}
-
-	return m.adapter.Update(ctx, int32(jobIDInt), adapterUpdate)
+	// JobUpdate is an alias for JobCreate - pass it directly
+	// The adapter will use only the fields that are set
+	return m.adapter.Update(ctx, int32(jobIDInt), update)
 }
 
 func (m *adapterJobManager) Cancel(ctx context.Context, jobID string) error {
 	// Convert string to int32 for adapter
 	jobIDInt, err := strconv.ParseInt(jobID, 10, 32)
 	if err != nil {
-		return fmt.Errorf("invalid job ID: %w", err)
+		return fmt.Errorf("invalid job JobId: %w", err)
 	}
 	return m.adapter.Cancel(ctx, int32(jobIDInt), nil)
 }
@@ -440,11 +470,11 @@ func (m *adapterJobManager) Hold(ctx context.Context, jobID string) error {
 	// Convert string to int32 for adapter
 	jobIDInt, err := strconv.ParseInt(jobID, 10, 32)
 	if err != nil {
-		return fmt.Errorf("invalid job ID: %w", err)
+		return fmt.Errorf("invalid job JobId: %w", err)
 	}
 	// Create hold request (hold = true)
 	req := &types.JobHoldRequest{
-		JobID: int32(jobIDInt),
+		JobId: int32(jobIDInt),
 		Hold:  true,
 	}
 	return m.adapter.Hold(ctx, req)
@@ -455,11 +485,11 @@ func (m *adapterJobManager) Release(ctx context.Context, jobID string) error {
 	// Convert string to int32 for adapter
 	jobIDInt, err := strconv.ParseInt(jobID, 10, 32)
 	if err != nil {
-		return fmt.Errorf("invalid job ID: %w", err)
+		return fmt.Errorf("invalid job JobId: %w", err)
 	}
 	// Create hold request (hold = false to release)
 	req := &types.JobHoldRequest{
-		JobID: int32(jobIDInt),
+		JobId: int32(jobIDInt),
 		Hold:  false,
 	}
 	return m.adapter.Hold(ctx, req)
@@ -470,10 +500,10 @@ func (m *adapterJobManager) Signal(ctx context.Context, jobID string, signal str
 	// Convert string to int32 for adapter
 	jobIDInt, err := strconv.ParseInt(jobID, 10, 32)
 	if err != nil {
-		return fmt.Errorf("invalid job ID: %w", err)
+		return fmt.Errorf("invalid job JobId: %w", err)
 	}
 	req := &types.JobSignalRequest{
-		JobID:  int32(jobIDInt),
+		JobId:  int32(jobIDInt),
 		Signal: signal,
 	}
 	return m.adapter.Signal(ctx, req)
@@ -484,10 +514,10 @@ func (m *adapterJobManager) Notify(ctx context.Context, jobID string, message st
 	// Convert string to int32 for adapter
 	jobIDInt, err := strconv.ParseInt(jobID, 10, 32)
 	if err != nil {
-		return fmt.Errorf("invalid job ID: %w", err)
+		return fmt.Errorf("invalid job JobId: %w", err)
 	}
 	req := &types.JobNotifyRequest{
-		JobID:   int32(jobIDInt),
+		JobId:   int32(jobIDInt),
 		Message: message,
 	}
 	return m.adapter.Notify(ctx, req)
@@ -498,12 +528,12 @@ func (m *adapterJobManager) Requeue(ctx context.Context, jobID string) error {
 	// Convert string to int32 for adapter
 	jobIDInt, err := strconv.ParseInt(jobID, 10, 32)
 	if err != nil {
-		return fmt.Errorf("invalid job ID: %w", err)
+		return fmt.Errorf("invalid job JobId: %w", err)
 	}
 	return m.adapter.Requeue(ctx, int32(jobIDInt))
 }
 
-func (m *adapterJobManager) Watch(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+func (m *adapterJobManager) Watch(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
 	// Convert WatchJobsOptions to types.JobWatchOptions
 	adapterOpts := &types.JobWatchOptions{}
 
@@ -513,7 +543,7 @@ func (m *adapterJobManager) Watch(ctx context.Context, opts *interfaces.WatchJob
 			// Just watch the first job ID for now (adapter expects single job ID)
 			jobIDInt, err := strconv.ParseInt(opts.JobIDs[0], 10, 32)
 			if err == nil {
-				adapterOpts.JobID = int32(jobIDInt)
+				adapterOpts.JobId = int32(jobIDInt)
 			}
 		}
 
@@ -530,20 +560,20 @@ func (m *adapterJobManager) Watch(ctx context.Context, opts *interfaces.WatchJob
 	}
 
 	// Create interface event channel
-	interfaceEventChan := make(chan interfaces.JobEvent, 10)
+	interfaceEventChan := make(chan types.JobEvent, 10)
 
 	// Start goroutine to convert events
 	go func() {
 		defer close(interfaceEventChan)
 
 		for adapterEvent := range adapterEventChan {
-			// Convert types.JobWatchEvent to interfaces.JobEvent
-			interfaceEvent := interfaces.JobEvent{
-				Type:      adapterEvent.EventType,
-				JobID:     strconv.Itoa(int(adapterEvent.JobID)),
-				OldState:  string(adapterEvent.PreviousState),
-				NewState:  string(adapterEvent.NewState),
-				Timestamp: adapterEvent.EventTime,
+			// Convert types.JobWatchEvent to types.JobEvent
+			interfaceEvent := types.JobEvent{
+				EventType:     adapterEvent.EventType,
+				JobId:         adapterEvent.JobId,
+				PreviousState: adapterEvent.PreviousState,
+				NewState:      adapterEvent.NewState,
+				EventTime:     adapterEvent.EventTime,
 			}
 
 			select {
@@ -557,147 +587,15 @@ func (m *adapterJobManager) Watch(ctx context.Context, opts *interfaces.WatchJob
 	return interfaceEventChan, nil
 }
 
-func (m *adapterJobManager) AnalyzeBatchJobs(ctx context.Context, jobIDs []string, opts *interfaces.BatchAnalysisOptions) (*interfaces.BatchJobAnalysis, error) {
-	// AnalyzeBatchJobs is not implemented in adapters
-	return nil, fmt.Errorf("AnalyzeBatchJobs not implemented in adapter")
-}
-
-// Analytics methods for resource utilization and performance
-func (m *adapterJobManager) Steps(ctx context.Context, jobID string) (*interfaces.JobStepList, error) {
-	return nil, fmt.Errorf("Steps not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetJobUtilization(ctx context.Context, jobID string) (*interfaces.JobUtilization, error) {
-	return nil, fmt.Errorf("GetJobUtilization not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetJobEfficiency(ctx context.Context, jobID string) (*interfaces.ResourceUtilization, error) {
-	return nil, fmt.Errorf("GetJobEfficiency not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetJobPerformance(ctx context.Context, jobID string) (*interfaces.JobPerformance, error) {
-	return nil, fmt.Errorf("GetJobPerformance not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetJobLiveMetrics(ctx context.Context, jobID string) (*interfaces.JobLiveMetrics, error) {
-	return nil, fmt.Errorf("GetJobLiveMetrics not implemented in adapter")
-}
-
-func (m *adapterJobManager) WatchJobMetrics(ctx context.Context, jobID string, opts *interfaces.WatchMetricsOptions) (<-chan interfaces.JobMetricsEvent, error) {
-	return nil, fmt.Errorf("WatchJobMetrics not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetJobResourceTrends(ctx context.Context, jobID string, opts *interfaces.ResourceTrendsOptions) (*interfaces.JobResourceTrends, error) {
-	return nil, fmt.Errorf("GetJobResourceTrends not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetJobStepDetails(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepDetails, error) {
-	return nil, fmt.Errorf("GetJobStepDetails not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetJobStepUtilization(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepUtilization, error) {
-	return nil, fmt.Errorf("GetJobStepUtilization not implemented in adapter")
-}
-
-func (m *adapterJobManager) ListJobStepsWithMetrics(ctx context.Context, jobID string, opts *interfaces.ListJobStepsOptions) (*interfaces.JobStepMetricsList, error) {
-	return nil, fmt.Errorf("ListJobStepsWithMetrics not implemented in adapter")
-}
-
-// SLURM Integration Methods
-func (m *adapterJobManager) GetJobStepsFromAccounting(ctx context.Context, jobID string, opts *interfaces.AccountingQueryOptions) (*interfaces.AccountingJobSteps, error) {
-	return nil, fmt.Errorf("GetJobStepsFromAccounting not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetStepAccountingData(ctx context.Context, jobID string, stepID string) (*interfaces.StepAccountingRecord, error) {
-	return nil, fmt.Errorf("GetStepAccountingData not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetJobStepAPIData(ctx context.Context, jobID string, stepID string) (*interfaces.JobStepAPIData, error) {
-	return nil, fmt.Errorf("GetJobStepAPIData not implemented in adapter")
-}
-
-func (m *adapterJobManager) ListJobStepsFromSacct(ctx context.Context, jobID string, opts *interfaces.SacctQueryOptions) (*interfaces.SacctJobStepData, error) {
-	return nil, fmt.Errorf("ListJobStepsFromSacct not implemented in adapter")
-}
-
-// Advanced Analytics Methods
-func (m *adapterJobManager) GetJobCPUAnalytics(ctx context.Context, jobID string) (*interfaces.CPUAnalytics, error) {
-	return nil, fmt.Errorf("GetJobCPUAnalytics not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetJobMemoryAnalytics(ctx context.Context, jobID string) (*interfaces.MemoryAnalytics, error) {
-	return nil, fmt.Errorf("GetJobMemoryAnalytics not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetJobIOAnalytics(ctx context.Context, jobID string) (*interfaces.IOAnalytics, error) {
-	return nil, fmt.Errorf("GetJobIOAnalytics not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetJobComprehensiveAnalytics(ctx context.Context, jobID string) (*interfaces.JobComprehensiveAnalytics, error) {
-	return nil, fmt.Errorf("GetJobComprehensiveAnalytics not implemented in adapter")
-}
-
-// Historical Performance Tracking Methods
-func (m *adapterJobManager) GetJobPerformanceHistory(ctx context.Context, jobID string, opts *interfaces.PerformanceHistoryOptions) (*interfaces.JobPerformanceHistory, error) {
-	return nil, fmt.Errorf("GetJobPerformanceHistory not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetPerformanceTrends(ctx context.Context, opts *interfaces.TrendAnalysisOptions) (*interfaces.PerformanceTrends, error) {
-	return nil, fmt.Errorf("GetPerformanceTrends not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetUserEfficiencyTrends(ctx context.Context, userID string, opts *interfaces.EfficiencyTrendOptions) (*interfaces.UserEfficiencyTrends, error) {
-	return nil, fmt.Errorf("GetUserEfficiencyTrends not implemented in adapter")
-}
-
-func (m *adapterJobManager) GetWorkflowPerformance(ctx context.Context, workflowID string, opts *interfaces.WorkflowAnalysisOptions) (*interfaces.WorkflowPerformance, error) {
-	return nil, fmt.Errorf("GetWorkflowPerformance not implemented in adapter")
-}
-
-func (m *adapterJobManager) GenerateEfficiencyReport(ctx context.Context, opts *interfaces.ReportOptions) (*interfaces.EfficiencyReport, error) {
-	return nil, fmt.Errorf("GenerateEfficiencyReport not implemented in adapter")
-}
-
-// Helper function to convert types.Job to interfaces.Job
-func convertJobToInterface(job types.Job) interfaces.Job {
-	// Convert node list to slice
-	nodes := []string{}
-	if job.NodeList != "" {
-		nodes = []string{job.NodeList} // Simple conversion - could be improved to split properly
-	}
-
-	return interfaces.Job{
-		ID:          strconv.Itoa(int(job.JobID)),
-		Name:        job.Name,
-		UserID:      strconv.Itoa(int(job.UserID)),
-		GroupID:     strconv.Itoa(int(job.GroupID)),
-		State:       string(job.State),
-		Partition:   job.Partition,
-		Priority:    int(job.Priority),
-		SubmitTime:  job.SubmitTime,
-		StartTime:   job.StartTime,
-		EndTime:     job.EndTime,
-		CPUs:        int(job.CPUs),
-		Memory:      int(job.ResourceRequests.Memory), // Use actual allocated memory (in bytes)
-		TimeLimit:   int(job.TimeLimit),
-		WorkingDir:  job.WorkingDirectory,
-		Command:     job.Command,
-		Environment: job.Environment,
-		Nodes:       nodes,
-		ExitCode:    int(job.ExitCode),
-		Metadata:    make(map[string]interface{}),
-	}
-}
-
 // Allocate allocates resources for a job
-func (m *adapterJobManager) Allocate(ctx context.Context, req *interfaces.JobAllocateRequest) (*interfaces.JobAllocateResponse, error) {
-	// Convert interfaces.JobAllocateRequest to types.JobAllocateRequest
+func (m *adapterJobManager) Allocate(ctx context.Context, req *types.JobAllocateRequest) (*types.JobAllocateResponse, error) {
+	// Convert types.JobAllocateRequest to types.JobAllocateRequest
 	adapterReq := &types.JobAllocateRequest{
 		Name:      req.Name,
 		Account:   req.Account,
 		Partition: req.Partition,
-		Nodes:     strconv.Itoa(req.Nodes),
-		CPUs:      int32(req.CPUs),
+		Nodes:     req.Nodes,
+		Cpus:      int32(req.Cpus),
 		TimeLimit: int32(req.TimeLimit), // Time limit in minutes
 		QoS:       req.QoS,
 	}
@@ -708,18 +606,17 @@ func (m *adapterJobManager) Allocate(ctx context.Context, req *interfaces.JobAll
 		return nil, err
 	}
 
-	// Convert types.JobAllocateResponse to interfaces.JobAllocateResponse
-	return &interfaces.JobAllocateResponse{
-		JobID: strconv.Itoa(int(result.JobID)),
-	}, nil
+	// Convert types.JobAllocateResponse to types.JobAllocateResponse
+	// Since types.JobAllocateResponse = types.JobAllocateResponse, just return it
+	return result, nil
 }
 
-// adapterNodeManager wraps a common.NodeAdapter to implement interfaces.NodeManager
+// adapterNodeManager wraps a common.NodeAdapter to implement types.NodeManager
 type adapterNodeManager struct {
 	adapter common.NodeAdapter
 }
 
-func (m *adapterNodeManager) List(ctx context.Context, opts *interfaces.ListNodesOptions) (*interfaces.NodeList, error) {
+func (m *adapterNodeManager) List(ctx context.Context, opts *types.ListNodesOptions) (*types.NodeList, error) {
 	// Convert options
 	adapterOpts := &types.NodeListOptions{}
 	if opts != nil {
@@ -743,46 +640,35 @@ func (m *adapterNodeManager) List(ctx context.Context, opts *interfaces.ListNode
 
 	// Check if result is nil before accessing it
 	if result == nil {
-		return &interfaces.NodeList{
-			Nodes: []interfaces.Node{},
+		return &types.NodeList{
+			Nodes: []types.Node{},
 			Total: 0,
 		}, nil
 	}
 
 	// Convert result
-	nodeList := &interfaces.NodeList{
-		Nodes: make([]interfaces.Node, 0, len(result.Nodes)),
+	nodeList := &types.NodeList{
+		Nodes: append([]types.Node{}, result.Nodes...),
 		Total: result.Total,
-	}
-
-	for _, node := range result.Nodes {
-		nodeList.Nodes = append(nodeList.Nodes, convertNodeToInterface(node))
 	}
 
 	return nodeList, nil
 }
 
-func (m *adapterNodeManager) Get(ctx context.Context, nodeName string) (*interfaces.Node, error) {
+func (m *adapterNodeManager) Get(ctx context.Context, nodeName string) (*types.Node, error) {
 	node, err := m.adapter.Get(ctx, nodeName)
 	if err != nil {
 		return nil, err
 	}
-	result := convertNodeToInterface(*node)
-	return &result, nil
+	return node, nil
 }
 
-func (m *adapterNodeManager) Update(ctx context.Context, nodeName string, update *interfaces.NodeUpdate) error {
-	// Convert update
-	adapterUpdate := &types.NodeUpdate{
-		State:    (*types.NodeState)(update.State),
-		Reason:   update.Reason,
-		Features: update.Features,
-	}
-
-	return m.adapter.Update(ctx, nodeName, adapterUpdate)
+func (m *adapterNodeManager) Update(ctx context.Context, nodeName string, update *types.NodeUpdate) error {
+	// The common NodeUpdate type is now used directly
+	return m.adapter.Update(ctx, nodeName, update)
 }
 
-func (m *adapterNodeManager) Watch(ctx context.Context, opts *interfaces.WatchNodesOptions) (<-chan interfaces.NodeEvent, error) {
+func (m *adapterNodeManager) Watch(ctx context.Context, opts *types.WatchNodesOptions) (<-chan types.NodeEvent, error) {
 	// Convert WatchNodesOptions to types.NodeWatchOptions
 	adapterOpts := &types.NodeWatchOptions{}
 
@@ -812,21 +698,15 @@ func (m *adapterNodeManager) Watch(ctx context.Context, opts *interfaces.WatchNo
 	}
 
 	// Create interface event channel
-	interfaceEventChan := make(chan interfaces.NodeEvent, 10)
+	interfaceEventChan := make(chan types.NodeEvent, 10)
 
 	// Start goroutine to convert events
 	go func() {
 		defer close(interfaceEventChan)
 
 		for adapterEvent := range adapterEventChan {
-			// Convert types.NodeWatchEvent to interfaces.NodeEvent
-			interfaceEvent := interfaces.NodeEvent{
-				Type:      adapterEvent.EventType,
-				NodeName:  adapterEvent.NodeName,
-				OldState:  string(adapterEvent.PreviousState),
-				NewState:  string(adapterEvent.NewState),
-				Timestamp: adapterEvent.EventTime,
-			}
+			// Since types.NodeEvent = types.NodeEvent, just pass it through
+			interfaceEvent := adapterEvent
 
 			select {
 			case interfaceEventChan <- interfaceEvent:
@@ -854,31 +734,13 @@ func (m *adapterNodeManager) Resume(ctx context.Context, nodeName string) error 
 	return m.adapter.Resume(ctx, nodeName)
 }
 
-// Helper function to convert types.Node to interfaces.Node
-func convertNodeToInterface(node types.Node) interfaces.Node {
-	// Copy features directly
-	features := node.Features
-
-	return interfaces.Node{
-		Name:         node.Name,
-		State:        string(node.State),
-		CPUs:         int(node.CPUs),
-		Memory:       int(node.Memory),
-		Partitions:   node.Partitions,
-		Features:     features,
-		Reason:       node.Reason,
-		LastBusy:     node.LastBusy,
-		Architecture: node.Arch,
-		Metadata:     make(map[string]interface{}),
-	}
-}
-
+// Helper function to convert types.Node to types.Node
 // adapterPartitionManager wraps a common.PartitionAdapter
 type adapterPartitionManager struct {
 	adapter common.PartitionAdapter
 }
 
-func (m *adapterPartitionManager) List(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error) {
+func (m *adapterPartitionManager) List(ctx context.Context, opts *types.ListPartitionsOptions) (*types.PartitionList, error) {
 	// Convert options
 	adapterOpts := &types.PartitionListOptions{}
 	if opts != nil {
@@ -895,35 +757,30 @@ func (m *adapterPartitionManager) List(ctx context.Context, opts *interfaces.Lis
 
 	// Check if result is nil before accessing it
 	if result == nil {
-		return &interfaces.PartitionList{
-			Partitions: []interfaces.Partition{},
+		return &types.PartitionList{
+			Partitions: []types.Partition{},
 			Total:      0,
 		}, nil
 	}
 
 	// Convert result
-	partitionList := &interfaces.PartitionList{
-		Partitions: make([]interfaces.Partition, 0, len(result.Partitions)),
+	partitionList := &types.PartitionList{
+		Partitions: append([]types.Partition{}, result.Partitions...),
 		Total:      result.Total,
-	}
-
-	for _, partition := range result.Partitions {
-		partitionList.Partitions = append(partitionList.Partitions, convertPartitionToInterface(partition))
 	}
 
 	return partitionList, nil
 }
 
-func (m *adapterPartitionManager) Get(ctx context.Context, partitionName string) (*interfaces.Partition, error) {
+func (m *adapterPartitionManager) Get(ctx context.Context, partitionName string) (*types.Partition, error) {
 	partition, err := m.adapter.Get(ctx, partitionName)
 	if err != nil {
 		return nil, err
 	}
-	result := convertPartitionToInterface(*partition)
-	return &result, nil
+	return partition, nil
 }
 
-func (m *adapterPartitionManager) Update(ctx context.Context, partitionName string, update *interfaces.PartitionUpdate) error {
+func (m *adapterPartitionManager) Update(ctx context.Context, partitionName string, update *types.PartitionUpdate) error {
 	// Convert update request
 	adapterUpdate := &types.PartitionUpdate{}
 	if update != nil {
@@ -946,41 +803,143 @@ func (m *adapterPartitionManager) Update(ctx context.Context, partitionName stri
 	return m.adapter.Update(ctx, partitionName, adapterUpdate)
 }
 
-func (m *adapterPartitionManager) Watch(ctx context.Context, opts *interfaces.WatchPartitionsOptions) (<-chan interfaces.PartitionEvent, error) {
-	// Watch is not implemented in adapters
-	return nil, fmt.Errorf("watch not implemented in adapter")
+func (m *adapterPartitionManager) Watch(ctx context.Context, opts *types.WatchPartitionsOptions) (<-chan types.PartitionEvent, error) {
+	// Implement polling-based watch since the adapter layer doesn't have Watch
+	eventChan := make(chan types.PartitionEvent, 10)
+
+	go func() {
+		defer close(eventChan)
+
+		// Track previous partition states
+		prevPartitions := make(map[string]*types.Partition)
+		pollInterval := 5 * time.Second
+
+		ticker := time.NewTicker(pollInterval)
+		defer ticker.Stop()
+
+		// Helper to get state from partition
+		getState := func(p *types.Partition) string {
+			if p != nil && p.Partition != nil && len(p.Partition.State) > 0 {
+				return string(p.Partition.State[0])
+			}
+			return ""
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				// Fetch current partitions
+				result, err := m.adapter.List(ctx, &types.PartitionListOptions{})
+				if err != nil {
+					continue // Skip this poll on error
+				}
+
+				currentPartitions := make(map[string]*types.Partition)
+				for i := range result.Partitions {
+					p := &result.Partitions[i]
+					name := ""
+					if p.Name != nil {
+						name = *p.Name
+					}
+					if name == "" {
+						continue
+					}
+					// Filter by partition names if specified
+					if opts != nil && len(opts.PartitionNames) > 0 {
+						found := false
+						for _, pn := range opts.PartitionNames {
+							if pn == name {
+								found = true
+								break
+							}
+						}
+						if !found {
+							continue
+						}
+					}
+					currentPartitions[name] = p
+				}
+
+				// Detect changes
+				now := time.Now()
+
+				// Check for new or changed partitions
+				for name, current := range currentPartitions {
+					prev, existed := prevPartitions[name]
+					if !existed {
+						// New partition
+						if len(prevPartitions) > 0 { // Skip first poll
+							event := types.PartitionEvent{
+								EventTime:     now,
+								EventType:     "created",
+								PartitionName: name,
+								Partition:     current,
+								NewState:      types.PartitionState(getState(current)),
+							}
+							select {
+							case eventChan <- event:
+							case <-ctx.Done():
+								return
+							}
+						}
+					} else {
+						// Check for state change
+						prevState := getState(prev)
+						currState := getState(current)
+						if prevState != currState {
+							event := types.PartitionEvent{
+								EventTime:     now,
+								EventType:     "state_change",
+								PartitionName: name,
+								PreviousState: types.PartitionState(prevState),
+								NewState:      types.PartitionState(currState),
+								Partition:     current,
+							}
+							select {
+							case eventChan <- event:
+							case <-ctx.Done():
+								return
+							}
+						}
+					}
+				}
+
+				// Check for deleted partitions
+				for name := range prevPartitions {
+					if _, exists := currentPartitions[name]; !exists {
+						event := types.PartitionEvent{
+							EventTime:     now,
+							EventType:     "deleted",
+							PartitionName: name,
+						}
+						select {
+						case eventChan <- event:
+						case <-ctx.Done():
+							return
+						}
+					}
+				}
+
+				prevPartitions = currentPartitions
+			}
+		}
+	}()
+
+	return eventChan, nil
 }
 
 // Create creates a new partition
-func (m *adapterPartitionManager) Create(ctx context.Context, partition *interfaces.PartitionCreate) (*interfaces.PartitionCreateResponse, error) {
-	// Convert to adapter type
-	adapterCreate := &types.PartitionCreate{
-		Name:             partition.Name,
-		Nodes:            strings.Join(partition.Nodes, ","), // Convert []string to comma-separated string
-		MaxTime:          int32(partition.MaxTime),
-		DefaultTime:      int32(partition.DefaultTime),
-		DefaultMemPerCPU: int64(partition.DefaultMemory), // Map DefaultMemory to DefaultMemPerCPU
-		State:            types.PartitionState(partition.State),
-		Priority:         int32(partition.Priority),
-	}
-
-	// Handle allowed/denied users
-	if len(partition.AllowedUsers) > 0 {
-		adapterCreate.AllowAccounts = partition.AllowedUsers
-	}
-	if len(partition.DeniedUsers) > 0 {
-		adapterCreate.DenyAccounts = partition.DeniedUsers
-	}
-
-	// Call adapter
-	resp, err := m.adapter.Create(ctx, adapterCreate)
+func (m *adapterPartitionManager) Create(ctx context.Context, partition *types.PartitionCreate) (*types.PartitionCreateResponse, error) {
+	// Since types.PartitionCreate = types.PartitionCreate, no conversion needed
+	resp, err := m.adapter.Create(ctx, partition)
 	if err != nil {
 		return nil, err
 	}
 
-	return &interfaces.PartitionCreateResponse{
-		PartitionName: resp.PartitionName,
-	}, nil
+	// Since types.PartitionCreateResponse = types.PartitionCreateResponse, just return it
+	return resp, nil
 }
 
 // Delete deletes a partition
@@ -988,167 +947,11 @@ func (m *adapterPartitionManager) Delete(ctx context.Context, partitionName stri
 	return m.adapter.Delete(ctx, partitionName)
 }
 
-// Helper function to convert types.Partition to interfaces.Partition
-func convertPartitionToInterface(partition types.Partition) interfaces.Partition {
-	return interfaces.Partition{
-		Name:           partition.Name,
-		State:          string(partition.State),
-		TotalNodes:     int(partition.TotalNodes),
-		AvailableNodes: 0, // Not available in types.Partition
-		TotalCPUs:      int(partition.TotalCPUs),
-		IdleCPUs:       int(partition.TotalCPUs), // No idle CPUs field in types
-		MaxTime:        int(partition.MaxTime),
-		DefaultTime:    int(partition.DefaultTime),
-		MaxMemory:      int(partition.MaxMemPerNode),
-		DefaultMemory:  int(partition.DefMemPerNode),
-		AllowedUsers:   []string{}, // Not available in types
-		DeniedUsers:    []string{}, // Not available in types
-		AllowedGroups:  partition.AllowGroups,
-		DeniedGroups:   []string{}, // Not available as DenyGroups
-		Priority:       int(partition.Priority),
-		Nodes:          convertNodeStringToArray(partition.Nodes), // Convert from string to []string
-	}
-}
+// Helper function to convert types.Account to types.Account
 
-// Helper function to convert node string (comma-separated) to array
-func convertNodeStringToArray(nodes string) []string {
-	if nodes == "" {
-		return []string{}
-	}
-	// Split by comma or other delimiters as needed
-	return []string{nodes}
-}
+// Helper function to convert types.User to types.User
 
-// Helper function to convert types.Account to interfaces.Account
-func convertAccountToInterface(account types.Account) interfaces.Account {
-	return interfaces.Account{
-		Name:              account.Name,
-		Description:       account.Description,
-		Organization:      account.Organization,
-		CoordinatorUsers:  account.Coordinators,
-		AllowedPartitions: account.AllowedPartitions,
-		DefaultPartition:  account.DefaultPartition,
-		AllowedQoS:        account.QoSList,
-		DefaultQoS:        account.DefaultQoS,
-		CPULimit:          int(account.MaxCPUs),
-		MaxJobs:           int(account.MaxJobs),
-		MaxJobsPerUser:    int(account.MaxJobsPerUser),
-		MaxNodes:          int(account.MaxNodes),
-		MaxWallTime:       int(account.MaxWallTime),
-		FairShareTRES:     make(map[string]int), // Will need proper conversion if available
-		GrpTRES:           make(map[string]int), // Will need proper conversion if available
-		GrpTRESMinutes:    make(map[string]int), // Will need proper conversion if available
-		MaxTRES:           make(map[string]int), // Will need proper conversion if available
-		MaxTRESPerUser:    make(map[string]int), // Will need proper conversion if available
-		SharesPriority:    int(account.Priority),
-		ParentAccount:     account.ParentName,
-	}
-}
-
-// Helper function to convert types.User to interfaces.User
-func convertUserToInterface(user types.User) interfaces.User {
-	// Convert accounts to UserAccount format
-	accounts := make([]interfaces.UserAccount, 0, len(user.Accounts))
-	for _, accountName := range user.Accounts {
-		accounts = append(accounts, interfaces.UserAccount{
-			AccountName: accountName,
-			// Other fields would need to be populated from associations
-		})
-	}
-
-	// Convert coordinators
-	coordinatorAccounts := make([]string, 0, len(user.Coordinators))
-	for _, coord := range user.Coordinators {
-		coordinatorAccounts = append(coordinatorAccounts, coord.AccountName)
-	}
-
-	return interfaces.User{
-		Name:                user.Name,
-		UID:                 int(user.UID),
-		DefaultAccount:      user.DefaultAccount,
-		DefaultWCKey:        user.DefaultWCKey,
-		AdminLevel:          string(user.AdminLevel),
-		CoordinatorAccounts: coordinatorAccounts,
-		Accounts:            accounts,
-		Quotas:              nil,        // Would need proper conversion
-		FairShare:           nil,        // Would need proper conversion
-		Associations:        nil,        // Would need proper conversion
-		Created:             time.Now(), // Not available in types.User
-		Modified:            time.Now(), // Not available in types.User,
-		Metadata:            nil,
-	}
-}
-
-// Helper function to convert types.QoS to interfaces.QoS
-func convertQoSToInterface(qos types.QoS) interfaces.QoS {
-	// Extract limits from the QoS
-	maxJobs := 0
-	maxJobsPerUser := 0
-	maxJobsPerAccount := 0
-	maxSubmitJobs := 0
-	maxCPUs := 0
-	maxCPUsPerUser := 0
-	maxNodes := 0
-	maxWallTime := 0
-	minCPUs := 0
-	minNodes := 0
-
-	if qos.Limits != nil {
-		if qos.Limits.MaxJobsPerUser != nil {
-			maxJobsPerUser = *qos.Limits.MaxJobsPerUser
-		}
-		if qos.Limits.MaxJobsPerAccount != nil {
-			maxJobsPerAccount = *qos.Limits.MaxJobsPerAccount
-		}
-		if qos.Limits.MaxSubmitJobsPerUser != nil {
-			maxSubmitJobs = *qos.Limits.MaxSubmitJobsPerUser
-		}
-		if qos.Limits.MaxCPUsPerUser != nil {
-			maxCPUsPerUser = *qos.Limits.MaxCPUsPerUser
-		}
-		if qos.Limits.MaxCPUsPerJob != nil {
-			maxCPUs = *qos.Limits.MaxCPUsPerJob
-		}
-		if qos.Limits.MaxNodesPerJob != nil {
-			maxNodes = *qos.Limits.MaxNodesPerJob
-		}
-		if qos.Limits.MaxWallTimePerJob != nil {
-			maxWallTime = *qos.Limits.MaxWallTimePerJob
-		}
-		if qos.Limits.MinCPUsPerJob != nil {
-			minCPUs = *qos.Limits.MinCPUsPerJob
-		}
-		if qos.Limits.MinNodesPerJob != nil {
-			minNodes = *qos.Limits.MinNodesPerJob
-		}
-	}
-
-	return interfaces.QoS{
-		Name:              qos.Name,
-		Description:       qos.Description,
-		Priority:          qos.Priority,
-		PreemptMode:       qos.PreemptMode,
-		GraceTime:         qos.GraceTime,
-		MaxJobs:           maxJobs,
-		MaxJobsPerUser:    maxJobsPerUser,
-		MaxJobsPerAccount: maxJobsPerAccount,
-		MaxSubmitJobs:     maxSubmitJobs,
-		MaxCPUs:           maxCPUs,
-		MaxCPUsPerUser:    maxCPUsPerUser,
-		MaxNodes:          maxNodes,
-		MaxWallTime:       maxWallTime,
-		MinCPUs:           minCPUs,
-		MinNodes:          minNodes,
-		UsageFactor:       qos.UsageFactor,
-		UsageThreshold:    qos.UsageThreshold,
-		Flags:             qos.Flags,
-		AllowedAccounts:   qos.AllowedAccounts,
-		DeniedAccounts:    []string{}, // Not available in types.QoS
-		AllowedUsers:      qos.AllowedUsers,
-		DeniedUsers:       []string{}, // Not available in types.QoS,
-		Metadata:          nil,
-	}
-}
+// Helper function to convert types.QoS to types.QoS
 
 // adapterInfoManager provides info operations via the adapter
 type adapterInfoManager struct {
@@ -1160,7 +963,7 @@ func (m *adapterInfoManager) Ping(ctx context.Context) error {
 	return m.adapter.Ping(ctx)
 }
 
-func (m *adapterInfoManager) Get(ctx context.Context) (*interfaces.ClusterInfo, error) {
+func (m *adapterInfoManager) Get(ctx context.Context) (*types.ClusterInfo, error) {
 	result, err := m.adapter.Get(ctx)
 	if err != nil {
 		return nil, err
@@ -1171,7 +974,7 @@ func (m *adapterInfoManager) Get(ctx context.Context) (*interfaces.ClusterInfo, 
 	return convertTypesClusterInfoToInterface(result), nil
 }
 
-func (m *adapterInfoManager) Stats(ctx context.Context) (*interfaces.ClusterStats, error) {
+func (m *adapterInfoManager) Stats(ctx context.Context) (*types.ClusterStats, error) {
 	result, err := m.adapter.Stats(ctx)
 	if err != nil {
 		return nil, err
@@ -1179,7 +982,7 @@ func (m *adapterInfoManager) Stats(ctx context.Context) (*interfaces.ClusterStat
 	return convertTypesClusterStatsToInterface(result), nil
 }
 
-func (m *adapterInfoManager) Version(ctx context.Context) (*interfaces.APIVersion, error) {
+func (m *adapterInfoManager) Version(ctx context.Context) (*types.APIVersion, error) {
 	result, err := m.adapter.Version(ctx)
 	if err != nil {
 		return nil, err
@@ -1192,11 +995,11 @@ func (m *adapterInfoManager) PingDatabase(ctx context.Context) error {
 }
 
 // Type converters for Info types
-func convertTypesClusterInfoToInterface(t *types.ClusterInfo) *interfaces.ClusterInfo {
+func convertTypesClusterInfoToInterface(t *types.ClusterInfo) *types.ClusterInfo {
 	if t == nil {
 		return nil
 	}
-	return &interfaces.ClusterInfo{
+	return &types.ClusterInfo{
 		ClusterName: t.ClusterName,
 		Version:     t.Version,
 		Release:     t.Release,
@@ -1205,11 +1008,11 @@ func convertTypesClusterInfoToInterface(t *types.ClusterInfo) *interfaces.Cluste
 	}
 }
 
-func convertTypesClusterStatsToInterface(t *types.ClusterStats) *interfaces.ClusterStats {
+func convertTypesClusterStatsToInterface(t *types.ClusterStats) *types.ClusterStats {
 	if t == nil {
 		return nil
 	}
-	return &interfaces.ClusterStats{
+	return &types.ClusterStats{
 		TotalNodes:     t.TotalNodes,
 		IdleNodes:      t.IdleNodes,
 		AllocatedNodes: t.AllocatedNodes,
@@ -1223,11 +1026,11 @@ func convertTypesClusterStatsToInterface(t *types.ClusterStats) *interfaces.Clus
 	}
 }
 
-func convertTypesAPIVersionToInterface(t *types.APIVersion) *interfaces.APIVersion {
+func convertTypesAPIVersionToInterface(t *types.APIVersion) *types.APIVersion {
 	if t == nil {
 		return nil
 	}
-	return &interfaces.APIVersion{
+	return &types.APIVersion{
 		Version:     t.Version,
 		Release:     t.Release,
 		Description: t.Description,
@@ -1241,7 +1044,7 @@ type adapterQoSManager struct {
 	adapter common.QoSAdapter
 }
 
-func (m *adapterQoSManager) List(ctx context.Context, opts *interfaces.ListQoSOptions) (*interfaces.QoSList, error) {
+func (m *adapterQoSManager) List(ctx context.Context, opts *types.ListQoSOptions) (*types.QoSList, error) {
 	// Convert options
 	adapterOpts := &types.QoSListOptions{}
 	if opts != nil {
@@ -1257,35 +1060,30 @@ func (m *adapterQoSManager) List(ctx context.Context, opts *interfaces.ListQoSOp
 
 	// Check if result is nil before accessing it
 	if result == nil {
-		return &interfaces.QoSList{
-			QoS:   []interfaces.QoS{},
+		return &types.QoSList{
+			QoS:   []types.QoS{},
 			Total: 0,
 		}, nil
 	}
 
 	// Convert result
-	qosList := &interfaces.QoSList{
-		QoS:   make([]interfaces.QoS, 0, len(result.QoS)),
+	qosList := &types.QoSList{
+		QoS:   append([]types.QoS{}, result.QoS...),
 		Total: result.Total,
-	}
-
-	for _, qos := range result.QoS {
-		qosList.QoS = append(qosList.QoS, convertQoSToInterface(qos))
 	}
 
 	return qosList, nil
 }
 
-func (m *adapterQoSManager) Get(ctx context.Context, qosName string) (*interfaces.QoS, error) {
+func (m *adapterQoSManager) Get(ctx context.Context, qosName string) (*types.QoS, error) {
 	qos, err := m.adapter.Get(ctx, qosName)
 	if err != nil {
 		return nil, err
 	}
-	result := convertQoSToInterface(*qos)
-	return &result, nil
+	return qos, nil
 }
 
-func (m *adapterQoSManager) Create(ctx context.Context, qos *interfaces.QoSCreate) (*interfaces.QoSCreateResponse, error) {
+func (m *adapterQoSManager) Create(ctx context.Context, qos *types.QoSCreate) (*types.QoSCreateResponse, error) {
 	// Convert create request
 	adapterCreate := &types.QoSCreate{
 		Name:        qos.Name,
@@ -1300,12 +1098,12 @@ func (m *adapterQoSManager) Create(ctx context.Context, qos *interfaces.QoSCreat
 		return nil, err
 	}
 
-	return &interfaces.QoSCreateResponse{
+	return &types.QoSCreateResponse{
 		QoSName: resp.QoSName,
 	}, nil
 }
 
-func (m *adapterQoSManager) Update(ctx context.Context, qosName string, update *interfaces.QoSUpdate) error {
+func (m *adapterQoSManager) Update(ctx context.Context, qosName string, update *types.QoSUpdate) error {
 	// Convert update request
 	adapterUpdate := &types.QoSUpdate{}
 	if update.Description != nil {
@@ -1324,10 +1122,11 @@ func (m *adapterQoSManager) Delete(ctx context.Context, qosName string) error {
 }
 
 type adapterAccountManager struct {
-	adapter common.AccountAdapter
+	adapter            common.AccountAdapter
+	associationAdapter common.AssociationAdapter
 }
 
-func (m *adapterAccountManager) List(ctx context.Context, opts *interfaces.ListAccountsOptions) (*interfaces.AccountList, error) {
+func (m *adapterAccountManager) List(ctx context.Context, opts *types.ListAccountsOptions) (*types.AccountList, error) {
 	// Convert options
 	adapterOpts := &types.AccountListOptions{}
 	if opts != nil {
@@ -1344,35 +1143,30 @@ func (m *adapterAccountManager) List(ctx context.Context, opts *interfaces.ListA
 
 	// Check if result is nil before accessing it
 	if result == nil {
-		return &interfaces.AccountList{
-			Accounts: []interfaces.Account{},
+		return &types.AccountList{
+			Accounts: []types.Account{},
 			Total:    0,
 		}, nil
 	}
 
 	// Convert result
-	accountList := &interfaces.AccountList{
-		Accounts: make([]interfaces.Account, 0, len(result.Accounts)),
+	accountList := &types.AccountList{
+		Accounts: append([]types.Account{}, result.Accounts...),
 		Total:    result.Total,
-	}
-
-	for _, account := range result.Accounts {
-		accountList.Accounts = append(accountList.Accounts, convertAccountToInterface(account))
 	}
 
 	return accountList, nil
 }
 
-func (m *adapterAccountManager) Get(ctx context.Context, accountName string) (*interfaces.Account, error) {
+func (m *adapterAccountManager) Get(ctx context.Context, accountName string) (*types.Account, error) {
 	account, err := m.adapter.Get(ctx, accountName)
 	if err != nil {
 		return nil, err
 	}
-	result := convertAccountToInterface(*account)
-	return &result, nil
+	return account, nil
 }
 
-func (m *adapterAccountManager) Create(ctx context.Context, account *interfaces.AccountCreate) (*interfaces.AccountCreateResponse, error) {
+func (m *adapterAccountManager) Create(ctx context.Context, account *types.AccountCreate) (*types.AccountCreateResponse, error) {
 	// Convert create request
 	adapterCreate := &types.AccountCreate{
 		Name:         account.Name,
@@ -1387,12 +1181,10 @@ func (m *adapterAccountManager) Create(ctx context.Context, account *interfaces.
 		return nil, err
 	}
 
-	return &interfaces.AccountCreateResponse{
-		AccountName: resp.AccountName,
-	}, nil
+	return resp, nil
 }
 
-func (m *adapterAccountManager) Update(ctx context.Context, accountName string, update *interfaces.AccountUpdate) error {
+func (m *adapterAccountManager) Update(ctx context.Context, accountName string, update *types.AccountUpdate) error {
 	// Convert update request
 	adapterUpdate := &types.AccountUpdate{
 		Description:  update.Description,
@@ -1407,57 +1199,63 @@ func (m *adapterAccountManager) Delete(ctx context.Context, accountName string) 
 	return m.adapter.Delete(ctx, accountName)
 }
 
-func (m *adapterAccountManager) GetAccountHierarchy(ctx context.Context, rootAccount string) (*interfaces.AccountHierarchy, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterAccountManager) GetAccountHierarchy(ctx context.Context, rootAccount string) (*types.AccountHierarchy, error) {
+	ext := &extendedAccountManager{adapter: m.adapter, associationAdapter: m.associationAdapter}
+	return ext.GetAccountHierarchy(ctx, rootAccount)
 }
 
-func (m *adapterAccountManager) GetParentAccounts(ctx context.Context, accountName string) ([]*interfaces.Account, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterAccountManager) GetParentAccounts(ctx context.Context, accountName string) ([]*types.Account, error) {
+	ext := &extendedAccountManager{adapter: m.adapter, associationAdapter: m.associationAdapter}
+	return ext.GetParentAccounts(ctx, accountName)
 }
 
-func (m *adapterAccountManager) GetChildAccounts(ctx context.Context, accountName string, depth int) ([]*interfaces.Account, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterAccountManager) GetChildAccounts(ctx context.Context, accountName string, depth int) ([]*types.Account, error) {
+	ext := &extendedAccountManager{adapter: m.adapter, associationAdapter: m.associationAdapter}
+	return ext.GetChildAccounts(ctx, accountName, depth)
 }
 
-func (m *adapterAccountManager) GetAccountQuotas(ctx context.Context, accountName string) (*interfaces.AccountQuota, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterAccountManager) GetAccountQuotas(ctx context.Context, accountName string) (*types.AccountQuota, error) {
+	ext := &extendedAccountManager{adapter: m.adapter, associationAdapter: m.associationAdapter}
+	return ext.GetAccountQuotas(ctx, accountName)
 }
 
-func (m *adapterAccountManager) GetAccountQuotaUsage(ctx context.Context, accountName string, timeframe string) (*interfaces.AccountUsage, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterAccountManager) GetAccountQuotaUsage(ctx context.Context, accountName string, timeframe string) (*types.AccountUsage, error) {
+	ext := &extendedAccountManager{adapter: m.adapter, associationAdapter: m.associationAdapter}
+	return ext.GetAccountQuotaUsage(ctx, accountName, timeframe)
 }
 
-func (m *adapterAccountManager) GetAccountUsers(ctx context.Context, accountName string, opts *interfaces.ListAccountUsersOptions) ([]*interfaces.UserAccountAssociation, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterAccountManager) GetAccountUsers(ctx context.Context, accountName string, opts *types.ListAccountUsersOptions) ([]*types.UserAccountAssociation, error) {
+	ext := &extendedAccountManager{adapter: m.adapter, associationAdapter: m.associationAdapter}
+	return ext.GetAccountUsers(ctx, accountName, opts)
 }
 
-func (m *adapterAccountManager) ValidateUserAccess(ctx context.Context, userName, accountName string) (*interfaces.UserAccessValidation, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterAccountManager) ValidateUserAccess(ctx context.Context, userName, accountName string) (*types.UserAccessValidation, error) {
+	ext := &extendedAccountManager{adapter: m.adapter, associationAdapter: m.associationAdapter}
+	return ext.ValidateUserAccess(ctx, userName, accountName)
 }
 
-func (m *adapterAccountManager) GetAccountUsersWithPermissions(ctx context.Context, accountName string, permissions []string) ([]*interfaces.UserAccountAssociation, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterAccountManager) GetAccountUsersWithPermissions(ctx context.Context, accountName string, permissions []string) ([]*types.UserAccountAssociation, error) {
+	ext := &extendedAccountManager{adapter: m.adapter, associationAdapter: m.associationAdapter}
+	return ext.GetAccountUsersWithPermissions(ctx, accountName, permissions)
 }
 
-func (m *adapterAccountManager) GetAccountFairShare(ctx context.Context, accountName string) (*interfaces.AccountFairShare, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterAccountManager) GetAccountFairShare(ctx context.Context, accountName string) (*types.AccountFairShare, error) {
+	ext := &extendedAccountManager{adapter: m.adapter, associationAdapter: m.associationAdapter}
+	return ext.GetAccountFairShare(ctx, accountName)
 }
 
-func (m *adapterAccountManager) GetFairShareHierarchy(ctx context.Context, rootAccount string) (*interfaces.FairShareHierarchy, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-
-// CreateAssociation creates a user-account association
-func (m *adapterAccountManager) CreateAssociation(ctx context.Context, userName, accountName string, opts *interfaces.AssociationOptions) (*interfaces.AssociationCreateResponse, error) {
-	// For now, return not implemented as this requires cross-manager coordination
-	return nil, fmt.Errorf("CreateAssociation not implemented in adapter")
+func (m *adapterAccountManager) GetFairShareHierarchy(ctx context.Context, rootAccount string) (*types.FairShareHierarchy, error) {
+	ext := &extendedAccountManager{adapter: m.adapter, associationAdapter: m.associationAdapter}
+	return ext.GetFairShareHierarchy(ctx, rootAccount)
 }
 
 type adapterUserManager struct {
-	adapter common.UserAdapter
+	adapter            common.UserAdapter
+	accountAdapter     common.AccountAdapter
+	associationAdapter common.AssociationAdapter
 }
 
-func (m *adapterUserManager) List(ctx context.Context, opts *interfaces.ListUsersOptions) (*interfaces.UserList, error) {
+func (m *adapterUserManager) List(ctx context.Context, opts *types.ListUsersOptions) (*types.UserList, error) {
 	// Convert options
 	adapterOpts := &types.UserListOptions{}
 	if opts != nil {
@@ -1474,95 +1272,88 @@ func (m *adapterUserManager) List(ctx context.Context, opts *interfaces.ListUser
 
 	// Check if result is nil before accessing it
 	if result == nil {
-		return &interfaces.UserList{
-			Users: []interfaces.User{},
+		return &types.UserList{
+			Users: []types.User{},
 			Total: 0,
 		}, nil
 	}
 
 	// Convert result
-	userList := &interfaces.UserList{
-		Users: make([]interfaces.User, 0, len(result.Users)),
+	userList := &types.UserList{
+		Users: append([]types.User{}, result.Users...),
 		Total: result.Total,
-	}
-
-	for _, user := range result.Users {
-		userList.Users = append(userList.Users, convertUserToInterface(user))
 	}
 
 	return userList, nil
 }
 
-func (m *adapterUserManager) Get(ctx context.Context, userName string) (*interfaces.User, error) {
+func (m *adapterUserManager) Get(ctx context.Context, userName string) (*types.User, error) {
 	user, err := m.adapter.Get(ctx, userName)
 	if err != nil {
 		return nil, err
 	}
-	result := convertUserToInterface(*user)
-	return &result, nil
+	return user, nil
 }
 
-func (m *adapterUserManager) GetUserAccounts(ctx context.Context, userName string) ([]*interfaces.UserAccount, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterUserManager) GetUserAccounts(ctx context.Context, userName string) ([]*types.UserAccount, error) {
+	ext := &extendedUserManager{adapter: m.adapter, accountAdapter: m.accountAdapter, associationAdapter: m.associationAdapter}
+	return ext.GetUserAccounts(ctx, userName)
 }
 
-func (m *adapterUserManager) GetUserQuotas(ctx context.Context, userName string) (*interfaces.UserQuota, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterUserManager) GetUserQuotas(ctx context.Context, userName string) (*types.UserQuota, error) {
+	ext := &extendedUserManager{adapter: m.adapter, accountAdapter: m.accountAdapter, associationAdapter: m.associationAdapter}
+	return ext.GetUserQuotas(ctx, userName)
 }
 
-func (m *adapterUserManager) GetUserDefaultAccount(ctx context.Context, userName string) (*interfaces.Account, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterUserManager) GetUserDefaultAccount(ctx context.Context, userName string) (*types.Account, error) {
+	ext := &extendedUserManager{adapter: m.adapter, accountAdapter: m.accountAdapter, associationAdapter: m.associationAdapter}
+	return ext.GetUserDefaultAccount(ctx, userName)
 }
 
-func (m *adapterUserManager) GetUserFairShare(ctx context.Context, userName string) (*interfaces.UserFairShare, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterUserManager) GetUserFairShare(ctx context.Context, userName string) (*types.UserFairShare, error) {
+	ext := &extendedUserManager{adapter: m.adapter, accountAdapter: m.accountAdapter, associationAdapter: m.associationAdapter}
+	return ext.GetUserFairShare(ctx, userName)
 }
 
-func (m *adapterUserManager) CalculateJobPriority(ctx context.Context, userName string, jobSubmission *interfaces.JobSubmission) (*interfaces.JobPriorityInfo, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterUserManager) CalculateJobPriority(ctx context.Context, userName string, jobSubmission *types.JobSubmission) (*types.JobPriorityInfo, error) {
+	ext := &extendedUserManager{adapter: m.adapter, accountAdapter: m.accountAdapter, associationAdapter: m.associationAdapter}
+	return ext.CalculateJobPriority(ctx, userName, jobSubmission)
 }
 
-func (m *adapterUserManager) ValidateUserAccountAccess(ctx context.Context, userName, accountName string) (*interfaces.UserAccessValidation, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterUserManager) ValidateUserAccountAccess(ctx context.Context, userName, accountName string) (*types.UserAccessValidation, error) {
+	ext := &extendedUserManager{adapter: m.adapter, accountAdapter: m.accountAdapter, associationAdapter: m.associationAdapter}
+	return ext.ValidateUserAccountAccess(ctx, userName, accountName)
 }
 
-func (m *adapterUserManager) GetUserAccountAssociations(ctx context.Context, userName string, opts *interfaces.ListUserAccountAssociationsOptions) ([]*interfaces.UserAccountAssociation, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterUserManager) GetUserAccountAssociations(ctx context.Context, userName string, opts *types.ListUserAccountAssociationsOptions) ([]*types.UserAccountAssociation, error) {
+	ext := &extendedUserManager{adapter: m.adapter, accountAdapter: m.accountAdapter, associationAdapter: m.associationAdapter}
+	return ext.GetUserAccountAssociations(ctx, userName, opts)
 }
 
-func (m *adapterUserManager) GetBulkUserAccounts(ctx context.Context, userNames []string) (map[string][]*interfaces.UserAccount, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterUserManager) GetBulkUserAccounts(ctx context.Context, userNames []string) (map[string][]*types.UserAccount, error) {
+	ext := &extendedUserManager{adapter: m.adapter, accountAdapter: m.accountAdapter, associationAdapter: m.associationAdapter}
+	return ext.GetBulkUserAccounts(ctx, userNames)
 }
 
-func (m *adapterUserManager) GetBulkAccountUsers(ctx context.Context, accountNames []string) (map[string][]*interfaces.UserAccountAssociation, error) {
-	return nil, fmt.Errorf("not implemented")
+func (m *adapterUserManager) GetBulkAccountUsers(ctx context.Context, accountNames []string) (map[string][]*types.UserAccountAssociation, error) {
+	ext := &extendedUserManager{adapter: m.adapter, accountAdapter: m.accountAdapter, associationAdapter: m.associationAdapter}
+	return ext.GetBulkAccountUsers(ctx, accountNames)
 }
 
 // Create creates a new user
-func (m *adapterUserManager) Create(ctx context.Context, user *interfaces.UserCreate) (*interfaces.UserCreateResponse, error) {
-	// Convert to adapter type
-	adapterCreate := &types.UserCreate{
-		Name:           user.Name,
-		UID:            int32(user.UID),
-		DefaultAccount: user.DefaultAccount,
-		DefaultWCKey:   user.DefaultWCKey,
-		AdminLevel:     types.AdminLevel(user.AdminLevel),
-		// Add other fields as needed
-	}
-
-	// Call adapter
-	resp, err := m.adapter.Create(ctx, adapterCreate)
+func (m *adapterUserManager) Create(ctx context.Context, user *types.UserCreate) (*types.UserCreateResponse, error) {
+	// Since types.UserCreate = types.UserCreate, no conversion needed
+	resp, err := m.adapter.Create(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 
-	return &interfaces.UserCreateResponse{
-		UserName: resp.UserName,
-	}, nil
+	// Since types.UserCreateResponse = types.UserCreateResponse, just return it
+	return resp, nil
 }
 
 // Update updates a user
-func (m *adapterUserManager) Update(ctx context.Context, userName string, update *interfaces.UserUpdate) error {
+func (m *adapterUserManager) Update(ctx context.Context, userName string, update *types.UserUpdate) error {
 	// Convert to adapter type
 	adapterUpdate := &types.UserUpdate{}
 	if update != nil {
@@ -1587,17 +1378,11 @@ func (m *adapterUserManager) Delete(ctx context.Context, userName string) error 
 	return m.adapter.Delete(ctx, userName)
 }
 
-// CreateAssociation creates a user-account association
-func (m *adapterUserManager) CreateAssociation(ctx context.Context, accountName string, opts *interfaces.AssociationOptions) (*interfaces.AssociationCreateResponse, error) {
-	// For now, return not implemented as this requires cross-manager coordination
-	return nil, fmt.Errorf("CreateAssociation not implemented in adapter")
-}
-
 type adapterReservationManager struct {
 	adapter common.ReservationAdapter
 }
 
-func (m *adapterReservationManager) List(ctx context.Context, opts *interfaces.ListReservationsOptions) (*interfaces.ReservationList, error) {
+func (m *adapterReservationManager) List(ctx context.Context, opts *types.ListReservationsOptions) (*types.ReservationList, error) {
 	// Convert options
 	adapterOpts := &types.ReservationListOptions{}
 	if opts != nil {
@@ -1613,26 +1398,22 @@ func (m *adapterReservationManager) List(ctx context.Context, opts *interfaces.L
 
 	// Check if result is nil before accessing it
 	if result == nil {
-		return &interfaces.ReservationList{
-			Reservations: []interfaces.Reservation{},
+		return &types.ReservationList{
+			Reservations: []types.Reservation{},
 			Total:        0,
 		}, nil
 	}
 
 	// Convert result
-	reservationList := &interfaces.ReservationList{
-		Reservations: make([]interfaces.Reservation, 0, len(result.Reservations)),
+	reservationList := &types.ReservationList{
+		Reservations: append([]types.Reservation{}, result.Reservations...),
 		Total:        result.Total,
-	}
-
-	for _, reservation := range result.Reservations {
-		reservationList.Reservations = append(reservationList.Reservations, convertReservationToInterface(reservation))
 	}
 
 	return reservationList, nil
 }
 
-func (m *adapterReservationManager) Get(ctx context.Context, reservationName string) (*interfaces.Reservation, error) {
+func (m *adapterReservationManager) Get(ctx context.Context, reservationName string) (*types.Reservation, error) {
 	// Call adapter
 	result, err := m.adapter.Get(ctx, reservationName)
 	if err != nil {
@@ -1644,97 +1425,25 @@ func (m *adapterReservationManager) Get(ctx context.Context, reservationName str
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("reservation %s not found", reservationName))
 	}
 
-	// Convert result
-	reservation := convertReservationToInterface(*result)
-	return &reservation, nil
+	return result, nil
 }
 
-func (m *adapterReservationManager) Create(ctx context.Context, reservation *interfaces.ReservationCreate) (*interfaces.ReservationCreateResponse, error) {
-	// Convert to adapter type
-	adapterReservation := &types.ReservationCreate{
-		Name:          reservation.Name,
-		StartTime:     reservation.StartTime,
-		EndTime:       &reservation.EndTime,
-		Duration:      int32(reservation.Duration),
-		Users:         reservation.Users,
-		Accounts:      reservation.Accounts,
-		NodeList:      strings.Join(reservation.Nodes, ","),
-		NodeCount:     int32(reservation.NodeCount),
-		CoreCount:     int32(reservation.CoreCount),
-		PartitionName: reservation.PartitionName,
-		Features:      reservation.Features,
-		BurstBuffer:   reservation.BurstBuffer,
-		Comment:       "", // Not available in interfaces.ReservationCreate
-	}
-
-	// Convert flags from []string to []ReservationFlag
-	if len(reservation.Flags) > 0 {
-		adapterReservation.Flags = make([]types.ReservationFlag, len(reservation.Flags))
-		for i, flag := range reservation.Flags {
-			adapterReservation.Flags[i] = types.ReservationFlag(flag)
-		}
-	}
-
-	// Convert licenses from map[string]int to map[string]int32
-	if len(reservation.Licenses) > 0 {
-		adapterReservation.Licenses = make(map[string]int32)
-		for k, v := range reservation.Licenses {
-			adapterReservation.Licenses[k] = int32(v)
-		}
-	}
-
-	// Call adapter
-	result, err := m.adapter.Create(ctx, adapterReservation)
+func (m *adapterReservationManager) Create(ctx context.Context, reservation *types.ReservationCreate) (*types.ReservationCreateResponse, error) {
+	// Since types.ReservationCreate = types.ReservationCreate, no conversion needed
+	result, err := m.adapter.Create(ctx, reservation)
 	if err != nil {
 		return nil, err
 	}
 
 	// Convert result
-	return &interfaces.ReservationCreateResponse{
+	return &types.ReservationCreateResponse{
 		ReservationName: result.ReservationName,
 	}, nil
 }
 
-func (m *adapterReservationManager) Update(ctx context.Context, reservationName string, update *interfaces.ReservationUpdate) error {
-	// Convert to adapter type
-	adapterUpdate := &types.ReservationUpdate{}
-	if update != nil {
-		if update.Users != nil {
-			adapterUpdate.Users = update.Users
-		}
-		if update.Accounts != nil {
-			adapterUpdate.Accounts = update.Accounts
-		}
-		if len(update.Nodes) > 0 {
-			nodeList := strings.Join(update.Nodes, ",")
-			adapterUpdate.NodeList = &nodeList
-		}
-		if update.NodeCount != nil {
-			nodeCount := int32(*update.NodeCount)
-			adapterUpdate.NodeCount = &nodeCount
-		}
-		if update.StartTime != nil {
-			adapterUpdate.StartTime = update.StartTime
-		}
-		if update.EndTime != nil {
-			adapterUpdate.EndTime = update.EndTime
-		}
-		if update.Duration != nil {
-			duration := int32(*update.Duration)
-			adapterUpdate.Duration = &duration
-		}
-		if len(update.Flags) > 0 {
-			adapterUpdate.Flags = make([]types.ReservationFlag, len(update.Flags))
-			for i, flag := range update.Flags {
-				adapterUpdate.Flags[i] = types.ReservationFlag(flag)
-			}
-		}
-		if update.Features != nil {
-			adapterUpdate.Features = update.Features
-		}
-	}
-
-	return m.adapter.Update(ctx, reservationName, adapterUpdate)
+func (m *adapterReservationManager) Update(ctx context.Context, reservationName string, update *types.ReservationUpdate) error {
+	// Since types.ReservationUpdate = types.ReservationUpdate, no conversion needed
+	return m.adapter.Update(ctx, reservationName, update)
 }
 
 func (m *adapterReservationManager) Delete(ctx context.Context, reservationName string) error {
@@ -1745,7 +1454,7 @@ type adapterAssociationManager struct {
 	adapter common.AssociationAdapter
 }
 
-func (m *adapterAssociationManager) List(ctx context.Context, opts *interfaces.ListAssociationsOptions) (*interfaces.AssociationList, error) {
+func (m *adapterAssociationManager) List(ctx context.Context, opts *types.ListAssociationsOptions) (*types.AssociationList, error) {
 	// Convert options
 	adapterOpts := &types.AssociationListOptions{}
 	if opts != nil {
@@ -1762,40 +1471,19 @@ func (m *adapterAssociationManager) List(ctx context.Context, opts *interfaces.L
 
 	// Check if result is nil before accessing it
 	if result == nil {
-		return &interfaces.AssociationList{
-			Associations: []*interfaces.Association{},
+		return &types.AssociationList{
+			Associations: []types.Association{},
 			Total:        0,
 		}, nil
 	}
 
-	// Convert result
-	associationList := &interfaces.AssociationList{
-		Associations: make([]*interfaces.Association, 0, len(result.Associations)),
-		Total:        result.Total,
-	}
-
-	for _, association := range result.Associations {
-		converted := convertAssociationToInterface(association)
-		associationList.Associations = append(associationList.Associations, &converted)
-	}
-
-	return associationList, nil
+	// Since types.AssociationList = types.AssociationList, just return it
+	return result, nil
 }
 
-func (m *adapterAssociationManager) Get(ctx context.Context, opts *interfaces.GetAssociationOptions) (*interfaces.Association, error) {
-	// Build association ID from options
-	if opts == nil || (opts.User == "" && opts.Account == "") {
-		return nil, fmt.Errorf("user or account must be specified")
-	}
-
-	// Create a composite ID or use the first matching association
-	var associationID string
-	if opts.User != "" && opts.Account != "" {
-		associationID = fmt.Sprintf("%s:%s", opts.User, opts.Account)
-	} else if opts.User != "" {
-		associationID = opts.User
-	} else {
-		associationID = opts.Account
+func (m *adapterAssociationManager) Get(ctx context.Context, associationID string) (*types.Association, error) {
+	if associationID == "" {
+		return nil, fmt.Errorf("association ID must be specified")
 	}
 
 	// Call adapter
@@ -1809,183 +1497,50 @@ func (m *adapterAssociationManager) Get(ctx context.Context, opts *interfaces.Ge
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("association %s not found", associationID))
 	}
 
-	// Convert result
-	association := convertAssociationToInterface(*result)
-	return &association, nil
+	return result, nil
 }
 
-func (m *adapterAssociationManager) Create(ctx context.Context, associations []*interfaces.AssociationCreate) (*interfaces.AssociationCreateResponse, error) {
+func (m *adapterAssociationManager) Create(ctx context.Context, associations []*types.AssociationCreate) (*types.AssociationCreateResponse, error) {
 	// For now, handle single association creation
 	if len(associations) == 0 {
 		return nil, fmt.Errorf("no associations provided")
 	}
 
-	// Convert first association (adapter interface expects single association)
-	assoc := associations[0]
-	adapterAssoc := &types.AssociationCreate{
-		AccountName:   assoc.Account,
-		Cluster:       assoc.Cluster,
-		UserName:      assoc.User,
-		Partition:     assoc.Partition,
-		ParentAccount: assoc.ParentAccount,
-		IsDefault:     assoc.IsDefault,
-		DefaultQoS:    assoc.DefaultQoS,
-		QoSList:       assoc.QoSList,
-		Comment:       assoc.Comment,
-	}
-
-	// Convert pointer values to non-pointer values for the adapter
-	if assoc.SharesRaw != nil {
-		adapterAssoc.SharesRaw = int32(*assoc.SharesRaw)
-	}
-	if assoc.Priority != nil {
-		adapterAssoc.Priority = int32(*assoc.Priority)
-	}
-	if assoc.MaxJobs != nil {
-		adapterAssoc.MaxJobs = int32(*assoc.MaxJobs)
-	}
-	if assoc.MaxJobsAccrue != nil {
-		adapterAssoc.MaxJobsAccrue = int32(*assoc.MaxJobsAccrue)
-	}
-	if assoc.MaxSubmitJobs != nil {
-		adapterAssoc.MaxSubmitJobs = int32(*assoc.MaxSubmitJobs)
-	}
-	if assoc.MaxWallDuration != nil {
-		adapterAssoc.MaxWallTime = int32(*assoc.MaxWallDuration)
-	}
-	if assoc.GrpJobs != nil {
-		adapterAssoc.GrpJobs = int32(*assoc.GrpJobs)
-	}
-	if assoc.GrpJobsAccrue != nil {
-		adapterAssoc.GrpJobsAccrue = int32(*assoc.GrpJobsAccrue)
-	}
-	if assoc.GrpSubmitJobs != nil {
-		adapterAssoc.GrpSubmitJobs = int32(*assoc.GrpSubmitJobs)
-	}
-	if assoc.GrpWall != nil {
-		adapterAssoc.GrpWallTime = int32(*assoc.GrpWall)
-	}
-
-	// Call adapter
-	_, err := m.adapter.Create(ctx, adapterAssoc)
+	// Since types.AssociationCreate = types.AssociationCreate, no conversion needed
+	resp, err := m.adapter.Create(ctx, associations[0])
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert result - the adapter returns just status and message
-	// We can't reconstruct the association details from the response
-	return &interfaces.AssociationCreateResponse{
-		Associations: []*interfaces.Association{}, // Empty since we don't have details in response
-		Created:      1,                           // Assume success if no error
-		Updated:      0,
-		Errors:       nil,
-		Warnings:     nil,
-	}, nil
+	// Since types.AssociationCreateResponse = types.AssociationCreateResponse, just return it
+	return resp, nil
 }
 
-func (m *adapterAssociationManager) Update(ctx context.Context, associations []*interfaces.AssociationUpdate) error {
+func (m *adapterAssociationManager) Update(ctx context.Context, associations []*types.AssociationUpdate) error {
 	// For now, handle single association update
 	if len(associations) == 0 {
 		return fmt.Errorf("no associations provided")
 	}
 
-	// Process first association
 	assoc := associations[0]
-	var associationID string
-	if assoc.User != "" && assoc.Account != "" {
-		associationID = fmt.Sprintf("%s:%s", assoc.User, assoc.Account)
-	} else if assoc.User != "" {
-		associationID = assoc.User
-	} else if assoc.Account != "" {
-		associationID = assoc.Account
-	} else {
-		return fmt.Errorf("user or account must be specified")
-	}
 
-	// Convert to adapter type
-	adapterUpdate := &types.AssociationUpdate{}
-	if assoc.IsDefault != nil {
-		adapterUpdate.IsDefault = assoc.IsDefault
+	// Extract the association ID from the update request
+	if assoc.ID == nil || *assoc.ID == 0 {
+		return fmt.Errorf("associationID is required")
 	}
-	if assoc.Comment != nil {
-		adapterUpdate.Comment = assoc.Comment
-	}
-	if assoc.DefaultQoS != nil {
-		adapterUpdate.DefaultQoS = assoc.DefaultQoS
-	}
-	if assoc.QoSList != nil {
-		adapterUpdate.QoSList = assoc.QoSList
-	}
+	associationID := fmt.Sprintf("%d", *assoc.ID)
 
-	// Convert int pointers to int32 pointers
-	if assoc.SharesRaw != nil {
-		sharesRaw := int32(*assoc.SharesRaw)
-		adapterUpdate.SharesRaw = &sharesRaw
-	}
-	if assoc.Priority != nil {
-		priority := int32(*assoc.Priority)
-		adapterUpdate.Priority = &priority
-	}
-	if assoc.MaxJobs != nil {
-		maxJobs := int32(*assoc.MaxJobs)
-		adapterUpdate.MaxJobs = &maxJobs
-	}
-	if assoc.MaxJobsAccrue != nil {
-		maxJobsAccrue := int32(*assoc.MaxJobsAccrue)
-		adapterUpdate.MaxJobsAccrue = &maxJobsAccrue
-	}
-	if assoc.MaxSubmitJobs != nil {
-		maxSubmitJobs := int32(*assoc.MaxSubmitJobs)
-		adapterUpdate.MaxSubmitJobs = &maxSubmitJobs
-	}
-	if assoc.MaxWallDuration != nil {
-		maxWallTime := int32(*assoc.MaxWallDuration)
-		adapterUpdate.MaxWallTime = &maxWallTime
-	}
-	if assoc.GrpJobs != nil {
-		grpJobs := int32(*assoc.GrpJobs)
-		adapterUpdate.GrpJobs = &grpJobs
-	}
-	if assoc.GrpJobsAccrue != nil {
-		grpJobsAccrue := int32(*assoc.GrpJobsAccrue)
-		adapterUpdate.GrpJobsAccrue = &grpJobsAccrue
-	}
-	if assoc.GrpSubmitJobs != nil {
-		grpSubmitJobs := int32(*assoc.GrpSubmitJobs)
-		adapterUpdate.GrpSubmitJobs = &grpSubmitJobs
-	}
-	if assoc.GrpWall != nil {
-		grpWallTime := int32(*assoc.GrpWall)
-		adapterUpdate.GrpWallTime = &grpWallTime
-	}
-
-	return m.adapter.Update(ctx, associationID, adapterUpdate)
+	return m.adapter.Update(ctx, associationID, assoc)
 }
 
-func (m *adapterAssociationManager) Delete(ctx context.Context, opts *interfaces.DeleteAssociationOptions) error {
-	if opts == nil || (opts.User == "" && opts.Account == "") {
-		return fmt.Errorf("user or account must be specified")
+func (m *adapterAssociationManager) Delete(ctx context.Context, associationID string) error {
+	if associationID == "" {
+		return fmt.Errorf("association ID must be specified")
 	}
-
-	// Build association ID from options
-	var associationID string
-	if opts.User != "" && opts.Account != "" {
-		associationID = fmt.Sprintf("%s:%s", opts.User, opts.Account)
-	} else if opts.User != "" {
-		associationID = opts.User
-	} else {
-		associationID = opts.Account
-	}
-
 	return m.adapter.Delete(ctx, associationID)
 }
 
-func (m *adapterAssociationManager) BulkDelete(ctx context.Context, opts *interfaces.BulkDeleteOptions) (*interfaces.BulkDeleteResponse, error) {
-	// Not supported in base adapter interface
-	return nil, fmt.Errorf("bulk delete not supported in adapter implementation")
-}
-
-func (m *adapterAssociationManager) GetUserAssociations(ctx context.Context, userName string) ([]*interfaces.Association, error) {
+func (m *adapterAssociationManager) GetUserAssociations(ctx context.Context, userName string) ([]*types.Association, error) {
 	// List associations and filter by user
 	opts := &types.AssociationListOptions{
 		Limit: 1000, // Get all associations for the user
@@ -1997,18 +1552,19 @@ func (m *adapterAssociationManager) GetUserAssociations(ctx context.Context, use
 	}
 
 	// Filter associations for the specified user
-	userAssociations := make([]*interfaces.Association, 0)
+	userAssociations := []*types.Association{}
 	for _, assoc := range result.Associations {
-		if assoc.UserName == userName {
-			converted := convertAssociationToInterface(assoc)
-			userAssociations = append(userAssociations, &converted)
+		if assoc.User == userName {
+			// Need to create a copy to take address
+			a := assoc
+			userAssociations = append(userAssociations, &a)
 		}
 	}
 
 	return userAssociations, nil
 }
 
-func (m *adapterAssociationManager) GetAccountAssociations(ctx context.Context, accountName string) ([]*interfaces.Association, error) {
+func (m *adapterAssociationManager) GetAccountAssociations(ctx context.Context, accountName string) ([]*types.Association, error) {
 	// List associations and filter by account
 	opts := &types.AssociationListOptions{
 		Limit: 1000, // Get all associations for the account
@@ -2020,11 +1576,11 @@ func (m *adapterAssociationManager) GetAccountAssociations(ctx context.Context, 
 	}
 
 	// Filter associations for the specified account
-	accountAssociations := make([]*interfaces.Association, 0)
+	accountAssociations := []*types.Association{}
 	for _, assoc := range result.Associations {
-		if assoc.AccountName == accountName {
-			converted := convertAssociationToInterface(assoc)
-			accountAssociations = append(accountAssociations, &converted)
+		if assoc.Account != nil && *assoc.Account == accountName {
+			a := assoc
+			accountAssociations = append(accountAssociations, &a)
 		}
 	}
 
@@ -2032,14 +1588,13 @@ func (m *adapterAssociationManager) GetAccountAssociations(ctx context.Context, 
 }
 
 func (m *adapterAssociationManager) ValidateAssociation(ctx context.Context, user, account, cluster string) (bool, error) {
-	// Try to get the specific association
-	opts := &interfaces.GetAssociationOptions{
-		User:    user,
-		Account: account,
-		Cluster: cluster,
+	// Build association ID from components
+	associationID := fmt.Sprintf("%s:%s", user, account)
+	if cluster != "" {
+		associationID = fmt.Sprintf("%s@%s", associationID, cluster)
 	}
 
-	_, err := m.Get(ctx, opts)
+	_, err := m.Get(ctx, associationID)
 	if err != nil {
 		// Association doesn't exist or error occurred
 		return false, err
@@ -2049,115 +1604,16 @@ func (m *adapterAssociationManager) ValidateAssociation(ctx context.Context, use
 	return true, nil
 }
 
-// Helper function to convert types.Reservation to interfaces.Reservation
-func convertReservationToInterface(reservation types.Reservation) interfaces.Reservation {
-	// Convert flags from []ReservationFlag to []string
-	flags := make([]string, len(reservation.Flags))
-	for i, flag := range reservation.Flags {
-		flags[i] = string(flag)
-	}
+// Helper function to convert types.Reservation to types.Reservation
 
-	// Convert licenses from map[string]int32 to map[string]int
-	licenses := make(map[string]int)
-	for k, v := range reservation.Licenses {
-		licenses[k] = int(v)
-	}
+// Helper function to convert types.Association to types.Association
 
-	// Convert node list to array if needed
-	nodes := []string{}
-	if reservation.NodeList != "" {
-		nodes = strings.Split(reservation.NodeList, ",")
-	}
-
-	return interfaces.Reservation{
-		Name:          reservation.Name,
-		State:         string(reservation.State),
-		StartTime:     reservation.StartTime,
-		EndTime:       reservation.EndTime,
-		Duration:      int(reservation.Duration),
-		Users:         reservation.Users,
-		Accounts:      reservation.Accounts,
-		Nodes:         nodes,
-		NodeCount:     int(reservation.NodeCount),
-		CoreCount:     int(reservation.CoreCount),
-		PartitionName: reservation.PartitionName,
-		Flags:         flags,
-		Features:      reservation.Features,
-		Licenses:      licenses,
-		BurstBuffer:   reservation.BurstBuffer,
-		Metadata:      nil,
-	}
-}
-
-// Helper function to convert types.Association to interfaces.Association
-func convertAssociationToInterface(association types.Association) interfaces.Association {
-	// Convert pointers for limits
-	var maxJobs, maxSubmitJobs *int
-	if association.MaxJobs > 0 {
-		jobs := int(association.MaxJobs)
-		maxJobs = &jobs
-	}
-	if association.MaxSubmitJobs > 0 {
-		submitJobs := int(association.MaxSubmitJobs)
-		maxSubmitJobs = &submitJobs
-	}
-
-	var maxWallDuration *int
-	if association.MaxWallTime > 0 {
-		wallTime := int(association.MaxWallTime)
-		maxWallDuration = &wallTime
-	}
-
-	var grpJobs, grpSubmitJobs, grpWall *int
-	if association.GrpJobs > 0 {
-		jobs := int(association.GrpJobs)
-		grpJobs = &jobs
-	}
-	if association.GrpSubmitJobs > 0 {
-		submitJobs := int(association.GrpSubmitJobs)
-		grpSubmitJobs = &submitJobs
-	}
-	if association.GrpWallTime > 0 {
-		wallTime := int(association.GrpWallTime)
-		grpWall = &wallTime
-	}
-
-	return interfaces.Association{
-		ID:              0, // Not available in types.Association
-		User:            association.UserName,
-		Account:         association.AccountName,
-		Cluster:         association.Cluster,
-		Partition:       association.Partition,
-		ParentAccount:   association.ParentAccount,
-		IsDefault:       false, // Not available in types.Association
-		Comment:         association.Comment,
-		SharesRaw:       int(association.SharesRaw),
-		Priority:        uint32(association.Priority),
-		MaxJobs:         maxJobs,
-		MaxJobsAccrue:   nil, // Not available in types.Association
-		MaxSubmitJobs:   maxSubmitJobs,
-		MaxWallDuration: maxWallDuration,
-		GrpJobs:         grpJobs,
-		GrpJobsAccrue:   nil, // Not available in types.Association
-		GrpSubmitJobs:   grpSubmitJobs,
-		GrpWall:         grpWall,
-		MaxTRESPerJob:   make(map[string]string), // Would need proper conversion
-		MaxTRESMins:     make(map[string]string), // Would need proper conversion
-		GrpTRES:         make(map[string]string), // Would need proper conversion
-		GrpTRESMins:     make(map[string]string), // Would need proper conversion
-		GrpTRESRunMins:  make(map[string]string), // Would need proper conversion
-		DefaultQoS:      association.DefaultQoS,
-		QoSList:         association.QoSList,
-		Flags:           []string{}, // Not available in types.Association
-	}
-}
-
-// adapterClusterManager wraps a common.ClusterAdapter to implement interfaces.ClusterManager
+// adapterClusterManager wraps a common.ClusterAdapter to implement types.ClusterManager
 type adapterClusterManager struct {
 	adapter common.ClusterAdapter
 }
 
-func (m *adapterClusterManager) List(ctx context.Context, opts *interfaces.ListClustersOptions) (*interfaces.ClusterList, error) {
+func (m *adapterClusterManager) List(ctx context.Context, opts *types.ListClustersOptions) (*types.ClusterList, error) {
 	// Call adapter (types.ClusterListOptions doesn't have Names field, filtering done after)
 	adapterOpts := &types.ClusterListOptions{}
 
@@ -2169,106 +1625,61 @@ func (m *adapterClusterManager) List(ctx context.Context, opts *interfaces.ListC
 
 	// Check if result is nil before accessing it
 	if result == nil {
-		return &interfaces.ClusterList{
-			Clusters: []*interfaces.Cluster{},
+		return &types.ClusterList{
+			Clusters: []types.Cluster{},
 			Total:    0,
 		}, nil
 	}
 
-	// Convert result
-	clusterList := &interfaces.ClusterList{
-		Clusters: make([]*interfaces.Cluster, 0, len(result.Clusters)),
-		Total:    len(result.Clusters),
-	}
-
-	for _, cluster := range result.Clusters {
-		converted := convertClusterToInterface(cluster)
-
-		// Apply client-side filtering by names if specified
-		if opts != nil && len(opts.Names) > 0 {
+	// Apply client-side filtering by names if specified
+	if opts != nil && len(opts.Names) > 0 {
+		filtered := []types.Cluster{}
+		for _, cluster := range result.Clusters {
 			found := false
 			for _, name := range opts.Names {
-				if cluster.Name == name {
+				if cluster.Name != nil && *cluster.Name == name {
 					found = true
 					break
 				}
 			}
-			if !found {
-				continue
+			if found {
+				filtered = append(filtered, cluster)
 			}
 		}
-
-		clusterList.Clusters = append(clusterList.Clusters, &converted)
+		return &types.ClusterList{
+			Clusters: filtered,
+			Total:    len(filtered),
+		}, nil
 	}
 
-	// Update total to match filtered count
-	clusterList.Total = len(clusterList.Clusters)
-
-	return clusterList, nil
+	// No filtering needed, return result directly (since types.ClusterList = types.ClusterList)
+	return result, nil
 }
 
-func (m *adapterClusterManager) Get(ctx context.Context, clusterName string) (*interfaces.Cluster, error) {
+func (m *adapterClusterManager) Get(ctx context.Context, clusterName string) (*types.Cluster, error) {
 	cluster, err := m.adapter.Get(ctx, clusterName)
 	if err != nil {
 		return nil, err
 	}
-	result := convertClusterToInterface(*cluster)
-	return &result, nil
+	return cluster, nil
 }
 
-func (m *adapterClusterManager) Create(ctx context.Context, cluster *interfaces.ClusterCreate) (*interfaces.ClusterCreateResponse, error) {
-	return nil, fmt.Errorf("cluster creation not implemented in adapter pattern")
-}
-
-func (m *adapterClusterManager) Update(ctx context.Context, clusterName string, update *interfaces.ClusterUpdate) error {
-	return fmt.Errorf("cluster update not implemented in adapter pattern")
+func (m *adapterClusterManager) Create(ctx context.Context, cluster *types.ClusterCreate) (*types.ClusterCreateResponse, error) {
+	return m.adapter.Create(ctx, cluster)
 }
 
 func (m *adapterClusterManager) Delete(ctx context.Context, clusterName string) error {
-	return fmt.Errorf("cluster deletion not implemented in adapter pattern")
+	return m.adapter.Delete(ctx, clusterName)
 }
 
-// convertClusterToInterface converts types.Cluster to interfaces.Cluster
-func convertClusterToInterface(cluster types.Cluster) interfaces.Cluster {
-	result := interfaces.Cluster{
-		Name:        cluster.Name,
-		ControlHost: cluster.ControllerHost,
-		ControlPort: int(cluster.ControllerPort),
-		RPCVersion:  int(cluster.RpcVersion),
-		Features:    cluster.Flags,
-		Metadata:    cluster.Meta,
-	}
+// convertClusterToInterface converts types.Cluster to types.Cluster
 
-	// Handle TRES list
-	if len(cluster.TRES) > 0 {
-		result.TRESList = make([]string, 0, len(cluster.TRES))
-		for _, tres := range cluster.TRES {
-			result.TRESList = append(result.TRESList, tres.Type)
-		}
-	}
-
-	// Handle timestamps
-	if cluster.CreatedTime != nil {
-		result.Created = *cluster.CreatedTime
-	} else {
-		result.Created = time.Now()
-	}
-
-	if cluster.ModifiedTime != nil {
-		result.Modified = *cluster.ModifiedTime
-	} else {
-		result.Modified = time.Now()
-	}
-
-	return result
-}
-
-// adapterWCKeyManager wraps a common.WCKeyAdapter to implement interfaces.WCKeyManager
+// adapterWCKeyManager wraps a common.WCKeyAdapter to implement types.WCKeyManager
 type adapterWCKeyManager struct {
 	adapter common.WCKeyAdapter
 }
 
-func (m *adapterWCKeyManager) List(ctx context.Context, opts *interfaces.WCKeyListOptions) (*interfaces.WCKeyList, error) {
+func (m *adapterWCKeyManager) List(ctx context.Context, opts *types.WCKeyListOptions) (*types.WCKeyList, error) {
 	// Convert options
 	adapterOpts := &types.WCKeyListOptions{}
 	if opts != nil {
@@ -2285,29 +1696,29 @@ func (m *adapterWCKeyManager) List(ctx context.Context, opts *interfaces.WCKeyLi
 
 	// Check if result is nil before accessing it
 	if result == nil {
-		return &interfaces.WCKeyList{
-			WCKeys: []interfaces.WCKey{},
+		return &types.WCKeyList{
+			WCKeys: []types.WCKey{},
 			Total:  0,
 		}, nil
 	}
 
 	// Convert result
-	wckeys := make([]interfaces.WCKey, 0, len(result.WCKeys))
+	wckeys := make([]types.WCKey, 0, len(result.WCKeys))
 	for _, wckey := range result.WCKeys {
-		wckeys = append(wckeys, interfaces.WCKey{
+		wckeys = append(wckeys, types.WCKey{
 			Name:    wckey.Name,
 			User:    wckey.User,
 			Cluster: wckey.Cluster,
 		})
 	}
 
-	return &interfaces.WCKeyList{
+	return &types.WCKeyList{
 		WCKeys: wckeys,
 		Total:  len(wckeys),
 	}, nil
 }
 
-func (m *adapterWCKeyManager) Get(ctx context.Context, wckeyName, user, cluster string) (*interfaces.WCKey, error) {
+func (m *adapterWCKeyManager) Get(ctx context.Context, wckeyName, user, cluster string) (*types.WCKey, error) {
 	// For the adapter Get method, we pass the ID constructed from name, user, cluster
 	wcKeyID := fmt.Sprintf("%s:%s:%s", wckeyName, user, cluster)
 
@@ -2321,14 +1732,14 @@ func (m *adapterWCKeyManager) Get(ctx context.Context, wckeyName, user, cluster 
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, fmt.Sprintf("WCKey %s not found", wcKeyID))
 	}
 
-	return &interfaces.WCKey{
+	return &types.WCKey{
 		Name:    result.Name,
 		User:    result.User,
 		Cluster: result.Cluster,
 	}, nil
 }
 
-func (m *adapterWCKeyManager) Create(ctx context.Context, wckey *interfaces.WCKeyCreate) (*interfaces.WCKeyCreateResponse, error) {
+func (m *adapterWCKeyManager) Create(ctx context.Context, wckey *types.WCKeyCreate) (*types.WCKeyCreateResponse, error) {
 	// Convert request
 	adapterReq := &types.WCKeyCreate{
 		Name:    wckey.Name,
@@ -2337,19 +1748,13 @@ func (m *adapterWCKeyManager) Create(ctx context.Context, wckey *interfaces.WCKe
 	}
 
 	// Call adapter
-	_, err := m.adapter.Create(ctx, adapterReq)
+	resp, err := m.adapter.Create(ctx, adapterReq)
 	if err != nil {
 		return nil, err
 	}
 
-	return &interfaces.WCKeyCreateResponse{
-		WCKeyName: wckey.Name,
-	}, nil
-}
-
-func (m *adapterWCKeyManager) Update(ctx context.Context, wckeyName, user, cluster string, update *interfaces.WCKeyUpdate) error {
-	// WCKey updates are not commonly supported in SLURM - return not implemented
-	return fmt.Errorf("WCKey updates not supported in this version")
+	// Since types.WCKeyCreateResponse = types.WCKeyCreateResponse, just return it
+	return resp, nil
 }
 
 func (m *adapterWCKeyManager) Delete(ctx context.Context, wckeyID string) error {
@@ -2358,225 +1763,119 @@ func (m *adapterWCKeyManager) Delete(ctx context.Context, wckeyID string) error 
 
 // === Type Conversion Helpers for Standalone Operations ===
 
-// convertLicenseListToInterface converts types.LicenseList to interfaces.LicenseList
-func convertLicenseListToInterface(list *types.LicenseList) *interfaces.LicenseList {
+// convertLicenseListToInterface converts types.LicenseList to types.LicenseList
+func convertLicenseListToInterface(list *types.LicenseList) *types.LicenseList {
 	if list == nil {
 		return nil
 	}
 
-	interfaceLicenses := make([]interfaces.License, len(list.Licenses))
+	interfaceLicenses := make([]types.License, len(list.Licenses))
 	for i, license := range list.Licenses {
-		interfaceLicenses[i] = interfaces.License{
+		interfaceLicenses[i] = types.License{
 			Name:       license.Name,
 			Total:      license.Total,
 			Used:       license.Used,
-			Available:  license.Free,
+			Free:       license.Free,
 			Reserved:   license.Reserved,
-			Remote:     license.RemoteUsed > 0,
-			LastUpdate: time.Now(),
-			Percent:    calculatePercentage(license.Used, license.Total),
+			RemoteUsed: license.RemoteUsed,
 		}
 	}
 
-	return &interfaces.LicenseList{
+	return &types.LicenseList{
 		Licenses: interfaceLicenses,
 		Meta:     list.Meta,
 	}
 }
 
-// convertSharesListToInterface converts types.SharesList to interfaces.SharesList
-func convertSharesListToInterface(list *types.SharesList) *interfaces.SharesList {
+// convertSharesListToInterface converts types.SharesList to types.SharesList
+func convertSharesListToInterface(list *types.SharesList) *types.SharesList {
 	if list == nil {
 		return nil
 	}
 
-	interfaceShares := make([]interfaces.Share, len(list.Shares))
+	interfaceShares := make([]types.Share, len(list.Shares))
 	for i, share := range list.Shares {
-		interfaceShares[i] = interfaces.Share{
-			Name:        share.Account,
-			User:        share.User,
-			Account:     share.Account,
-			Cluster:     share.Cluster,
-			Partition:   share.Partition,
-			Shares:      share.FairshareShares,
-			RawShares:   share.RawShares,
-			NormShares:  share.NormalizedShares,
-			RawUsage:    int(share.RawUsage),
-			NormUsage:   share.NormalizedUsage,
-			EffectUsage: share.EffectiveUsage,
-			FairShare:   share.FairshareLevel,
-			LevelFS:     share.FairshareLevel,
-			Priority:    0, // Not available in types.Share
-			Level:       0, // Not available in types.Share
-			LastUpdate:  time.Now(),
+		interfaceShares[i] = types.Share{
+			Cluster:          share.Cluster,
+			Account:          share.Account,
+			User:             share.User,
+			Partition:        share.Partition,
+			EffectiveUsage:   share.EffectiveUsage,
+			FairshareLevel:   share.FairshareLevel,
+			FairshareUsage:   share.FairshareUsage,
+			FairshareShares:  share.FairshareShares,
+			NormalizedShares: share.NormalizedShares,
+			NormalizedUsage:  share.NormalizedUsage,
+			RawShares:        share.RawShares,
+			RawUsage:         share.RawUsage,
+			SharesUsed:       share.SharesUsed,
+			RunSeconds:       share.RunSeconds,
+			AssocID:          share.AssocID,
+			ParentAccount:    share.ParentAccount,
+			Meta:             share.Meta,
 		}
 	}
 
-	return &interfaces.SharesList{
+	return &types.SharesList{
 		Shares: interfaceShares,
 		Meta:   list.Meta,
 	}
 }
 
-// convertConfigToInterface converts types.Config to interfaces.Config
-func convertConfigToInterface(cfg *types.Config) *interfaces.Config {
-	if cfg == nil {
-		return nil
-	}
-
-	controlMachine := ""
-	if len(cfg.ControlMachine) > 0 {
-		controlMachine = cfg.ControlMachine[0]
-	}
-
-	return &interfaces.Config{
-		AccountingStorageType: cfg.AccountingStorageType,
-		AccountingStorageHost: cfg.AccountingStorageHost,
-		AccountingStoragePort: cfg.AccountingStoragePort,
-		AccountingStorageUser: cfg.AccountingStorageUser,
-		ClusterName:           cfg.ClusterName,
-		ControlMachine:        controlMachine,
-		BackupController:      cfg.BackupController,
-		MaxJobCount:           cfg.MaxJobCount,
-		SlurmUser:             cfg.SlurmUser,
-		SlurmctldLogFile:      cfg.SlurmctldLogFile,
-		SlurmdLogFile:         cfg.SlurmdLogFile,
-		StateSaveLocation:     cfg.StateSaveLocation,
-		PluginDir:             cfg.PluginDir,
-		Version:               cfg.Version,
-		Parameters:            cfg.Meta,
-	}
+// convertConfigToInterface converts types.Config to types.Config
+// Since both types are identical, this is a pass-through
+func convertConfigToInterface(cfg *types.Config) *types.Config {
+	return cfg
 }
 
-// convertDiagnosticsToInterface converts types.Diagnostics to interfaces.Diagnostics
-func convertDiagnosticsToInterface(diag *types.Diagnostics) *interfaces.Diagnostics {
-	if diag == nil {
-		return nil
-	}
-
-	return &interfaces.Diagnostics{
-		DataCollected:        diag.DataCollected,
-		ReqTime:              diag.ReqTime,
-		ReqTimeStart:         diag.ReqTimeStart,
-		ServerThreadCount:    diag.ServerThreadCount,
-		AgentCount:           diag.AgentCount,
-		AgentThreadCount:     diag.AgentThreadCount,
-		DBDAgentCount:        diag.DBDAgentCount,
-		JobsSubmitted:        diag.JobsSubmitted,
-		JobsStarted:          diag.JobsStarted,
-		JobsCompleted:        diag.JobsCompleted,
-		JobsCanceled:         diag.JobsCanceled,
-		JobsFailed:           diag.JobsFailed,
-		ScheduleCycleMax:     int(diag.ScheduleCycleMax),
-		ScheduleCycleLast:    int(diag.ScheduleCycleLast),
-		ScheduleCycleTotal:   diag.ScheduleCycleSum,
-		ScheduleCycleCounter: diag.ScheduleCycleCounter,
-		ScheduleCycleMean:    float64(diag.ScheduleCycleMean),
-		BackfillCycleMax:     int(diag.BFCycleMax),
-		BackfillCycleLast:    diag.BFCycle,
-		BackfillCycleTotal:   diag.BFCycleMean,
-		BackfillCycleCounter: diag.BFBackfilledJobs,
-		BackfillCycleMean:    float64(diag.BFCycleMean),
-		BfBackfilledJobs:     diag.BFBackfilledJobs,
-		BfQueueLen:           diag.BFQueueLen,
-		BfQueueLenSum:        int64(diag.BFQueueLenSum),
-		BfWhenLastCycle:      diag.BFWhenLastCycle.Unix(),
-		BfActive:             diag.BFActive,
-		PendingRPCs:          diag.RPCsQueued,
-	}
+// convertDiagnosticsToInterface converts types.Diagnostics to types.Diagnostics
+// Since both types are identical, this is a pass-through
+func convertDiagnosticsToInterface(diag *types.Diagnostics) *types.Diagnostics {
+	return diag
 }
 
-// convertInstanceToInterface converts types.Instance to interfaces.Instance
-func convertInstanceToInterface(inst *types.Instance) *interfaces.Instance {
-	if inst == nil {
-		return nil
-	}
-
-	timeEnd := int64(0)
-	if !inst.TimeEnd.IsZero() {
-		timeEnd = inst.TimeEnd.Unix()
-	}
-
-	timeStart := int64(0)
-	if !inst.TimeStart.IsZero() {
-		timeStart = inst.TimeStart.Unix()
-	}
-
-	return &interfaces.Instance{
-		Cluster:   inst.Cluster,
-		ExtraInfo: inst.ExtraInfo,
-		Instance:  inst.Instance,
-		NodeName:  "", // Not available in types.Instance
-		TimeEnd:   timeEnd,
-		TimeStart: timeStart,
-		Created:   inst.TimeStart,
-		Modified:  inst.TimeEnd,
-	}
+// convertInstanceToInterface converts types.Instance to types.Instance
+// Since both types are identical, this is a pass-through
+func convertInstanceToInterface(inst *types.Instance) *types.Instance {
+	return inst
 }
 
-// convertInstanceListToInterface converts types.InstanceList to interfaces.InstanceList
-func convertInstanceListToInterface(list *types.InstanceList) *interfaces.InstanceList {
+// convertInstanceListToInterface converts types.InstanceList to types.InstanceList
+func convertInstanceListToInterface(list *types.InstanceList) *types.InstanceList {
 	if list == nil {
 		return nil
 	}
 
-	interfaceInstances := make([]interfaces.Instance, len(list.Instances))
+	interfaceInstances := make([]types.Instance, len(list.Instances))
 	for i, instance := range list.Instances {
 		interfaceInstances[i] = *convertInstanceToInterface(&instance)
 	}
 
-	return &interfaces.InstanceList{
+	return &types.InstanceList{
 		Instances: interfaceInstances,
 		Meta:      list.Meta,
 	}
 }
 
-// convertTRESListToInterface converts types.TRESList to interfaces.TRESList
-func convertTRESListToInterface(list *types.TRESList) *interfaces.TRESList {
-	if list == nil {
-		return nil
-	}
-
-	interfaceTRES := make([]interfaces.TRES, len(list.TRES))
-	for i, tres := range list.TRES {
-		interfaceTRES[i] = *convertTRESToInterface(&tres)
-	}
-
-	return &interfaces.TRESList{
-		TRES: interfaceTRES,
-		Meta: list.Meta,
-	}
+// convertTRESListToInterface converts types.TRESList to types.TRESList
+// Since both types are identical, this is a pass-through
+func convertTRESListToInterface(list *types.TRESList) *types.TRESList {
+	return list
 }
 
-// convertTRESToInterface converts types.TRES to interfaces.TRES
-func convertTRESToInterface(t *types.TRES) *interfaces.TRES {
-	if t == nil {
-		return nil
-	}
-
-	// Safe conversion: TRES IDs in SLURM are always non-negative
-	var id uint64
-	if t.ID >= 0 {
-		id = uint64(t.ID)
-	}
-
-	return &interfaces.TRES{
-		ID:       id,
-		Type:     t.Type,
-		Name:     t.Name,
-		Count:    t.Count,
-		Created:  time.Now(),
-		Modified: time.Now(),
-	}
+// convertTRESToInterface converts types.TRES to types.TRES
+// Since both types are identical, this is a pass-through
+func convertTRESToInterface(t *types.TRES) *types.TRES {
+	return t
 }
 
-// convertReconfigureResponseToInterface converts types.ReconfigureResponse to interfaces.ReconfigureResponse
-func convertReconfigureResponseToInterface(resp *types.ReconfigureResponse) *interfaces.ReconfigureResponse {
+// convertReconfigureResponseToInterface converts types.ReconfigureResponse to types.ReconfigureResponse
+func convertReconfigureResponseToInterface(resp *types.ReconfigureResponse) *types.ReconfigureResponse {
 	if resp == nil {
 		return nil
 	}
 
-	return &interfaces.ReconfigureResponse{
+	return &types.ReconfigureResponse{
 		Status:   resp.Status,
 		Message:  resp.Message,
 		Warnings: resp.Warnings,
@@ -2587,8 +1886,8 @@ func convertReconfigureResponseToInterface(resp *types.ReconfigureResponse) *int
 
 // === Input Conversion Helpers ===
 
-// convertGetSharesOptionsToTypes converts interfaces.GetSharesOptions to types.GetSharesOptions
-func convertGetSharesOptionsToTypes(opts *interfaces.GetSharesOptions) *types.GetSharesOptions {
+// convertGetSharesOptionsToTypes converts types.GetSharesOptions to types.GetSharesOptions
+func convertGetSharesOptionsToTypes(opts *types.GetSharesOptions) *types.GetSharesOptions {
 	if opts == nil {
 		return nil
 	}
@@ -2600,51 +1899,20 @@ func convertGetSharesOptionsToTypes(opts *interfaces.GetSharesOptions) *types.Ge
 	}
 }
 
-// convertGetInstanceOptionsToTypes converts interfaces.GetInstanceOptions to types.GetInstanceOptions
-func convertGetInstanceOptionsToTypes(opts *interfaces.GetInstanceOptions) *types.GetInstanceOptions {
-	if opts == nil {
-		return nil
-	}
-
-	// Convert NodeList []string to comma-separated string
-	nodeList := ""
-	if len(opts.NodeList) > 0 {
-		nodeList = strings.Join(opts.NodeList, ",")
-	}
-
-	return &types.GetInstanceOptions{
-		Cluster:   opts.Cluster,
-		Extra:     opts.Extra,
-		Instance:  opts.Instance,
-		NodeList:  nodeList,
-		TimeStart: opts.TimeStart,
-		TimeEnd:   opts.TimeEnd,
-	}
+// convertGetInstanceOptionsToTypes converts types.GetInstanceOptions to types.GetInstanceOptions
+// Since both types are identical, this is a pass-through
+func convertGetInstanceOptionsToTypes(opts *types.GetInstanceOptions) *types.GetInstanceOptions {
+	return opts
 }
 
-// convertGetInstancesOptionsToTypes converts interfaces.GetInstancesOptions to types.GetInstancesOptions
-func convertGetInstancesOptionsToTypes(opts *interfaces.GetInstancesOptions) *types.GetInstancesOptions {
-	if opts == nil {
-		return nil
-	}
-
-	// Convert NodeList []string to comma-separated string
-	nodeList := ""
-	if len(opts.NodeList) > 0 {
-		nodeList = strings.Join(opts.NodeList, ",")
-	}
-
-	return &types.GetInstancesOptions{
-		Clusters:  opts.Clusters,
-		Extra:     opts.Extra,
-		NodeList:  nodeList,
-		TimeStart: opts.TimeStart,
-		TimeEnd:   opts.TimeEnd,
-	}
+// convertGetInstancesOptionsToTypes converts types.GetInstancesOptions to types.GetInstancesOptions
+// Since both types are identical, this is a pass-through
+func convertGetInstancesOptionsToTypes(opts *types.GetInstancesOptions) *types.GetInstancesOptions {
+	return opts
 }
 
-// convertCreateTRESRequestToTypes converts interfaces.CreateTRESRequest to types.CreateTRESRequest
-func convertCreateTRESRequestToTypes(req *interfaces.CreateTRESRequest) *types.CreateTRESRequest {
+// convertCreateTRESRequestToTypes converts types.CreateTRESRequest to types.CreateTRESRequest
+func convertCreateTRESRequestToTypes(req *types.CreateTRESRequest) *types.CreateTRESRequest {
 	if req == nil {
 		return nil
 	}

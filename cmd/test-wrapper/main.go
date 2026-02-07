@@ -36,7 +36,7 @@ func main() {
 
 func createClient(jwtToken string) (slurm.SlurmClient, error) {
 	cfg := &config.Config{
-		BaseURL: "http://rocky9.ar.jontk.com:6820/slurm",
+		BaseURL: "http://localhost:6820/slurm",
 		Debug:   true,
 	}
 
@@ -97,7 +97,19 @@ func runJobListTest(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Printf("Found %d jobs\n", len(jobs.Jobs))
 	for i, job := range jobs.Jobs {
 		if i < 5 {
-			fmt.Printf("  Job: ID=%s, Name=%s, State=%s\n", job.ID, job.Name, job.State)
+			jobID := "N/A"
+			if job.JobID != nil {
+				jobID = fmt.Sprintf("%d", *job.JobID)
+			}
+			jobName := "N/A"
+			if job.Name != nil {
+				jobName = *job.Name
+			}
+			jobState := "N/A"
+			if len(job.JobState) > 0 {
+				jobState = string(job.JobState[0])
+			}
+			fmt.Printf("  Job: ID=%s, Name=%s, State=%s\n", jobID, jobName, jobState)
 		}
 	}
 	if len(jobs.Jobs) > 5 {
@@ -116,7 +128,7 @@ func runNodeListTest(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Printf("Found %d nodes\n", len(nodes.Nodes))
 	for i, node := range nodes.Nodes {
 		if i < 5 {
-			fmt.Printf("  Node: Name=%s, State=%s, CPUs=%d\n", node.Name, node.State, node.CPUs)
+			fmt.Printf("  Node: Name=%v, State=%v, CPUs=%d\n", node.Name, node.State, node.CPUs)
 		}
 	}
 	if len(nodes.Nodes) > 5 {
@@ -134,8 +146,20 @@ func runPartitionListTest(ctx context.Context, client slurm.SlurmClient) {
 	}
 	fmt.Printf("Found %d partitions\n", len(partitions.Partitions))
 	for _, partition := range partitions.Partitions {
+		partName := "N/A"
+		if partition.Name != nil {
+			partName = *partition.Name
+		}
+		partState := "N/A"
+		if partition.Partition != nil && len(partition.Partition.State) > 0 {
+			partState = string(partition.Partition.State[0])
+		}
+		partNodes := "N/A"
+		if partition.Nodes != nil && partition.Nodes.Configured != nil {
+			partNodes = *partition.Nodes.Configured
+		}
 		fmt.Printf("  Partition: Name=%s, State=%s, Nodes=%s\n",
-			partition.Name, partition.State, partition.Nodes)
+			partName, partState, partNodes)
 	}
 }
 
@@ -170,8 +194,12 @@ func runUserListTest(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Printf("Found %d users\n", len(users.Users))
 	for i, user := range users.Users {
 		if i < 5 {
+			defaultAccount := "N/A"
+			if user.Default != nil && user.Default.Account != nil {
+				defaultAccount = *user.Default.Account
+			}
 			fmt.Printf("  User: Name=%s, DefaultAccount=%s\n",
-				user.Name, user.DefaultAccount)
+				user.Name, defaultAccount)
 		}
 	}
 	if len(users.Users) > 5 {

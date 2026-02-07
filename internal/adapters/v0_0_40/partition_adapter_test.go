@@ -1,13 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_40
 
 import (
 	"context"
 	"testing"
 
-	"github.com/jontk/slurm-client/internal/managers/base"
+	adapterbase "github.com/jontk/slurm-client/internal/adapters/base"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,12 +16,10 @@ import (
 // Also removed tests that had type conversion issues:
 // - string constants used as int32 values
 // - []string used as string values
-
 func TestPartitionAdapter_ValidateContext(t *testing.T) {
 	adapter := &PartitionAdapter{
-		BaseManager: base.NewBaseManager("v0.0.40", "Partition"),
+		BaseManager: adapterbase.NewBaseManager("v0.0.40", "Partition"),
 	}
-
 	tests := []struct {
 		name    string
 		ctx     context.Context
@@ -41,7 +38,6 @@ func TestPartitionAdapter_ValidateContext(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := adapter.ValidateContext(tt.ctx)

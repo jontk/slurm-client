@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -17,7 +20,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	slurmErrors "github.com/jontk/slurm-client/pkg/errors"
@@ -50,8 +53,8 @@ func (suite *V0043IntegrationTestSuite) SetupSuite() {
 	suite.version = "v0.0.43"
 
 	// Use provided server configuration
-	suite.serverURL = "http://rocky9.ar.jontk.com:6820"
-	suite.token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjI2NTM4Mjk5NzYsImlhdCI6MTc1MzgyOTk3Niwic3VuIjoicm9vdCJ9.-z8Cq_wHuOxNJ7KHHTboX3l9r6JBtSD1RxQUgQR9owE"
+	suite.serverURL = "http://localhost:6820"
+	suite.token = "your-jwt-token-here"
 
 	// Create client with v0.0.43 configuration
 	ctx := context.Background()
@@ -149,7 +152,7 @@ func (suite *V0043IntegrationTestSuite) TestPhase1_BasicConnectivity() {
 			suite.T().Logf("  Cluster Statistics:")
 			suite.T().Logf("    - Total Nodes: %d (Idle: %d, Allocated: %d)",
 				stats.TotalNodes, stats.IdleNodes, stats.AllocatedNodes)
-			suite.T().Logf("    - Total CPUs: %d (Idle: %d, Allocated: %d)",
+			suite.T().Logf("    - Total Cpus: %d (Idle: %d, Allocated: %d)",
 				stats.TotalCPUs, stats.IdleCPUs, stats.AllocatedCPUs)
 			suite.T().Logf("    - Total Jobs: %d (Running: %d, Pending: %d)",
 				stats.TotalJobs, stats.RunningJobs, stats.PendingJobs)
@@ -235,7 +238,7 @@ func (suite *V0043IntegrationTestSuite) TestPhase2_JobsManager() {
 			Script:    "#!/bin/bash\necho 'V0.0.43 Integration Test'\nhostname\ndate\nsleep 30",
 			Partition: partition,
 			Nodes:     1,
-			CPUs:      1,
+			Cpus:      1,
 			TimeLimit: 5,
 		}
 
@@ -259,7 +262,7 @@ func (suite *V0043IntegrationTestSuite) TestPhase2_JobsManager() {
 			Script:    "#!/bin/bash\necho \"TEST_VAR=$TEST_VAR\"\necho \"API_VERSION=$API_VERSION\"",
 			Partition: partition,
 			Nodes:     1,
-			CPUs:      1,
+			Cpus:      1,
 			TimeLimit: 5,
 			Environment: map[string]string{
 				"TEST_VAR":    "v0043_test",
@@ -317,8 +320,8 @@ func (suite *V0043IntegrationTestSuite) TestPhase2_NodesManager() {
 			if i >= 3 {
 				break
 			}
-			suite.T().Logf("  - Node: %s, State: %s, CPUs: %d, Memory: %dMB",
-				node.Name, node.State, node.CPUs, node.Memory)
+			suite.T().Logf("  - Node: %s, State: %s, Cpus: %d, Memory: %dMB",
+				node.Name, node.State, node.Cpus, node.Memory)
 		}
 
 		// Filter by state
@@ -508,7 +511,7 @@ func (suite *V0043IntegrationTestSuite) TestPhase3_ErrorHandling() {
 			Script:    "#!/bin/bash\necho 'Should fail'",
 			Partition: "nonexistent-partition-v0043-test",
 			Nodes:     1,
-			CPUs:      1,
+			Cpus:      1,
 			TimeLimit: 5,
 		}
 
@@ -658,7 +661,7 @@ func (suite *V0043IntegrationTestSuite) TestPhase5_VersionSpecificFeatures() {
 			Script:    "#!/bin/bash\necho 'Testing v0.0.43 features'\ndate",
 			Partition: partitions.Partitions[0].Name,
 			Nodes:     1,
-			CPUs:      1,
+			Cpus:      1,
 			TimeLimit: 5,
 			// Note: WorkingDirectory and Comment may not be supported in all versions
 		}
@@ -718,7 +721,7 @@ func (suite *V0043IntegrationTestSuite) TestPhase6_IntegrationWorkflows() {
 			Script:    "#!/bin/bash\necho 'Job lifecycle test'\necho 'Step 1: Starting'\nsleep 5\necho 'Step 2: Processing'\nsleep 5\necho 'Step 3: Complete'",
 			Partition: selectedPartition,
 			Nodes:     1,
-			CPUs:      1,
+			Cpus:      1,
 			TimeLimit: 5,
 		}
 

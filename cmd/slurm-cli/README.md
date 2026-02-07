@@ -94,7 +94,7 @@ slurm-cli info -o json
 
 ```bash
 export SLURM_REST_URL="https://cluster.example.com:6820"
-export SLURM_JWT="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+export SLURM_JWT="your-jwt-token-here"
 
 slurm-cli jobs list
 ```

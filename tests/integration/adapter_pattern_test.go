@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -14,8 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
+	types "github.com/jontk/slurm-client/api"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_43"
 	"github.com/jontk/slurm-client/pkg/auth"
 )
 

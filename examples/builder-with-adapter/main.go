@@ -14,7 +14,7 @@ import (
 
 	"github.com/jontk/slurm-client/internal/adapters/common"
 	adapterV0043 "github.com/jontk/slurm-client/internal/adapters/v0_0_43"
-	apiV0043 "github.com/jontk/slurm-client/internal/api/v0_0_43"
+	apiV0043 "github.com/jontk/slurm-client/internal/openapi/v0_0_43"
 	"github.com/jontk/slurm-client/internal/common/builders"
 )
 
@@ -117,13 +117,8 @@ func createHighPriorityQoS(ctx context.Context, adapter common.VersionAdapter) e
 		WithDescription("High priority QoS for critical workloads").
 		WithPreemptExemptTime(10). // 10 minutes exempt from preemption
 		WithLimits().
-		WithMaxCPUsPerUser(500).
 		WithMaxJobsPerUser(20).
-		WithMaxNodesPerUser(25).
 		WithMaxWallTime(24 * time.Hour).
-		WithMaxMemoryPerNode(256 * builders.GB).
-		WithMaxMemoryPerCPU(8 * builders.GB).
-		WithMinCPUsPerJob(4). // Require at least 4 CPUs
 		Done().
 		Build()
 
@@ -140,7 +135,6 @@ func createHighPriorityQoS(ctx context.Context, adapter common.VersionAdapter) e
 	fmt.Printf("✓ Created high priority QoS: %s\n", resp.QoSName)
 	fmt.Printf("  - Priority: %d\n", qos.Priority)
 	fmt.Printf("  - Usage Factor: %.1f\n", qos.UsageFactor)
-	fmt.Printf("  - Max CPUs/user: %d\n", *qos.Limits.MaxCPUsPerUser)
 	fmt.Printf("  - Max wall time: %v\n\n", 24*time.Hour)
 	return nil
 }
@@ -153,11 +147,9 @@ func createBatchQoS(ctx context.Context, adapter common.VersionAdapter) error {
 		AsBatchQueue(). // Use preset for batch jobs
 		WithDescription("QoS for long-running batch jobs").
 		WithLimits().
-		WithMaxCPUsPerUser(200).
 		WithMaxJobsPerUser(100).
 		WithMaxSubmitJobsPerUser(500).       // Can queue many jobs
 		WithMaxWallTime(7 * 24 * time.Hour). // 7 days max
-		WithMaxMemoryPerNode(128 * builders.GB).
 		Done().
 		Build()
 
@@ -173,8 +165,7 @@ func createBatchQoS(ctx context.Context, adapter common.VersionAdapter) error {
 
 	fmt.Printf("✓ Created batch QoS: %s\n", resp.QoSName)
 	fmt.Printf("  - Priority: %d (low)\n", qos.Priority)
-	fmt.Printf("  - Usage Factor: %.1f (discounted)\n", qos.UsageFactor)
-	fmt.Printf("  - Max submit jobs: %d\n\n", *qos.Limits.MaxSubmitJobsPerUser)
+	fmt.Printf("  - Usage Factor: %.1f (discounted)\n\n", qos.UsageFactor)
 	return nil
 }
 
@@ -187,11 +178,8 @@ func createInteractiveQoS(ctx context.Context, adapter common.VersionAdapter) er
 		WithDescription("QoS for interactive development sessions").
 		WithGraceTime(300). // 5 minute grace period
 		WithLimits().
-		WithMaxCPUsPerUser(32).
 		WithMaxJobsPerUser(5).          // Limited concurrent sessions
 		WithMaxWallTime(8 * time.Hour). // 8 hour sessions
-		WithMaxMemoryPerNode(64 * builders.GB).
-		WithMaxNodesPerJob(1). // Single node only
 		Done().
 		Build()
 
@@ -207,8 +195,7 @@ func createInteractiveQoS(ctx context.Context, adapter common.VersionAdapter) er
 
 	fmt.Printf("✓ Created interactive QoS: %s\n", resp.QoSName)
 	fmt.Printf("  - Priority: %d (medium-high)\n", qos.Priority)
-	fmt.Printf("  - Preempt mode: %s\n", qos.PreemptMode[0])
-	fmt.Printf("  - Max concurrent jobs: %d\n\n", *qos.Limits.MaxJobsPerUser)
+	fmt.Printf("  - Preempt mode: %s\n\n", qos.PreemptMode[0])
 	return nil
 }
 
@@ -238,7 +225,6 @@ func updateQoSWithBuilder(ctx context.Context, adapter common.VersionAdapter) er
 		WithPriority(200).
 		WithUsageFactor(1.5).
 		WithLimits().
-		WithMaxCPUsPerUser(150).
 		WithMaxJobsPerUser(15).
 		Done().
 		BuildForUpdate() // Note: BuildForUpdate() instead of Build()
@@ -266,12 +252,7 @@ func cloneAndModifyQoS(ctx context.Context, adapter common.VersionAdapter) error
 	baseTemplate := builders.NewQoSBuilder("template").
 		WithDescription("Base GPU QoS template").
 		WithPriority(300).
-		WithFlags("gpu", "DenyOnLimit").
-		WithLimits().
-		WithMaxCPUsPerUser(64).
-		WithMaxNodesPerUser(4).
-		WithMaxMemoryPerNode(128 * builders.GB).
-		Done()
+		WithFlags("gpu", "DenyOnLimit")
 
 	// Clone and create variants
 	variants := []struct {
@@ -282,8 +263,6 @@ func cloneAndModifyQoS(ctx context.Context, adapter common.VersionAdapter) error
 			name: "gpu-small",
 			modifier: func(b *builders.QoSBuilder) *builders.QoSBuilder {
 				return b.WithLimits().
-					WithMaxCPUsPerUser(16).
-					WithMaxNodesPerUser(1).
 					Done()
 			},
 		},
@@ -292,8 +271,6 @@ func cloneAndModifyQoS(ctx context.Context, adapter common.VersionAdapter) error
 			modifier: func(b *builders.QoSBuilder) *builders.QoSBuilder {
 				return b.WithPriority(400).
 					WithLimits().
-					WithMaxCPUsPerUser(128).
-					WithMaxNodesPerUser(8).
 					Done()
 			},
 		},

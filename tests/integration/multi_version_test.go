@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -12,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	"github.com/jontk/slurm-client/tests/helpers"
@@ -104,7 +107,7 @@ func testVersionCompatibility(t *testing.T, ctx context.Context, serverPool *moc
 			Name:      "compat-test-" + version,
 			Script:    "#!/bin/bash\necho 'Compatibility test for " + version + "'",
 			Partition: "compute",
-			CPUs:      1,
+			Cpus:      1,
 			TimeLimit: 10,
 		}
 
@@ -235,7 +238,7 @@ func testVersionSpecificFeatures(t *testing.T, version string, expectedFeatures 
 				Name:      "update-test",
 				Script:    "#!/bin/bash\necho 'test'",
 				Partition: "compute",
-				CPUs:      1,
+				Cpus:      1,
 			}
 
 			response, err := client.Jobs().Submit(ctx, submission)
@@ -256,7 +259,7 @@ func testVersionSpecificFeatures(t *testing.T, version string, expectedFeatures 
 				Name:      "update-test",
 				Script:    "#!/bin/bash\necho 'test'",
 				Partition: "compute",
-				CPUs:      1,
+				Cpus:      1,
 			}
 
 			response, err := client.Jobs().Submit(ctx, submission)
@@ -359,7 +362,7 @@ func testVersionMigration(t *testing.T, ctx context.Context, serverPool *mocks.M
 		Name:      "migration-test-" + fromVersion + "-to-" + toVersion,
 		Script:    "#!/bin/bash\necho 'Migration test'",
 		Partition: "compute",
-		CPUs:      1,
+		Cpus:      1,
 	}
 
 	response, err := oldClient.Jobs().Submit(ctx, submission)
@@ -383,7 +386,7 @@ func testVersionMigration(t *testing.T, ctx context.Context, serverPool *mocks.M
 		Name:      "migration-new-" + toVersion,
 		Script:    "#!/bin/bash\necho 'New version test'",
 		Partition: "compute",
-		CPUs:      1,
+		Cpus:      1,
 	}
 
 	newResponse, err := newClient.Jobs().Submit(ctx, newSubmission)
@@ -433,7 +436,7 @@ func TestConcurrentVersions(t *testing.T) {
 			Name:      "concurrent-test-" + version,
 			Script:    "#!/bin/bash\necho 'Concurrent test for " + version + "'",
 			Partition: "compute",
-			CPUs:      1,
+			Cpus:      1,
 		}
 
 		response, err := client.Jobs().Submit(ctx, submission)

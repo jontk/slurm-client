@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -15,7 +18,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	"github.com/jontk/slurm-client/pkg/errors"
@@ -47,7 +50,7 @@ func (suite *RealServerIntegrationTestSuite) SetupSuite() {
 	// Get configuration from environment
 	suite.serverURL = os.Getenv("SLURM_SERVER_URL")
 	if suite.serverURL == "" {
-		suite.serverURL = "http://rocky9:6820"
+		suite.serverURL = "http://localhost
 	}
 
 	suite.version = os.Getenv("SLURM_API_VERSION")
@@ -142,7 +145,7 @@ func (suite *RealServerIntegrationTestSuite) TestCompleteClusterDiscovery() {
 	suite.T().Logf("Cluster Statistics:")
 	suite.T().Logf("  Total Nodes: %d (Idle: %d, Allocated: %d)",
 		stats.TotalNodes, stats.IdleNodes, stats.AllocatedNodes)
-	suite.T().Logf("  Total CPUs: %d (Idle: %d, Allocated: %d)",
+	suite.T().Logf("  Total Cpus: %d (Idle: %d, Allocated: %d)",
 		stats.TotalCPUs, stats.IdleCPUs, stats.AllocatedCPUs)
 	suite.T().Logf("  Total Jobs: %d (Running: %d, Pending: %d, Completed: %d)",
 		stats.TotalJobs, stats.RunningJobs, stats.PendingJobs, stats.CompletedJobs)
@@ -183,8 +186,8 @@ func (suite *RealServerIntegrationTestSuite) TestComprehensiveResourceListing() 
 			}
 			suite.NotEmpty(node.Name, "Node name should not be empty")
 			suite.NotEmpty(node.State, "Node state should not be empty")
-			suite.GreaterOrEqual(node.CPUs, int32(0), "Node CPUs should be non-negative")
-			suite.T().Logf("    Node: %s, State: %s, CPUs: %d", node.Name, node.State, node.CPUs)
+			suite.GreaterOrEqual(node.Cpus, int32(0), "Node CPUs should be non-negative")
+			suite.T().Logf("    Node: %s, State: %s, Cpus: %d", node.Name, node.State, node.Cpus)
 		}
 	}
 
@@ -298,7 +301,7 @@ func (suite *RealServerIntegrationTestSuite) TestAdvancedJobOperations() {
 		Script:    "#!/bin/bash\necho 'Environment test:'\necho 'SLURM_JOB_ID='$SLURM_JOB_ID\necho 'SLURM_JOB_NAME='$SLURM_JOB_NAME\necho 'TEST_VAR='$TEST_VAR\nenv | grep SLURM | head -10\nsleep 45",
 		Partition: targetPartition,
 		Nodes:     1,
-		CPUs:      1,
+		Cpus:      1,
 		TimeLimit: 5,
 		Environment: map[string]string{
 			"TEST_VAR":   "integration_test_value",
@@ -319,7 +322,7 @@ func (suite *RealServerIntegrationTestSuite) TestAdvancedJobOperations() {
 		Script:    "#!/bin/bash\necho 'Working directory test:'\npwd\nls -la\necho 'Creating test file...'\ntouch integration_test_file.txt\nls -la integration_test_file.txt\nsleep 30",
 		Partition: targetPartition,
 		Nodes:     1,
-		CPUs:      1,
+		Cpus:      1,
 		TimeLimit: 5,
 	}
 
@@ -336,7 +339,7 @@ func (suite *RealServerIntegrationTestSuite) TestAdvancedJobOperations() {
 		Script:    "#!/bin/bash\necho 'Resource test:'\necho 'CPUs allocated: '$SLURM_CPUS_PER_TASK\necho 'Memory info:'\nfree -h\necho 'CPU info:'\nlscpu | grep -E '^CPU\\(s\\)|^Model name'\nsleep 30",
 		Partition: targetPartition,
 		Nodes:     1,
-		CPUs:      2,    // Request 2 CPUs
+		Cpus:      2,    // Request 2 CPUs
 		Memory:    1024, // Request 1GB memory
 		TimeLimit: 5,
 	}
@@ -393,7 +396,7 @@ func (suite *RealServerIntegrationTestSuite) TestErrorHandlingScenarios() {
 		Script:    "#!/bin/bash\necho 'This should fail'",
 		Partition: "nonexistent-partition-integration-test",
 		Nodes:     1,
-		CPUs:      1,
+		Cpus:      1,
 		TimeLimit: 5,
 	}
 
@@ -410,7 +413,7 @@ func (suite *RealServerIntegrationTestSuite) TestErrorHandlingScenarios() {
 		Script:    "#!/bin/bash\necho 'Zero time limit'",
 		Partition: "debug", // Assume debug partition exists
 		Nodes:     1,
-		CPUs:      1,
+		Cpus:      1,
 		TimeLimit: 0, // Invalid time limit
 	}
 

@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_41
 
 import (
@@ -8,25 +7,24 @@ import (
 	"fmt"
 	"strconv"
 
-	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
+	types "github.com/jontk/slurm-client/api"
+	adapterbase "github.com/jontk/slurm-client/internal/adapters/base"
 	"github.com/jontk/slurm-client/internal/common"
-	"github.com/jontk/slurm-client/internal/common/types"
-	"github.com/jontk/slurm-client/internal/managers/base"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_41"
+	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // JobAdapter implements the JobAdapter interface for v0.0.41
 type JobAdapter struct {
-	*base.BaseManager
-	client  *api.ClientWithResponses
-	wrapper *api.WrapperClient
+	*adapterbase.BaseManager
+	client *api.ClientWithResponses
 }
 
 // NewJobAdapter creates a new Job adapter for v0.0.41
 func NewJobAdapter(client *api.ClientWithResponses) *JobAdapter {
 	return &JobAdapter{
-		BaseManager: base.NewBaseManager("v0.0.41", "Job"),
+		BaseManager: adapterbase.NewBaseManager("v0.0.41", "Job"),
 		client:      client,
-		wrapper:     nil, // We'll implement this later
 	}
 }
 
@@ -36,62 +34,49 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
-
 	// Prepare parameters for the API call
 	params := &api.SlurmV0041GetJobsParams{}
-
 	// Apply filters from options
 	// Note: v0.0.41 GetJobs doesn't support filtering parameters
 	// We'll need to filter the results after fetching all jobs
 	_ = opts
-
 	// Set flags to get detailed job information
 	flags := api.SlurmV0041GetJobsParamsFlagsDETAIL
 	params.Flags = &flags
-
 	// Make the API call
 	resp, err := a.client.SlurmV0041GetJobsWithResponse(ctx, params)
 	if err != nil {
 		return nil, a.WrapError(err, "failed to list jobs")
 	}
-
 	// Handle response
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return nil, err
 	}
-
 	if resp.JSON200 == nil {
 		return nil, fmt.Errorf("unexpected nil response")
 	}
-
 	// Convert response to common types
 	jobList := &types.JobList{
 		Jobs: make([]types.Job, 0, len(resp.JSON200.Jobs)),
 	}
-
 	for _, apiJob := range resp.JSON200.Jobs {
 		job, err := a.convertAPIJobToCommon(apiJob)
 		if err != nil {
 			// Log the error but continue processing other jobs
 			continue
 		}
-
 		// Apply filters if options were provided
 		if opts != nil && !a.jobPassesFilters(job, opts) {
 			continue
 		}
-
 		jobList.Jobs = append(jobList.Jobs, *job)
 	}
-
 	// Note: JobList doesn't have a Meta field in common types
 	// Warnings and errors from the response are being ignored for now
-
 	return jobList, nil
 }
 
@@ -101,24 +86,24 @@ func (a *JobAdapter) jobPassesFilters(job *types.Job, opts *types.JobListOptions
 	if len(opts.Accounts) > 0 && !a.jobAccountMatches(job.Account, opts.Accounts) {
 		return false
 	}
-
 	// Filter by partition
 	if len(opts.Partitions) > 0 && !a.jobPartitionMatches(job.Partition, opts.Partitions) {
 		return false
 	}
-
 	// Filter by state
-	if len(opts.States) > 0 && !a.jobStateMatches(job.State, opts.States) {
+	if len(opts.States) > 0 && !a.jobStateMatches(job.JobState, opts.States) {
 		return false
 	}
-
 	return true
 }
 
 // jobAccountMatches checks if a job account is in the filter list
-func (a *JobAdapter) jobAccountMatches(account string, accounts []string) bool {
-	for _, a := range accounts {
-		if a == account {
+func (a *JobAdapter) jobAccountMatches(account *string, accounts []string) bool {
+	if account == nil {
+		return false
+	}
+	for _, acc := range accounts {
+		if acc == *account {
 			return true
 		}
 	}
@@ -126,9 +111,12 @@ func (a *JobAdapter) jobAccountMatches(account string, accounts []string) bool {
 }
 
 // jobPartitionMatches checks if a job partition is in the filter list
-func (a *JobAdapter) jobPartitionMatches(partition string, partitions []string) bool {
+func (a *JobAdapter) jobPartitionMatches(partition *string, partitions []string) bool {
+	if partition == nil {
+		return false
+	}
 	for _, p := range partitions {
-		if p == partition {
+		if p == *partition {
 			return true
 		}
 	}
@@ -136,10 +124,12 @@ func (a *JobAdapter) jobPartitionMatches(partition string, partitions []string) 
 }
 
 // jobStateMatches checks if a job state is in the filter list
-func (a *JobAdapter) jobStateMatches(state types.JobState, states []types.JobState) bool {
-	for _, s := range states {
-		if s == state {
-			return true
+func (a *JobAdapter) jobStateMatches(jobStates []types.JobState, states []types.JobState) bool {
+	for _, js := range jobStates {
+		for _, s := range states {
+			if s == js {
+				return true
+			}
 		}
 	}
 	return false
@@ -151,45 +141,37 @@ func (a *JobAdapter) Get(ctx context.Context, jobID int32) (*types.Job, error) {
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-
 	// Validate job ID
 	if jobID <= 0 {
 		return nil, common.NewValidationError("job ID must be positive", "jobID", jobID)
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
-
 	// Set flags to get detailed job information
 	flags := api.SlurmV0041GetJobParamsFlagsDETAIL
 	params := &api.SlurmV0041GetJobParams{
 		Flags: &flags,
 	}
-
 	// Make the API call
 	jobIDStr := strconv.FormatUint(uint64(jobID), 10)
 	resp, err := a.client.SlurmV0041GetJobWithResponse(ctx, jobIDStr, params)
 	if err != nil {
 		return nil, a.WrapError(err, fmt.Sprintf("failed to get job %d", jobID))
 	}
-
 	// Handle response
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return nil, err
 	}
-
 	if resp.JSON200 == nil || len(resp.JSON200.Jobs) == 0 {
 		return nil, a.HandleNotFound(fmt.Sprintf("job with ID %d", jobID))
 	}
-
 	// Convert the first job in the response
 	job, err := a.convertAPIJobToCommon(resp.JSON200.Jobs[0])
 	if err != nil {
 		return nil, a.WrapError(err, fmt.Sprintf("failed to convert job %d", jobID))
 	}
-
 	return job, nil
 }
 
@@ -199,50 +181,71 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-
 	// Validate job
 	if job == nil {
 		return nil, a.HandleValidationError("job cannot be nil")
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
 
-	// Note: v0.0.41 API job submission is not yet implemented
-	// This would require V0041JobDescMsg and V0041JobSubmitReq types which don't exist in the generated client.
-	// TODO: Use a newer API version (v0.0.42+) for job submission
-	return nil, fmt.Errorf("job submission not yet implemented for v0.0.41 - use a newer API version")
-}
+	// Convert to API request
+	reqBody, err := a.convertCommonJobCreateToAPI(job)
+	if err != nil {
+		return nil, a.WrapError(err, "failed to convert job request")
+	}
 
-// OLD IMPLEMENTATION DISABLED - would use undefined types
-// Commented out code that uses V0041JobDescMsg and V0041JobSubmitReq
-/*
-func (a *JobAdapter) Submit_OLD_DISABLED(ctx context.Context, job *types.JobCreate) (*types.JobSubmitResponse, error) {
-	// This implementation has been disabled due to undefined types in the generated client
-	// See the current Submit function above for the replacement
-	return nil, fmt.Errorf("disabled")
-}
-*/
+	// Make the API call
+	resp, err := a.client.SlurmV0041PostJobSubmitWithResponse(ctx, reqBody)
+	if err != nil {
+		return nil, a.WrapError(err, "failed to submit job")
+	}
 
+	// Handle response
+	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return nil, err
+	}
+
+	if resp.JSON200 == nil {
+		return nil, fmt.Errorf("unexpected nil response from job submit")
+	}
+
+	// Check for errors in response
+	if resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
+		errMsgs := make([]string, 0, len(*resp.JSON200.Errors))
+		for _, apiErr := range *resp.JSON200.Errors {
+			if apiErr.Error != nil {
+				errMsgs = append(errMsgs, *apiErr.Error)
+			}
+		}
+		if len(errMsgs) > 0 {
+			return nil, fmt.Errorf("job submission failed: %v", errMsgs)
+		}
+	}
+
+	// Build response
+	response := &types.JobSubmitResponse{}
+	if resp.JSON200.JobId != nil {
+		response.JobId = *resp.JSON200.JobId
+	}
+
+	return response, nil
+}
 // Cancel cancels a job
 func (a *JobAdapter) Cancel(ctx context.Context, jobID int32, opts *types.JobCancelRequest) error {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-
 	// Validate job ID
 	if jobID <= 0 {
 		return a.HandleValidationError("jobID must be positive")
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return err
 	}
-
 	// Make the API call
 	jobIDStr := strconv.FormatInt(int64(jobID), 10)
 	params := &api.SlurmV0041DeleteJobParams{}
@@ -250,12 +253,10 @@ func (a *JobAdapter) Cancel(ctx context.Context, jobID int32, opts *types.JobCan
 	if err != nil {
 		return a.WrapError(err, fmt.Sprintf("failed to cancel job %d", jobID))
 	}
-
 	// Handle response
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -265,54 +266,56 @@ func (a *JobAdapter) Update(ctx context.Context, jobID int32, update *types.JobU
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-
 	// Validate job ID
 	if err := a.ValidateResourceID(strconv.FormatInt(int64(jobID), 10), "jobID"); err != nil {
 		return err
 	}
-
 	// Validate update
 	if update == nil {
 		return a.HandleValidationError("job update cannot be nil")
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return err
 	}
 
-	// Convert update to API request
-	updateReq := map[string]interface{}{
-		"jobs": []map[string]interface{}{
-			{
-				"job_id": strconv.FormatInt(int64(jobID), 10),
-			},
-		},
+	// Convert to API request using JSON marshaling workaround
+	reqBody, err := a.convertJobUpdateToAPI(update)
+	if err != nil {
+		return a.WrapError(err, "failed to convert job update request")
 	}
 
-	// Add fields from update if provided
-	if update.TimeLimit != nil {
-		jobs, ok := updateReq["jobs"].([]map[string]interface{})
-		if ok && len(jobs) > 0 {
-			jobs[0]["time_limit"] = *update.TimeLimit
-		}
+	// Make the API call
+	jobIDStr := strconv.FormatInt(int64(jobID), 10)
+	resp, err := a.client.SlurmV0041PostJobWithResponse(ctx, jobIDStr, reqBody)
+	if err != nil {
+		return a.WrapError(err, fmt.Sprintf("failed to update job %d", jobID))
 	}
-	if update.Priority != nil {
-		jobs, ok := updateReq["jobs"].([]map[string]interface{})
-		if ok && len(jobs) > 0 {
-			jobs[0]["priority"] = *update.Priority
+
+	// Handle response
+	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	// Check for errors in response
+	if resp.JSON200 != nil && resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
+		errMsgs := make([]string, 0)
+		for _, apiErr := range *resp.JSON200.Errors {
+			if apiErr.Error != nil {
+				errMsgs = append(errMsgs, *apiErr.Error)
+			}
+		}
+		if len(errMsgs) > 0 {
+			return fmt.Errorf("job update failed: %v", errMsgs)
 		}
 	}
 
-	// Note: v0.0.41 may not support job updates via API
-	// This is a placeholder implementation
-	_ = updateReq
-	return fmt.Errorf("job updates not supported in v0.0.41 API")
+	return nil
 }
 
 // Watch watches for job state changes (not implemented in v0.0.41)
 func (a *JobAdapter) Watch(ctx context.Context, opts *types.JobWatchOptions) (<-chan types.JobEvent, error) {
-	return nil, fmt.Errorf("job watching is not supported in API v0.0.41")
+	return nil, errors.NewNotImplementedError("Watch Jobs", "v0.0.41")
 }
 
 // Signal sends a signal to a job (not implemented in v0.0.41)

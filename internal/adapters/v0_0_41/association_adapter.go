@@ -1,31 +1,28 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_41
 
 import (
 	"context"
 	"fmt"
-	"strings"
+	"strconv"
 
-	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
-	"github.com/jontk/slurm-client/internal/common/types"
-	"github.com/jontk/slurm-client/internal/managers/base"
+	types "github.com/jontk/slurm-client/api"
+	adapterbase "github.com/jontk/slurm-client/internal/adapters/base"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_41"
 )
 
 // AssociationAdapter implements the AssociationAdapter interface for v0.0.41
 type AssociationAdapter struct {
-	*base.BaseManager
-	client  *api.ClientWithResponses
-	wrapper *api.WrapperClient
+	*adapterbase.BaseManager
+	client *api.ClientWithResponses
 }
 
 // NewAssociationAdapter creates a new Association adapter for v0.0.41
 func NewAssociationAdapter(client *api.ClientWithResponses) *AssociationAdapter {
 	return &AssociationAdapter{
-		BaseManager: base.NewBaseManager("v0.0.41", "Association"),
+		BaseManager: adapterbase.NewBaseManager("v0.0.41", "Association"),
 		client:      client,
-		wrapper:     nil, // We'll implement this later
 	}
 }
 
@@ -35,15 +32,12 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
-
 	// Prepare parameters for the API call
 	params := &api.SlurmdbV0041GetAssociationsParams{}
-
 	// Apply filters from options
 	if opts != nil {
 		// Map AssociationListOptions fields to API parameters
@@ -66,28 +60,23 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 		// Note: ParentAccount and WithSubAccounts are not in the common types
 		// These would need to be handled differently if needed
 	}
-
 	// Make the API call
 	resp, err := a.client.SlurmdbV0041GetAssociationsWithResponse(ctx, params)
 	if err != nil {
 		return nil, a.WrapError(err, "failed to list associations")
 	}
-
 	// Handle response
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return nil, err
 	}
-
 	if resp.JSON200 == nil {
 		return nil, fmt.Errorf("unexpected nil response")
 	}
-
 	// Convert response to common types
 	assocList := &types.AssociationList{
 		Associations: make([]types.Association, 0, len(resp.JSON200.Associations)),
 		Total:        len(resp.JSON200.Associations),
 	}
-
 	for _, apiAssoc := range resp.JSON200.Associations {
 		assoc, err := a.convertAPIAssociationToCommon(apiAssoc)
 		if err != nil {
@@ -96,10 +85,8 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 		}
 		assocList.Associations = append(assocList.Associations, *assoc)
 	}
-
 	// Note: AssociationList doesn't have a Meta field in common types
 	// Warnings and errors from the response are being ignored for now
-
 	return assocList, nil
 }
 
@@ -111,13 +98,12 @@ func (a *AssociationAdapter) Get(ctx context.Context, id string) (*types.Associa
 	if err != nil {
 		return nil, err
 	}
-
 	for _, assoc := range assocList.Associations {
-		if assoc.ID == id {
+		// ID is *int32, compare after converting id string to int
+		if assoc.ID != nil && strconv.Itoa(int(*assoc.ID)) == id {
 			return &assoc, nil
 		}
 	}
-
 	return nil, a.HandleNotFound("association with ID " + id)
 }
 
@@ -127,34 +113,23 @@ func (a *AssociationAdapter) Create(ctx context.Context, req *types.AssociationC
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-
 	// Validate request
 	if req == nil {
 		return nil, a.HandleValidationError("association create request cannot be nil")
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
 
-	// Convert request to association for API call
-	association := &types.Association{
-		AccountName:   req.AccountName,
-		UserName:      req.UserName,
-		Cluster:       req.Cluster,
-		Partition:     req.Partition,
-		DefaultQoS:    req.DefaultQoS,
-		SharesRaw:     req.SharesRaw,
-		Priority:      req.Priority,
-		ParentAccount: req.ParentAccount,
+	// Convert to API request using JSON marshaling workaround
+	reqBody, err := a.convertAssociationCreateToAPI(req)
+	if err != nil {
+		return nil, a.WrapError(err, "failed to convert association create request")
 	}
 
-	// Convert association to API request
-	createReq := a.convertCommonToAPIAssociation(association)
-
 	// Make the API call
-	resp, err := a.client.SlurmdbV0041PostAssociationsWithResponse(ctx, *createReq)
+	resp, err := a.client.SlurmdbV0041PostAssociationsWithResponse(ctx, reqBody)
 	if err != nil {
 		return nil, a.WrapError(err, "failed to create association")
 	}
@@ -164,15 +139,22 @@ func (a *AssociationAdapter) Create(ctx context.Context, req *types.AssociationC
 		return nil, err
 	}
 
+	// Check for errors in response
+	if resp.JSON200 != nil && resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
+		errMsgs := make([]string, 0)
+		for _, apiErr := range *resp.JSON200.Errors {
+			if apiErr.Error != nil {
+				errMsgs = append(errMsgs, *apiErr.Error)
+			}
+		}
+		if len(errMsgs) > 0 {
+			return nil, fmt.Errorf("association creation failed: %v", errMsgs)
+		}
+	}
+
 	return &types.AssociationCreateResponse{
 		Status:  "success",
-		Message: "Association created successfully",
-		Meta: map[string]interface{}{
-			"association_id": association.ID,
-			"account_name":   association.AccountName,
-			"user_name":      association.UserName,
-			"cluster":        association.Cluster,
-		},
+		Message: fmt.Sprintf("Created association for %s:%s:%s", req.Account, req.User, req.Cluster),
 	}, nil
 }
 
@@ -182,43 +164,25 @@ func (a *AssociationAdapter) Update(ctx context.Context, id string, update *type
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-
 	// Validate update
 	if update == nil {
 		return a.HandleValidationError("association update cannot be nil")
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return err
 	}
 
-	// Note: idNum conversion was here but is not needed since we're using the string ID directly
-
-	// Get the existing association first
-	existingAssoc, err := a.Get(ctx, id)
+	// Convert to API request using JSON marshaling workaround
+	reqBody, err := a.convertAssociationUpdateToAPI(id, update)
 	if err != nil {
-		return err
+		return a.WrapError(err, "failed to convert association update request")
 	}
-
-	// Apply updates
-	if update.DefaultQoS != nil {
-		existingAssoc.DefaultQoS = *update.DefaultQoS
-	}
-	if update.SharesRaw != nil {
-		existingAssoc.SharesRaw = *update.SharesRaw
-	}
-	if update.Priority != nil {
-		existingAssoc.Priority = *update.Priority
-	}
-
-	// Convert to API request
-	updateReq := a.convertCommonToAPIAssociation(existingAssoc)
 
 	// Make the API call
-	resp, err := a.client.SlurmdbV0041PostAssociationsWithResponse(ctx, *updateReq)
+	resp, err := a.client.SlurmdbV0041PostAssociationsWithResponse(ctx, reqBody)
 	if err != nil {
-		return a.WrapError(err, "failed to update association "+id)
+		return a.WrapError(err, "failed to update association")
 	}
 
 	// Handle response
@@ -226,57 +190,97 @@ func (a *AssociationAdapter) Update(ctx context.Context, id string, update *type
 		return err
 	}
 
+	// Check for errors in response
+	if resp.JSON200 != nil && resp.JSON200.Errors != nil && len(*resp.JSON200.Errors) > 0 {
+		errMsgs := make([]string, 0)
+		for _, apiErr := range *resp.JSON200.Errors {
+			if apiErr.Error != nil {
+				errMsgs = append(errMsgs, *apiErr.Error)
+			}
+		}
+		if len(errMsgs) > 0 {
+			return fmt.Errorf("association update failed: %v", errMsgs)
+		}
+	}
+
 	return nil
 }
 
-// Delete deletes an association
+// Delete deletes an association by ID or composite key.
+// Supports two formats:
+//   - Numeric ID: "123"
+//   - Composite key: "account:user:cluster[:partition]"
 func (a *AssociationAdapter) Delete(ctx context.Context, id string) error {
 	// Use base validation
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-
+	// Validate ID
+	if id == "" {
+		return a.HandleValidationError("association ID cannot be empty")
+	}
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return err
 	}
 
-	// v0.0.41 doesn't support deleting by ID directly
-	// Parse the composite key (format: "account:user:cluster:partition")
-	parts := strings.Split(id, ":")
+	// Check if this is a numeric ID or composite key
+	_, numErr := strconv.Atoi(id)
+	isNumericID := numErr == nil
+
+	if isNumericID {
+		// Use ID-based deletion
+		params := &api.SlurmdbV0041DeleteAssociationParams{
+			Id: &id,
+		}
+		resp, err := a.client.SlurmdbV0041DeleteAssociationWithResponse(ctx, params)
+		if err != nil {
+			return a.WrapError(err, "failed to delete association "+id)
+		}
+		if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// Parse composite key format: "account:user:cluster[:partition]"
+	parts := make([]string, 0, 4)
+	current := ""
+	for _, c := range id {
+		if c == ':' {
+			parts = append(parts, current)
+			current = ""
+		} else {
+			current += string(c)
+		}
+	}
+	parts = append(parts, current)
+
 	if len(parts) < 3 {
-		return a.HandleValidationError("invalid association ID format, expected 'account:user:cluster[:partition]'")
+		return a.HandleValidationError("invalid association ID format, expected numeric ID or 'account:user:cluster[:partition]'")
 	}
 
 	account := parts[0]
 	user := parts[1]
 	cluster := parts[2]
-	partition := ""
-	if len(parts) > 3 {
-		partition = parts[3]
-	}
 
-	// Make the API call using account, user, cluster, partition
+	// Use filter-based deletion
 	params := &api.SlurmdbV0041DeleteAssociationsParams{
 		Account: &account,
 		User:    &user,
 		Cluster: &cluster,
 	}
-
-	if partition != "" {
-		params.Partition = &partition
+	if len(parts) > 3 && parts[3] != "" {
+		params.Partition = &parts[3]
 	}
 
 	resp, err := a.client.SlurmdbV0041DeleteAssociationsWithResponse(ctx, params)
 	if err != nil {
 		return a.WrapError(err, "failed to delete association "+id)
 	}
-
-	// Handle response
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -306,7 +310,6 @@ func (a *AssociationAdapter) Delete(ctx context.Context, id string) error {
 //
 // 	return a.Update(ctx, id, update)
 // }
-
 // GetByUserAccount gets associations for a specific user and account
 func (a *AssociationAdapter) GetByUserAccount(ctx context.Context, user, account, cluster string) (*types.Association, error) {
 	opts := &types.AssociationListOptions{
@@ -314,16 +317,13 @@ func (a *AssociationAdapter) GetByUserAccount(ctx context.Context, user, account
 		Accounts: []string{account},
 		Clusters: []string{cluster},
 	}
-
 	assocList, err := a.List(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
-
 	if len(assocList.Associations) == 0 {
 		return nil, a.HandleNotFound(fmt.Sprintf("association for user %s in account %s", user, account))
 	}
-
 	// Return the first matching association
 	return &assocList.Associations[0], nil
 }

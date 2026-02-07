@@ -12,8 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	slurm "github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -67,7 +66,7 @@ func submitBatchJobs(ctx context.Context, client slurm.SlurmClient, count int) [
 		go func(index int) {
 			defer wg.Done()
 
-			job := &interfaces.JobSubmission{
+			job := &slurm.JobSubmission{
 				Name:       fmt.Sprintf("batch-job-%d", index),
 				Command:    fmt.Sprintf("python process.py --input data_%d.txt", index),
 				Partition:  "compute",
@@ -87,8 +86,9 @@ func submitBatchJobs(ctx context.Context, client slurm.SlurmClient, count int) [
 				return
 			}
 
-			jobChan <- resp.JobID
-			fmt.Printf("Submitted job %d: ID=%s\n", index, resp.JobID)
+			jobID := fmt.Sprintf("%d", resp.JobId)
+			jobChan <- jobID
+			fmt.Printf("Submitted job %d: ID=%s\n", index, jobID)
 		}(i)
 	}
 
@@ -137,17 +137,24 @@ func monitorJobProgress(ctx context.Context, client slurm.SlurmClient, jobIDs []
 					continue
 				}
 
-				fmt.Printf("Job %s: State=%s", jobID, job.State)
-				if job.StartTime != nil {
-					fmt.Printf(", Runtime=%s", time.Since(*job.StartTime).Round(time.Second))
+				state := ""
+				if len(job.JobState) > 0 {
+					state = string(job.JobState[0])
+				}
+				fmt.Printf("Job %s: State=%s", jobID, state)
+				if !job.StartTime.IsZero() {
+					fmt.Printf(", Runtime=%s", time.Since(job.StartTime).Round(time.Second))
 				}
 				fmt.Println()
 
 				// Check if job completed
-				if job.State == "COMPLETED" || job.State == "FAILED" || job.State == "CANCELLED" {
-					completedJobs[jobID] = true
-					if job.State == "FAILED" {
-						log.Printf("Job %s failed!", jobID)
+				if len(job.JobState) > 0 {
+					jobStateStr := string(job.JobState[0])
+					if jobStateStr == "COMPLETED" || jobStateStr == "FAILED" || jobStateStr == "CANCELLED" {
+						completedJobs[jobID] = true
+						if jobStateStr == "FAILED" {
+							log.Printf("Job %s failed!", jobID)
+						}
 					}
 				}
 			}
@@ -191,25 +198,31 @@ func collectJobResults(ctx context.Context, client slurm.SlurmClient, jobIDs []s
 			continue
 		}
 
+		jobIDStr := ""
+		if job.JobID != nil {
+			jobIDStr = fmt.Sprintf("%d", *job.JobID)
+		}
+		state := ""
+		if len(job.JobState) > 0 {
+			state = string(job.JobState[0])
+		}
+		exitCode := 0
+		if job.ExitCode != nil {
+			// ExitCode is a struct with Status and Signal fields
+			// Access the appropriate field based on your needs
+		}
+
 		result := JobResult{
-			JobID:    job.ID,
-			State:    job.State,
-			ExitCode: job.ExitCode,
+			JobID:    jobIDStr,
+			State:    state,
+			ExitCode: exitCode,
 		}
 
 		// Calculate runtime if available
-		if job.StartTime != nil && job.EndTime != nil {
-			result.StartTime = job.StartTime
-			result.EndTime = job.EndTime
-			result.Runtime = job.EndTime.Sub(*job.StartTime)
-		}
-
-		// Get additional metrics from metadata if available
-		if cpuTime, ok := job.Metadata["cpu_time"].(float64); ok {
-			result.CPUTime = cpuTime
-		}
-		if maxMem, ok := job.Metadata["max_memory"].(int64); ok {
-			result.MaxMemory = maxMem
+		if !job.StartTime.IsZero() && !job.EndTime.IsZero() {
+			result.StartTime = &job.StartTime
+			result.EndTime = &job.EndTime
+			result.Runtime = job.EndTime.Sub(job.StartTime)
 		}
 
 		results = append(results, result)
@@ -270,10 +283,13 @@ func cleanupJobs(ctx context.Context, client slurm.SlurmClient, jobIDs []string)
 		}
 
 		// Cancel if still running
-		if job.State == "RUNNING" || job.State == "PENDING" {
-			fmt.Printf("Cancelling job %s (state: %s)\n", jobID, job.State)
-			if err := client.Jobs().Cancel(ctx, jobID); err != nil {
-				log.Printf("Failed to cancel job %s: %v", jobID, err)
+		if len(job.JobState) > 0 {
+			jobStateStr := string(job.JobState[0])
+			if jobStateStr == "RUNNING" || jobStateStr == "PENDING" {
+				fmt.Printf("Cancelling job %s (state: %s)\n", jobID, jobStateStr)
+				if err := client.Jobs().Cancel(ctx, jobID); err != nil {
+					log.Printf("Failed to cancel job %s: %v", jobID, err)
+				}
 			}
 		}
 	}

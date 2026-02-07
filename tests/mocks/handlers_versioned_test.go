@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"testing"
 
-	v0_0_40 "github.com/jontk/slurm-client/internal/api/v0_0_40"
-	v0_0_42 "github.com/jontk/slurm-client/internal/api/v0_0_42"
-	v0_0_43 "github.com/jontk/slurm-client/internal/api/v0_0_43"
-	v0_0_44 "github.com/jontk/slurm-client/internal/api/v0_0_44"
+	v0_0_40 "github.com/jontk/slurm-client/internal/openapi/v0_0_40"
+	v0_0_42 "github.com/jontk/slurm-client/internal/openapi/v0_0_42"
+	v0_0_43 "github.com/jontk/slurm-client/internal/openapi/v0_0_43"
+	v0_0_44 "github.com/jontk/slurm-client/internal/openapi/v0_0_44"
 )
 
 // TestVersionedHandlers_V0040 tests v0.0.40 versioned handlers

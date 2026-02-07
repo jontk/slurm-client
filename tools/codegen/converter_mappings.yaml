@@ -1,0 +1,220 @@
+# Converter Mappings Configuration
+# Defines how to convert between API types and common types for each version
+
+# Common configuration
+common:
+  types_package: "github.com/jontk/slurm-client/internal/common/types"
+
+  # Standard field name transformations (API -> Common)
+  field_transforms:
+    Id: ID
+    Cpus: CPUs
+
+  # Common pointer handling patterns
+  pointer_patterns:
+    # When API field is *T and common field is T, dereference
+    # When API field is T and common field is *T, take address
+
+# Per-version configurations
+versions:
+  v0_0_44:
+    api_package: "github.com/jontk/slurm-client/internal/api/v0_0_44"
+    api_prefix: "V0044"
+
+    entities:
+      Account:
+        api_type: V0044Account
+        common_type: Account
+        fields:
+          - api: Name
+            common: Name
+            api_type: string
+            common_type: string
+          - api: Description
+            common: Description
+            api_type: string
+            common_type: string
+          - api: Organization
+            common: Organization
+            api_type: string
+            common_type: string
+          - api: Coordinators
+            common: Coordinators
+            api_type: "*[]V0044Coord"
+            common_type: "[]Coord"
+            converter: coordSlice
+          - api: Flags
+            common: Flags
+            api_type: "*[]V0044AccountFlags"
+            common_type: "[]AccountFlagsValue"
+            converter: accountFlags
+
+      Association:
+        api_type: V0044Assoc
+        common_type: Association
+        fields:
+          - api: Account
+            common: Account
+            api_type: "*string"
+            common_type: "*string"
+            direct: true
+          - api: User
+            common: User
+            api_type: string
+            common_type: string
+          - api: Cluster
+            common: Cluster
+            api_type: "*string"
+            common_type: "*string"
+            direct: true
+          - api: Partition
+            common: Partition
+            api_type: "*string"
+            common_type: "*string"
+            direct: true
+          - api: Id
+            common: ID
+            api_type: "*int32"
+            common_type: "*int32"
+            direct: true
+          - api: SharesRaw
+            common: SharesRaw
+            api_type: "*int32"
+            common_type: "*int32"
+            direct: true
+
+      Node:
+        api_type: V0044Node
+        common_type: Node
+        fields:
+          - api: Name
+            common: Name
+            api_type: "*string"
+            common_type: "*string"
+            direct: true
+          - api: State
+            common: State
+            api_type: "[]V0044NodeState"
+            common_type: "[]NodeState"
+            converter: nodeStateSlice
+          - api: Cpus
+            common: CPUs
+            api_type: "*int32"
+            common_type: "*int32"
+            direct: true
+          - api: Partitions
+            common: Partitions
+            api_type: "*[]string"
+            common_type: "[]string"
+            converter: stringPtrSliceToSlice
+
+      Job:
+        api_type: V0044JobInfo
+        common_type: Job
+        fields:
+          - api: JobId
+            common: JobID
+            api_type: "*int32"
+            common_type: "*int32"
+            direct: true
+          - api: Name
+            common: Name
+            api_type: "*string"
+            common_type: "*string"
+            direct: true
+          - api: UserId
+            common: UserID
+            api_type: "*string"
+            common_type: "*string"
+            direct: true
+          - api: GroupId
+            common: GroupID
+            api_type: "*string"
+            common_type: "*string"
+            direct: true
+          - api: Partition
+            common: Partition
+            api_type: "*string"
+            common_type: "*string"
+            direct: true
+          - api: Account
+            common: Account
+            api_type: "*string"
+            common_type: "*string"
+            direct: true
+          - api: JobState
+            common: State
+            api_type: "[]V0044JobState"
+            common_type: "[]JobState"
+            converter: jobStateSlice
+
+  v0_0_43:
+    api_package: "github.com/jontk/slurm-client/internal/api/v0_0_43"
+    api_prefix: "V0043"
+    # Similar structure to v0_0_44
+
+  v0_0_42:
+    api_package: "github.com/jontk/slurm-client/internal/api/v0_0_42"
+    api_prefix: "V0042"
+
+  v0_0_41:
+    api_package: "github.com/jontk/slurm-client/internal/api/v0_0_41"
+    api_prefix: "V0041"
+
+  v0_0_40:
+    api_package: "github.com/jontk/slurm-client/internal/api/v0_0_40"
+    api_prefix: "V0040"
+
+# Converter templates for complex conversions
+converters:
+  coordSlice:
+    description: "Convert API Coord slice to common Coord slice"
+    template: |
+      if {{.ApiField}} != nil && len(*{{.ApiField}}) > 0 {
+          result := make([]types.Coord, len(*{{.ApiField}}))
+          for i, c := range *{{.ApiField}} {
+              result[i] = types.Coord{Name: c.Name}
+          }
+          {{.CommonField}} = result
+      }
+
+  accountFlags:
+    description: "Convert API account flags to common flags"
+    template: |
+      if {{.ApiField}} != nil {
+          for _, flag := range *{{.ApiField}} {
+              switch flag {
+              case api.{{.ApiPrefix}}AccountFlagsDELETED:
+                  {{.CommonField}} = append({{.CommonField}}, types.AccountFlagsDeleted)
+              }
+          }
+      }
+
+  nodeStateSlice:
+    description: "Convert API node state slice to common state slice"
+    template: |
+      if len({{.ApiField}}) > 0 {
+          result := make([]types.NodeState, len({{.ApiField}}))
+          for i, s := range {{.ApiField}} {
+              result[i] = types.NodeState(s)
+          }
+          {{.CommonField}} = result
+      }
+
+  jobStateSlice:
+    description: "Convert API job state slice to common state slice"
+    template: |
+      if len({{.ApiField}}) > 0 {
+          result := make([]types.JobState, len({{.ApiField}}))
+          for i, s := range {{.ApiField}} {
+              result[i] = types.JobState(s)
+          }
+          {{.CommonField}} = result
+      }
+
+  stringPtrSliceToSlice:
+    description: "Convert *[]string to []string"
+    template: |
+      if {{.ApiField}} != nil {
+          {{.CommonField}} = *{{.ApiField}}
+      }

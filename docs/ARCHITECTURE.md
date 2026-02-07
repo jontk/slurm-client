@@ -37,11 +37,13 @@ This document describes the architecture of the SLURM REST API Client Library.
 
 ### 1. Public Interface Layer
 
-Located in `internal/interfaces/`, this layer defines all public contracts:
+Located in the root `slurm` package, this layer provides the main API surface with type aliases and public contracts:
 
 - **Manager Interfaces**: JobManager, NodeManager, PartitionManager, etc.
 - **Data Types**: Job, Node, Partition, Reservation, etc.
 - **Configuration**: ClientConfig, AuthConfig, etc.
+
+This package serves as the stable public API that users import and interact with.
 
 ```go
 type JobManager interface {
@@ -54,7 +56,7 @@ type JobManager interface {
 
 ### 2. Factory Layer
 
-Located in `pkg/client/factory/`, responsible for:
+Located in `internal/factory/`, responsible for:
 
 - API version auto-detection
 - Client instantiation
@@ -94,7 +96,7 @@ type JobAdapter interface {
 
 ### 4. Implementation Layer
 
-Version-specific implementations in `internal/api/v0_0_**/`:
+Version-specific implementations in `internal/adapters/v0_0_**/`:
 
 - **Manager Implementations**: Implement public interfaces
 - **Adapter Implementations**: Handle version-specific API calls
@@ -102,7 +104,7 @@ Version-specific implementations in `internal/api/v0_0_**/`:
 
 ### 5. OpenAPI Client Layer
 
-Auto-generated clients in `internal/api/v0_0_**/`:
+Auto-generated clients in `internal/openapi/v0_0_**/`:
 
 - Generated from OpenAPI specifications
 - Provides low-level HTTP API access
@@ -173,7 +175,7 @@ Public Types (interfaces) → Adapter Types (common) → API Types (version-spec
 
 ### Adding New Features
 
-1. Define interface in `internal/interfaces/`
+1. Define interface in `internal/interfaces/` and export via `pkg/slurm/`
 2. Implement in each supported version
 3. Provide fallback for unsupported versions
 4. Update documentation

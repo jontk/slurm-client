@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_44
 
 import (
@@ -15,7 +14,6 @@ func TestStandaloneAdapter_PingDatabase(t *testing.T) {
 	adapter := &StandaloneAdapter{
 		client: nil,
 	}
-
 	tests := []struct {
 		name    string
 		ctx     context.Context
@@ -35,7 +33,6 @@ func TestStandaloneAdapter_PingDatabase(t *testing.T) {
 			errMsg:  "API client not initialized",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, err := adapter.PingDatabase(tt.ctx)
@@ -50,12 +47,10 @@ func TestStandaloneAdapter_PingDatabase(t *testing.T) {
 		})
 	}
 }
-
 func TestStandaloneAdapter_GetTRES(t *testing.T) {
 	adapter := &StandaloneAdapter{
 		client: nil,
 	}
-
 	tests := []struct {
 		name    string
 		ctx     context.Context
@@ -75,7 +70,6 @@ func TestStandaloneAdapter_GetTRES(t *testing.T) {
 			errMsg:  "API client not initialized",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, err := adapter.GetTRES(tt.ctx)
@@ -90,12 +84,10 @@ func TestStandaloneAdapter_GetTRES(t *testing.T) {
 		})
 	}
 }
-
 func TestStandaloneAdapter_CreateTRES(t *testing.T) {
 	adapter := &StandaloneAdapter{
 		client: nil,
 	}
-
 	tests := []struct {
 		name    string
 		ctx     context.Context
@@ -109,7 +101,6 @@ func TestStandaloneAdapter_CreateTRES(t *testing.T) {
 			errMsg:  "CreateTRES request is required",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, err := adapter.CreateTRES(tt.ctx, nil)

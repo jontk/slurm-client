@@ -31,7 +31,6 @@ Each adapter follows the same pattern as v0_0_43:
 type XxxAdapter struct {
     *base.XxxBaseManager
     client  *api.ClientWithResponses
-    wrapper *api.WrapperClient
 }
 ```
 
@@ -41,7 +40,6 @@ func NewXxxAdapter(client *api.ClientWithResponses) *XxxAdapter {
     return &XxxAdapter{
         XxxBaseManager: base.NewXxxBaseManager("v0.0.XX"),
         client:         client,
-        wrapper:        nil, // Wrapper implemented later
     }
 }
 ```
@@ -85,7 +83,7 @@ Each converter file provides:
 
 ## Notes for Implementers
 
-- Use base managers from `internal/managers/base/`
+- Use base managers from `internal/adapters/base/`
 - Follow error handling patterns from v0_0_43
 - Include validation using base manager methods
 - Handle nil pointers carefully in converters

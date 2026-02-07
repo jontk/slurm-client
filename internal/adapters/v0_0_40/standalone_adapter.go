@@ -1,14 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_40
 
 import (
 	"context"
 	"fmt"
 
-	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
-	"github.com/jontk/slurm-client/internal/common/types"
+	types "github.com/jontk/slurm-client/api"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_40"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -31,27 +30,22 @@ func (a *StandaloneAdapter) GetLicenses(ctx context.Context) (*types.LicenseList
 	if a.client == nil {
 		return nil, fmt.Errorf("API client not initialized")
 	}
-
 	resp, err := a.client.SlurmV0040GetLicensesWithResponse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get licenses: %w", err)
 	}
-
 	// Handle API response with enhanced error handling
 	if err := a.errorAdapter.HandleAPIResponse(resp.StatusCode(), resp.Body, "GetLicenses"); err != nil {
 		return nil, err
 	}
-
 	if resp.JSON200 == nil {
 		return &types.LicenseList{Licenses: []types.License{}}, nil
 	}
-
 	// Convert API licenses to common types
 	licenses := make([]types.License, 0)
 	// Licenses is not a pointer field
 	for _, apiLicense := range resp.JSON200.Licenses {
 		license := types.License{}
-
 		if apiLicense.LicenseName != nil {
 			license.Name = *apiLicense.LicenseName
 		}
@@ -71,10 +65,8 @@ func (a *StandaloneAdapter) GetLicenses(ctx context.Context) (*types.LicenseList
 		// For now, just note that this is a remote license
 		if apiLicense.Remote != nil && *apiLicense.Remote {
 		}
-
 		licenses = append(licenses, license)
 	}
-
 	return &types.LicenseList{
 		Licenses: licenses,
 		Meta:     extractMeta(resp.JSON200.Meta),
@@ -86,7 +78,6 @@ func (a *StandaloneAdapter) GetShares(ctx context.Context, opts *types.GetShares
 	if a.client == nil {
 		return nil, fmt.Errorf("API client not initialized")
 	}
-
 	// Build query parameters
 	params := &api.SlurmV0040GetSharesParams{}
 	if opts != nil {
@@ -98,26 +89,21 @@ func (a *StandaloneAdapter) GetShares(ctx context.Context, opts *types.GetShares
 		}
 		// v0.0.40 doesn't have a Partition parameter for GetShares
 	}
-
 	resp, err := a.client.SlurmV0040GetSharesWithResponse(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get shares: %w", err)
 	}
-
 	// Handle API response with enhanced error handling
 	if err := a.errorAdapter.HandleAPIResponse(resp.StatusCode(), resp.Body, "GetShares"); err != nil {
 		return nil, err
 	}
-
 	if resp.JSON200 == nil {
 		return &types.SharesList{Shares: []types.Share{}}, nil
 	}
-
 	// Convert API shares to common types
 	shares := make([]types.Share, 0)
 	for _, apiShare := range *resp.JSON200.Shares.Shares {
 		share := types.Share{}
-
 		if apiShare.Name != nil {
 			// This could be account or user name
 			share.Account = *apiShare.Name
@@ -125,7 +111,6 @@ func (a *StandaloneAdapter) GetShares(ctx context.Context, opts *types.GetShares
 		if apiShare.Partition != nil {
 			share.Partition = *apiShare.Partition
 		}
-
 		// Convert share numbers
 		if apiShare.Shares != nil && apiShare.Shares.Number != nil {
 			share.RawShares = int(*apiShare.Shares.Number)
@@ -141,10 +126,8 @@ func (a *StandaloneAdapter) GetShares(ctx context.Context, opts *types.GetShares
 			// SharesNormalized.Number is float64, convert to int
 			share.FairshareShares = int(*apiShare.SharesNormalized.Number)
 		}
-
 		shares = append(shares, share)
 	}
-
 	return &types.SharesList{
 		Shares: shares,
 		Meta:   extractMeta(resp.JSON200.Meta),
@@ -161,26 +144,21 @@ func (a *StandaloneAdapter) GetDiagnostics(ctx context.Context) (*types.Diagnost
 	if a.client == nil {
 		return nil, fmt.Errorf("API client not initialized")
 	}
-
 	resp, err := a.client.SlurmV0040GetDiagWithResponse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get diagnostics: %w", err)
 	}
-
 	// Handle API response with enhanced error handling
 	if err := a.errorAdapter.HandleAPIResponse(resp.StatusCode(), resp.Body, "GetDiagnostics"); err != nil {
 		return nil, err
 	}
-
 	if resp.JSON200 == nil {
 		return nil, fmt.Errorf("empty diagnostics response")
 	}
-
 	// Convert API diagnostics to common type
 	diag := &types.Diagnostics{
 		Meta: extractMeta(resp.JSON200.Meta),
 	}
-
 	// Map statistics fields
 	stats := resp.JSON200.Statistics
 	if stats.JobsSubmitted != nil {
@@ -204,10 +182,8 @@ func (a *StandaloneAdapter) GetDiagnostics(ctx context.Context) (*types.Diagnost
 	if stats.JobsRunning != nil {
 		diag.JobsRunning = int(*stats.JobsRunning)
 	}
-
 	// RPC statistics
 	// Note: v0.0.40 doesn't have RPC statistics in the same structure
-
 	return diag, nil
 }
 
@@ -240,41 +216,31 @@ func (a *StandaloneAdapter) GetTRES(ctx context.Context) (*types.TRESList, error
 	if a.client == nil {
 		return nil, fmt.Errorf("API client not initialized")
 	}
-
 	resp, err := a.client.SlurmdbV0040GetTresWithResponse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get TRES: %w", err)
 	}
-
 	// Handle API response with enhanced error handling
 	if err := a.errorAdapter.HandleAPIResponse(resp.StatusCode(), resp.Body, "GetTRES"); err != nil {
 		return nil, err
 	}
-
 	if resp.JSON200 == nil || resp.JSON200.TRES == nil {
 		return &types.TRESList{TRES: []types.TRES{}}, nil
 	}
-
 	// Convert API TRES to common types
 	tresList := make([]types.TRES, 0)
 	for _, apiTres := range resp.JSON200.TRES {
-		tres := types.TRES{}
-
+		tres := types.TRES{
+			Type: apiTres.Type,
+		}
 		if apiTres.Id != nil {
-			tres.ID = int(*apiTres.Id)
+			id := int32(*apiTres.Id)
+			tres.ID = &id
 		}
-		// Type is not a pointer in v0.0.40
-		tres.Type = apiTres.Type
-		if apiTres.Name != nil {
-			tres.Name = *apiTres.Name
-		}
-		if apiTres.Count != nil {
-			tres.Count = *apiTres.Count
-		}
-
+		tres.Name = apiTres.Name
+		tres.Count = apiTres.Count
 		tresList = append(tresList, tres)
 	}
-
 	return &types.TRESList{
 		TRES: tresList,
 		Meta: extractMeta(resp.JSON200.Meta),
@@ -299,11 +265,9 @@ func (a *StandaloneAdapter) PingDatabase(ctx context.Context) (*types.PingRespon
 // extractMeta extracts metadata from API response meta field
 func extractMeta(meta *api.V0040OpenapiMeta) map[string]interface{} {
 	result := make(map[string]interface{})
-
 	if meta == nil {
 		return result
 	}
-
 	// V0040OpenapiMeta has Client, Command, Plugin fields but not Messages/Warnings/Errors
 	// Extract basic metadata
 	if meta.Client != nil {
@@ -321,11 +285,9 @@ func extractMeta(meta *api.V0040OpenapiMeta) map[string]interface{} {
 			result["client"] = clientInfo
 		}
 	}
-
 	if meta.Command != nil && len(*meta.Command) > 0 {
 		result["command"] = *meta.Command
 	}
-
 	if meta.Plugin != nil {
 		pluginInfo := make(map[string]interface{})
 		if meta.Plugin.Type != nil {
@@ -338,6 +300,5 @@ func extractMeta(meta *api.V0040OpenapiMeta) map[string]interface{} {
 			result["plugin"] = pluginInfo
 		}
 	}
-
 	return result
 }

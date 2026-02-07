@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	"github.com/jontk/slurm-client/pkg/performance"
@@ -62,7 +61,7 @@ func demonstrateConnectionPooling(ctx context.Context, cfg *config.Config, auth 
 	// Create client with custom HTTP client from pool
 	// Note: pool is *HTTPClientPool, not *http.Client, so we need to get a client from it
 	httpClient := pool.GetClient(cfg.BaseURL)
-	client, err := slurm.NewClient(ctx,
+	client, err := slurm.NewClient(context.Background(),
 		slurm.WithConfig(cfg),
 		slurm.WithAuth(auth),
 		slurm.WithHTTPClient(httpClient),
@@ -89,7 +88,7 @@ func demonstrateConnectionPooling(ctx context.Context, cfg *config.Config, auth 
 	fmt.Printf("Average per request: %v\n", elapsed/10)
 
 	// Compare with non-pooled client
-	basicClient, err := slurm.NewClient(ctx,
+	basicClient, err := slurm.NewClient(context.Background(),
 		slurm.WithConfig(cfg),
 		slurm.WithAuth(auth),
 	)
@@ -125,7 +124,7 @@ func demonstrateResponseCaching(ctx context.Context, cfg *config.Config, auth au
 	cache := performance.NewResponseCache(cacheConfig)
 
 	// Create client (in real usage, you'd integrate cache with client)
-	client, err := slurm.NewClient(ctx,
+	client, err := slurm.NewClient(context.Background(),
 		slurm.WithConfig(cfg),
 		slurm.WithAuth(auth),
 	)
@@ -185,7 +184,7 @@ func demonstrateResponseCaching(ctx context.Context, cfg *config.Config, auth au
 }
 
 // Helper function for caching demonstration
-func getPartitionsWithCache(ctx context.Context, client slurm.SlurmClient, cache *performance.ResponseCache, key string) (*interfaces.PartitionList, error) {
+func getPartitionsWithCache(ctx context.Context, client slurm.SlurmClient, cache *performance.ResponseCache, key string) (*slurm.PartitionList, error) {
 	// Check cache first
 	// Note: In a real implementation, we would check the cache and deserialize
 	// For this example, we always fetch fresh data
@@ -207,7 +206,7 @@ func getPartitionsWithCache(ctx context.Context, client slurm.SlurmClient, cache
 
 // demonstrateBatchOperations shows efficient batch operation patterns
 func demonstrateBatchOperations(ctx context.Context, cfg *config.Config, auth auth.Provider) {
-	client, err := slurm.NewClient(ctx,
+	client, err := slurm.NewClient(context.Background(),
 		slurm.WithConfig(cfg),
 		slurm.WithAuth(auth),
 	)
@@ -237,7 +236,7 @@ func demonstrateBatchOperations(ctx context.Context, cfg *config.Config, auth au
 	start = time.Now()
 
 	// Get all jobs in one request and filter client-side
-	allJobs, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
+	allJobs, err := client.Jobs().List(ctx, &slurm.ListJobsOptions{
 		Limit: 100,
 	})
 	if err != nil {
@@ -253,7 +252,8 @@ func demonstrateBatchOperations(ctx context.Context, cfg *config.Config, auth au
 
 	matchCount := 0
 	for _, job := range allJobs.Jobs {
-		if jobIDMap[job.ID] {
+		jobID := fmt.Sprintf("%d", *job.JobID)
+		if jobIDMap[jobID] {
 			matchCount++
 		}
 	}
@@ -269,7 +269,7 @@ func demonstrateBatchOperations(ctx context.Context, cfg *config.Config, auth au
 	// Prepare batch of jobs
 	var submittedJobs []string
 	for i := range 5 {
-		job := &interfaces.JobSubmission{
+		job := &slurm.JobSubmission{
 			Name:      fmt.Sprintf("batch-job-%d", i),
 			Command:   fmt.Sprintf("echo 'Batch job %d'", i),
 			Partition: "compute",
@@ -283,7 +283,7 @@ func demonstrateBatchOperations(ctx context.Context, cfg *config.Config, auth au
 			log.Printf("Failed to submit job %d: %v", i, err)
 			continue
 		}
-		submittedJobs = append(submittedJobs, resp.JobID)
+		submittedJobs = append(submittedJobs, fmt.Sprintf("%d", resp.JobId))
 	}
 
 	elapsed = time.Since(start)
@@ -305,7 +305,7 @@ func demonstrateConcurrentRequests(ctx context.Context, cfg *config.Config, auth
 			defer wg.Done()
 
 			// Each worker gets its own client
-			client, err := slurm.NewClient(ctx,
+			client, err := slurm.NewClient(context.Background(),
 				slurm.WithConfig(cfg),
 				slurm.WithAuth(auth),
 			)
@@ -318,11 +318,11 @@ func demonstrateConcurrentRequests(ctx context.Context, cfg *config.Config, auth
 			// Perform concurrent operations
 			operations := []operation{
 				{name: "list-jobs", fn: func() error {
-					_, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{Limit: 10})
+					_, err := client.Jobs().List(ctx, &slurm.ListJobsOptions{Limit: 10})
 					return err
 				}},
 				{name: "list-nodes", fn: func() error {
-					_, err := client.Nodes().List(ctx, &interfaces.ListNodesOptions{Limit: 10})
+					_, err := client.Nodes().List(ctx, &slurm.ListNodesOptions{Limit: 10})
 					return err
 				}},
 				{name: "get-info", fn: func() error {
@@ -424,7 +424,7 @@ func demonstratePerformanceProfiling(ctx context.Context, cfg *config.Config, au
 		profilePool := poolManager.GetPoolForVersion("v0.0.42", p.profile)
 		httpClient := profilePool.GetClient(cfg.BaseURL)
 
-		client, err := slurm.NewClient(ctx,
+		client, err := slurm.NewClient(context.Background(),
 			slurm.WithConfig(cfg),
 			slurm.WithAuth(auth),
 			slurm.WithHTTPClient(httpClient),

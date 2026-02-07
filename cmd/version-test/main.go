@@ -9,16 +9,15 @@ import (
 	"log"
 	"time"
 
-	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	slurm "github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
 
 func main() {
-	serverURL := "http://rocky9.ar.jontk.com:6820"
+	serverURL := "http://localhost:6820"
 	//nolint:gosec // G101 - Test token for development/testing purposes only
-	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjI2NTM4Mjk5NzYsImlhdCI6MTc1MzgyOTk3Niwic3VuIjoicm9vdCJ9.-z8Cq_wHuOxNJ7KHHTboX3l9r6JBtSD1RxQUgQR9owE"
+	token := "your-jwt-token-here"
 	versions := []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43"}
 
 	ctx := context.Background()
@@ -73,7 +72,7 @@ func testVersion(ctx context.Context, version, serverURL, token string) {
 
 	// Test 3: List jobs
 	fmt.Print("  List Jobs: ")
-	if jobs, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{Limit: 5}); err != nil {
+	if jobs, err := client.Jobs().List(ctx, &slurm.ListJobsOptions{Limit: 5}); err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
 		fmt.Printf("✅ Found %d jobs\n", len(jobs.Jobs))
@@ -81,7 +80,7 @@ func testVersion(ctx context.Context, version, serverURL, token string) {
 
 	// Test 4: Job submission
 	fmt.Print("  Submit Job: ")
-	submission := &interfaces.JobSubmission{
+	submission := &slurm.JobSubmission{
 		Name:       fmt.Sprintf("test-%s-%d", version, time.Now().Unix()),
 		Script:     "#!/bin/bash\necho 'Testing " + version + "'\nhostname\ndate\nsleep 5",
 		Partition:  "debug",
@@ -94,9 +93,10 @@ func testVersion(ctx context.Context, version, serverURL, token string) {
 	if resp, err := client.Jobs().Submit(ctx, submission); err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
-		fmt.Printf("✅ Job ID=%s", resp.JobID)
+		jobIdStr := fmt.Sprintf("%d", resp.JobId)
+		fmt.Printf("✅ Job ID=%s", jobIdStr)
 		// Try to cancel
-		if err := client.Jobs().Cancel(ctx, resp.JobID); err != nil {
+		if err := client.Jobs().Cancel(ctx, jobIdStr); err != nil {
 			fmt.Printf(" (cancel failed: %v)\n", err)
 		} else {
 			fmt.Println(" (cancelled)")
@@ -105,7 +105,7 @@ func testVersion(ctx context.Context, version, serverURL, token string) {
 
 	// Test 5: List nodes
 	fmt.Print("  List Nodes: ")
-	if nodes, err := client.Nodes().List(ctx, &interfaces.ListNodesOptions{Limit: 5}); err != nil {
+	if nodes, err := client.Nodes().List(ctx, &slurm.ListNodesOptions{Limit: 5}); err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
 		fmt.Printf("✅ Found %d nodes\n", len(nodes.Nodes))
@@ -113,7 +113,7 @@ func testVersion(ctx context.Context, version, serverURL, token string) {
 
 	// Test 6: List partitions
 	fmt.Print("  List Partitions: ")
-	if partitions, err := client.Partitions().List(ctx, &interfaces.ListPartitionsOptions{Limit: 5}); err != nil {
+	if partitions, err := client.Partitions().List(ctx, &slurm.ListPartitionsOptions{Limit: 5}); err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
 		fmt.Printf("✅ Found %d partitions\n", len(partitions.Partitions))

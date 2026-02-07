@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_44
 
 import (
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/internal/adapters/common"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_44"
 )
 
 // Adapter implements the VersionAdapter interface for API version v0.0.44
@@ -49,6 +49,63 @@ func NewAdapter(client *api.ClientWithResponses) *Adapter {
 // GetVersion returns the API version this adapter supports
 func (a *Adapter) GetVersion() string {
 	return a.version
+}
+
+// GetCapabilities returns the features supported by this API version
+func (a *Adapter) GetCapabilities() types.ClientCapabilities {
+	return types.ClientCapabilities{
+		Version: "v0.0.44",
+		// Resource Manager Support - full support
+		SupportsJobs:         true,
+		SupportsNodes:        true,
+		SupportsPartitions:   true,
+		SupportsReservations: true,
+		// Database Manager Support - full support
+		SupportsAccounts:     true,
+		SupportsUsers:        true,
+		SupportsQoS:          true,
+		SupportsClusters:     true,
+		SupportsAssociations: true,
+		SupportsWCKeys:       true,
+		// Write Operations Support - full support
+		SupportsJobSubmit:        true,
+		SupportsJobUpdate:        true,
+		SupportsJobCancel:        true,
+		SupportsNodeUpdate:       true,
+		SupportsPartitionWrite:   true,
+		SupportsReservationWrite: true,
+		// Database Write Operations - full support
+		SupportsAccountWrite:     true,
+		SupportsUserWrite:        true,
+		SupportsQoSWrite:         true,
+		SupportsClusterWrite:     true,
+		SupportsAssociationWrite: true,
+		SupportsWCKeyWrite:       true,
+		// Advanced Features - full support
+		SupportsTRES:        true,
+		SupportsInstances:   true,
+		SupportsReconfigure: true,
+		SupportsDiagnostics: true,
+		SupportsShares:      true,
+		SupportsLicenses:    true,
+		// Extended Features - not implemented in adapter pattern
+		SupportsJobSteps:       false, // Steps() requires direct API access
+		SupportsJobWatch:       true,  // Watch() is implemented
+		SupportsNodeWatch:      true,  // Watch() is implemented
+		SupportsPartitionWatch: false, // Watch() not implemented in adapter
+		SupportsAnalytics:      false, // Analytics returns nil
+		// Extended Account/User Operations - not implemented in adapter
+		SupportsAccountHierarchy: false,
+		SupportsAccountQuotas:    false,
+		SupportsUserHelpers:      false,
+		SupportsFairShare:        false,
+		// Cluster Operations - limited in adapter pattern
+		SupportsClusterCreate: false,
+		SupportsClusterUpdate: false,
+		SupportsClusterDelete: false,
+		// Bulk Operations
+		SupportsAssociationBulkDelete: false,
+	}
 }
 
 // GetQoSManager returns the QoS adapter for this version

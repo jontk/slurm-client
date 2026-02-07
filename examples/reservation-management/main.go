@@ -7,10 +7,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -125,14 +126,27 @@ func listReservations(ctx context.Context, cfg *config.Config, auth auth.Provide
 
 	// Display reservations
 	for _, res := range reservations.Reservations {
-		fmt.Printf("\nReservation: %s\n", res.Name)
-		fmt.Printf("  State: %s\n", res.State)
+		name := ""
+		if res.Name != nil {
+			name = *res.Name
+		}
+		fmt.Printf("\nReservation: %s\n", name)
 		fmt.Printf("  Start: %s\n", res.StartTime.Format("2006-01-02 15:04"))
 		fmt.Printf("  End: %s\n", res.EndTime.Format("2006-01-02 15:04"))
-		fmt.Printf("  Duration: %d hours\n", res.Duration/3600)
-		fmt.Printf("  Nodes: %d (%v)\n", res.NodeCount, res.Nodes)
-		fmt.Printf("  Users: %v\n", res.Users)
-		fmt.Printf("  Accounts: %v\n", res.Accounts)
+		duration := res.EndTime.Sub(res.StartTime)
+		fmt.Printf("  Duration: %.0f hours\n", duration.Hours())
+		if res.NodeCount != nil {
+			fmt.Printf("  Node Count: %d\n", *res.NodeCount)
+		}
+		if res.NodeList != nil {
+			fmt.Printf("  Nodes: %s\n", *res.NodeList)
+		}
+		if res.Users != nil {
+			fmt.Printf("  Users: %s\n", *res.Users)
+		}
+		if res.Accounts != nil {
+			fmt.Printf("  Accounts: %s\n", *res.Accounts)
+		}
 
 		if len(res.Flags) > 0 {
 			fmt.Printf("  Flags: %v\n", res.Flags)
@@ -141,7 +155,7 @@ func listReservations(ctx context.Context, cfg *config.Config, auth auth.Provide
 
 	// List with filters
 	fmt.Println("\nListing reservations for specific users:")
-	userReservations, err := client.Reservations().List(ctx, &interfaces.ListReservationsOptions{
+	userReservations, err := client.Reservations().List(ctx, &slurm.ListReservationsOptions{
 		Users:  []string{"user1", "user2"},
 		States: []string{"ACTIVE"},
 	})
@@ -174,13 +188,13 @@ func createReservation(ctx context.Context, cfg *config.Config, auth auth.Provid
 	// Example 1: Node-based reservation
 	fmt.Println("Creating node-based reservation:")
 
-	nodeReservation := &interfaces.ReservationCreate{
-		Name:      "maintenance-window",
+	nodeReservation := &slurm.ReservationCreate{
+		Name:      stringPtr("maintenance-window"),
 		StartTime: time.Now().Add(24 * time.Hour),
-		Duration:  4 * 3600, // 4 hours
-		Nodes:     []string{"node001", "node002", "node003"},
+		Duration:  uint32Ptr(4 * 60), // 4 hours in minutes
+		NodeList:  []string{"node001", "node002", "node003"},
 		Users:     []string{"admin", "maintenance"},
-		Flags:     []string{"MAINT", "IGNORE_JOBS"},
+		Flags:     []types.FlagsValue{"MAINT", "IGNORE_JOBS"},
 	}
 
 	resp, err := client.Reservations().Create(ctx, nodeReservation)
@@ -193,14 +207,15 @@ func createReservation(ctx context.Context, cfg *config.Config, auth auth.Provid
 	// Example 2: Core-based reservation
 	fmt.Println("\nCreating core-based reservation:")
 
-	coreReservation := &interfaces.ReservationCreate{
-		Name:          "weekly-bigdata",
-		StartTime:     getNextMonday(),
-		EndTime:       getNextMonday().Add(72 * time.Hour), // 3 days
-		CoreCount:     256,
-		PartitionName: "compute",
-		Accounts:      []string{"bigdata-project"},
-		Features:      []string{"highmem", "ssd"},
+	endTime := getNextMonday().Add(72 * time.Hour) // 3 days
+	coreReservation := &slurm.ReservationCreate{
+		Name:      stringPtr("weekly-bigdata"),
+		StartTime: getNextMonday(),
+		EndTime:   endTime,
+		CoreCount: uint32Ptr(256),
+		Partition: stringPtr("compute"),
+		Accounts:  []string{"bigdata-project"},
+		Features:  stringPtr("highmem,ssd"),
 	}
 
 	resp2, err := client.Reservations().Create(ctx, coreReservation)
@@ -213,16 +228,13 @@ func createReservation(ctx context.Context, cfg *config.Config, auth auth.Provid
 	// Example 3: License reservation
 	fmt.Println("\nCreating license reservation:")
 
-	licenseReservation := &interfaces.ReservationCreate{
-		Name:      "matlab-training",
+	licenseReservation := &slurm.ReservationCreate{
+		Name:      stringPtr("matlab-training"),
 		StartTime: time.Now().Add(48 * time.Hour),
-		Duration:  8 * 3600, // 8 hours
-		NodeCount: 10,
-		Licenses: map[string]int{
-			"matlab":   50,
-			"simulink": 20,
-		},
-		Users: []string{"instructor", "student1", "student2"},
+		Duration:  uint32Ptr(8 * 60), // 8 hours in minutes
+		NodeCount: uint32Ptr(10),
+		Licenses:  []string{"matlab:50", "simulink:20"},
+		Users:     []string{"instructor", "student1", "student2"},
 	}
 
 	resp3, err := client.Reservations().Create(ctx, licenseReservation)
@@ -264,9 +276,17 @@ func updateReservation(ctx context.Context, cfg *config.Config, auth auth.Provid
 
 	// Extend reservation by 2 hours
 	newEndTime := current.EndTime.Add(2 * time.Hour)
-	update := &interfaces.ReservationUpdate{
+
+	// Parse current users (comma-separated string)
+	currentUsers := []string{}
+	if current.Users != nil {
+		currentUsers = append(currentUsers, *current.Users)
+	}
+	newUsers := append(currentUsers, "newuser")
+
+	update := &slurm.ReservationUpdate{
 		EndTime: &newEndTime,
-		Users:   append(current.Users, "newuser"),
+		Users:   newUsers,
 	}
 
 	fmt.Println("\nExtending reservation by 2 hours and adding user...")
@@ -312,14 +332,14 @@ func complexReservationScenarios(ctx context.Context, cfg *config.Config, auth a
 	for week := range 4 {
 		startTime := getNextMonday().Add(time.Duration(week*7*24) * time.Hour)
 
-		reservation := &interfaces.ReservationCreate{
-			Name:      fmt.Sprintf("weekly-gpu-slot-week%d", week+1),
+		reservation := &slurm.ReservationCreate{
+			Name:      stringPtr(fmt.Sprintf("weekly-gpu-slot-week%d", week+1)),
 			StartTime: startTime.Add(9 * time.Hour), // 9 AM
-			Duration:  8 * 3600,                     // 8 hours
-			Nodes:     []string{"gpu001", "gpu002"},
+			Duration:  uint32Ptr(8 * 60),            // 8 hours in minutes
+			NodeList:  []string{"gpu001", "gpu002"},
 			Accounts:  []string{"ml-research"},
-			Features:  []string{"gpu"},
-			Flags:     []string{"DAILY_9_5"}, // Custom flag
+			Features:  stringPtr("gpu"),
+			Flags:     []types.FlagsValue{"DAILY_9_5"}, // Custom flag
 		}
 
 		resp, err := client.Reservations().Create(ctx, reservation)
@@ -348,10 +368,27 @@ func complexReservationScenarios(ctx context.Context, cfg *config.Config, auth a
 			res1 := allReservations.Reservations[i]
 			res2 := allReservations.Reservations[j]
 
-			if hasNodeOverlap(res1.Nodes, res2.Nodes) &&
+			// Get node lists (comma-separated strings to arrays)
+			nodes1 := []string{}
+			if res1.NodeList != nil && *res1.NodeList != "" {
+				nodes1 = strings.Split(*res1.NodeList, ",")
+			}
+			nodes2 := []string{}
+			if res2.NodeList != nil && *res2.NodeList != "" {
+				nodes2 = strings.Split(*res2.NodeList, ",")
+			}
+
+			if hasNodeOverlap(nodes1, nodes2) &&
 				hasTimeOverlap(res1.StartTime, res1.EndTime, res2.StartTime, res2.EndTime) {
-				fmt.Printf("  Conflict detected: %s and %s overlap\n",
-					res1.Name, res2.Name)
+				name1 := ""
+				if res1.Name != nil {
+					name1 = *res1.Name
+				}
+				name2 := ""
+				if res2.Name != nil {
+					name2 = *res2.Name
+				}
+				fmt.Printf("  Conflict detected: %s and %s overlap\n", name1, name2)
 			}
 		}
 	}
@@ -360,13 +397,13 @@ func complexReservationScenarios(ctx context.Context, cfg *config.Config, auth a
 	fmt.Println("\nScenario 3: Creating maintenance window with job drainage")
 
 	// First, create a pre-maintenance reservation to prevent new jobs
-	preMaintenance := &interfaces.ReservationCreate{
-		Name:      "pre-maintenance-drain",
+	preMaintenance := &slurm.ReservationCreate{
+		Name:      stringPtr("pre-maintenance-drain"),
 		StartTime: time.Now().Add(23 * time.Hour), // 1 hour before maintenance
-		Duration:  1 * 3600,
-		Nodes:     []string{"node001", "node002", "node003", "node004"},
+		Duration:  uint32Ptr(1 * 60),              // 1 hour in minutes
+		NodeList:  []string{"node001", "node002", "node003", "node004"},
 		Users:     []string{"root"},
-		Flags:     []string{"NO_HOLD_JOBS_AFTER_END"},
+		Flags:     []types.FlagsValue{"NO_HOLD_JOBS_AFTER_END"},
 	}
 
 	_, err = client.Reservations().Create(ctx, preMaintenance)
@@ -375,13 +412,13 @@ func complexReservationScenarios(ctx context.Context, cfg *config.Config, auth a
 	}
 
 	// Then create the actual maintenance window
-	maintenance := &interfaces.ReservationCreate{
-		Name:      "maintenance-full",
+	maintenance := &slurm.ReservationCreate{
+		Name:      stringPtr("maintenance-full"),
 		StartTime: time.Now().Add(24 * time.Hour),
-		Duration:  4 * 3600,
-		Nodes:     []string{"node001", "node002", "node003", "node004"},
+		Duration:  uint32Ptr(4 * 60), // 4 hours in minutes
+		NodeList:  []string{"node001", "node002", "node003", "node004"},
 		Users:     []string{"root", "admin"},
-		Flags:     []string{"MAINT", "IGNORE_JOBS"},
+		Flags:     []types.FlagsValue{"MAINT", "IGNORE_JOBS"},
 	}
 
 	_, err = client.Reservations().Create(ctx, maintenance)
@@ -418,4 +455,12 @@ func hasNodeOverlap(nodes1, nodes2 []string) bool {
 
 func hasTimeOverlap(start1, end1, start2, end2 time.Time) bool {
 	return start1.Before(end2) && start2.Before(end1)
+}
+
+func stringPtr(s string) *string {
+	return &s
+}
+
+func uint32Ptr(u uint32) *uint32 {
+	return &u
 }

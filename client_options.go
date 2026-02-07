@@ -11,12 +11,6 @@ import (
 
 	"github.com/jontk/slurm-client/internal/factory"
 	"github.com/jontk/slurm-client/pkg/auth"
-	slurmctx "github.com/jontk/slurm-client/pkg/context"
-	"github.com/jontk/slurm-client/pkg/logging"
-	"github.com/jontk/slurm-client/pkg/metrics"
-	"github.com/jontk/slurm-client/pkg/middleware"
-	"github.com/jontk/slurm-client/pkg/pool"
-	"github.com/jontk/slurm-client/pkg/retry"
 )
 
 // Additional client options that aren't in client.go
@@ -64,11 +58,17 @@ func WithHTTPClient(client *http.Client) ClientOption {
 	}
 }
 
-// WithVersion forces a specific API version
+// WithVersion is deprecated and has no effect.
+//
+// To specify a version, use NewClientWithVersion instead:
+//
+//	client, err := slurm.NewClientWithVersion(ctx, "v0.0.44", opts...)
+//
+// Deprecated: This function is a no-op. Use NewClientWithVersion to specify the API version.
 func WithVersion(version string) ClientOption {
 	return func(f *factory.ClientFactory) error {
-		// Version handling is done at client creation time
-		// This is a no-op for now
+		// This is a no-op - version must be specified via NewClientWithVersion()
+		// Keeping this for backward compatibility but it will be removed in a future release
 		return nil
 	}
 }
@@ -92,157 +92,11 @@ func (n *noAuth) Type() string {
 	return "none"
 }
 
-// === Enhanced feature options ===
-// NOTE: These options may need to be implemented in the factory package
-// For now, they are no-ops to allow the code to compile
-
-// WithLogger sets a custom logger for the client
-func WithLogger(logger logging.Logger) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
-// WithLogLevel sets the logging level
-func WithLogLevel(level string) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
-// WithMetricsCollector sets a custom metrics collector
-func WithMetricsCollector(collector metrics.Collector) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
-// WithMiddleware adds custom middleware to the HTTP client
-func WithMiddleware(middlewares ...middleware.Middleware) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
 // WithTimeout sets default timeout for all operations
+// This modifies the existing HTTP client's timeout without replacing the client,
+// preserving TLS configuration and custom transport settings
 func WithTimeout(timeout time.Duration) ClientOption {
 	return func(f *factory.ClientFactory) error {
-		// Create a new HTTP client with the specified timeout
-		httpClient := &http.Client{
-			Timeout: timeout,
-		}
-		return factory.WithHTTPClient(httpClient)(f)
-	}
-}
-
-// WithTimeoutConfig sets custom timeout configuration for different operation types
-func WithTimeoutConfig(config *slurmctx.TimeoutConfig) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
-// WithConnectionPool enables connection pooling with the specified configuration
-func WithConnectionPool(config *pool.PoolConfig) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
-// WithRetryBackoff sets a custom retry backoff strategy
-func WithRetryBackoff(backoff retry.Policy) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
-// WithMaxRetries sets the maximum number of retry attempts
-func WithMaxRetries(maxRetries int) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
-// WithUserAgent sets a custom User-Agent header
-func WithUserAgent(userAgent string) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
-// WithRequestID enables request ID generation with the provided generator
-func WithRequestID(generator func() string) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
-// WithCircuitBreaker enables circuit breaker functionality
-func WithCircuitBreaker(threshold int, timeout time.Duration) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
-// WithCompression enables or disables HTTP compression
-func WithCompression(enabled bool) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
-// WithKeepAlive enables or disables HTTP keep-alive
-func WithKeepAlive(enabled bool) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
-// WithDebug enables debug mode with verbose logging
-func WithDebug() ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
-// WithTLSConfig sets custom TLS configuration
-func WithTLSConfig(tlsConfig *http.Transport) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		// TODO: Implement in factory
-		return nil
-	}
-}
-
-// WithUseAdapters enables the use of adapter pattern instead of wrapper clients.
-// This is recommended for better version compatibility, especially for older versions
-// (v0.0.40, v0.0.41, v0.0.42, v0.0.43) where wrapper clients have limited functionality.
-//
-// When enabled, the client uses the adapter pattern which provides more complete
-// implementation of standalone operations like GetShares(), GetTRES(), GetDiagnostics(), etc.
-//
-// Example:
-//
-//	client, err := slurm.NewClientWithVersion(ctx, "v0.0.42",
-//	    slurm.WithBaseURL("http://localhost:6820"),
-//	    slurm.WithAuth(authProvider),
-//	    slurm.WithUseAdapters(true),  // Enable adapters
-//	)
-func WithUseAdapters(useAdapters bool) ClientOption {
-	return func(f *factory.ClientFactory) error {
-		return factory.WithUseAdapters(useAdapters)(f)
+		return f.SetTimeout(timeout)
 	}
 }

@@ -19,7 +19,7 @@ func testV0041() {
 	token := os.Getenv("SLURM_JWT_TOKEN")
 	if token == "" {
 		// Use default value
-		token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjI2NTM4Mjk5NzYsImlhdCI6MTc1MzgyOTk3Niwic3VuIjoicm9vdCJ9.-z8Cq_wHuOxNJ7KHHTboX3l9r6JBtSD1RxQUgQR9owE"
+		token = "your-jwt-token-here"
 	}
 
 	// Create auth provider
@@ -28,7 +28,7 @@ func testV0041() {
 	// Create factory
 	clientFactory, err := factory.NewClientFactory(
 		factory.WithAuth(authProvider),
-		factory.WithBaseURL("http://rocky9.ar.jontk.com:6820"),
+		factory.WithBaseURL("http://localhost:6820"),
 	)
 	if err != nil {
 		fmt.Printf("Error creating factory: %v\n", err)

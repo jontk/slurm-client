@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -15,7 +18,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -41,7 +44,7 @@ func (suite *E2EWorkflowTestSuite) SetupSuite() {
 	// Get server configuration
 	suite.serverURL = os.Getenv("SLURM_SERVER_URL")
 	if suite.serverURL == "" {
-		suite.serverURL = "http://rocky9:6820"
+		suite.serverURL = "http://localhost
 	}
 
 	// Get API version
@@ -168,7 +171,7 @@ func (suite *E2EWorkflowTestSuite) TestFullJobLifecycle() {
 		Script:    fmt.Sprintf("#!/bin/bash\n# E2E Test Job\necho 'Job %s started at:'\ndate\nhostname\necho 'Running workflow test...'\nsleep 60\necho 'Job completed at:'\ndate", jobName),
 		Partition: targetPartition,
 		Nodes:     1,
-		CPUs:      1,
+		Cpus:      1,
 		TimeLimit: 10, // 10 minutes
 		// QoS field removed from JobSubmission interface
 	}
@@ -278,7 +281,7 @@ func (suite *E2EWorkflowTestSuite) TestMultiJobWorkflow() {
 			Script:    fmt.Sprintf("#!/bin/bash\necho 'Multi-job test %d'\nhostname\nsleep 30\necho 'Job %d completed'", i+1, i+1),
 			Partition: targetPartition,
 			Nodes:     1,
-			CPUs:      1,
+			Cpus:      1,
 			TimeLimit: 5, // 5 minutes
 		}
 
@@ -387,7 +390,7 @@ func (suite *E2EWorkflowTestSuite) TestResourceRelationshipWorkflow() {
 			Partition: partition.Name,
 			// QoS field removed from JobSubmission interface
 			Nodes:     1,
-			CPUs:      1,
+			Cpus:      1,
 			TimeLimit: 5,
 		}
 
@@ -418,7 +421,7 @@ func (suite *E2EWorkflowTestSuite) TestErrorRecoveryWorkflow() {
 		Script:    "#!/bin/bash\necho 'This should fail'",
 		Partition: "nonexistent-partition-12345",
 		Nodes:     1,
-		CPUs:      1,
+		Cpus:      1,
 		TimeLimit: 5,
 	}
 
@@ -440,7 +443,7 @@ func (suite *E2EWorkflowTestSuite) TestErrorRecoveryWorkflow() {
 			Partition: partitions.Partitions[0].Name,
 			// QoS field removed from JobSubmission interface
 			Nodes:     1,
-			CPUs:      1,
+			Cpus:      1,
 			TimeLimit: 5,
 		}
 
@@ -457,7 +460,7 @@ func (suite *E2EWorkflowTestSuite) TestErrorRecoveryWorkflow() {
 			Script:    "#!/bin/bash\necho 'This might fail'",
 			Partition: partitions.Partitions[0].Name,
 			Nodes:     999999, // Excessive nodes
-			CPUs:      999999, // Excessive CPUs
+			Cpus:      999999, // Excessive CPUs
 			TimeLimit: 5,
 		}
 

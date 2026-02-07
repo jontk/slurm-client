@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_44
 
 import (
@@ -9,7 +8,7 @@ import (
 	"fmt"
 	"net/http"
 
-	api "github.com/jontk/slurm-client/internal/api/v0_0_44"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_44"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -27,19 +26,16 @@ func (e *ErrorAdapter) HandleAPIResponse(statusCode int, body []byte, operation 
 	if statusCode >= 200 && statusCode < 300 {
 		return nil
 	}
-
 	// Try to parse the error response
 	var apiResp struct {
 		Meta     *api.V0044OpenapiMeta     `json:"meta,omitempty"`
 		Errors   *api.V0044OpenapiErrors   `json:"errors,omitempty"`
 		Warnings *api.V0044OpenapiWarnings `json:"warnings,omitempty"`
 	}
-
 	var details []errors.SlurmAPIErrorDetail
 	if err := json.Unmarshal(body, &apiResp); err == nil {
 		// Check for errors in the meta field (v0.0.44 doesn't have Errors in meta)
 		// Skip this check for v0.0.44
-
 		// Also check for errors in the errors field
 		if apiResp.Errors != nil {
 			for _, apiErr := range *apiResp.Errors {
@@ -62,14 +58,12 @@ func (e *ErrorAdapter) HandleAPIResponse(statusCode int, body []byte, operation 
 			}
 		}
 	}
-
 	// Create a structured error using the error package
 	if len(details) > 0 {
 		apiErr := errors.NewSlurmAPIError(statusCode, "v0.0.44", details)
 		apiErr.SlurmError.Details = "Operation: " + operation
 		return apiErr
 	}
-
 	// Handle specific HTTP status codes
 	switch statusCode {
 	case http.StatusUnauthorized:
@@ -125,7 +119,6 @@ func (e *ErrorAdapter) ParseSlurmError(err error) (string, string, int) {
 	code := "UNKNOWN"
 	message := err.Error()
 	errno := -1
-
 	// Try to extract more specific error information
 	var apiErr *errors.SlurmAPIError
 	if stderrors.As(err, &apiErr) {
@@ -135,6 +128,5 @@ func (e *ErrorAdapter) ParseSlurmError(err error) (string, string, int) {
 			errno = apiErr.Errors[0].ErrorNumber
 		}
 	}
-
 	return code, message, errno
 }

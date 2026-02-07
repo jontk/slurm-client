@@ -37,11 +37,13 @@ This document describes the architecture of the SLURM REST API Client Library.
 
 ### 1. Public Interface Layer
 
-Located in `internal/interfaces/`, this layer defines all public contracts:
+Located in `pkg/slurm/`, this layer provides the main API surface with type aliases and public contracts:
 
 - **Manager Interfaces**: JobManager, NodeManager, PartitionManager, etc.
 - **Data Types**: Job, Node, Partition, Reservation, etc.
 - **Configuration**: ClientConfig, AuthConfig, etc.
+
+This package serves as the stable public API that users import and interact with.
 
 ```go
 type JobManager interface {
@@ -173,7 +175,7 @@ Public Types (interfaces) → Adapter Types (common) → API Types (version-spec
 
 ### Adding New Features
 
-1. Define interface in `internal/interfaces/`
+1. Define interface in `internal/interfaces/` and export via `pkg/slurm/`
 2. Implement in each supported version
 3. Provide fallback for unsupported versions
 4. Update documentation

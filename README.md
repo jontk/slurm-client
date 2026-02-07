@@ -27,28 +27,20 @@ The definitive solution addressing Go SLURM client ecosystem fragmentation throu
 
 ## 🚀 Multi-Version Architecture
 
-> **🎯 Default Choice**: Use the **Adapter Pattern** for version-agnostic, production-ready code. The wrapper pattern is only for advanced use cases.
+Unlike existing solutions that support single API versions, this library provides seamless compatibility across all active SLURM REST API versions through a sophisticated **adapter pattern** that provides version abstraction while maintaining optimal performance and type safety.
 
-Unlike existing solutions that support single API versions, this library provides seamless compatibility across all active SLURM REST API versions:
+### Adapter Pattern Implementation
 
-### Adapter Pattern Implementation (Recommended)
-
-The library implements a sophisticated **adapter pattern** that provides version abstraction while maintaining optimal performance and type safety. Most users should use this approach for production applications.
+The library uses an adapter pattern that abstracts version differences behind a clean, unified API. All users should use this approach for production applications.
 
 #### Architecture Overview
 
 ```
 Client Application
         ↓
-    Public Interfaces (interfaces/)
+    Public API (pkg/slurm)
         ↓
-┌─────────────┬─────────────┐
-│ Adapter     │ Wrapper     │
-│ Pattern     │ Pattern     │
-│ (Recommended)│ (Direct)   │
-└─────────────┴─────────────┘
-        ↓           ↓
-Version-Specific Implementations
+Version-Specific Adapters
 (v0.0.40, v0.0.41, v0.0.42, v0.0.43, v0.0.44)
 ```
 
@@ -60,22 +52,11 @@ Version-Specific Implementations
 - **⚡ Performance**: Zero-copy operations where possible, intelligent caching
 - **🔄 Future-Proof**: Easy addition of new API versions without breaking changes
 
-#### Adapter vs Wrapper Comparison
-
-| Feature | Adapter Pattern | Wrapper Pattern |
-|---------|----------------|-----------------|
-| **Abstraction Level** | High - Version agnostic | Low - Version specific |
-| **Type Conversion** | Automatic | Manual |
-| **Performance** | Optimized with caching | Direct API calls |
-| **Complexity** | Simple to use | Requires version knowledge |
-| **Recommended For** | Production applications | Advanced users, debugging |
-
 #### Implementation Example
 
 ```go
-// Using Adapter Pattern (Recommended)
 func main() {
-    // Automatically selects best compatible version
+    // Create client - automatically selects best compatible version
     client, err := slurm.NewClient(ctx,
         slurm.WithBaseURL("https://cluster:6820"),
         slurm.WithAuth(auth.NewTokenAuth("token")),
@@ -99,19 +80,6 @@ func main() {
     for _, res := range reservations.Reservations {
         fmt.Printf("Reservation: %s, Nodes: %v\n", res.Name, res.Nodes)
     }
-}
-
-// Using Wrapper Pattern (Advanced)
-func advancedExample() {
-    // Direct access to specific version wrapper
-    wrapper, err := slurm.NewVersionWrapper(ctx, "v0.0.43", options...)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Direct API calls - requires version-specific knowledge
-    reservations, err := wrapper.ReservationAPI.SlurmV0043GetReservations(ctx)
-    // Handle version-specific response types manually...
 }
 ```
 
@@ -151,39 +119,16 @@ if err != nil {
 
 **Performance Optimizations**
 ```go
-// Adapter pattern includes built-in optimizations:
+// The client includes built-in optimizations:
 // - Zero-copy type conversion where possible
 // - Intelligent field mapping to avoid unnecessary allocations
 // - Response caching for expensive operations like cluster info
 // - Connection pooling managed at the adapter level
 
-// Benchmark results show 15-25% performance improvement over direct wrappers
-// when handling large datasets due to optimized type conversions
+// Benchmark results show 15-25% performance improvement when caching is enabled
+// on large datasets due to optimized type conversions
 ```
 
-#### Migration Guide: Wrapper to Adapter
-
-For users currently using the wrapper pattern:
-
-```go
-// Before: Version-specific wrapper (v0.0.43)
-wrapper, err := slurm.NewVersionWrapper(ctx, "v0.0.43", opts...)
-response, err := wrapper.ReservationAPI.SlurmV0043GetReservations(ctx)
-// Manual handling of version-specific types
-for _, res := range response.Reservations {
-    // Direct access to internal API types
-    fmt.Printf("Reservation: %s\n", *res.Name)
-}
-
-// After: Adapter pattern (works across versions)
-client, err := slurm.NewClient(ctx, opts...)
-reservations, err := client.Reservations().List(ctx, nil)
-// Automatic type conversion and version abstraction
-for _, res := range reservations.Reservations {
-    // Clean interface types with consistent behavior
-    fmt.Printf("Reservation: %s\n", res.Name)
-}
-```
 
 | SLURM Version | Supported API Versions | Recommended | Status |
 |---------------|------------------------|-------------|---------|
@@ -303,9 +248,7 @@ make test
 
 **Note**: The mock builders are generated from OpenAPI specs and are not committed to the repository. You must run `make generate-mocks` before running tests locally. CI automatically generates them.
 
-## ⚡ Quick Start (Recommended Approach)
-
-> **💡 New to slurm-client?** Use the **Adapter Pattern** for the best experience. It provides version-agnostic APIs with automatic type conversion and error handling.
+## ⚡ Quick Start
 
 ### Basic Example
 
@@ -324,7 +267,7 @@ import (
 )
 
 func main() {
-    // 🎯 Adapter Pattern: Works across all SLURM versions
+    // Create client - automatically detects the best compatible API version
     client, err := slurm.NewClient(context.Background(),
         slurm.WithBaseURL("https://your-slurm-server:6820"),
         slurm.WithAuth(auth.NewTokenAuth("your-token")),
@@ -396,138 +339,45 @@ func main() {
 }
 ```
 
-### 🤔 Which Pattern Should I Use?
-
-```
-Are you building a production application? ──── YES ──→ Use Adapter Pattern ✅
-                   │
-                   NO
-                   │
-                   ↓
-Do you need direct API access or debugging? ── YES ──→ Use Wrapper Pattern ⚠️
-                   │
-                   NO
-                   │
-                   ↓
-                Use Adapter Pattern ✅ (Default choice)
-```
-
-| **Use Adapter Pattern When** | **Use Wrapper Pattern When** |
-|-------------------------------|-------------------------------|
-| ✅ **Building production applications** | ⚠️ **You need direct API access** |
-| ✅ **You want version-agnostic code** | ⚠️ **Maximum performance is critical** |
-| ✅ **You're new to SLURM APIs** | ⚠️ **You're debugging API responses** |
-| ✅ **You want simple error handling** | ⚠️ **You need version-specific features** |
-| ✅ **You want automatic type conversion** | ⚠️ **You're migrating from direct API calls** |
-
-> **🎯 Recommendation**: **95% of users should use the Adapter Pattern**. You can always switch to the Wrapper Pattern later if you have specific advanced needs.
-
-### Advanced Usage: Wrapper Pattern
-
-Only use the wrapper pattern if you need direct access to version-specific APIs:
-
-```go
-// ⚠️ Advanced: Direct API access with version-specific code
-import "github.com/jontk/slurm-client/internal/api/v0_0_43"
-
-func advancedExample() {
-    // Direct access to v0.0.43 API - requires version knowledge
-    config := &interfaces.ClientConfig{
-        BaseURL: "https://slurm-server:6820",
-        Version: "v0.0.43", // Must specify exact version
-    }
-
-    wrapper, err := v0_0_43.NewWrapperClient(config)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Direct API call - you handle all type conversions
-    response, err := wrapper.GetJobs(ctx, &v0_0_43.GetJobsParams{})
-    // Manual error handling and type conversion required...
-}
-```
-
-> **📚 Need wrapper documentation?** See [Advanced Wrapper Usage](docs/wrapper-advanced.md)
-
-#### Adapter Configuration Options
-
-The adapter pattern supports advanced configuration for performance tuning and behavior customization:
-
-```go
-import "github.com/jontk/slurm-client/pkg/config"
-
-// Configure adapter-specific behavior
-adapterConfig := &config.AdapterConfig{
-    // Performance tuning
-    EnableTypeCache:     true,  // Cache converted types (15-25% faster)
-    EnableResponseCache: true,  // Cache expensive operations like cluster info
-    CacheTimeout:        5 * time.Minute,
-
-    // Conversion behavior
-    StrictTypeConversion: false, // Allow lossy conversions for compatibility
-    PreferZeroCopy:       true,  // Optimize for memory efficiency
-
-    // Version handling
-    AutoVersionFallback:  true,  // Fall back to compatible versions
-    VersionLockTimeout:   30 * time.Second,
-
-    // Error handling
-    ProvideVersionContext: true, // Include API version in all errors
-    WrapLegacyErrors:     true,  // Convert old error formats
-}
-
-client, err := slurm.NewClient(ctx,
-    slurm.WithBaseURL("https://cluster:6820"),
-    slurm.WithAdapterConfig(adapterConfig),
-)
-```
-
-**Environment Variables for Adapters**
-```bash
-# Adapter-specific configuration
-export SLURM_ADAPTER_TYPE_CACHE="true"          # Enable type conversion caching
-export SLURM_ADAPTER_RESPONSE_CACHE="true"      # Enable response caching
-export SLURM_ADAPTER_CACHE_TIMEOUT="5m"         # Cache timeout duration
-export SLURM_ADAPTER_STRICT_TYPES="false"       # Allow lossy type conversions
-export SLURM_ADAPTER_VERSION_CONTEXT="true"     # Include version in errors
-export SLURM_ADAPTER_AUTO_FALLBACK="true"       # Auto fallback to compatible versions
-```
-
-**Performance Monitoring**
-```go
-// Monitor adapter performance
-stats := client.AdapterStats()
-fmt.Printf("Cache Hit Rate: %.2f%%\n", stats.CacheHitRate*100)
-fmt.Printf("Type Conversions: %d\n", stats.TypeConversions)
-fmt.Printf("Average Conversion Time: %v\n", stats.AvgConversionTime)
-fmt.Printf("Memory Saved: %d bytes\n", stats.ZeroCopyBytes)
-```
-
-## Configuration
+## Client Configuration
 
 The client can be configured via environment variables:
 
 ```bash
+# Connection settings
 export SLURM_REST_URL="https://your-slurm-server:6820"
 export SLURM_TIMEOUT="30s"
 export SLURM_MAX_RETRIES="3"
 export SLURM_DEBUG="true"
 export SLURM_INSECURE_SKIP_VERIFY="false"
+
 ```
 
-Or programmatically:
+Or configure programmatically:
 
 ```go
-config := &config.Config{
+import "github.com/jontk/slurm-client/pkg/config"
+
+cfg := &config.Config{
+    // Connection settings
     BaseURL:    "https://your-slurm-server:6820",
     Timeout:    30 * time.Second,
     MaxRetries: 3,
     Debug:      true,
+
+    // Retry settings
+    RetryWaitMin: 1 * time.Second,  // Minimum wait between retries
+    RetryWaitMax: 30 * time.Second, // Maximum wait between retries
+
+    // Version handling
+    APIVersion: "v0.0.43", // Force specific API version (optional)
+
+    // Security
+    InsecureSkipVerify: false, // Skip TLS verification (dev only)
 }
 
-client, err := slurm.NewClient(
-    slurm.WithConfig(config),
+client, err := slurm.NewClient(ctx,
+    slurm.WithConfig(cfg),
     slurm.WithAuth(auth.NewTokenAuth("your-token")),
 )
 ```

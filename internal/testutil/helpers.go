@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client/internal/adapters/common"
-	"github.com/jontk/slurm-client/internal/common/types"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/stretchr/testify/require"
 )
 

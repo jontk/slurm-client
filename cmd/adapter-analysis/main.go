@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/internal/factory"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
@@ -36,18 +36,17 @@ func main() {
 
 	// Create configuration
 	cfg := config.NewDefault()
-	cfg.BaseURL = "http://rocky9.ar.jontk.com:6820"
+	cfg.BaseURL = "http://localhost:6820"
 	cfg.Debug = false
 
 	// Create JWT authentication provider
 	authProvider := auth.NewTokenAuth(jwtToken)
 
-	// Create factory (using wrapper clients for now)
+	// Create factory
 	clientFactory, err := factory.NewClientFactory(
 		factory.WithConfig(cfg),
 		factory.WithAuth(authProvider),
 		factory.WithBaseURL(cfg.BaseURL),
-		// Note: Not using WithUseAdapters(true) because adapters are incomplete
 	)
 	if err != nil {
 		log.Fatalf("Failed to create factory: %v", err)
@@ -75,7 +74,7 @@ func main() {
 	fmt.Println("\nAdapter Implementation Analysis Complete")
 }
 
-func testJobsManager(client interfaces.SlurmClient, version string) {
+func testJobsManager(client types.SlurmClient, version string) {
 	ctx := context.Background()
 	fmt.Println("\n=== Jobs Manager ===")
 
@@ -89,7 +88,7 @@ func testJobsManager(client interfaces.SlurmClient, version string) {
 
 	// Test List
 	fmt.Print("\nTesting List: ")
-	jobs, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{Limit: 5})
+	jobs, err := client.Jobs().List(ctx, &types.ListJobsOptions{Limit: 5})
 	if err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
@@ -102,7 +101,7 @@ func testJobsManager(client interfaces.SlurmClient, version string) {
 
 	// Test Submit
 	fmt.Print("Testing Submit: ")
-	submitJob := &interfaces.JobSubmission{
+	submitJob := &types.JobSubmission{
 		Name:       fmt.Sprintf("adapter-analysis-%s-%d", version, time.Now().Unix()),
 		Partition:  "normal",
 		Script:     "#!/bin/bash\necho 'Testing adapter analysis'\nsleep 5",
@@ -119,21 +118,21 @@ func testJobsManager(client interfaces.SlurmClient, version string) {
 	if err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
-		fmt.Printf("✅ Success: Job ID %s\n", submitResp.JobID)
+		fmt.Printf("✅ Success: Job ID %d\n", submitResp.JobId)
 
 		// Test Get
 		fmt.Print("Testing Get: ")
-		job, err := client.Jobs().Get(ctx, submitResp.JobID)
+		job, err := client.Jobs().Get(ctx, fmt.Sprintf("%d", submitResp.JobId))
 		if err != nil {
 			fmt.Printf("❌ Failed: %v\n", err)
 		} else {
-			fmt.Printf("✅ Success: Got job %s\n", job.Name)
+			fmt.Printf("✅ Success: Got job %v\n", job.Name)
 		}
 
 		// Test Update
 		fmt.Print("Testing Update: ")
-		err = client.Jobs().Update(ctx, submitResp.JobID, &interfaces.JobUpdate{
-			Priority: intPtr(100),
+		err = client.Jobs().Update(ctx, fmt.Sprintf("%d", submitResp.JobId), &types.JobUpdate{
+			Priority: uint32Ptr(100),
 		})
 		if err != nil {
 			fmt.Printf("❌ Failed: %v\n", err)
@@ -143,7 +142,7 @@ func testJobsManager(client interfaces.SlurmClient, version string) {
 
 		// Test Cancel
 		fmt.Print("Testing Cancel: ")
-		err = client.Jobs().Cancel(ctx, submitResp.JobID)
+		err = client.Jobs().Cancel(ctx, fmt.Sprintf("%d", submitResp.JobId))
 		if err != nil {
 			fmt.Printf("❌ Failed: %v\n", err)
 		} else {
@@ -153,7 +152,7 @@ func testJobsManager(client interfaces.SlurmClient, version string) {
 
 	// Test Watch
 	fmt.Print("Testing Watch: ")
-	_, err = client.Jobs().Watch(ctx, &interfaces.WatchJobsOptions{})
+	_, err = client.Jobs().Watch(ctx, &types.WatchJobsOptions{})
 	if err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
@@ -161,7 +160,7 @@ func testJobsManager(client interfaces.SlurmClient, version string) {
 	}
 }
 
-func testNodesManager(client interfaces.SlurmClient, _ string) {
+func testNodesManager(client types.SlurmClient, _ string) {
 	ctx := context.Background()
 	fmt.Println("\n=== Nodes Manager ===")
 
@@ -173,7 +172,7 @@ func testNodesManager(client interfaces.SlurmClient, _ string) {
 
 	// Test List
 	fmt.Print("\nTesting List: ")
-	nodes, err := client.Nodes().List(ctx, &interfaces.ListNodesOptions{})
+	nodes, err := client.Nodes().List(ctx, &types.ListNodesOptions{})
 	if err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
@@ -181,8 +180,8 @@ func testNodesManager(client interfaces.SlurmClient, _ string) {
 		var firstNodeName string
 		if nodes != nil && nodes.Nodes != nil {
 			nodeCount = len(nodes.Nodes)
-			if nodeCount > 0 {
-				firstNodeName = nodes.Nodes[0].Name
+			if nodeCount > 0 && nodes.Nodes[0].Name != nil {
+				firstNodeName = *nodes.Nodes[0].Name
 			}
 		}
 		fmt.Printf("✅ Success: Found %d nodes\n", nodeCount)
@@ -194,13 +193,13 @@ func testNodesManager(client interfaces.SlurmClient, _ string) {
 			if err != nil {
 				fmt.Printf("❌ Failed: %v\n", err)
 			} else {
-				fmt.Printf("✅ Success: Got node %s\n", node.Name)
+				fmt.Printf("✅ Success: Got node %v\n", node.Name)
 			}
 
 			// Test Update
 			fmt.Print("Testing Update: ")
-			err = client.Nodes().Update(ctx, firstNodeName, &interfaces.NodeUpdate{
-				State: stringPtr("IDLE"),
+			err = client.Nodes().Update(ctx, firstNodeName, &types.NodeUpdate{
+				State: []types.NodeState{types.NodeStateIdle},
 			})
 			if err != nil {
 				fmt.Printf("❌ Failed: %v\n", err)
@@ -212,7 +211,7 @@ func testNodesManager(client interfaces.SlurmClient, _ string) {
 
 	// Test Watch
 	fmt.Print("Testing Watch: ")
-	_, err = client.Nodes().Watch(ctx, &interfaces.WatchNodesOptions{})
+	_, err = client.Nodes().Watch(ctx, &types.WatchNodesOptions{})
 	if err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
@@ -220,7 +219,7 @@ func testNodesManager(client interfaces.SlurmClient, _ string) {
 	}
 }
 
-func testPartitionsManager(client interfaces.SlurmClient, _ string) {
+func testPartitionsManager(client types.SlurmClient, _ string) {
 	ctx := context.Background()
 	fmt.Println("\n=== Partitions Manager ===")
 
@@ -231,7 +230,7 @@ func testPartitionsManager(client interfaces.SlurmClient, _ string) {
 
 	// Test List
 	fmt.Print("\nTesting List: ")
-	partitions, err := client.Partitions().List(ctx, &interfaces.ListPartitionsOptions{})
+	partitions, err := client.Partitions().List(ctx, &types.ListPartitionsOptions{})
 	if err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
@@ -239,8 +238,8 @@ func testPartitionsManager(client interfaces.SlurmClient, _ string) {
 		var firstPartitionName string
 		if partitions != nil && partitions.Partitions != nil {
 			partitionCount = len(partitions.Partitions)
-			if partitionCount > 0 {
-				firstPartitionName = partitions.Partitions[0].Name
+			if partitionCount > 0 && partitions.Partitions[0].Name != nil {
+				firstPartitionName = *partitions.Partitions[0].Name
 			}
 		}
 		fmt.Printf("✅ Success: Found %d partitions\n", partitionCount)
@@ -252,13 +251,13 @@ func testPartitionsManager(client interfaces.SlurmClient, _ string) {
 			if err != nil {
 				fmt.Printf("❌ Failed: %v\n", err)
 			} else {
-				fmt.Printf("✅ Success: Got partition %s\n", partition.Name)
+				fmt.Printf("✅ Success: Got partition %v\n", partition.Name)
 			}
 
 			// Test Update
 			fmt.Print("Testing Update: ")
-			err = client.Partitions().Update(ctx, firstPartitionName, &interfaces.PartitionUpdate{
-				MaxTime: intPtr(120),
+			err = client.Partitions().Update(ctx, firstPartitionName, &types.PartitionUpdate{
+				MaxTime: int32Ptr(120),
 			})
 			if err != nil {
 				fmt.Printf("❌ Failed: %v\n", err)
@@ -269,7 +268,7 @@ func testPartitionsManager(client interfaces.SlurmClient, _ string) {
 	}
 }
 
-func testAccountsManager(client interfaces.SlurmClient, _ string) {
+func testAccountsManager(client types.SlurmClient, _ string) {
 	ctx := context.Background()
 	fmt.Println("\n=== Accounts Manager ===")
 
@@ -282,7 +281,7 @@ func testAccountsManager(client interfaces.SlurmClient, _ string) {
 
 	// Test List
 	fmt.Print("\nTesting List: ")
-	accounts, err := client.Accounts().List(ctx, &interfaces.ListAccountsOptions{})
+	accounts, err := client.Accounts().List(ctx, &types.ListAccountsOptions{})
 	if err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
@@ -295,7 +294,7 @@ func testAccountsManager(client interfaces.SlurmClient, _ string) {
 
 	// Test Create
 	fmt.Print("Testing Create: ")
-	testAccount := &interfaces.AccountCreate{
+	testAccount := &types.AccountCreate{
 		Name:        fmt.Sprintf("test-account-%d", time.Now().Unix()),
 		Description: "Test account",
 	}
@@ -316,7 +315,7 @@ func testAccountsManager(client interfaces.SlurmClient, _ string) {
 
 		// Test Update
 		fmt.Print("Testing Update: ")
-		updateAccount := &interfaces.AccountUpdate{
+		updateAccount := &types.AccountUpdate{
 			Description: stringPtr("Updated test account"),
 		}
 		err = client.Accounts().Update(ctx, testAccount.Name, updateAccount)
@@ -337,7 +336,7 @@ func testAccountsManager(client interfaces.SlurmClient, _ string) {
 	}
 }
 
-func testUsersManager(client interfaces.SlurmClient, _ string) {
+func testUsersManager(client types.SlurmClient, _ string) {
 	ctx := context.Background()
 	fmt.Println("\n=== Users Manager ===")
 
@@ -350,7 +349,7 @@ func testUsersManager(client interfaces.SlurmClient, _ string) {
 
 	// Test List
 	fmt.Print("\nTesting List: ")
-	users, err := client.Users().List(ctx, &interfaces.ListUsersOptions{})
+	users, err := client.Users().List(ctx, &types.ListUsersOptions{})
 	if err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
@@ -374,37 +373,14 @@ func testUsersManager(client interfaces.SlurmClient, _ string) {
 				fmt.Printf("✅ Success: Got user %s\n", user.Name)
 			}
 
-			// Test GetUserAccounts
-			fmt.Print("Testing GetUserAccounts: ")
-			accounts, err := client.Users().GetUserAccounts(ctx, firstUserName)
-			if err != nil {
-				fmt.Printf("❌ Failed: %v\n", err)
-			} else {
-				fmt.Printf("✅ Success: Got %d accounts\n", len(accounts))
-			}
-
-			// Test GetUserQuotas
-			fmt.Print("Testing GetUserQuotas: ")
-			_, err = client.Users().GetUserQuotas(ctx, firstUserName)
-			if err != nil {
-				fmt.Printf("❌ Failed: %v\n", err)
-			} else {
-				fmt.Printf("✅ Success: Got quotas\n")
-			}
-
-			// Test GetUserDefaultAccount
-			fmt.Print("Testing GetUserDefaultAccount: ")
-			_, err = client.Users().GetUserDefaultAccount(ctx, firstUserName)
-			if err != nil {
-				fmt.Printf("❌ Failed: %v\n", err)
-			} else {
-				fmt.Printf("✅ Success: Got default account\n")
-			}
+			// Note: GetUserAccounts, GetUserQuotas, GetUserDefaultAccount
+			// are not part of the core UserManager interface.
+			// Use Associations().List() to get user-account relationships.
 		}
 	}
 }
 
-func testQoSManager(client interfaces.SlurmClient, _ string) {
+func testQoSManager(client types.SlurmClient, _ string) {
 	ctx := context.Background()
 	fmt.Println("\n=== QoS Manager ===")
 
@@ -417,7 +393,7 @@ func testQoSManager(client interfaces.SlurmClient, _ string) {
 
 	// Test List
 	fmt.Print("\nTesting List: ")
-	qosList, err := client.QoS().List(ctx, &interfaces.ListQoSOptions{})
+	qosList, err := client.QoS().List(ctx, &types.ListQoSOptions{})
 	if err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
@@ -425,8 +401,8 @@ func testQoSManager(client interfaces.SlurmClient, _ string) {
 		var firstQoSName string
 		if qosList != nil && qosList.QoS != nil {
 			qosCount = len(qosList.QoS)
-			if qosCount > 0 {
-				firstQoSName = qosList.QoS[0].Name
+			if qosCount > 0 && qosList.QoS[0].Name != nil {
+				firstQoSName = *qosList.QoS[0].Name
 			}
 		}
 		fmt.Printf("✅ Success: Found %d QoS\n", qosCount)
@@ -438,14 +414,14 @@ func testQoSManager(client interfaces.SlurmClient, _ string) {
 			if err != nil {
 				fmt.Printf("❌ Failed: %v\n", err)
 			} else {
-				fmt.Printf("✅ Success: Got QoS %s\n", qos.Name)
+				fmt.Printf("✅ Success: Got QoS %v\n", qos.Name)
 			}
 		}
 	}
 
 	// Test Create
 	fmt.Print("Testing Create: ")
-	testQoS := &interfaces.QoSCreate{
+	testQoS := &types.QoSCreate{
 		Name:        fmt.Sprintf("test-qos-%d", time.Now().Unix()),
 		Description: "Test QoS",
 		Priority:    10,
@@ -458,7 +434,7 @@ func testQoSManager(client interfaces.SlurmClient, _ string) {
 
 		// Test Update
 		fmt.Print("Testing Update: ")
-		updateQoS := &interfaces.QoSUpdate{
+		updateQoS := &types.QoSUpdate{
 			Priority: intPtr(20),
 		}
 		err = client.QoS().Update(ctx, testQoS.Name, updateQoS)
@@ -479,7 +455,7 @@ func testQoSManager(client interfaces.SlurmClient, _ string) {
 	}
 }
 
-func testReservationsManager(client interfaces.SlurmClient, _ string) {
+func testReservationsManager(client types.SlurmClient, _ string) {
 	ctx := context.Background()
 	fmt.Println("\n=== Reservations Manager ===")
 
@@ -492,7 +468,7 @@ func testReservationsManager(client interfaces.SlurmClient, _ string) {
 
 	// Test List
 	fmt.Print("\nTesting List: ")
-	reservations, err := client.Reservations().List(ctx, &interfaces.ListReservationsOptions{})
+	reservations, err := client.Reservations().List(ctx, &types.ListReservationsOptions{})
 	if err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
@@ -507,32 +483,33 @@ func testReservationsManager(client interfaces.SlurmClient, _ string) {
 	fmt.Print("Testing Create: ")
 	startTime := time.Now().Add(1 * time.Hour)
 	endTime := startTime.Add(1 * time.Hour)
-	testReservation := &interfaces.ReservationCreate{
-		Name:      fmt.Sprintf("test-res-%d", time.Now().Unix()),
+	resName := fmt.Sprintf("test-res-%d", time.Now().Unix())
+	testReservation := &types.ReservationCreate{
+		Name:      stringPtr(resName),
 		StartTime: startTime,
 		EndTime:   endTime,
-		NodeCount: 1,
+		NodeCount: uint32Ptr(1),
 		Users:     []string{"root"},
 	}
 	_, err = client.Reservations().Create(ctx, testReservation)
 	if err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
-		fmt.Printf("✅ Success: Created %s\n", testReservation.Name)
+		fmt.Printf("✅ Success: Created %s\n", resName)
 
 		// Test Get
 		fmt.Print("Testing Get: ")
-		reservation, err := client.Reservations().Get(ctx, testReservation.Name)
+		reservation, err := client.Reservations().Get(ctx, resName)
 		if err != nil {
 			fmt.Printf("❌ Failed: %v\n", err)
 		} else {
-			fmt.Printf("✅ Success: Got reservation %s\n", reservation.Name)
+			fmt.Printf("✅ Success: Got reservation %v\n", reservation.Name)
 		}
 
 		// Test Update
 		fmt.Print("Testing Update: ")
-		err = client.Reservations().Update(ctx, testReservation.Name, &interfaces.ReservationUpdate{
-			NodeCount: intPtr(2),
+		err = client.Reservations().Update(ctx, resName, &types.ReservationUpdate{
+			NodeCount: int32Ptr(2),
 		})
 		if err != nil {
 			fmt.Printf("❌ Failed: %v\n", err)
@@ -542,7 +519,7 @@ func testReservationsManager(client interfaces.SlurmClient, _ string) {
 
 		// Test Delete
 		fmt.Print("Testing Delete: ")
-		err = client.Reservations().Delete(ctx, testReservation.Name)
+		err = client.Reservations().Delete(ctx, resName)
 		if err != nil {
 			fmt.Printf("❌ Failed: %v\n", err)
 		} else {
@@ -551,7 +528,7 @@ func testReservationsManager(client interfaces.SlurmClient, _ string) {
 	}
 }
 
-func testAssociationsManager(client interfaces.SlurmClient, _ string) {
+func testAssociationsManager(client types.SlurmClient, _ string) {
 	ctx := context.Background()
 	fmt.Println("\n=== Associations Manager ===")
 
@@ -564,7 +541,7 @@ func testAssociationsManager(client interfaces.SlurmClient, _ string) {
 
 	// Test List
 	fmt.Print("\nTesting List: ")
-	associations, err := client.Associations().List(ctx, &interfaces.ListAssociationsOptions{})
+	associations, err := client.Associations().List(ctx, &types.ListAssociationsOptions{})
 	if err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
@@ -575,29 +552,31 @@ func testAssociationsManager(client interfaces.SlurmClient, _ string) {
 		fmt.Printf("✅ Success: Found %d associations\n", assocCount)
 
 		if assocCount > 0 {
-			// Test Get
+			// Test Get by ID
 			fmt.Print("Testing Get: ")
 			firstAssoc := associations.Associations[0]
-			association, err := client.Associations().Get(ctx, &interfaces.GetAssociationOptions{
-				User:    firstAssoc.User,
-				Account: firstAssoc.Account,
-			})
-			if err != nil {
-				fmt.Printf("❌ Failed: %v\n", err)
+			if firstAssoc.ID != nil {
+				assocID := fmt.Sprintf("%d", *firstAssoc.ID)
+				association, err := client.Associations().Get(ctx, assocID)
+				if err != nil {
+					fmt.Printf("❌ Failed: %v\n", err)
+				} else {
+					fmt.Printf("✅ Success: Got association for user %s\n", association.User)
+				}
 			} else {
-				fmt.Printf("✅ Success: Got association for user %s\n", association.User)
+				fmt.Printf("⚠️ Skipped: First association has no ID\n")
 			}
 		}
 	}
 
 	// Test Create
 	fmt.Print("Testing Create: ")
-	testAssociation := &interfaces.AssociationCreate{
+	testAssociation := &types.AssociationCreate{
 		Account:   "root",
 		User:      "root",
 		Partition: "normal",
 	}
-	_, err = client.Associations().Create(ctx, []*interfaces.AssociationCreate{testAssociation})
+	_, err = client.Associations().Create(ctx, []*types.AssociationCreate{testAssociation})
 	if err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
@@ -607,6 +586,14 @@ func testAssociationsManager(client interfaces.SlurmClient, _ string) {
 
 // Helper functions
 func intPtr(i int) *int {
+	return &i
+}
+
+func int32Ptr(i int32) *int32 {
+	return &i
+}
+
+func uint32Ptr(i uint32) *uint32 {
 	return &i
 }
 

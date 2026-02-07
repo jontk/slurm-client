@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,8 +33,8 @@ func TestNewWebSocketServer(t *testing.T) {
 func TestHandleWebSocket_Upgrade(t *testing.T) {
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
-				ch := make(chan interfaces.JobEvent)
+			watchFunc: func(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
+				ch := make(chan types.JobEvent)
 				close(ch)
 				return ch, nil
 			},
@@ -60,23 +60,23 @@ func TestHandleWebSocket_Upgrade(t *testing.T) {
 
 // Test stream request for jobs
 func TestHandleWebSocket_JobsStreamRequest(t *testing.T) {
-	eventChan := make(chan interfaces.JobEvent, 10)
+	eventChan := make(chan types.JobEvent, 10)
 
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
 				// Verify options were parsed correctly
 				assert.Equal(t, "testuser", opts.UserID)
 				assert.Equal(t, "gpu", opts.Partition)
 
 				// Send an event
 				go func() {
-					eventChan <- interfaces.JobEvent{
-						Type:      "state_change",
-						JobID:     "123",
-						OldState:  "PENDING",
-						NewState:  "RUNNING",
-						Timestamp: time.Now(),
+					eventChan <- types.JobEvent{
+						EventType:     "state_change",
+						JobId:         123,
+						PreviousState: types.JobStatePending,
+						NewState:      types.JobStateRunning,
+						EventTime:     time.Now(),
 					}
 					time.Sleep(100 * time.Millisecond)
 					close(eventChan)
@@ -119,18 +119,18 @@ func TestHandleWebSocket_JobsStreamRequest(t *testing.T) {
 
 // Test stream request for nodes
 func TestHandleWebSocket_NodesStreamRequest(t *testing.T) {
-	eventChan := make(chan interfaces.NodeEvent, 10)
+	eventChan := make(chan types.NodeEvent, 10)
 
 	client := &mockSlurmClient{
 		nodes: &mockNodeManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchNodesOptions) (<-chan interfaces.NodeEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchNodesOptions) (<-chan types.NodeEvent, error) {
 				go func() {
-					eventChan <- interfaces.NodeEvent{
-						Type:      "state_change",
-						NodeName:  "node01",
-						OldState:  "IDLE",
-						NewState:  "ALLOCATED",
-						Timestamp: time.Now(),
+					eventChan <- types.NodeEvent{
+						EventType:     "state_change",
+						NodeName:      "node01",
+						PreviousState: types.NodeStateIdle,
+						NewState:      types.NodeStateAllocated,
+						EventTime:     time.Now(),
 					}
 					time.Sleep(100 * time.Millisecond)
 					close(eventChan)
@@ -170,18 +170,18 @@ func TestHandleWebSocket_NodesStreamRequest(t *testing.T) {
 
 // Test stream request for partitions
 func TestHandleWebSocket_PartitionsStreamRequest(t *testing.T) {
-	eventChan := make(chan interfaces.PartitionEvent, 10)
+	eventChan := make(chan types.PartitionEvent, 10)
 
 	client := &mockSlurmClient{
 		partitions: &mockPartitionManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchPartitionsOptions) (<-chan interfaces.PartitionEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchPartitionsOptions) (<-chan types.PartitionEvent, error) {
 				go func() {
-					eventChan <- interfaces.PartitionEvent{
-						Type:          "state_change",
+					eventChan <- types.PartitionEvent{
+						EventType:     "state_change",
 						PartitionName: "gpu",
-						OldState:      "UP",
-						NewState:      "DOWN",
-						Timestamp:     time.Now(),
+						PreviousState: types.PartitionStateUp,
+						NewState:      types.PartitionStateDown,
+						EventTime:     time.Now(),
 					}
 					time.Sleep(100 * time.Millisecond)
 					close(eventChan)
@@ -249,11 +249,11 @@ func TestHandleWebSocket_UnknownStreamType(t *testing.T) {
 
 // Test stream closed event
 func TestHandleWebSocket_StreamClosedEvent(t *testing.T) {
-	eventChan := make(chan interfaces.JobEvent)
+	eventChan := make(chan types.JobEvent)
 
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
 				// Close channel immediately
 				close(eventChan)
 				return eventChan, nil
@@ -289,7 +289,7 @@ func TestHandleWebSocket_StreamClosedEvent(t *testing.T) {
 func TestHandleWebSocket_WatchError(t *testing.T) {
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
 				return nil, fmt.Errorf("watch failed")
 			},
 		},
@@ -418,13 +418,13 @@ func TestHandleWebSocket_ConcurrentStreams(t *testing.T) {
 	// (WebSocket doesn't support concurrent writes to the same connection)
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
-				ch := make(chan interfaces.JobEvent, 10)
+			watchFunc: func(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
+				ch := make(chan types.JobEvent, 10)
 				go func() {
-					ch <- interfaces.JobEvent{
-						Type:      "state_change",
-						JobID:     "123",
-						Timestamp: time.Now(),
+					ch <- types.JobEvent{
+						EventType: "state_change",
+						JobId:     123,
+						EventTime: time.Now(),
 					}
 					time.Sleep(50 * time.Millisecond)
 					close(ch)
@@ -433,13 +433,13 @@ func TestHandleWebSocket_ConcurrentStreams(t *testing.T) {
 			},
 		},
 		nodes: &mockNodeManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchNodesOptions) (<-chan interfaces.NodeEvent, error) {
-				ch := make(chan interfaces.NodeEvent, 10)
+			watchFunc: func(ctx context.Context, opts *types.WatchNodesOptions) (<-chan types.NodeEvent, error) {
+				ch := make(chan types.NodeEvent, 10)
 				go func() {
-					ch <- interfaces.NodeEvent{
-						Type:      "state_change",
+					ch <- types.NodeEvent{
+						EventType: "state_change",
 						NodeName:  "node01",
-						Timestamp: time.Now(),
+						EventTime: time.Now(),
 					}
 					time.Sleep(50 * time.Millisecond)
 					close(ch)
@@ -488,16 +488,16 @@ func TestHandleWebSocket_ConcurrentStreams(t *testing.T) {
 
 // Test nil options handling
 func TestHandleWebSocket_NilOptions(t *testing.T) {
-	eventChan := make(chan interfaces.JobEvent, 10)
+	eventChan := make(chan types.JobEvent, 10)
 
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
 				go func() {
-					eventChan <- interfaces.JobEvent{
-						Type:      "state_change",
-						JobID:     "123",
-						Timestamp: time.Now(),
+					eventChan <- types.JobEvent{
+						EventType: "state_change",
+						JobId:     123,
+						EventTime: time.Now(),
 					}
 					time.Sleep(100 * time.Millisecond)
 					close(eventChan)
@@ -534,11 +534,11 @@ func TestHandleWebSocket_NilOptions(t *testing.T) {
 
 // Test context cancellation
 func TestHandleWebSocket_ContextCancellation(t *testing.T) {
-	eventChan := make(chan interfaces.JobEvent)
+	eventChan := make(chan types.JobEvent)
 
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
 				// Keep channel open to test cancellation
 				return eventChan, nil
 			},
@@ -624,11 +624,11 @@ func BenchmarkStreamRequest_Unmarshal(b *testing.B) {
 }
 
 func BenchmarkHandleWebSocket_JobStream(b *testing.B) {
-	eventChan := make(chan interfaces.JobEvent, 100)
+	eventChan := make(chan types.JobEvent, 100)
 
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
 				return eventChan, nil
 			},
 		},
@@ -662,11 +662,11 @@ func BenchmarkHandleWebSocket_JobStream(b *testing.B) {
 }
 
 func BenchmarkSendMessage(b *testing.B) {
-	eventChan := make(chan interfaces.JobEvent, 1000)
+	eventChan := make(chan types.JobEvent, 1000)
 
 	client := &mockSlurmClient{
 		jobs: &mockJobManager{
-			watchFunc: func(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+			watchFunc: func(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
 				return eventChan, nil
 			},
 		},

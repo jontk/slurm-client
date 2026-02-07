@@ -1,0 +1,675 @@
+# Adapter Generation Configuration
+# Defines how to generate adapter method bodies for each entity and version
+
+generation:
+  output_suffix: ".gen.go"
+  generate_converters: true
+  generate_adapters: true
+  generate_validation: true
+  generate_helpers: true
+
+# Validation configuration
+# Defines validation rules for create/update operations
+validation:
+  # Common error message templates
+  error_messages:
+    nil_input: "{entity} {operation} data is required"
+    required_field: "{field} is required"
+    empty_update: "at least one field must be provided for update"
+    nil_context: "context is required"
+    client_not_init: "client not initialized"
+
+# Common patterns used across all versions
+patterns:
+  list:
+    description: "List operation - returns slice of entities"
+    steps:
+      - validate_context
+      - check_client
+      - build_params
+      - api_call
+      - handle_response
+      - convert_each
+      - apply_pagination
+      - return_list
+
+  get:
+    description: "Get single entity by identifier"
+    steps:
+      - validate_context
+      - validate_identifier
+      - check_client
+      - api_call
+      - handle_response
+      - check_exists
+      - convert_single
+      - return_entity
+
+  create:
+    description: "Create new entity"
+    steps:
+      - validate_context
+      - validate_input
+      - check_client
+      - convert_to_api
+      - api_call
+      - handle_response
+      - return_response
+
+  delete:
+    description: "Delete entity by identifier"
+    steps:
+      - validate_context
+      - validate_identifier
+      - check_client
+      - api_call
+      - handle_response
+
+# Entity configurations
+entities:
+  Account:
+    identifier: "accountName"
+    identifier_type: "string"
+    list_options: "AccountListOptions"
+    list_result: "AccountList"
+    create_input: "AccountCreate"
+    create_result: "AccountCreateResponse"
+    update_input: "AccountUpdate"
+    association_request: "AccountAssociationRequest"
+    association_result: "AssociationCreateResponse"
+    methods:
+      - list
+      - get
+      - create
+      - update
+      - delete
+      - create_association
+    validation:
+      create:
+        nil_error: "account creation data is required"
+        required_fields:
+          - field: "Name"
+            error: "account name is required"
+      update:
+        nil_error: "account update data is required"
+
+  Node:
+    identifier: "nodeName"
+    identifier_type: "string"
+    identifier_display: "Node"  # For error messages
+    list_options: "NodeListOptions"
+    list_result: "NodeList"
+    update_input: "NodeUpdate"
+    watch_options: "NodeWatchOptions"
+    methods:
+      - list
+      - get
+      - update
+      - delete
+      - drain
+      - resume
+      - watch
+    validation:
+      update:
+        nil_error: "node update data is required"
+        at_least_one_of: ["State", "Reason", "Comment", "Features", "Weight"]
+        at_least_one_error: "at least one field must be provided for update"
+
+  Job:
+    identifier: "jobID"
+    identifier_type: "int32"  # Job IDs are int32 in the interface
+    list_options: "JobListOptions"
+    list_result: "JobList"
+    create_input: "JobCreate"  # Submit uses JobCreate
+    create_result: "JobSubmitResponse"
+    update_input: "JobUpdate"
+    # Job-specific request types
+    cancel_request: "JobCancelRequest"
+    hold_request: "JobHoldRequest"
+    signal_request: "JobSignalRequest"
+    notify_request: "JobNotifyRequest"
+    watch_options: "JobWatchOptions"
+    allocate_request: "JobAllocateRequest"
+    allocate_result: "JobAllocateResponse"
+    methods:
+      - list
+      - get
+      - submit
+      - update
+      - cancel
+      - hold
+      - release
+      - signal
+      - notify
+      - requeue
+      - watch
+      - allocate
+    validation:
+      create:
+        nil_error: "job creation data is required"
+        required_fields:
+          - field: "Script"
+            error: "job script is required"
+            check_type: "pointer"
+      update:
+        nil_error: "job update data is required"
+
+  Partition:
+    identifier: "partitionName"
+    identifier_type: "string"
+    list_options: "PartitionListOptions"
+    list_result: "PartitionList"
+    create_input: "PartitionCreate"
+    create_result: "PartitionCreateResponse"
+    update_input: "PartitionUpdate"
+    # Note: SLURM REST API only supports read operations for partitions
+    # Create/Update/Delete are done via slurm.conf, not the REST API
+    # These methods will return "unsupported" errors
+    methods:
+      - list
+      - get
+      - create
+      - update
+      - delete
+
+  QoS:
+    identifier: "qosName"
+    identifier_type: "string"
+    identifier_display: "QoS"
+    list_options: "QoSListOptions"
+    list_result: "QoSList"
+    list_field: "QoS"  # Field name in list result (overrides default Entity+"s")
+    create_input: "QoSCreate"
+    create_result: "QoSCreateResponse"
+    update_input: "QoSUpdate"
+    methods:
+      - list
+      - get
+      - create
+      - update
+      - delete
+    validation:
+      create:
+        nil_error: "QoS creation data is required"
+        required_fields:
+          - field: "Name"
+            error: "QoS name is required"
+      update:
+        nil_error: "QoS update data is required"
+        # Empty updates allowed for QoS
+
+  Reservation:
+    identifier: "reservationName"
+    identifier_type: "string"
+    identifier_display: "Reservation"
+    list_options: "ReservationListOptions"
+    list_result: "ReservationList"
+    create_input: "ReservationCreate"
+    create_result: "ReservationCreateResponse"
+    update_input: "ReservationUpdate"
+    methods:
+      - list
+      - get
+      - create
+      - update
+      - delete
+    validation:
+      create:
+        nil_error: "reservation creation data is required"
+        required_fields:
+          - field: "Name"
+            error: "reservation name is required"
+            check_type: "pointer"
+          - field: "StartTime"
+            error: "start time is required"
+            check_type: "time"  # Use IsZero() check
+      update:
+        nil_error: "reservation update data is required"
+        at_least_one_of: ["Comment", "Partition", "Accounts", "Users", "Duration", "NodeCount", "NodeList", "Flags", "Groups", "Features"]
+        at_least_one_error: "at least one field must be provided for update"
+
+  User:
+    identifier: "userName"
+    identifier_type: "string"
+    list_options: "UserListOptions"
+    list_result: "UserList"
+    create_input: "UserCreate"
+    create_result: "UserCreateResponse"
+    update_input: "UserUpdate"
+    association_request: "UserAssociationRequest"
+    association_result: "AssociationCreateResponse"
+    methods:
+      - list
+      - get
+      - create
+      - update
+      - delete
+      - create_association
+    validation:
+      create:
+        nil_error: "user creation data is required"
+        required_fields:
+          - field: "Name"
+            error: "user name is required"
+      update:
+        nil_error: "user update data is required"
+
+  Association:
+    identifier: "associationID"
+    identifier_type: "string"
+    identifier_display: "Association"
+    list_options: "AssociationListOptions"
+    list_result: "AssociationList"
+    create_input: "AssociationCreate"
+    create_result: "AssociationCreateResponse"
+    update_input: "AssociationUpdate"
+    methods:
+      - list
+      - get
+      - create
+      - update
+      - delete
+    validation:
+      create:
+        nil_error: "association creation data is required"
+        required_fields:
+          - field: "Account"
+            error: "account is required"
+          - field: "User"
+            error: "user is required"
+      update:
+        nil_error: "association update data is required"
+        at_least_one_of: ["DefaultQoS", "QoSList", "MaxJobs", "MaxSubmitJobs", "MaxWallTime"]
+        at_least_one_error: "at least one field must be provided for update"
+
+  Cluster:
+    identifier: "clusterName"
+    identifier_type: "string"
+    list_options: "ClusterListOptions"
+    list_result: "ClusterList"
+    create_input: "ClusterCreate"
+    create_result: "ClusterCreateResponse"
+    methods:
+      - list
+      - get
+      - create
+      - delete
+    validation:
+      create:
+        nil_error: "cluster creation data is required"
+        required_fields:
+          - field: "Name"
+            error: "cluster name is required"
+
+  WCKey:
+    identifier: "wckeyName"
+    identifier_type: "string"
+    identifier_display: "WCKey"
+    list_options: "WCKeyListOptions"
+    list_result: "WCKeyList"
+    create_input: "WCKeyCreate"
+    create_result: "WCKeyCreateResponse"
+    methods:
+      - list
+      - get
+      - create
+      - delete
+    validation:
+      create:
+        nil_error: "wckey creation data is required"
+        required_fields:
+          - field: "Name"
+            error: "wckey name is required"
+          - field: "User"
+            error: "wckey user is required"
+
+# Version-specific API mappings
+versions:
+  v0_0_44:
+    api_prefix: "V0044"
+    api_package: "v0_0_44"
+    api_methods:
+      Account:
+        list: "SlurmdbV0044GetAccountsWithResponse"
+        get: "SlurmdbV0044GetAccountWithResponse"
+        create: "SlurmdbV0044PostAccountsWithResponse"
+        delete: "SlurmdbV0044DeleteAccountWithResponse"
+        list_params: "SlurmdbV0044GetAccountsParams"
+        get_params: "SlurmdbV0044GetAccountParams"
+        response_list: "Accounts"
+        api_type: "V0044Account"
+        request_body_type: "SlurmdbV0044PostAccountsJSONRequestBody"
+        request_list_field: "Accounts"
+      Node:
+        list: "SlurmV0044GetNodesWithResponse"
+        get: "SlurmV0044GetNodeWithResponse"
+        update: "SlurmV0044PostNodeWithResponse"
+        delete: "SlurmV0044DeleteNodeWithResponse"
+        list_params: "SlurmV0044GetNodesParams"
+        get_params: "SlurmV0044GetNodeParams"
+        response_list: "Nodes"
+        api_type: "V0044Node"
+        request_body_type: "SlurmV0044PostNodeJSONRequestBody"
+        # Node uses UpdateNodeMsg, not a list wrapper
+      Job:
+        list: "SlurmV0044GetJobsWithResponse"
+        get: "SlurmV0044GetJobWithResponse"
+        submit: "SlurmV0044PostJobSubmitWithResponse"
+        update: "SlurmV0044PostJobWithResponse"
+        delete: "SlurmV0044DeleteJobWithResponse"
+        allocate: "SlurmV0044PostJobAllocateWithResponse"
+        list_params: "SlurmV0044GetJobsParams"
+        get_params: "SlurmV0044GetJobParams"
+        response_list: "Jobs"
+        api_type: "V0044JobInfo"
+        submit_request_body: "SlurmV0044PostJobSubmitJSONRequestBody"
+        allocate_request_body: "SlurmV0044PostJobAllocateJSONRequestBody"
+      Partition:
+        list: "SlurmV0044GetPartitionsWithResponse"
+        get: "SlurmV0044GetPartitionWithResponse"
+        list_params: "SlurmV0044GetPartitionsParams"
+        get_params: "SlurmV0044GetPartitionParams"
+        response_list: "Partitions"
+        api_type: "V0044PartitionInfo"
+      QoS:
+        list: "SlurmdbV0044GetQosWithResponse"
+        get: "SlurmdbV0044GetSingleQosWithResponse"
+        create: "SlurmdbV0044PostQosWithResponse"
+        delete: "SlurmdbV0044DeleteSingleQosWithResponse"
+        list_params: "SlurmdbV0044GetQosParams"
+        get_params: "SlurmdbV0044GetSingleQosParams"
+        response_list: "Qos"
+        api_type: "V0044Qos"
+        request_body_type: "SlurmdbV0044PostQosJSONRequestBody"
+        request_list_field: "Qos"
+        create_needs_params: true  # API requires params argument
+      Reservation:
+        list: "SlurmV0044GetReservationsWithResponse"
+        get: "SlurmV0044GetReservationWithResponse"
+        create: "SlurmV0044PostReservationsWithResponse"
+        update: "SlurmV0044PostReservationsWithResponse"  # Use plural method (same as create)
+        delete: "SlurmV0044DeleteReservationWithResponse"
+        list_params: "SlurmV0044GetReservationsParams"
+        get_params: "SlurmV0044GetReservationParams"
+        request_body_type: "SlurmV0044PostReservationsJSONRequestBody"
+        request_list_field: "Reservations"
+        response_list: "Reservations"
+        api_type: "V0044ReservationInfo"
+        input_api_type: "V0044ReservationDescMsg"
+      User:
+        list: "SlurmdbV0044GetUsersWithResponse"
+        get: "SlurmdbV0044GetUserWithResponse"
+        create: "SlurmdbV0044PostUsersWithResponse"
+        delete: "SlurmdbV0044DeleteUserWithResponse"
+        list_params: "SlurmdbV0044GetUsersParams"
+        get_params: "SlurmdbV0044GetUserParams"
+        response_list: "Users"
+        api_type: "V0044User"
+        request_body_type: "SlurmdbV0044PostUsersJSONRequestBody"
+        request_list_field: "Users"
+      Association:
+        list: "SlurmdbV0044GetAssociationsWithResponse"
+        get: "SlurmdbV0044GetAssociationWithResponse"
+        create: "SlurmdbV0044PostAssociationsWithResponse"
+        delete: "SlurmdbV0044DeleteAssociationWithResponse"
+        list_params: "SlurmdbV0044GetAssociationsParams"
+        get_params: "SlurmdbV0044GetAssociationParams"
+        response_list: "Associations"
+        api_type: "V0044Assoc"  # Note: API type is Assoc, not Association
+        request_body_type: "SlurmdbV0044PostAssociationsJSONRequestBody"
+        request_list_field: "Associations"
+        # Note: Association Get uses query params, not path params (different pattern)
+      Cluster:
+        list: "SlurmdbV0044GetClustersWithResponse"
+        get: "SlurmdbV0044GetClusterWithResponse"
+        create: "SlurmdbV0044PostClustersWithResponse"
+        delete: "SlurmdbV0044DeleteClusterWithResponse"
+        list_params: "SlurmdbV0044GetClustersParams"
+        get_params: "SlurmdbV0044GetClusterParams"
+        response_list: "Clusters"
+        api_type: "V0044ClusterRec"
+        request_body_type: "SlurmdbV0044PostClustersJSONRequestBody"
+        request_list_field: "Clusters"
+        create_needs_params: true
+        delete_needs_params: true
+      WCKey:
+        list: "SlurmdbV0044GetWckeysWithResponse"
+        get: "SlurmdbV0044GetWckeyWithResponse"
+        create: "SlurmdbV0044PostWckeysWithResponse"
+        delete: "SlurmdbV0044DeleteWckeyWithResponse"
+        list_params: "SlurmdbV0044GetWckeysParams"
+        response_list: "Wckeys"
+        api_type: "V0044Wckey"
+        request_body_type: "SlurmdbV0044PostWckeysJSONRequestBody"
+        request_list_field: "Wckeys"
+        create_needs_params: true
+
+  v0_0_43:
+    api_prefix: "V0043"
+    api_package: "v0_0_43"
+    api_methods:
+      Account:
+        list: "SlurmdbV0043GetAccountsWithResponse"
+        get: "SlurmdbV0043GetAccountWithResponse"
+        create: "SlurmdbV0043PostAccountsWithResponse"
+        delete: "SlurmdbV0043DeleteAccountWithResponse"
+        list_params: "SlurmdbV0043GetAccountsParams"
+        get_params: "SlurmdbV0043GetAccountParams"
+        response_list: "Accounts"
+        api_type: "V0043Account"
+        request_body_type: "SlurmdbV0043PostAccountsJSONRequestBody"
+        request_list_field: "Accounts"
+      Node:
+        list: "SlurmV0043GetNodesWithResponse"
+        get: "SlurmV0043GetNodeWithResponse"
+        update: "SlurmV0043PostNodeWithResponse"
+        delete: "SlurmV0043DeleteNodeWithResponse"
+        list_params: "SlurmV0043GetNodesParams"
+        get_params: "SlurmV0043GetNodeParams"
+        response_list: "Nodes"
+        api_type: "V0043Node"
+        request_body_type: "SlurmV0043PostNodeJSONRequestBody"
+      Job:
+        list: "SlurmV0043GetJobsWithResponse"
+        get: "SlurmV0043GetJobWithResponse"
+        submit: "SlurmV0043PostJobSubmitWithResponse"
+        update: "SlurmV0043PostJobWithResponse"
+        delete: "SlurmV0043DeleteJobWithResponse"
+        allocate: "SlurmV0043PostJobAllocateWithResponse"
+        list_params: "SlurmV0043GetJobsParams"
+        get_params: "SlurmV0043GetJobParams"
+        response_list: "Jobs"
+        api_type: "V0043JobInfo"
+        submit_request_body: "SlurmV0043PostJobSubmitJSONRequestBody"
+        allocate_request_body: "SlurmV0043PostJobAllocateJSONRequestBody"
+      Partition:
+        list: "SlurmV0043GetPartitionsWithResponse"
+        get: "SlurmV0043GetPartitionWithResponse"
+        list_params: "SlurmV0043GetPartitionsParams"
+        get_params: "SlurmV0043GetPartitionParams"
+        response_list: "Partitions"
+        api_type: "V0043PartitionInfo"
+      QoS:
+        list: "SlurmdbV0043GetQosWithResponse"
+        get: "SlurmdbV0043GetSingleQosWithResponse"
+        create: "SlurmdbV0043PostQosWithResponse"
+        delete: "SlurmdbV0043DeleteSingleQosWithResponse"
+        list_params: "SlurmdbV0043GetQosParams"
+        get_params: "SlurmdbV0043GetSingleQosParams"
+        response_list: "Qos"
+        api_type: "V0043Qos"
+        request_body_type: "SlurmdbV0043PostQosJSONRequestBody"
+        request_list_field: "Qos"
+        create_needs_params: true
+      Reservation:
+        list: "SlurmV0043GetReservationsWithResponse"
+        get: "SlurmV0043GetReservationWithResponse"
+        create: "SlurmV0043PostReservationsWithResponse"
+        update: "SlurmV0043PostReservationsWithResponse"  # Use plural method (same as create)
+        delete: "SlurmV0043DeleteReservationWithResponse"
+        list_params: "SlurmV0043GetReservationsParams"
+        get_params: "SlurmV0043GetReservationParams"
+        request_body_type: "SlurmV0043PostReservationsJSONRequestBody"
+        request_list_field: "Reservations"
+        response_list: "Reservations"
+        api_type: "V0043ReservationInfo"
+        input_api_type: "V0043ReservationDescMsg"
+      User:
+        list: "SlurmdbV0043GetUsersWithResponse"
+        get: "SlurmdbV0043GetUserWithResponse"
+        create: "SlurmdbV0043PostUsersWithResponse"
+        delete: "SlurmdbV0043DeleteUserWithResponse"
+        list_params: "SlurmdbV0043GetUsersParams"
+        get_params: "SlurmdbV0043GetUserParams"
+        response_list: "Users"
+        api_type: "V0043User"
+        request_body_type: "SlurmdbV0043PostUsersJSONRequestBody"
+        request_list_field: "Users"
+      Association:
+        list: "SlurmdbV0043GetAssociationsWithResponse"
+        get: "SlurmdbV0043GetAssociationWithResponse"
+        create: "SlurmdbV0043PostAssociationsWithResponse"
+        delete: "SlurmdbV0043DeleteAssociationWithResponse"
+        list_params: "SlurmdbV0043GetAssociationsParams"
+        get_params: "SlurmdbV0043GetAssociationParams"
+        response_list: "Associations"
+        api_type: "V0043Assoc"
+        request_body_type: "SlurmdbV0043PostAssociationsJSONRequestBody"
+        request_list_field: "Associations"
+      Cluster:
+        list: "SlurmdbV0043GetClustersWithResponse"
+        get: "SlurmdbV0043GetClusterWithResponse"
+        create: "SlurmdbV0043PostClustersWithResponse"
+        delete: "SlurmdbV0043DeleteClusterWithResponse"
+        list_params: "SlurmdbV0043GetClustersParams"
+        get_params: "SlurmdbV0043GetClusterParams"
+        response_list: "Clusters"
+        api_type: "V0043ClusterRec"
+        request_body_type: "SlurmdbV0043PostClustersJSONRequestBody"
+        request_list_field: "Clusters"
+        create_needs_params: true
+        delete_needs_params: true
+      WCKey:
+        list: "SlurmdbV0043GetWckeysWithResponse"
+        get: "SlurmdbV0043GetWckeyWithResponse"
+        create: "SlurmdbV0043PostWckeysWithResponse"
+        delete: "SlurmdbV0043DeleteWckeyWithResponse"
+        list_params: "SlurmdbV0043GetWckeysParams"
+        response_list: "Wckeys"
+        api_type: "V0043Wckey"
+        request_body_type: "SlurmdbV0043PostWckeysJSONRequestBody"
+        request_list_field: "Wckeys"
+        create_needs_params: true
+
+  v0_0_42:
+    api_prefix: "V0042"
+    api_package: "v0_0_42"
+    api_methods:
+      Account:
+        list: "SlurmdbV0042GetAccountsWithResponse"
+        get: "SlurmdbV0042GetAccountWithResponse"
+        create: "SlurmdbV0042PostAccountsWithResponse"
+        delete: "SlurmdbV0042DeleteAccountWithResponse"
+        list_params: "SlurmdbV0042GetAccountsParams"
+        get_params: "SlurmdbV0042GetAccountParams"
+        response_list: "Accounts"
+        api_type: "V0042Account"
+        request_body_type: "SlurmdbV0042PostAccountsJSONRequestBody"
+        request_list_field: "Accounts"
+      Node:
+        list: "SlurmV0042GetNodesWithResponse"
+        get: "SlurmV0042GetNodeWithResponse"
+        update: "SlurmV0042PostNodeWithResponse"
+        delete: "SlurmV0042DeleteNodeWithResponse"
+        list_params: "SlurmV0042GetNodesParams"
+        get_params: "SlurmV0042GetNodeParams"
+        response_list: "Nodes"
+        api_type: "V0042Node"
+        request_body_type: "SlurmV0042PostNodeJSONRequestBody"
+      Job:
+        list: "SlurmV0042GetJobsWithResponse"
+        get: "SlurmV0042GetJobWithResponse"
+        submit: "SlurmV0042PostJobSubmitWithResponse"
+        update: "SlurmV0042PostJobWithResponse"
+        delete: "SlurmV0042DeleteJobWithResponse"
+        allocate: "SlurmV0042PostJobAllocateWithResponse"
+        list_params: "SlurmV0042GetJobsParams"
+        get_params: "SlurmV0042GetJobParams"
+        response_list: "Jobs"
+        api_type: "V0042JobInfo"
+        submit_request_body: "SlurmV0042PostJobSubmitJSONRequestBody"
+        allocate_request_body: "SlurmV0042PostJobAllocateJSONRequestBody"
+      Partition:
+        list: "SlurmV0042GetPartitionsWithResponse"
+        get: "SlurmV0042GetPartitionWithResponse"
+        list_params: "SlurmV0042GetPartitionsParams"
+        get_params: "SlurmV0042GetPartitionParams"
+        response_list: "Partitions"
+        api_type: "V0042PartitionInfo"
+      QoS:
+        list: "SlurmdbV0042GetQosWithResponse"
+        get: "SlurmdbV0042GetSingleQosWithResponse"
+        create: "SlurmdbV0042PostQosWithResponse"
+        delete: "SlurmdbV0042DeleteSingleQosWithResponse"
+        list_params: "SlurmdbV0042GetQosParams"
+        get_params: "SlurmdbV0042GetSingleQosParams"
+        response_list: "Qos"
+        api_type: "V0042Qos"
+        request_body_type: "SlurmdbV0042PostQosJSONRequestBody"
+        request_list_field: "Qos"
+        create_needs_params: true
+      Reservation:
+        list: "SlurmV0042GetReservationsWithResponse"
+        get: "SlurmV0042GetReservationWithResponse"
+        # Note: v0_0_42 does not have PostReservations API
+        delete: "SlurmV0042DeleteReservationWithResponse"
+        list_params: "SlurmV0042GetReservationsParams"
+        get_params: "SlurmV0042GetReservationParams"
+        response_list: "Reservations"
+        api_type: "V0042ReservationInfo"
+      User:
+        list: "SlurmdbV0042GetUsersWithResponse"
+        get: "SlurmdbV0042GetUserWithResponse"
+        create: "SlurmdbV0042PostUsersWithResponse"
+        delete: "SlurmdbV0042DeleteUserWithResponse"
+        list_params: "SlurmdbV0042GetUsersParams"
+        get_params: "SlurmdbV0042GetUserParams"
+        response_list: "Users"
+        api_type: "V0042User"
+        request_body_type: "SlurmdbV0042PostUsersJSONRequestBody"
+        request_list_field: "Users"
+      Association:
+        list: "SlurmdbV0042GetAssociationsWithResponse"
+        get: "SlurmdbV0042GetAssociationWithResponse"
+        create: "SlurmdbV0042PostAssociationsWithResponse"
+        delete: "SlurmdbV0042DeleteAssociationWithResponse"
+        list_params: "SlurmdbV0042GetAssociationsParams"
+        get_params: "SlurmdbV0042GetAssociationParams"
+        response_list: "Associations"
+        api_type: "V0042Assoc"
+        request_body_type: "SlurmdbV0042PostAssociationsJSONRequestBody"
+        request_list_field: "Associations"
+      Cluster:
+        list: "SlurmdbV0042GetClustersWithResponse"
+        get: "SlurmdbV0042GetClusterWithResponse"
+        create: "SlurmdbV0042PostClustersWithResponse"
+        delete: "SlurmdbV0042DeleteClusterWithResponse"
+        list_params: "SlurmdbV0042GetClustersParams"
+        get_params: "SlurmdbV0042GetClusterParams"
+        response_list: "Clusters"
+        api_type: "V0042ClusterRec"
+        request_body_type: "SlurmdbV0042PostClustersJSONRequestBody"
+        request_list_field: "Clusters"
+        create_needs_params: true
+        delete_needs_params: true
+      WCKey:
+        list: "SlurmdbV0042GetWckeysWithResponse"
+        get: "SlurmdbV0042GetWckeyWithResponse"
+        create: "SlurmdbV0042PostWckeysWithResponse"
+        delete: "SlurmdbV0042DeleteWckeyWithResponse"
+        list_params: "SlurmdbV0042GetWckeysParams"
+        response_list: "Wckeys"
+        api_type: "V0042Wckey"
+        request_body_type: "SlurmdbV0042PostWckeysJSONRequestBody"
+        request_list_field: "Wckeys"
+        create_needs_params: true

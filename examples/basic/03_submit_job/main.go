@@ -61,17 +61,20 @@ func simpleJob(ctx context.Context, client slurm.SlurmClient) {
 		return
 	}
 
-	fmt.Printf("Successfully submitted job with ID: %s\n", response.JobID)
+	fmt.Printf("Successfully submitted job with ID: %d\n", response.JobId)
 
 	// Get job details
-	job, err := client.Jobs().Get(ctx, response.JobID)
+	jobIDStr := fmt.Sprintf("%d", response.JobId)
+	job, err := client.Jobs().Get(ctx, jobIDStr)
 	if err != nil {
 		log.Printf("Failed to get job details: %v", err)
 		return
 	}
 
-	fmt.Printf("Job State: %s\n", job.State)
-	fmt.Printf("Job Partition: %s\n", job.Partition)
+	if len(job.JobState) > 0 {
+		fmt.Printf("Job State: %s\n", string(job.JobState[0]))
+	}
+	fmt.Printf("Job Partition: %v\n", job.Partition)
 }
 
 func resourceJob(ctx context.Context, client slurm.SlurmClient) {
@@ -105,7 +108,7 @@ srun hostname`,
 		return
 	}
 
-	fmt.Printf("Submitted resource job with ID: %s\n", response.JobID)
+	fmt.Printf("Submitted resource job with ID: %d\n", response.JobId)
 	fmt.Printf("Requested: 2 nodes, 16 CPUs, 16GB memory\n")
 }
 
@@ -132,7 +135,7 @@ echo "Task $SLURM_ARRAY_TASK_ID completed"`,
 		return
 	}
 
-	fmt.Printf("Submitted array job with ID: %s\n", response.JobID)
+	fmt.Printf("Submitted array job with ID: %d\n", response.JobId)
 	fmt.Println("Array tasks 1-10 will run in parallel based on available resources")
 }
 
@@ -151,19 +154,19 @@ func dependentJob(ctx context.Context, client slurm.SlurmClient) {
 		return
 	}
 
-	fmt.Printf("Submitted prerequisite job with ID: %s\n", prereqResp.JobID)
+	fmt.Printf("Submitted prerequisite job with ID: %d\n", prereqResp.JobId)
 
 	// Submit a job that depends on the prerequisite
 	dependentSpec := &slurm.JobSubmission{
 		Name: "dependent-job",
 		Script: fmt.Sprintf(`#!/bin/bash
-#SBATCH --dependency=afterok:%s
+#SBATCH --dependency=afterok:%d
 
-echo 'Dependent job started after job %s completed successfully'
+echo 'Dependent job started after job %d completed successfully'
 date
 echo 'Running dependent task...'
 sleep 20
-echo 'Dependent job complete'`, prereqResp.JobID, prereqResp.JobID),
+echo 'Dependent job complete'`, prereqResp.JobId, prereqResp.JobId),
 		Partition: "compute",
 		TimeLimit: 300, // 5 minutes in seconds
 	}
@@ -174,19 +177,30 @@ echo 'Dependent job complete'`, prereqResp.JobID, prereqResp.JobID),
 		return
 	}
 
-	fmt.Printf("Submitted dependent job with ID: %s\n", dependentResp.JobID)
-	fmt.Printf("Job %s will start after job %s completes successfully\n", dependentResp.JobID, prereqResp.JobID)
+	fmt.Printf("Submitted dependent job with ID: %d\n", dependentResp.JobId)
+	fmt.Printf("Job %d will start after job %d completes successfully\n", dependentResp.JobId, prereqResp.JobId)
 
 	// Monitor the jobs
 	fmt.Println("\nMonitoring job progress...")
 	for range 10 {
-		prereqJob, _ := client.Jobs().Get(ctx, prereqResp.JobID)
-		dependentJob, _ := client.Jobs().Get(ctx, dependentResp.JobID)
+		prereqJobIDStr := fmt.Sprintf("%d", prereqResp.JobId)
+		dependentJobIDStr := fmt.Sprintf("%d", dependentResp.JobId)
+		prereqJob, _ := client.Jobs().Get(ctx, prereqJobIDStr)
+		dependentJob, _ := client.Jobs().Get(ctx, dependentJobIDStr)
 
-		fmt.Printf("  Prerequisite job %s: %s\n", prereqResp.JobID, prereqJob.State)
-		fmt.Printf("  Dependent job %s: %s\n", dependentResp.JobID, dependentJob.State)
+		prereqState := ""
+		if len(prereqJob.JobState) > 0 {
+			prereqState = string(prereqJob.JobState[0])
+		}
+		dependentState := ""
+		if len(dependentJob.JobState) > 0 {
+			dependentState = string(dependentJob.JobState[0])
+		}
 
-		if dependentJob.State == "COMPLETED" || dependentJob.State == "FAILED" {
+		fmt.Printf("  Prerequisite job %d: %s\n", prereqResp.JobId, prereqState)
+		fmt.Printf("  Dependent job %d: %s\n", dependentResp.JobId, dependentState)
+
+		if dependentState == "COMPLETED" || dependentState == "FAILED" {
 			break
 		}
 

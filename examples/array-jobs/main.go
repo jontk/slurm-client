@@ -7,10 +7,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -55,7 +55,7 @@ func main() {
 func submitArrayJob(ctx context.Context, client slurm.SlurmClient) string {
 	// Create array job submission
 	// Array syntax: jobname[1-100:5] means tasks 1-100 with step of 5
-	job := &interfaces.JobSubmission{
+	job := &slurm.JobSubmission{
 		Name: "array-example",
 		Script: `#!/bin/bash
 #SBATCH --array=1-20:2  # Create tasks 1,3,5,7,9,11,13,15,17,19
@@ -74,11 +74,6 @@ echo "Task $SLURM_ARRAY_TASK_ID completed at $(date)" > output_$SLURM_ARRAY_TASK
 		Memory:     4096, // 4GB
 		TimeLimit:  30,   // 30 minutes
 		WorkingDir: "/scratch/array-jobs",
-		Environment: map[string]string{
-			"DATA_DIR":    "/data/datasets",
-			"OUTPUT_DIR":  "/scratch/array-jobs/outputs",
-			"PYTHON_PATH": "/usr/bin/python3",
-		},
 	}
 
 	// Submit the array job
@@ -87,10 +82,10 @@ echo "Task $SLURM_ARRAY_TASK_ID completed at $(date)" > output_$SLURM_ARRAY_TASK
 		log.Fatalf("Failed to submit array job: %v", err)
 	}
 
-	fmt.Printf("Array job submitted with ID: %s\n", resp.JobID)
+	fmt.Printf("Array job submitted with ID: %s\n", strconv.Itoa(int(resp.JobId)))
 	fmt.Printf("Total array tasks: 10 (1,3,5,7,9,11,13,15,17,19)\n")
 
-	return resp.JobID
+	return strconv.Itoa(int(resp.JobId))
 }
 
 // monitorArrayJob monitors the progress of an array job
@@ -110,7 +105,7 @@ func monitorArrayJob(ctx context.Context, client slurm.SlurmClient, arrayJobID s
 		select {
 		case <-ticker.C:
 			// List all jobs with array job ID prefix
-			jobs, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
+			jobs, err := client.Jobs().List(ctx, &slurm.ListJobsOptions{
 				UserID: "", // Filter by current user if needed
 				Limit:  100,
 			})
@@ -123,22 +118,28 @@ func monitorArrayJob(ctx context.Context, client slurm.SlurmClient, arrayJobID s
 			for _, job := range jobs.Jobs {
 				// Extract array task ID from job name or ID
 				// Format typically: jobid_taskid
-				taskID := extractArrayTaskID(job.ID, arrayJobID)
+				taskID := extractArrayTaskID(strconv.Itoa(int(*job.JobID)), arrayJobID)
+
+				// Get the first job state from the slice
+				jobStateStr := ""
+				if len(job.JobState) > 0 {
+					jobStateStr = string(job.JobState[0])
+				}
 
 				oldState, exists := taskStates[taskID]
-				if !exists || oldState != job.State {
-					taskStates[taskID] = job.State
-					fmt.Printf("Task %s: %s", taskID, job.State)
+				if !exists || oldState != jobStateStr {
+					taskStates[taskID] = jobStateStr
+					fmt.Printf("Task %s: %s", taskID, jobStateStr)
 
-					if exists && oldState != job.State {
+					if exists && oldState != jobStateStr {
 						fmt.Printf(" (was %s)", oldState)
 					}
 
-					if job.State == "COMPLETED" {
+					if jobStateStr == "COMPLETED" {
 						completedCount++
 						fmt.Printf(" - Runtime: %s", formatRuntime(job.StartTime, job.EndTime))
-					} else if job.State == "FAILED" {
-						fmt.Printf(" - Exit code: %d", job.ExitCode)
+					} else if jobStateStr == "FAILED" {
+						fmt.Printf(" - Exit code: %v", job.ExitCode)
 					}
 
 					fmt.Println()
@@ -185,25 +186,23 @@ func getArrayTaskDetails(ctx context.Context, client slurm.SlurmClient, arrayJob
 		}
 
 		fmt.Printf("\nArray Task %s:\n", taskID)
-		fmt.Printf("  State:      %s\n", job.State)
+
+		// Get the first job state from the slice
+		jobStateStr := ""
+		if len(job.JobState) > 0 {
+			jobStateStr = string(job.JobState[0])
+		}
+		fmt.Printf("  State:      %s\n", jobStateStr)
 		fmt.Printf("  Nodes:      %v\n", job.Nodes)
 		fmt.Printf("  CPUs:       %d\n", job.CPUs)
-		fmt.Printf("  Memory:     %d MB\n", job.Memory)
+		fmt.Printf("  Memory:     %d MB\n", *job.MemoryPerNode)
 
-		if job.StartTime != nil {
+		if !job.StartTime.IsZero() {
 			fmt.Printf("  Start Time: %s\n", job.StartTime.Format(time.TimeOnly))
 		}
-		if job.EndTime != nil && job.StartTime != nil {
-			runtime := job.EndTime.Sub(*job.StartTime)
+		if !job.EndTime.IsZero() && !job.StartTime.IsZero() {
+			runtime := job.EndTime.Sub(job.StartTime)
 			fmt.Printf("  Runtime:    %s\n", runtime.Round(time.Second))
-		}
-
-		// Show environment variables specific to array tasks
-		if arrayTaskID, ok := job.Environment["SLURM_ARRAY_TASK_ID"]; ok {
-			fmt.Printf("  Array Task ID: %s\n", arrayTaskID)
-		}
-		if arrayJobID, ok := job.Environment["SLURM_ARRAY_JOB_ID"]; ok {
-			fmt.Printf("  Array Job ID:  %s\n", arrayJobID)
 		}
 	}
 }
@@ -267,10 +266,10 @@ func extractArrayTaskID(jobID, arrayJobID string) string {
 	return jobID
 }
 
-func formatRuntime(start, end *time.Time) string {
-	if start == nil || end == nil {
+func formatRuntime(start, end time.Time) string {
+	if start.IsZero() || end.IsZero() {
 		return "N/A"
 	}
-	runtime := end.Sub(*start)
+	runtime := end.Sub(start)
 	return runtime.Round(time.Second).String()
 }

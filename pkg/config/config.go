@@ -48,7 +48,7 @@ func NewDefault() *Config {
 		MaxRetries:         3,
 		RetryWaitMin:       1 * time.Second,
 		RetryWaitMax:       30 * time.Second,
-		APIVersion:         "v0.0.39",
+		APIVersion:         "", // Empty means auto-detect; set explicitly to force a version
 		Debug:              getEnvBoolOrDefault("SLURM_DEBUG", false),
 		InsecureSkipVerify: getEnvBoolOrDefault("SLURM_INSECURE_SKIP_VERIFY", false),
 	}

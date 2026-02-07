@@ -253,7 +253,7 @@ linters:
         text: empty-block
       - linters:
           - dupl
-        path: ^internal/(factory|managers/base)/  # Factory and base managers boilerplate
+        path: ^internal/(factory|adapters/base)/  # Factory and base managers boilerplate
       - linters:
           - dupl
         path: ^internal/common/(builders|types)/  # Builder and type boilerplate patterns
@@ -343,7 +343,7 @@ linters:
         text: exported  # Established public API types - renaming would break compatibility
       - linters:
           - revive
-        path: (internal/factory/factory\.go|pkg/context/context\.go|pkg/performance/connection_pool\.go|pkg/pool/connection_pool\.go|internal/managers/base/base_manager\.go)
+        path: (internal/factory/factory\.go|pkg/context/context\.go|pkg/performance/connection_pool\.go|pkg/pool/connection_pool\.go|internal/adapters/base/base_manager\.go)
         text: exported  # Backward compatibility type aliases and established internal types
       - linters:
           - exhaustive
@@ -401,7 +401,7 @@ linters:
         text: do not pass a nil Context
       - linters:
           - intrange
-        path: ^internal/managers/base/crud_manager\.go$
+        path: ^internal/adapters/base/crud_manager\.go$
         # Loop condition calls v.Len() which should not be converted
       - linters:
           - intrange
@@ -410,6 +410,13 @@ linters:
       - linters:
           - goheader
         path: (\.pb\.go|\.gen\.go|/wrapper\.go$|/client\.go$|/managers\.go$)  # Generated files
+      - linters:
+          - goheader
+        path: ^internal/common/types/  # Generated types from OpenAPI spec
+      - linters:
+          - revive
+        path: ^internal/common/types/
+        text: exported  # Generated enum constants don't need individual comments
       - linters:
           - goconst
         path: internal/factory/

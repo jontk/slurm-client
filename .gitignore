@@ -174,3 +174,24 @@ plan/
 /job-analytics
 /test-wrapper
 
+comprehensive-adapter-test
+01_connect
+02_list_jobs
+
+# Compiled binaries
+03_submit_job
+04_error_handling
+adapter-analysis
+simple-adapter-test
+test-adapters
+test-error-handling
+examples/basic/*/01_connect
+examples/basic/*/02_list_jobs
+examples/basic/*/03_submit_job
+examples/basic/*/04_error_handling
+
+# Internal planning docs
+*_PLAN.md
+*_PROGRESS.md
+*_SUMMARY.md
+*_FIXES*.md

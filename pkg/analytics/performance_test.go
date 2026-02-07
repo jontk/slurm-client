@@ -1,16 +1,27 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
+// NOTE: Tests updated for api/ package type changes.
+// Job struct fields: ID->JobID (*int32), Cpus->CPUs (*uint32), Memory->MemoryPerNode (*uint64 in MB)
+// StartTime/EndTime are now value types (time.Time), not pointers
+// UserId->UserName (*string)
+
 package analytics
 
 import (
 	"testing"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// Helper functions for pointer types
+func ptrInt32Test(i int32) *int32    { return &i }
+func ptrUint32Test(u uint32) *uint32 { return &u }
+func ptrUint64Test(u uint64) *uint64 { return &u }
+func ptrStringTest(s string) *string { return &s }
 
 func TestCompareJobPerformance(t *testing.T) {
 	analyzer := NewPerformanceAnalyzer()
@@ -18,34 +29,34 @@ func TestCompareJobPerformance(t *testing.T) {
 	// Create test jobs
 	startTimeA := time.Now().Add(-2 * time.Hour)
 	endTimeA := time.Now().Add(-1 * time.Hour)
-	jobA := &interfaces.Job{
-		ID:        "job-a",
-		Name:      "test-job",
-		CPUs:      16,
-		Memory:    64 * 1024 * 1024 * 1024,
-		StartTime: &startTimeA,
-		EndTime:   &endTimeA,
+	jobA := &types.Job{
+		JobID:         ptrInt32Test(1),
+		Name:          ptrStringTest("test-job"),
+		CPUs:          ptrUint32Test(16),
+		MemoryPerNode: ptrUint64Test(64 * 1024), // 64GB in MB
+		StartTime:     startTimeA,
+		EndTime:       endTimeA,
 	}
 
 	startTimeB := time.Now().Add(-90 * time.Minute)
 	endTimeB := time.Now().Add(-45 * time.Minute)
-	jobB := &interfaces.Job{
-		ID:        "job-b",
-		Name:      "test-job-optimized",
-		CPUs:      12,
-		Memory:    48 * 1024 * 1024 * 1024,
-		StartTime: &startTimeB,
-		EndTime:   &endTimeB,
+	jobB := &types.Job{
+		JobID:         ptrInt32Test(2),
+		Name:          ptrStringTest("test-job-optimized"),
+		CPUs:          ptrUint32Test(12),
+		MemoryPerNode: ptrUint64Test(48 * 1024), // 48GB in MB
+		StartTime:     startTimeB,
+		EndTime:       endTimeB,
 	}
 
 	// Create analytics
-	analyticsA := &interfaces.JobComprehensiveAnalytics{
-		CPUAnalytics: &interfaces.CPUAnalytics{
+	analyticsA := &types.JobComprehensiveAnalytics{
+		CPUAnalytics: &types.CPUAnalytics{
 			AllocatedCores:     16,
 			UsedCores:          10.0,
 			UtilizationPercent: 62.5,
 		},
-		MemoryAnalytics: &interfaces.MemoryAnalytics{
+		MemoryAnalytics: &types.MemoryAnalytics{
 			AllocatedBytes:     64 * 1024 * 1024 * 1024,
 			UsedBytes:          40 * 1024 * 1024 * 1024,
 			UtilizationPercent: 62.5,
@@ -53,13 +64,13 @@ func TestCompareJobPerformance(t *testing.T) {
 		OverallEfficiency: 60.0,
 	}
 
-	analyticsB := &interfaces.JobComprehensiveAnalytics{
-		CPUAnalytics: &interfaces.CPUAnalytics{
+	analyticsB := &types.JobComprehensiveAnalytics{
+		CPUAnalytics: &types.CPUAnalytics{
 			AllocatedCores:     12,
 			UsedCores:          10.2,
 			UtilizationPercent: 85.0,
 		},
-		MemoryAnalytics: &interfaces.MemoryAnalytics{
+		MemoryAnalytics: &types.MemoryAnalytics{
 			AllocatedBytes:     48 * 1024 * 1024 * 1024,
 			UsedBytes:          40 * 1024 * 1024 * 1024,
 			UtilizationPercent: 83.3,
@@ -93,7 +104,7 @@ func TestCompareJobPerformance(t *testing.T) {
 	assert.Equal(t, "B", comparison.Winner)
 
 	// Check summary contains key information
-	assert.Contains(t, comparison.Summary, "Job B (job-b) performed better overall")
+	assert.Contains(t, comparison.Summary, "Job B (2) performed better overall")
 	assert.Contains(t, comparison.Summary, "B completed significantly faster")
 	assert.Contains(t, comparison.Summary, "significantly better resource efficiency")
 }
@@ -101,8 +112,8 @@ func TestCompareJobPerformance(t *testing.T) {
 func TestCompareJobPerformance_Errors(t *testing.T) {
 	analyzer := NewPerformanceAnalyzer()
 
-	job := &interfaces.Job{ID: "test"}
-	analytics := &interfaces.JobComprehensiveAnalytics{}
+	job := &types.Job{JobID: ptrInt32Test(999)}
+	analytics := &types.JobComprehensiveAnalytics{}
 
 	// Test nil jobs
 	_, err := analyzer.CompareJobPerformance(nil, analytics, job, analytics)
@@ -125,87 +136,87 @@ func TestGetSimilarJobsPerformance(t *testing.T) {
 	// Create reference job
 	startTime := time.Now().Add(-1 * time.Hour)
 	endTime := time.Now()
-	referenceJob := &interfaces.Job{
-		ID:        "ref-job",
-		Name:      "matrix-multiply",
-		UserID:    "user123",
-		Partition: "compute",
-		CPUs:      16,
-		Memory:    64 * 1024 * 1024 * 1024,
-		StartTime: &startTime,
-		EndTime:   &endTime,
+	referenceJob := &types.Job{
+		JobID:         ptrInt32Test(100),
+		Name:          ptrStringTest("matrix-multiply"),
+		UserName:      ptrStringTest("user123"),
+		Partition:     ptrStringTest("compute"),
+		CPUs:          ptrUint32Test(16),
+		MemoryPerNode: ptrUint64Test(64 * 1024), // 64GB in MB
+		StartTime:     startTime,
+		EndTime:       endTime,
 	}
 
-	referenceAnalytics := &interfaces.JobComprehensiveAnalytics{
+	referenceAnalytics := &types.JobComprehensiveAnalytics{
 		OverallEfficiency: 70.0,
 	}
 
 	// Create candidate jobs
 	candidates := []struct {
-		Job       *interfaces.Job
-		Analytics *interfaces.JobComprehensiveAnalytics
+		Job       *types.Job
+		Analytics *types.JobComprehensiveAnalytics
 	}{
 		{
 			// Very similar job with better performance
-			Job: &interfaces.Job{
-				ID:        "similar-1",
-				Name:      "matrix-multiply",
-				UserID:    "user123",
-				Partition: "compute",
-				CPUs:      16,
-				Memory:    64 * 1024 * 1024 * 1024,
-				StartTime: &startTime,
-				EndTime:   &[]time.Time{startTime.Add(45 * time.Minute)}[0],
+			Job: &types.Job{
+				JobID:         ptrInt32Test(101),
+				Name:          ptrStringTest("matrix-multiply"),
+				UserName:      ptrStringTest("user123"),
+				Partition:     ptrStringTest("compute"),
+				CPUs:          ptrUint32Test(16),
+				MemoryPerNode: ptrUint64Test(64 * 1024),
+				StartTime:     startTime,
+				EndTime:       startTime.Add(45 * time.Minute),
 			},
-			Analytics: &interfaces.JobComprehensiveAnalytics{
+			Analytics: &types.JobComprehensiveAnalytics{
 				OverallEfficiency: 85.0,
 			},
 		},
 		{
 			// Similar job with different resources
-			Job: &interfaces.Job{
-				ID:        "similar-2",
-				Name:      "matrix-multiply",
-				UserID:    "user123",
-				Partition: "compute",
-				CPUs:      12,
-				Memory:    48 * 1024 * 1024 * 1024,
-				StartTime: &startTime,
-				EndTime:   &[]time.Time{startTime.Add(55 * time.Minute)}[0],
+			Job: &types.Job{
+				JobID:         ptrInt32Test(102),
+				Name:          ptrStringTest("matrix-multiply"),
+				UserName:      ptrStringTest("user123"),
+				Partition:     ptrStringTest("compute"),
+				CPUs:          ptrUint32Test(12),
+				MemoryPerNode: ptrUint64Test(48 * 1024),
+				StartTime:     startTime,
+				EndTime:       startTime.Add(55 * time.Minute),
 			},
-			Analytics: &interfaces.JobComprehensiveAnalytics{
+			Analytics: &types.JobComprehensiveAnalytics{
 				OverallEfficiency: 80.0,
 			},
 		},
 		{
 			// Less similar job (different user)
-			Job: &interfaces.Job{
-				ID:        "less-similar",
-				Name:      "matrix-multiply",
-				UserID:    "user456",
-				Partition: "compute",
-				CPUs:      16,
-				Memory:    64 * 1024 * 1024 * 1024,
-				StartTime: &startTime,
-				EndTime:   &endTime,
+			Job: &types.Job{
+				JobID:         ptrInt32Test(103),
+				Name:          ptrStringTest("matrix-multiply"),
+				UserName:      ptrStringTest("user456"),
+				Partition:     ptrStringTest("compute"),
+				CPUs:          ptrUint32Test(16),
+				MemoryPerNode: ptrUint64Test(64 * 1024),
+				StartTime:     startTime,
+				EndTime:       endTime,
 			},
-			Analytics: &interfaces.JobComprehensiveAnalytics{
+			Analytics: &types.JobComprehensiveAnalytics{
 				OverallEfficiency: 65.0,
 			},
 		},
 		{
 			// Dissimilar job (should be filtered out)
-			Job: &interfaces.Job{
-				ID:        "dissimilar",
-				Name:      "deep-learning",
-				UserID:    "user789",
-				Partition: "gpu",
-				CPUs:      32,
-				Memory:    128 * 1024 * 1024 * 1024,
-				StartTime: &startTime,
-				EndTime:   &endTime,
+			Job: &types.Job{
+				JobID:         ptrInt32Test(104),
+				Name:          ptrStringTest("deep-learning"),
+				UserName:      ptrStringTest("user789"),
+				Partition:     ptrStringTest("gpu"),
+				CPUs:          ptrUint32Test(32),
+				MemoryPerNode: ptrUint64Test(128 * 1024),
+				StartTime:     startTime,
+				EndTime:       endTime,
 			},
-			Analytics: &interfaces.JobComprehensiveAnalytics{
+			Analytics: &types.JobComprehensiveAnalytics{
 				OverallEfficiency: 90.0,
 			},
 		},
@@ -227,7 +238,7 @@ func TestGetSimilarJobsPerformance(t *testing.T) {
 	}
 
 	// Check that jobs are sorted by efficiency (best first)
-	assert.Equal(t, "similar-1", analysis.SimilarJobs[0].Job.ID)
+	assert.Equal(t, int32(101), *analysis.SimilarJobs[0].Job.JobID)
 	assert.Equal(t, 1, analysis.SimilarJobs[0].PerformanceRank)
 	assert.InDelta(t, 15.0, analysis.SimilarJobs[0].EfficiencyDelta, 0.1)
 
@@ -253,64 +264,64 @@ func TestGetSimilarJobsPerformance(t *testing.T) {
 func TestCalculateJobSimilarity(t *testing.T) {
 	analyzer := NewPerformanceAnalyzer()
 
-	baseJob := &interfaces.Job{
-		Name:      "test-job",
-		UserID:    "user123",
-		Partition: "compute",
-		CPUs:      16,
-		Memory:    64 * 1024 * 1024 * 1024,
+	baseJob := &types.Job{
+		Name:          ptrStringTest("test-job"),
+		UserName:      ptrStringTest("user123"),
+		Partition:     ptrStringTest("compute"),
+		CPUs:          ptrUint32Test(16),
+		MemoryPerNode: ptrUint64Test(64 * 1024),
 	}
 
 	tests := []struct {
 		name     string
-		otherJob *interfaces.Job
+		otherJob *types.Job
 		minScore float64
 		maxScore float64
 	}{
 		{
 			name: "identical job",
-			otherJob: &interfaces.Job{
-				Name:      "test-job",
-				UserID:    "user123",
-				Partition: "compute",
-				CPUs:      16,
-				Memory:    64 * 1024 * 1024 * 1024,
+			otherJob: &types.Job{
+				Name:          ptrStringTest("test-job"),
+				UserName:      ptrStringTest("user123"),
+				Partition:     ptrStringTest("compute"),
+				CPUs:          ptrUint32Test(16),
+				MemoryPerNode: ptrUint64Test(64 * 1024),
 			},
 			minScore: 0.85, // Actual implementation value
 			maxScore: 1.0,
 		},
 		{
 			name: "same user different resources",
-			otherJob: &interfaces.Job{
-				Name:      "other-job",
-				UserID:    "user123",
-				Partition: "compute",
-				CPUs:      8,
-				Memory:    32 * 1024 * 1024 * 1024,
+			otherJob: &types.Job{
+				Name:          ptrStringTest("other-job"),
+				UserName:      ptrStringTest("user123"),
+				Partition:     ptrStringTest("compute"),
+				CPUs:          ptrUint32Test(8),
+				MemoryPerNode: ptrUint64Test(32 * 1024),
 			},
 			minScore: 0.5,
 			maxScore: 0.7,
 		},
 		{
 			name: "different user same resources",
-			otherJob: &interfaces.Job{
-				Name:      "test-job",
-				UserID:    "user456",
-				Partition: "compute",
-				CPUs:      16,
-				Memory:    64 * 1024 * 1024 * 1024,
+			otherJob: &types.Job{
+				Name:          ptrStringTest("test-job"),
+				UserName:      ptrStringTest("user456"),
+				Partition:     ptrStringTest("compute"),
+				CPUs:          ptrUint32Test(16),
+				MemoryPerNode: ptrUint64Test(64 * 1024),
 			},
 			minScore: 0.7,
 			maxScore: 0.9,
 		},
 		{
 			name: "completely different",
-			otherJob: &interfaces.Job{
-				Name:      "other-job",
-				UserID:    "user456",
-				Partition: "gpu",
-				CPUs:      32,
-				Memory:    128 * 1024 * 1024 * 1024,
+			otherJob: &types.Job{
+				Name:          ptrStringTest("other-job"),
+				UserName:      ptrStringTest("user456"),
+				Partition:     ptrStringTest("gpu"),
+				CPUs:          ptrUint32Test(32),
+				MemoryPerNode: ptrUint64Test(128 * 1024),
 			},
 			minScore: 0.2,
 			maxScore: 0.5,
@@ -331,29 +342,29 @@ func TestCalculatePerformanceStatistics(t *testing.T) {
 
 	similarJobs := []*SimilarJobResult{
 		{
-			Job: &interfaces.Job{
-				CPUs:   16,
-				Memory: 64 * 1024 * 1024 * 1024,
+			Job: &types.Job{
+				CPUs:          ptrUint32Test(16),
+				MemoryPerNode: ptrUint64Test(64 * 1024),
 			},
-			Analytics: &interfaces.JobComprehensiveAnalytics{
+			Analytics: &types.JobComprehensiveAnalytics{
 				OverallEfficiency: 90.0,
 			},
 		},
 		{
-			Job: &interfaces.Job{
-				CPUs:   12,
-				Memory: 48 * 1024 * 1024 * 1024,
+			Job: &types.Job{
+				CPUs:          ptrUint32Test(12),
+				MemoryPerNode: ptrUint64Test(48 * 1024),
 			},
-			Analytics: &interfaces.JobComprehensiveAnalytics{
+			Analytics: &types.JobComprehensiveAnalytics{
 				OverallEfficiency: 80.0,
 			},
 		},
 		{
-			Job: &interfaces.Job{
-				CPUs:   16,
-				Memory: 64 * 1024 * 1024 * 1024,
+			Job: &types.Job{
+				CPUs:          ptrUint32Test(16),
+				MemoryPerNode: ptrUint64Test(64 * 1024),
 			},
-			Analytics: &interfaces.JobComprehensiveAnalytics{
+			Analytics: &types.JobComprehensiveAnalytics{
 				OverallEfficiency: 70.0,
 			},
 		},
@@ -376,13 +387,13 @@ func TestGenerateRecommendations(t *testing.T) {
 	analyzer := NewPerformanceAnalyzer()
 
 	// Reference job with suboptimal resources
-	referenceJob := &interfaces.Job{
-		ID:     "ref-job",
-		CPUs:   32,                       // Over-allocated
-		Memory: 128 * 1024 * 1024 * 1024, // Over-allocated
+	referenceJob := &types.Job{
+		JobID:         ptrInt32Test(200),
+		CPUs:          ptrUint32Test(32),         // Over-allocated
+		MemoryPerNode: ptrUint64Test(128 * 1024), // Over-allocated
 	}
 
-	referenceAnalytics := &interfaces.JobComprehensiveAnalytics{
+	referenceAnalytics := &types.JobComprehensiveAnalytics{
 		OverallEfficiency: 55.0, // Below average
 	}
 
@@ -412,7 +423,7 @@ func TestGenerateRecommendations(t *testing.T) {
 	}
 
 	// Skip resource reduction checks - implementation may not find similar jobs
-	// if analysis.PerformanceStats.OptimalResources.CPUs > 0 {
+	// if analysis.PerformanceStats.OptimalResources.Cpus > 0 {
 	//	assert.True(t, foundCPUReduction)
 	// }
 	// if analysis.PerformanceStats.OptimalResources.MemoryGB > 0 {

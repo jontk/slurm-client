@@ -1,6 +1,6 @@
 # Makefile for slurm-client
 
-.PHONY: build test check-mocks lint lint-staged fmt vet clean docs help install-tools install-hooks generate download-specs generate-mocks
+.PHONY: build test check-mocks lint lint-staged fmt vet clean docs help install-tools install-hooks generate download-specs generate-mocks install-goverter generate-goverter verify-goverter
 
 # Variables
 BINARY_NAME=slurm-client
@@ -270,4 +270,114 @@ help:
 	@echo "  integration-test - Run integration tests (requires SLURM_REST_URL)"
 	@echo "  check-version   - Check Go version"
 	@echo "  release-prep    - Prepare for release"
+	@echo "  generate-converters - Generate type converters for all API versions"
+	@echo "  generate-all-adapters - Generate adapters, validation, helpers, tests, and converters"
+	@echo "  generate-adapters-v0_0_44 - Generate all adapter files for v0_0_44 only (testing)"
+	@echo "  verify-converters - Verify generated converters are up to date"
+	@echo "  install-goverter - Install goverter tool"
+	@echo "  generate-goverter - Generate goverter converters for all versions"
+	@echo "  verify-goverter - Verify goverter generated files are up to date"
 	@echo "  help            - Show this help message"
+# Code generation targets
+.PHONY: generate-converters
+generate-converters: ## Generate type converters for all API versions
+	@echo "Generating converters for all API versions..."
+	@go run tools/codegen/generate_converters_v2.go \
+		tools/codegen/converter_patterns.go \
+		tools/codegen/converter_helpers.go \
+		-all \
+		-config=tools/codegen/converter_config_enhanced.yaml
+	@echo "Formatting generated files..."
+	@gofmt -w internal/adapters/*/*.gen.go
+	@echo "✓ Generated converters for all versions"
+
+.PHONY: verify-converters
+verify-converters: ## Verify generated converters are up to date
+	@echo "Verifying generated converters..."
+	@echo "Regenerating converters..."
+	@$(MAKE) generate-converters > /dev/null 2>&1
+	@if git diff --quiet internal/adapters/*/*.gen.go; then \
+		echo "✓ Generated converters are up to date"; \
+	else \
+		echo "❌ Generated converters are out of date!"; \
+		echo "Run 'make generate-converters' to update them"; \
+		git diff --stat internal/adapters/*/*.gen.go; \
+		exit 1; \
+	fi
+
+.PHONY: generate-all-adapters
+generate-all-adapters: ## Generate adapters, validation, helpers, tests, and converters with field mappings
+	@echo "Phase 1: Generating adapters, validation, helpers, and tests..."
+	@go run tools/codegen/generate_adapters.go -all
+	@echo ""
+	@echo "Phase 2: Generating converters with actual field mappings..."
+	@go run tools/codegen/generate_converters_v2.go \
+		tools/codegen/converter_patterns.go \
+		tools/codegen/converter_helpers.go \
+		-all \
+		-config=tools/codegen/converter_config_enhanced.yaml
+	@echo ""
+	@echo "Phase 3: Formatting generated code..."
+	@gofmt -w internal/adapters/
+	@echo ""
+	@echo "✓ All adapter generation complete"
+	@echo "  - Adapters: *_adapter.gen.go"
+	@echo "  - Validation: *_validation.gen.go"
+	@echo "  - Helpers: *_helpers.gen.go"
+	@echo "  - Tests: *_adapter_gen_test.go"
+	@echo "  - Converters: *_converters.gen.go (with field mappings)"
+
+.PHONY: generate-adapters-v0_0_44
+generate-adapters-v0_0_44: ## Generate adapters for v0_0_44 only (for testing)
+	@echo "Phase 1: Generating adapters, validation, helpers, and tests for v0_0_44..."
+	@go run tools/codegen/generate_adapters.go -version=v0_0_44
+	@echo ""
+	@echo "Phase 2: Generating converters with actual field mappings for v0_0_44..."
+	@go run tools/codegen/generate_converters_v2.go \
+		tools/codegen/converter_patterns.go \
+		tools/codegen/converter_helpers.go \
+		-version=v0_0_44 \
+		-config=tools/codegen/converter_config_enhanced.yaml
+	@echo ""
+	@echo "Phase 3: Formatting generated code..."
+	@gofmt -w internal/adapters/v0_0_44/
+	@echo ""
+	@echo "✓ v0_0_44 adapter generation complete"
+
+# Goverter targets
+.PHONY: install-goverter
+install-goverter: ## Install goverter tool for type converter generation
+	@command -v goverter >/dev/null 2>&1 || { \
+		echo "Installing goverter..."; \
+		go install github.com/jmattheis/goverter/cmd/goverter@latest; \
+	}
+	@echo "✓ goverter installed"
+
+.PHONY: generate-goverter
+generate-goverter: install-goverter ## Generate goverter converters for v0_0_40, v0_0_42, v0_0_43, v0_0_44
+	@echo "Generating goverter converters for all active API versions..."
+	@echo "  Generating v0_0_40..."
+	@goverter gen ./internal/adapters/v0_0_40/
+	@echo "  Generating v0_0_42..."
+	@goverter gen ./internal/adapters/v0_0_42/
+	@echo "  Generating v0_0_43..."
+	@goverter gen ./internal/adapters/v0_0_43/
+	@echo "  Generating v0_0_44..."
+	@goverter gen ./internal/adapters/v0_0_44/
+	@echo "Formatting generated files..."
+	@gofmt -w internal/adapters/v0_0_40/*_goverter*.go internal/adapters/v0_0_42/*_goverter*.go internal/adapters/v0_0_43/*_goverter*.go internal/adapters/v0_0_44/*_goverter*.go
+	@echo "✓ Generated goverter converters for all versions"
+
+.PHONY: verify-goverter
+verify-goverter: ## Verify goverter generated files are up to date
+	@echo "Verifying goverter generated files..."
+	@echo "Regenerating goverter converters..."
+	@$(MAKE) generate-goverter > /dev/null 2>&1
+	@if git diff --quiet internal/adapters/v0_0_40/*_goverter*.go internal/adapters/v0_0_42/*_goverter*.go internal/adapters/v0_0_43/*_goverter*.go internal/adapters/v0_0_44/*_goverter*.go 2>/dev/null; then \
+		echo "✓ Goverter generated files are up to date"; \
+	else \
+		echo "❌ Goverter generated files are out of date!"; \
+		echo "Run 'make generate-goverter' to update them"; \
+		git diff --stat internal/adapters/*_goverter*.go 2>/dev/null || true; \
+		exit 1; \
+	fi

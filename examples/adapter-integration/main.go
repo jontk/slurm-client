@@ -9,8 +9,8 @@ import (
 
 	"github.com/jontk/slurm-client/internal/adapters/common"
 	v0_0_43 "github.com/jontk/slurm-client/internal/adapters/v0_0_43"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
-	"github.com/jontk/slurm-client/internal/common/types"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_43"
+	types "github.com/jontk/slurm-client/api"
 )
 
 // Example demonstrating how to use the integrated adapter
@@ -102,10 +102,13 @@ func coordinatedManagerExample(adapter common.VersionAdapter) {
 
 	// 1. Verify QoS exists (mock example)
 	// In a real scenario, this would fetch from the server
+	nameStr := "high_priority"
+	descStr := "High priority QoS"
+	priorityVal := uint32(1000)
 	qos := &types.QoS{
-		Name:        "high_priority",
-		Description: "High priority QoS",
-		Priority:    1000,
+		Name:        &nameStr,
+		Description: &descStr,
+		Priority:    &priorityVal,
 	}
 	_ = qos // Simulate using the QoS
 

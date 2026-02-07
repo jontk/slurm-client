@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -13,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/tests/helpers"
 	"github.com/jontk/slurm-client/tests/mocks"
@@ -132,7 +135,7 @@ func testAuthenticationFlow(t *testing.T, authProvider auth.Provider, enableAuth
 		Name:      "auth-test-job",
 		Script:    "#!/bin/bash\necho 'Auth test'",
 		Partition: "compute",
-		CPUs:      1,
+		Cpus:      1,
 	}
 
 	response, err := client.Jobs().Submit(ctx, submission)

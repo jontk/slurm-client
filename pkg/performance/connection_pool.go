@@ -1,6 +1,17 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
+// Package performance provides performance optimization features for the SLURM client.
+//
+// CONSOLIDATION NOTE (see plan/codex_feedback_8.md R4):
+// This package contains HTTPClientPool which duplicates functionality from pkg/pool.
+// pkg/pool is the canonical connection pooling implementation used by the factory.
+// This package's pool is kept separate because:
+//  1. This package is experimental/value-added (not core SDK)
+//  2. HTTPClientPoolManager is tightly coupled with PerformanceProfile system
+//  3. Only used by benchmarks and performance-optimization examples
+//
+// Future work: Consider using pkg/pool internally and wrapping it with PerformanceProfile features.
 package performance
 
 import (

@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	v0_0_40 "github.com/jontk/slurm-client/internal/api/v0_0_40"
-	v0_0_42 "github.com/jontk/slurm-client/internal/api/v0_0_42"
-	v0_0_43 "github.com/jontk/slurm-client/internal/api/v0_0_43"
-	v0_0_44 "github.com/jontk/slurm-client/internal/api/v0_0_44"
+	v0_0_40 "github.com/jontk/slurm-client/internal/openapi/v0_0_40"
+	v0_0_42 "github.com/jontk/slurm-client/internal/openapi/v0_0_42"
+	v0_0_43 "github.com/jontk/slurm-client/internal/openapi/v0_0_43"
+	v0_0_44 "github.com/jontk/slurm-client/internal/openapi/v0_0_44"
 )
 
 // JobHandler provides version-specific job handling

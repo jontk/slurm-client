@@ -9,7 +9,7 @@ import (
 
 	"github.com/jontk/slurm-client/internal/adapters/common"
 	v0_0_43 "github.com/jontk/slurm-client/internal/adapters/v0_0_43"
-	api "github.com/jontk/slurm-client/internal/api/v0_0_43"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_43"
 )
 
 // verifyIntegration checks that the adapter implements all required interfaces

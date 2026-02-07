@@ -1,32 +1,29 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_40
 
 import (
 	"context"
 	"strconv"
 
-	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
+	types "github.com/jontk/slurm-client/api"
+	adapterbase "github.com/jontk/slurm-client/internal/adapters/base"
 	"github.com/jontk/slurm-client/internal/common"
-	"github.com/jontk/slurm-client/internal/common/types"
-	"github.com/jontk/slurm-client/internal/managers/base"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_40"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // ReservationAdapter implements the ReservationAdapter interface for v0.0.40
 type ReservationAdapter struct {
-	*base.BaseManager
-	client  *api.ClientWithResponses
-	wrapper *api.WrapperClient
+	*adapterbase.BaseManager
+	client *api.ClientWithResponses
 }
 
 // NewReservationAdapter creates a new Reservation adapter for v0.0.40
 func NewReservationAdapter(client *api.ClientWithResponses) *ReservationAdapter {
 	return &ReservationAdapter{
-		BaseManager: base.NewBaseManager("v0.0.40", "Reservation"),
+		BaseManager: adapterbase.NewBaseManager("v0.0.40", "Reservation"),
 		client:      client,
-		wrapper:     nil,
 	}
 }
 
@@ -36,15 +33,12 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
-
 	// Prepare parameters for the API call
 	params := &api.SlurmV0040GetReservationsParams{}
-
 	// Apply filters from options
 	if opts != nil {
 		// v0.0.40 doesn't support reservation name filtering in params
@@ -54,24 +48,20 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 			params.UpdateTime = &updateTimeStr
 		}
 	}
-
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmV0040GetReservationsWithResponse(ctx, params)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
-
 	// Use common response error handling
 	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
-
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
 		return nil, err
 	}
-
 	// Check for unexpected response format
 	if err := a.CheckNilResponse(resp.JSON200, "List Reservations"); err != nil {
 		return nil, err
@@ -79,20 +69,16 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 	if err := a.CheckNilResponse(resp.JSON200.Reservations, "List Reservations - reservations field"); err != nil {
 		return nil, err
 	}
-
 	// Convert the response to common types
 	reservationList := make([]types.Reservation, 0, len(resp.JSON200.Reservations))
 	for _, apiReservation := range resp.JSON200.Reservations {
 		reservation := a.convertAPIReservationToCommon(apiReservation)
-
 		// Apply client-side filtering if needed
 		if !a.reservationPassesNameFilter(reservation, opts) {
 			continue
 		}
-
 		reservationList = append(reservationList, *reservation)
 	}
-
 	// Apply pagination
 	return a.paginateReservationList(reservationList, opts), nil
 }
@@ -102,9 +88,8 @@ func (a *ReservationAdapter) reservationPassesNameFilter(reservation *types.Rese
 	if opts == nil || len(opts.Names) == 0 {
 		return true
 	}
-
 	for _, name := range opts.Names {
-		if reservation.Name == name {
+		if reservation.Name != nil && *reservation.Name == name {
 			return true
 		}
 	}
@@ -113,12 +98,11 @@ func (a *ReservationAdapter) reservationPassesNameFilter(reservation *types.Rese
 
 // paginateReservationList applies pagination to a reservation list
 func (a *ReservationAdapter) paginateReservationList(reservationList []types.Reservation, opts *types.ReservationListOptions) *types.ReservationList {
-	listOpts := base.ListOptions{}
+	listOpts := adapterbase.ListOptions{}
 	if opts != nil {
 		listOpts.Limit = opts.Limit
 		listOpts.Offset = opts.Offset
 	}
-
 	start := listOpts.Offset
 	if start < 0 {
 		start = 0
@@ -129,7 +113,6 @@ func (a *ReservationAdapter) paginateReservationList(reservationList []types.Res
 			Total:        len(reservationList),
 		}
 	}
-
 	end := len(reservationList)
 	if listOpts.Limit > 0 {
 		end = start + listOpts.Limit
@@ -137,7 +120,6 @@ func (a *ReservationAdapter) paginateReservationList(reservationList []types.Res
 			end = len(reservationList)
 		}
 	}
-
 	return &types.ReservationList{
 		Reservations: reservationList[start:end],
 		Total:        len(reservationList),
@@ -153,7 +135,6 @@ func (a *ReservationAdapter) Get(ctx context.Context, reservationName string) (*
 	if err := a.ValidateResourceName(reservationName, "reservation name"); err != nil {
 		return nil, err
 	}
-
 	// v0.0.40 doesn't have a single reservation GET endpoint
 	// We need to list all and filter
 	list, err := a.List(ctx, &types.ReservationListOptions{
@@ -162,11 +143,9 @@ func (a *ReservationAdapter) Get(ctx context.Context, reservationName string) (*
 	if err != nil {
 		return nil, err
 	}
-
 	if len(list.Reservations) == 0 {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, "Reservation '"+reservationName+"' not found")
 	}
-
 	return &list.Reservations[0], nil
 }
 
@@ -185,7 +164,6 @@ func (a *ReservationAdapter) Update(ctx context.Context, reservationName string,
 	if err := a.ValidateResourceName(reservationName, "reservation name"); err != nil {
 		return err
 	}
-
 	// v0.0.40 doesn't support reservation updates
 	return errors.NewNotImplementedError("reservation updates", "v0.0.40")
 }
@@ -202,26 +180,21 @@ func (a *ReservationAdapter) Delete(ctx context.Context, reservationName string)
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return err
 	}
-
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmV0040DeleteReservationWithResponse(ctx, reservationName)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
-
 	// Use common response error handling
 	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
-
 	// Create adapter with special handling for 204 (No Content) status
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-
 	// For DELETE operations, 204 is also a success
 	if resp.StatusCode() == 204 {
 		return nil
 	}
-
 	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
 }
