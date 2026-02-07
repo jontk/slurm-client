@@ -101,35 +101,7 @@ jobs:
       env:
         # Increase buffer size to handle large linter output
         NODE_OPTIONS: --max-old-space-size=8192
-
-  staticcheck:
-    name: Static Analysis
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-
-    - name: Set up Go
-      uses: actions/setup-go@v6
-      with:
-        go-version: ${{ env.GO_VERSION_STABLE }}
-        cache: true
-
-    - name: Install oapi-codegen
-      run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
-
-    - name: Generate mock builders
-      run: make generate-mocks
-
-    - name: Build generated packages
-      run: go build ./tests/mocks/generated/...
-
-    - name: Install staticcheck
-      run: go install honnef.co/go/tools/cmd/staticcheck@latest
-
-    - name: Run staticcheck
-      run: staticcheck ./...
+      # Note: staticcheck is run as part of golangci-lint above
 
   build:
     name: Build
@@ -287,7 +259,7 @@ jobs:
 
   all-checks-passed:
     name: All Checks Passed
-    needs: [test, lint, staticcheck, build, license-check, module-check]
+    needs: [test, lint, build, license-check, module-check]
     runs-on: ubuntu-latest
     if: always()
 
@@ -297,14 +269,12 @@ jobs:
         echo "Job results:"
         echo "  test: ${{ needs.test.result }}"
         echo "  lint: ${{ needs.lint.result }}"
-        echo "  staticcheck: ${{ needs.staticcheck.result }}"
         echo "  build: ${{ needs.build.result }}"
         echo "  license-check: ${{ needs.license-check.result }}"
         echo "  module-check: ${{ needs.module-check.result }}"
 
         if [ "${{ needs.test.result }}" == "failure" ] || \
            [ "${{ needs.lint.result }}" == "failure" ] || \
-           [ "${{ needs.staticcheck.result }}" == "failure" ] || \
            [ "${{ needs.build.result }}" == "failure" ] || \
            [ "${{ needs.license-check.result }}" == "failure" ] || \
            [ "${{ needs.module-check.result }}" == "failure" ]; then
