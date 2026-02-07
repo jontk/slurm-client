@@ -210,6 +210,7 @@ func collectJobResults(ctx context.Context, client slurm.SlurmClient, jobIDs []s
 		if job.ExitCode != nil {
 			// ExitCode is a struct with Status and Signal fields
 			// Access the appropriate field based on your needs
+			// Processing deferred to caller - keeping default value
 		}
 
 		result := JobResult{

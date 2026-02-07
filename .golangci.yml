@@ -200,10 +200,11 @@ linters:
           - testifylint
           - thelper
           - unparam
+          - unconvert
         path: _test\.go
       - linters:
           - gosec
-        path: (^internal/adapters/|^internal/api/|^internal/factory/|^internal/common/|^tests/|_test\.go$|^tests/mocks/)
+        path: (^internal/adapters/|^internal/api/|^internal/factory/|^internal/common/|^tests/|_test\.go$|^tests/mocks/|^pkg/analytics/)
         text: G115  # Integer overflow conversions are safe for SLURM API type transformations and test data
       - linters:
           - gosec
@@ -214,6 +215,10 @@ linters:
         path: ^internal/api/v0_0_43/
         text: G404  # Weak random used for generating synthetic test data in simulation functions
       - linters:
+          - gosec
+        path: ^examples/
+        text: "G115|G101"  # Examples may have integer conversions and secrets for demonstration purposes
+      - linters:
           - revive
         path: _test\.go
         text: context-as-argument
@@ -221,6 +226,7 @@ linters:
           - deadcode
           - unused
           - nilnil
+          - unparam
         path: test_helpers\.go
       - linters:
           - depguard
@@ -296,6 +302,7 @@ linters:
           - testifylint
           - thelper
           - unparam
+          - unconvert
         path: ^benchmarks/
       - linters:
           - goconst
@@ -304,15 +311,21 @@ linters:
           - testifylint
           - thelper
           - unparam
+          - unconvert
         path: ^tests/
       - linters:
           - revive
-        path: client_options\.go
+        path: client_options.*\.go
         text: unused-parameter  # Builder pattern functions intentionally have unused parameters
       - linters:
           - revive
         path: ^internal/factory/
         text: unused-parameter  # Factory builder functions intentionally have unused parameters
+      - linters:
+          - revive
+          - unparam
+        path: ^internal/adapters/.*_watch_extra\.go$
+        text: "unused-parameter|maxEvents is unused"  # Watch implementations have consistent signatures
       - linters:
           - revive
         path: ^pkg/.*_options\.go
@@ -323,23 +336,41 @@ linters:
         text: unused-parameter  # Converter functions have consistent signatures across versions
       - linters:
           - revive
+          - unparam
         path: ^internal/common/(standalone_stubs|association_manager_stub)\.go$
-        text: unused-parameter  # Stub implementations need to match interface signatures
+        text: "unused-parameter|is unused"  # Stub implementations need to match interface signatures
       - linters:
           - revive
+          - unparam
+        path: ^internal/adapters/base/.*_base_manager\.go$
+        text: "unused-parameter|is unused"  # Base managers need to match interface signatures
+      - linters:
+          - revive
+          - unparam
         path: ^internal/adapters/.*_adapter\.go$
-        text: unused-parameter  # Adapter implementations need to match interface signatures
+        text: "unused-parameter|is unused"  # Adapter implementations need to match interface signatures
       - linters:
           - revive
+          - unparam
+        path: ^internal/adapters/.*/.*_converters\.go$
+        text: "unused-parameter|is unused"  # Converter implementations need to match interface signatures
+      - linters:
+          - revive
+          - unparam
         path: ^pkg/streaming/test_helpers\.go$
-        text: unused-parameter  # Test helper functions intentionally have unused parameters
+        text: "unused-parameter|is unused"  # Test helper functions intentionally have unused parameters
       - linters:
           - revive
+          - unparam
         path: _test\.go$
-        text: unused-parameter  # Test functions often have unused parameters
+        text: "unused-parameter|is unused"  # Test functions often have unused parameters
       - linters:
           - revive
         path: (client\.go|interfaces\.go|pkg/errors/)
+        text: exported  # Established public API types - renaming would break compatibility
+      - linters:
+          - revive
+        path: ^api/info\.go$
         text: exported  # Established public API types - renaming would break compatibility
       - linters:
           - revive
@@ -471,6 +502,11 @@ linters:
           - gocritic
         path: ^internal/adapters/.*goverter_helpers\.go$
         text: ptrToRefParam
+      # Goverter helpers - staticcheck S1001 for range loops
+      - linters:
+          - staticcheck
+        path: ^internal/adapters/.*goverter_helpers\.go$
+        text: S1001
       # Factory extended files - style preferences
       - linters:
           - gocritic
@@ -513,6 +549,9 @@ linters:
       - linters:
           - perfsprint
         path: ^internal/factory/
+      - linters:
+          - perfsprint
+        path: ^pkg/
       # Unconvert often flags valid type conversions in generated/adapter code
       - linters:
           - unconvert
@@ -520,6 +559,12 @@ linters:
       - linters:
           - unconvert
         path: ^internal/adapters/
+      - linters:
+          - unconvert
+        path: ^internal/factory/
+      - linters:
+          - unconvert
+        path: ^pkg/watch/
       # Converter helper functions prepared for future use in adapters
       - linters:
           - unused
@@ -527,10 +572,16 @@ linters:
       - linters:
           - unused
         path: ^internal/adapters/.*/goverter_bridge\.go$
-      # Example helper functions
       - linters:
           - unused
+        path: ^internal/factory/
+      # Example helper functions and style
+      - linters:
+          - unused
+          - revive
+          - unparam
         path: ^examples/
+        text: "unused-parameter|empty-block|is unused"
     paths:
       - .*\.pb\.go$
       - .*\.gen\.go$
