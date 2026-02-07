@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/jontk/slurm-client/pkg/logging"
@@ -417,11 +418,15 @@ func WithCircuitBreaker(threshold int, timeout time.Duration) Middleware {
 type circuitBreaker struct {
 	threshold int
 	timeout   time.Duration
+	mu        sync.RWMutex
 	failures  int
 	lastFail  time.Time
 }
 
 func (cb *circuitBreaker) Allow() bool {
+	cb.mu.RLock()
+	defer cb.mu.RUnlock()
+
 	if cb.failures < cb.threshold {
 		return true
 	}
@@ -431,10 +436,16 @@ func (cb *circuitBreaker) Allow() bool {
 }
 
 func (cb *circuitBreaker) RecordFailure() {
+	cb.mu.Lock()
+	defer cb.mu.Unlock()
+
 	cb.failures++
 	cb.lastFail = time.Now()
 }
 
 func (cb *circuitBreaker) RecordSuccess() {
+	cb.mu.Lock()
+	defer cb.mu.Unlock()
+
 	cb.failures = 0
 }

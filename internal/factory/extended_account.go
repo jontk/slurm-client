@@ -44,17 +44,23 @@ func (m *extendedAccountManager) GetAccountHierarchy(ctx context.Context, rootAc
 	tree := buildAccountTree(associations)
 
 	// Create the hierarchy starting from root
-	hierarchy := m.buildHierarchyNode(ctx, rootAccount, tree, 0, []string{})
+	hierarchy, err := m.buildHierarchyNode(ctx, rootAccount, tree, 0, []string{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to build hierarchy: %w", err)
+	}
 
 	return hierarchy, nil
 }
 
 // buildHierarchyNode recursively builds the hierarchy tree
-func (m *extendedAccountManager) buildHierarchyNode(ctx context.Context, accountName string, tree map[string]*accountNode, level int, path []string) *types.AccountHierarchy {
+func (m *extendedAccountManager) buildHierarchyNode(ctx context.Context, accountName string, tree map[string]*accountNode, level int, path []string) (*types.AccountHierarchy, error) {
 	node, exists := tree[accountName]
 
 	// Get account details
-	account, _ := m.adapter.Get(ctx, accountName)
+	account, err := m.adapter.Get(ctx, accountName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get account %s: %w", accountName, err)
+	}
 
 	hierarchy := &types.AccountHierarchy{
 		Account:          account,
@@ -66,7 +72,7 @@ func (m *extendedAccountManager) buildHierarchyNode(ctx context.Context, account
 	}
 
 	if !exists {
-		return hierarchy
+		return hierarchy, nil
 	}
 
 	// Count users
@@ -80,7 +86,10 @@ func (m *extendedAccountManager) buildHierarchyNode(ctx context.Context, account
 		// Find child account name from associations
 		for name, n := range tree {
 			if n == childNode {
-				childHierarchy := m.buildHierarchyNode(ctx, name, tree, level+1, hierarchy.Path)
+				childHierarchy, err := m.buildHierarchyNode(ctx, name, tree, level+1, hierarchy.Path)
+				if err != nil {
+					return nil, err
+				}
 				hierarchy.ChildAccounts = append(hierarchy.ChildAccounts, childHierarchy)
 				hierarchy.TotalSubAccounts++
 				hierarchy.TotalUsers += childHierarchy.TotalUsers
@@ -96,7 +105,7 @@ func (m *extendedAccountManager) buildHierarchyNode(ctx context.Context, account
 		hierarchy.AggregateUsage = extractUsageFromAssociation(node.assocs[0])
 	}
 
-	return hierarchy
+	return hierarchy, nil
 }
 
 // GetParentAccounts retrieves all parent accounts for the specified account
