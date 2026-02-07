@@ -163,6 +163,18 @@ func generateConvertersForVersion(version string, config *GeneratorConfig) error
 		return nil
 	}
 
+	// Skip versions that use goverter (have goverter_bridge.go files)
+	goverterVersions := map[string]bool{
+		"v0_0_40": true,
+		"v0_0_42": true,
+		"v0_0_43": true,
+		"v0_0_44": true,
+	}
+	if goverterVersions[version] {
+		fmt.Printf("  Skipping %s (uses goverter)\n", version)
+		return nil
+	}
+
 	// Parse API types from generated client
 	apiDir := filepath.Join("internal", "openapi", version)
 	apiTypes, err := parseAPITypes(apiDir, versionConfig.APIPrefix)
