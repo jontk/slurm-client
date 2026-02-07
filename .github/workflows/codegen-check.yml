@@ -36,16 +36,17 @@ jobs:
 
       - name: Check for uncommitted changes
         run: |
-          if [[ -n $(git status --porcelain internal/adapters/*/*.gen.go) ]]; then
+          # Only check v0_0_41 (other versions use goverter and are skipped by the generator)
+          if [[ -n $(git status --porcelain internal/adapters/v0_0_41/*.gen.go) ]]; then
             echo "❌ Generated converter files are out of sync!"
             echo ""
             echo "The following files have uncommitted changes:"
-            git status --porcelain internal/adapters/*/*.gen.go
+            git status --porcelain internal/adapters/v0_0_41/*.gen.go
             echo ""
             echo "Please run 'make generate-converters' locally and commit the changes."
             echo ""
             echo "Diff:"
-            git diff internal/adapters/*/*.gen.go
+            git diff internal/adapters/v0_0_41/*.gen.go
             exit 1
           fi
           echo "✅ Generated converters are up to date"

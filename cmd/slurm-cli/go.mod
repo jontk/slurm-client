@@ -5,7 +5,7 @@ go 1.22.5
 toolchain go1.24.5
 
 require (
-	github.com/jontk/slurm-client v0.0.0
+	github.com/jontk/slurm-client v0.0.0-00010101000000-000000000000
 	github.com/spf13/cobra v1.10.2
 )
 

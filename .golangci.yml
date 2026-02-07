@@ -395,6 +395,11 @@ linters:
           - staticcheck
         path: internal/adapters/
         text: deprecated
+      # Examples may use deprecated functions to demonstrate backward compatibility
+      - linters:
+          - staticcheck
+        path: ^examples/
+        text: SA1019
       - linters:
           - staticcheck
         path: _test\.go
@@ -424,6 +429,108 @@ linters:
       - linters:
           - goheader
         path: vendor/  # Third-party dependencies
+      - linters:
+          - goheader
+        path: ^internal/adapters/.*goverter.*\.go$  # Goverter helper files
+      # Goverter comments use "goverter:map Field Field" syntax which triggers dupword
+      - linters:
+          - dupword
+        path: ^internal/adapters/.*goverter.*\.go$
+      # Examples legitimately use context.Background() as entry points
+      - linters:
+          - contextcheck
+        path: ^examples/
+      # Examples don't always need Output comments
+      - linters:
+          - testableexamples
+        path: ^examples/
+      - linters:
+          - testableexamples
+        path: examples_test\.go$
+      # Example tests use log.Fatal for demonstration which triggers exitAfterDefer
+      - linters:
+          - gocritic
+        path: examples_test\.go$
+        text: exitAfterDefer
+      # Examples use string literals for clarity
+      - linters:
+          - goconst
+        path: ^examples/
+      # Example code style is intentionally simple for readability
+      - linters:
+          - gocritic
+        path: ^examples/
+        text: appendAssign|nestingReduce
+      # Tool code style preferences
+      - linters:
+          - gocritic
+        path: ^cmd/
+        text: nestingReduce
+      # Goverter helper functions use pointer parameters intentionally
+      - linters:
+          - gocritic
+        path: ^internal/adapters/.*goverter_helpers\.go$
+        text: ptrToRefParam
+      # Factory extended files - style preferences
+      - linters:
+          - gocritic
+        path: ^internal/factory/extended.*\.go$
+        text: nestingReduce
+      - linters:
+          - goconst
+        path: ^internal/factory/extended.*\.go$
+      # Adapter converters - style preferences
+      - linters:
+          - gocritic
+        path: ^internal/adapters/.*_converters\.go$
+        text: nestingReduce
+      # High complexity functions in cmd tools, examples, and adapters are acceptable
+      - linters:
+          - gocyclo
+        path: ^cmd/
+      - linters:
+          - gocyclo
+        path: ^examples/
+      - linters:
+          - gocyclo
+        path: ^internal/adapters/
+      - linters:
+          - gocyclo
+        path: ^internal/factory/extended.*\.go$
+      - linters:
+          - gocyclo
+        path: ^pkg/analytics/
+      # Performance sprint suggestions often not applicable in tools/examples/adapters
+      - linters:
+          - perfsprint
+        path: ^internal/adapters/
+      - linters:
+          - perfsprint
+        path: ^examples/
+      - linters:
+          - perfsprint
+        path: ^cmd/
+      - linters:
+          - perfsprint
+        path: ^internal/factory/
+      # Unconvert often flags valid type conversions in generated/adapter code
+      - linters:
+          - unconvert
+        path: \.gen\.go$
+      - linters:
+          - unconvert
+        path: ^internal/adapters/
+      # Converter helper functions prepared for future use in adapters
+      - linters:
+          - unused
+        path: ^internal/adapters/.*_converters.*\.go$
+      - linters:
+          - unused
+        path: ^internal/adapters/.*/goverter_bridge\.go$
+      # Example helper functions
+      - linters:
+          - unused
+        path: ^examples/
     paths:
       - .*\.pb\.go$
       - .*\.gen\.go$

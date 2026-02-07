@@ -15,7 +15,7 @@ import (
 	slurm "github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
-	pkgslurm types "github.com/jontk/slurm-client/api"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/spf13/cobra"
 )
 
@@ -179,7 +179,7 @@ func safeString(p *string) string {
 	return ""
 }
 
-func safeJobState(states []pkgslurm.JobState) string {
+func safeJobState(states []types.JobState) string {
 	if len(states) > 0 {
 		return string(states[0])
 	}

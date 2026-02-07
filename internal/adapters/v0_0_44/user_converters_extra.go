@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
+
 // user_converters_extra.go contains manual helper functions for User conversions
 // that complement the goverter-generated converters.
 // Note: User write converters (convertCommonUserCreateToAPI, convertCommonUserUpdateToAPI)
