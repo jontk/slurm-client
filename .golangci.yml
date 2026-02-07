@@ -395,6 +395,11 @@ linters:
           - staticcheck
         path: internal/adapters/
         text: deprecated
+      # Examples may use deprecated functions to demonstrate backward compatibility
+      - linters:
+          - staticcheck
+        path: ^examples/
+        text: SA1019
       - linters:
           - staticcheck
         path: _test\.go
@@ -461,6 +466,40 @@ linters:
           - gocritic
         path: ^cmd/
         text: nestingReduce
+      # Goverter helper functions use pointer parameters intentionally
+      - linters:
+          - gocritic
+        path: ^internal/adapters/.*goverter_helpers\.go$
+        text: ptrToRefParam
+      # Factory extended files - style preferences
+      - linters:
+          - gocritic
+        path: ^internal/factory/extended.*\.go$
+        text: nestingReduce
+      - linters:
+          - goconst
+        path: ^internal/factory/extended.*\.go$
+      # Adapter converters - style preferences
+      - linters:
+          - gocritic
+        path: ^internal/adapters/.*_converters\.go$
+        text: nestingReduce
+      # High complexity functions in cmd tools, examples, and adapters are acceptable
+      - linters:
+          - gocyclo
+        path: ^cmd/
+      - linters:
+          - gocyclo
+        path: ^examples/
+      - linters:
+          - gocyclo
+        path: ^internal/adapters/
+      - linters:
+          - gocyclo
+        path: ^internal/factory/extended.*\.go$
+      - linters:
+          - gocyclo
+        path: ^pkg/analytics/
       # Performance sprint suggestions often not applicable in tools/examples/adapters
       - linters:
           - perfsprint
