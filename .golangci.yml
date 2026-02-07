@@ -442,6 +442,25 @@ linters:
       - linters:
           - testableexamples
         path: examples_test\.go$
+      # Example tests use log.Fatal for demonstration which triggers exitAfterDefer
+      - linters:
+          - gocritic
+        path: examples_test\.go$
+        text: exitAfterDefer
+      # Examples use string literals for clarity
+      - linters:
+          - goconst
+        path: ^examples/
+      # Example code style is intentionally simple for readability
+      - linters:
+          - gocritic
+        path: ^examples/
+        text: appendAssign|nestingReduce
+      # Tool code style preferences
+      - linters:
+          - gocritic
+        path: ^cmd/
+        text: nestingReduce
       # Performance sprint suggestions often not applicable in tools/examples/adapters
       - linters:
           - perfsprint

@@ -214,7 +214,13 @@ func (f *ClientFactory) buildEnhancedHTTPClient(ctx context.Context) *http.Clien
 		baseClient = f.httpClient
 	} else {
 		// Create default client with TLS config from factory config
-		transport := http.DefaultTransport.(*http.Transport).Clone()
+		var transport *http.Transport
+		if defaultTransport, ok := http.DefaultTransport.(*http.Transport); ok {
+			transport = defaultTransport.Clone()
+		} else {
+			// Fallback to fresh transport if DefaultTransport is not *http.Transport
+			transport = &http.Transport{}
+		}
 
 		// Apply InsecureSkipVerify from config if set
 		if f.config != nil && f.config.InsecureSkipVerify {
