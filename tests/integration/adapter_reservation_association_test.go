@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/internal/factory"
 	"github.com/jontk/slurm-client/tests/helpers"
 	"github.com/jontk/slurm-client/tests/mocks"
@@ -75,7 +75,7 @@ func TestAdapterReservationOperations(t *testing.T) {
 					Users:         []string{"testuser"},
 					Accounts:      []string{"testaccount"},
 					NodeCount:     5,
-					PartitionName: "compute",
+					Partition: "compute",
 				}
 
 				// Create reservation

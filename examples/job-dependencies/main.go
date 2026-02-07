@@ -9,30 +9,23 @@ import (
 	"log"
 	"time"
 
-	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	slurm "github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/pkg/auth"
-	"github.com/jontk/slurm-client/pkg/config"
 )
 
 // Example: Job dependencies and workflow orchestration
 func main() {
-	// Create configuration
-	cfg := config.NewDefault()
-	cfg.BaseURL = "https://cluster.example.com:6820"
-
-	// Create authentication
-	authProvider := auth.NewTokenAuth("your-jwt-token")
+	ctx := context.Background()
 
 	// Create client
-	ctx := context.Background()
 	client, err := slurm.NewClient(ctx,
-		slurm.WithConfig(cfg),
-		slurm.WithAuth(authProvider),
+		slurm.WithBaseURL("https://cluster.example.com:6820"),
+		slurm.WithAuth(auth.NewTokenAuth("your-jwt-token")),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
+	defer client.Close()
 
 	// Example 1: Simple job chain (A -> B -> C)
 	fmt.Println("=== Simple Job Chain ===")
@@ -56,7 +49,7 @@ func runSimpleJobChain(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Creating job chain: preprocessing -> processing -> postprocessing")
 
 	// Job 1: Preprocessing
-	job1 := &interfaces.JobSubmission{
+	job1 := &slurm.JobSubmission{
 		Name: "preprocess",
 		Script: `#!/bin/bash
 echo "Starting preprocessing at $(date)"
@@ -75,10 +68,10 @@ echo "Preprocessing completed"
 	if err != nil {
 		log.Fatalf("Failed to submit preprocessing job: %v", err)
 	}
-	fmt.Printf("Preprocessing job submitted: %s\n", resp1.JobID)
+	fmt.Printf("Submitted Job 1: %d\n", resp1.JobId)
 
 	// Job 2: Processing (depends on Job 1)
-	job2 := &interfaces.JobSubmission{
+	job2 := &slurm.JobSubmission{
 		Name: "process",
 		Script: `#!/bin/bash
 echo "Starting main processing at $(date)"
@@ -99,10 +92,10 @@ echo "Processing completed"
 	if err != nil {
 		log.Fatalf("Failed to submit processing job: %v", err)
 	}
-	fmt.Printf("Processing job submitted: %s (depends on %s)\n", resp2.JobID, resp1.JobID)
+	fmt.Printf("Processing job submitted: %d (depends on %d)\n", resp2.JobId, resp1.JobId)
 
 	// Job 3: Postprocessing (depends on Job 2)
-	job3 := &interfaces.JobSubmission{
+	job3 := &slurm.JobSubmission{
 		Name: "postprocess",
 		Script: `#!/bin/bash
 echo "Starting postprocessing at $(date)"
@@ -122,10 +115,14 @@ echo "Postprocessing completed"
 	if err != nil {
 		log.Fatalf("Failed to submit postprocessing job: %v", err)
 	}
-	fmt.Printf("Postprocessing job submitted: %s (depends on %s)\n", resp3.JobID, resp2.JobID)
+	fmt.Printf("Postprocessing job submitted: %d (depends on %d)\n", resp3.JobId, resp2.JobId)
 
 	// Monitor the chain
-	monitorJobChain(ctx, client, []string{resp1.JobID, resp2.JobID, resp3.JobID})
+	monitorJobChain(ctx, client, []string{
+		fmt.Sprintf("%d", resp1.JobId),
+		fmt.Sprintf("%d", resp2.JobId),
+		fmt.Sprintf("%d", resp3.JobId),
+	})
 }
 
 // runFanOutWorkflow creates a fan-out/fan-in workflow pattern
@@ -133,7 +130,7 @@ func runFanOutWorkflow(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Creating fan-out workflow: setup -> parallel tasks -> merge")
 
 	// Setup job
-	setupJob := &interfaces.JobSubmission{
+	setupJob := &slurm.JobSubmission{
 		Name: "setup-fanout",
 		Script: `#!/bin/bash
 echo "Setting up parallel workflow"
@@ -151,12 +148,12 @@ echo "Setup completed - data split into 3 chunks"
 	if err != nil {
 		log.Fatalf("Failed to submit setup job: %v", err)
 	}
-	fmt.Printf("Setup job submitted: %s\n", setupResp.JobID)
+	fmt.Printf("Setup job submitted: %d\n", setupResp.JobId)
 
 	// Submit parallel processing jobs
-	var parallelJobIDs []string
+	var parallelJobIds []string
 	for i := range 3 {
-		parallelJob := &interfaces.JobSubmission{
+		parallelJob := &slurm.JobSubmission{
 			Name: fmt.Sprintf("parallel-task-%d", i),
 			Script: fmt.Sprintf(`#!/bin/bash
 echo "Processing chunk %d"
@@ -176,17 +173,17 @@ echo "Chunk %d processing completed"
 			log.Printf("Failed to submit parallel job %d: %v", i, err)
 			continue
 		}
-		parallelJobIDs = append(parallelJobIDs, resp.JobID)
-		fmt.Printf("Parallel job %d submitted: %s\n", i, resp.JobID)
+		parallelJobIds = append(parallelJobIds, fmt.Sprintf("%d", resp.JobId))
+		fmt.Printf("Parallel job %d submitted: %d\n", i, resp.JobId)
 	}
 
 	// Merge job (depends on all parallel jobs)
-	dependencies := make([]string, len(parallelJobIDs))
-	for i, jobID := range parallelJobIDs {
+	dependencies := make([]string, len(parallelJobIds))
+	for i, jobID := range parallelJobIds {
 		dependencies[i] = "afterok:" + jobID
 	}
 
-	mergeJob := &interfaces.JobSubmission{
+	mergeJob := &slurm.JobSubmission{
 		Name: "merge-results",
 		Script: `#!/bin/bash
 echo "Merging results from parallel jobs"
@@ -206,8 +203,8 @@ echo "Merge completed"
 	if err != nil {
 		log.Fatalf("Failed to submit merge job: %v", err)
 	}
-	fmt.Printf("Merge job submitted: %s (depends on %d parallel jobs)\n",
-		mergeResp.JobID, len(parallelJobIDs))
+	fmt.Printf("Merge job submitted: %d (depends on %d parallel jobs)\n",
+		mergeResp.JobId, len(parallelJobIds))
 }
 
 // runComplexDAGWorkflow creates a complex Directed Acyclic Graph workflow
@@ -300,7 +297,7 @@ python3 deploy.py --evaluation evaluation/ --models models/
 		}
 
 		// Submit job
-		submission := &interfaces.JobSubmission{
+		submission := &slurm.JobSubmission{
 			Name:      job.name,
 			Script:    job.script,
 			Partition: "compute",
@@ -320,7 +317,7 @@ python3 deploy.py --evaluation evaluation/ --models models/
 			continue
 		}
 
-		job.jobID = resp.JobID
+		job.jobID = fmt.Sprintf("%d", resp.JobId)
 		fmt.Printf("Submitted %s: %s", job.name, job.jobID)
 		if len(deps) > 0 {
 			fmt.Printf(" (depends on %d jobs)", len(deps))
@@ -334,7 +331,7 @@ func runConditionalWorkflow(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Creating conditional workflow with error handling")
 
 	// Validation job
-	validationJob := &interfaces.JobSubmission{
+	validationJob := &slurm.JobSubmission{
 		Name: "validate-input",
 		Script: `#!/bin/bash
 echo "Validating input data"
@@ -359,10 +356,10 @@ exit 0
 	if err != nil {
 		log.Fatalf("Failed to submit validation job: %v", err)
 	}
-	fmt.Printf("Validation job submitted: %s\n", valResp.JobID)
+	fmt.Printf("Validation job submitted: %d\n", valResp.JobId)
 
 	// Success path - runs only if validation succeeds
-	successJob := &interfaces.JobSubmission{
+	successJob := &slurm.JobSubmission{
 		Name: "process-valid-data",
 		Script: `#!/bin/bash
 echo "Processing validated data"
@@ -380,11 +377,11 @@ echo "Processing completed successfully"
 	if err != nil {
 		log.Printf("Failed to submit success job: %v", err)
 	} else {
-		fmt.Printf("Success job submitted: %s (runs on validation success)\n", successResp.JobID)
+		fmt.Printf("Success job submitted: %d (runs on validation success)\n", successResp.JobId)
 	}
 
 	// Failure path - runs only if validation fails
-	failureJob := &interfaces.JobSubmission{
+	failureJob := &slurm.JobSubmission{
 		Name: "handle-invalid-data",
 		Script: `#!/bin/bash
 echo "Handling validation failure"
@@ -405,11 +402,11 @@ echo "Fetched backup data"
 	if err != nil {
 		log.Printf("Failed to submit failure job: %v", err)
 	} else {
-		fmt.Printf("Failure job submitted: %s (runs on validation failure)\n", failureResp.JobID)
+		fmt.Printf("Failure job submitted: %d (runs on validation failure)\n", failureResp.JobId)
 	}
 
 	// Cleanup job - runs regardless of validation result
-	cleanupJob := &interfaces.JobSubmission{
+	cleanupJob := &slurm.JobSubmission{
 		Name: "cleanup",
 		Script: `#!/bin/bash
 echo "Performing cleanup"
@@ -430,7 +427,7 @@ echo "Cleanup completed"
 	if err != nil {
 		log.Printf("Failed to submit cleanup job: %v", err)
 	} else {
-		fmt.Printf("Cleanup job submitted: %s (runs after validation regardless of result)\n", cleanupResp.JobID)
+		fmt.Printf("Cleanup job submitted: %d (runs after validation regardless of result)\n", cleanupResp.JobId)
 	}
 }
 
@@ -455,13 +452,22 @@ func monitorJobChain(ctx context.Context, client slurm.SlurmClient, jobIDs []str
 					continue
 				}
 
-				fmt.Printf("Job %d (%s): %s", i+1, job.Name, job.State)
+				var jobState string
+				if len(job.JobState) > 0 {
+					jobState = string(job.JobState[0])
+				}
 
-				if job.State == "PENDING" {
+				jobName := ""
+				if job.Name != nil {
+					jobName = *job.Name
+				}
+				fmt.Printf("Job %d (%s): %s", i+1, jobName, jobState)
+
+				if jobState == "PENDING" {
 					fmt.Printf(" - waiting")
 				}
 
-				if job.State != "COMPLETED" && job.State != "FAILED" && job.State != "CANCELLED" {
+				if jobState != "COMPLETED" && jobState != "FAILED" && jobState != "CANCELLED" {
 					allComplete = false
 				}
 

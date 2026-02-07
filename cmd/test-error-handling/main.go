@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/internal/factory"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
@@ -88,10 +88,10 @@ func main() {
 	}
 }
 
-func createClient(jwtToken string) (interfaces.SlurmClient, error) {
+func createClient(jwtToken string) (types.SlurmClient, error) {
 	// Create configuration
 	cfg := config.NewDefault()
-	cfg.BaseURL = "http://rocky9.ar.jontk.com:6820"
+	cfg.BaseURL = "http://localhost:6820"
 	cfg.Debug = false
 
 	// Create JWT authentication provider
@@ -102,7 +102,6 @@ func createClient(jwtToken string) (interfaces.SlurmClient, error) {
 		factory.WithConfig(cfg),
 		factory.WithAuth(authProvider),
 		factory.WithBaseURL(cfg.BaseURL),
-		factory.WithUseAdapters(true), // Force use of adapters
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create factory: %w", err)
@@ -117,12 +116,12 @@ func createClient(jwtToken string) (interfaces.SlurmClient, error) {
 	return client, nil
 }
 
-func testInvalidAccount(client interfaces.SlurmClient) {
+func testInvalidAccount(client types.SlurmClient) {
 	fmt.Println("Test: Submit job with invalid account")
 	fmt.Println("Expected: Should get INVALID_ACCOUNT error with enhanced description")
 
 	ctx := context.Background()
-	submitJob := &interfaces.JobSubmission{
+	submitJob := &types.JobSubmission{
 		Name:       "test-invalid-account",
 		Account:    "nonexistent-account-12345", // This account doesn't exist
 		Partition:  "normal",
@@ -136,12 +135,12 @@ func testInvalidAccount(client interfaces.SlurmClient) {
 	analyzeError(err)
 }
 
-func testInvalidPartition(client interfaces.SlurmClient) {
+func testInvalidPartition(client types.SlurmClient) {
 	fmt.Println("Test: Submit job with invalid partition")
 	fmt.Println("Expected: Should get INVALID_PARTITION error with enhanced description")
 
 	ctx := context.Background()
-	submitJob := &interfaces.JobSubmission{
+	submitJob := &types.JobSubmission{
 		Name:       "test-invalid-partition",
 		Account:    "root",
 		Partition:  "nonexistent-partition-12345", // This partition doesn't exist
@@ -155,7 +154,7 @@ func testInvalidPartition(client interfaces.SlurmClient) {
 	analyzeError(err)
 }
 
-func testInvalidQoS(client interfaces.SlurmClient) {
+func testInvalidQoS(client types.SlurmClient) {
 	fmt.Println("Test: Get non-existent QoS")
 	fmt.Println("Expected: Should get QOS_NOT_FOUND error with enhanced description")
 
@@ -164,14 +163,14 @@ func testInvalidQoS(client interfaces.SlurmClient) {
 	analyzeError(err)
 }
 
-func testDuplicateAccount(client interfaces.SlurmClient) {
+func testDuplicateAccount(client types.SlurmClient) {
 	fmt.Println("Test: Create duplicate account")
 	fmt.Println("Expected: Should get ACCOUNT_ALREADY_EXISTS error with enhanced description")
 
 	ctx := context.Background()
 
 	// First, create an account
-	createReq := &interfaces.AccountCreate{
+	createReq := &types.AccountCreate{
 		Name:        fmt.Sprintf("test-dup-%d", time.Now().Unix()),
 		Description: "Test account for error handling",
 	}
@@ -190,7 +189,7 @@ func testDuplicateAccount(client interfaces.SlurmClient) {
 	_ = client.Accounts().Delete(ctx, createReq.Name)
 }
 
-func testMissingReservation(client interfaces.SlurmClient) {
+func testMissingReservation(client types.SlurmClient) {
 	fmt.Println("Test: Get non-existent reservation")
 	fmt.Println("Expected: Should get RESERVATION_NOT_FOUND error with enhanced description")
 
@@ -199,12 +198,12 @@ func testMissingReservation(client interfaces.SlurmClient) {
 	analyzeError(err)
 }
 
-func testBadJobTime(client interfaces.SlurmClient) {
+func testBadJobTime(client types.SlurmClient) {
 	fmt.Println("Test: Submit job with invalid time limit")
 	fmt.Println("Expected: Should get INVALID_TIME_LIMIT error with enhanced description")
 
 	ctx := context.Background()
-	submitJob := &interfaces.JobSubmission{
+	submitJob := &types.JobSubmission{
 		Name:       "test-bad-time",
 		Account:    "root",
 		Partition:  "normal",
@@ -218,14 +217,14 @@ func testBadJobTime(client interfaces.SlurmClient) {
 	analyzeError(err)
 }
 
-func testPermission(client interfaces.SlurmClient) {
+func testPermission(client types.SlurmClient) {
 	fmt.Println("Test: Update system QoS (permission test)")
 	fmt.Println("Expected: Should get PERMISSION_DENIED error with enhanced description")
 
 	ctx := context.Background()
 
 	// Try to modify a system QoS (usually protected)
-	updateReq := &interfaces.QoSUpdate{
+	updateReq := &types.QoSUpdate{
 		Priority: intPtr(99999),
 	}
 

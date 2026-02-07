@@ -1,31 +1,28 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_41
 
 import (
 	"context"
 	"fmt"
 
-	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
-	"github.com/jontk/slurm-client/internal/common/types"
-	"github.com/jontk/slurm-client/internal/managers/base"
+	types "github.com/jontk/slurm-client/api"
+	adapterbase "github.com/jontk/slurm-client/internal/adapters/base"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_41"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // UserAdapter implements the UserAdapter interface for v0.0.41
 type UserAdapter struct {
-	*base.BaseManager
-	client  *api.ClientWithResponses
-	wrapper *api.WrapperClient
+	*adapterbase.BaseManager
+	client *api.ClientWithResponses
 }
 
 // NewUserAdapter creates a new User adapter for v0.0.41
 func NewUserAdapter(client *api.ClientWithResponses) *UserAdapter {
 	return &UserAdapter{
-		BaseManager: base.NewBaseManager("v0.0.41", "User"),
+		BaseManager: adapterbase.NewBaseManager("v0.0.41", "User"),
 		client:      client,
-		wrapper:     nil, // We'll implement this later
 	}
 }
 
@@ -35,15 +32,12 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
-
 	// Prepare parameters for the API call
 	params := &api.SlurmdbV0041GetUsersParams{}
-
 	// Apply filters from options
 	if opts != nil {
 		// Names is not supported directly in v0.0.41 API params
@@ -77,28 +71,23 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 		// AdminLevel field doesn't exist in UserListOptions
 		// Skip AdminLevel filtering
 	}
-
 	// Make the API call
 	resp, err := a.client.SlurmdbV0041GetUsersWithResponse(ctx, params)
 	if err != nil {
 		return nil, a.WrapError(err, "failed to list users")
 	}
-
 	// Handle response
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return nil, err
 	}
-
 	if resp.JSON200 == nil {
 		return nil, fmt.Errorf("unexpected nil response")
 	}
-
 	// Convert response to common types
 	userList := &types.UserList{
 		Users: make([]types.User, 0, len(resp.JSON200.Users)),
 		Total: 0,
 	}
-
 	for _, apiUser := range resp.JSON200.Users {
 		user, err := a.convertAPIUserToCommon(apiUser)
 		if err != nil {
@@ -107,14 +96,12 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 		}
 		userList.Users = append(userList.Users, *user)
 	}
-
 	// Extract warning and error messages if any (but UserList doesn't have Meta)
 	// Warnings are ignored for now as UserList structure doesn't support them
 	if resp.JSON200.Warnings != nil {
 		// Log warnings if needed
 		_ = resp.JSON200.Warnings
 	}
-
 	// Extract error messages if any
 	if resp.JSON200.Errors != nil {
 		errors := make([]string, 0, len(*resp.JSON200.Errors))
@@ -127,7 +114,6 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 		// Skip error storage
 		_ = errors
 	}
-
 	return userList, nil
 }
 
@@ -137,17 +123,14 @@ func (a *UserAdapter) Get(ctx context.Context, name string) (*types.User, error)
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-
 	// Validate name
 	if err := a.ValidateResourceName("user name", name); err != nil {
 		return nil, err
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
-
 	// Make the API call
 	params := &api.SlurmdbV0041GetUserParams{
 		WithAssocs: ptr("true"),
@@ -158,22 +141,18 @@ func (a *UserAdapter) Get(ctx context.Context, name string) (*types.User, error)
 	if err != nil {
 		return nil, a.WrapError(err, "failed to get user "+name)
 	}
-
 	// Handle response
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return nil, err
 	}
-
 	if resp.JSON200 == nil || len(resp.JSON200.Users) == 0 {
 		return nil, a.HandleNotFound("user " + name)
 	}
-
 	// Convert the first user in the response
 	user, err := a.convertAPIUserToCommon(resp.JSON200.Users[0])
 	if err != nil {
 		return nil, a.WrapError(err, "failed to convert user "+name)
 	}
-
 	return user, nil
 }
 
@@ -183,7 +162,6 @@ func (a *UserAdapter) Create(ctx context.Context, req *types.UserCreate) (*types
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-
 	// Validate request
 	if req == nil {
 		return nil, a.HandleValidationError("user create request cannot be nil")
@@ -191,34 +169,39 @@ func (a *UserAdapter) Create(ctx context.Context, req *types.UserCreate) (*types
 	if err := a.ValidateResourceName("user name", req.Name); err != nil {
 		return nil, err
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
-
 	// Convert request to user for API call
 	user := &types.User{
-		Name:           req.Name,
-		DefaultAccount: req.DefaultAccount,
-		DefaultWCKey:   req.DefaultWCKey,
-		AdminLevel:     req.AdminLevel,
+		Name: req.Name,
 	}
-
+	// Set Default values if provided
+	if req.DefaultAccount != "" || req.DefaultWCKey != "" {
+		user.Default = &types.UserDefault{}
+		if req.DefaultAccount != "" {
+			user.Default.Account = &req.DefaultAccount
+		}
+		if req.DefaultWCKey != "" {
+			user.Default.Wckey = &req.DefaultWCKey
+		}
+	}
+	// Set AdminLevel if provided
+	if req.AdminLevel != "" {
+		user.AdministratorLevel = []types.AdministratorLevelValue{types.AdministratorLevelValue(req.AdminLevel)}
+	}
 	// Convert user to API request
 	createReq := a.convertCommonToAPIUser(user)
-
 	// Make the API call
 	resp, err := a.client.SlurmdbV0041PostUsersWithResponse(ctx, *createReq)
 	if err != nil {
 		return nil, a.WrapError(err, "failed to create user "+req.Name)
 	}
-
 	// Handle response
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return nil, err
 	}
-
 	return &types.UserCreateResponse{UserName: req.Name}, nil
 }
 
@@ -228,53 +211,50 @@ func (a *UserAdapter) Update(ctx context.Context, name string, update *types.Use
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-
 	// Validate name
 	if err := a.ValidateResourceName("user name", name); err != nil {
 		return err
 	}
-
 	// Validate update
 	if update == nil {
 		return a.HandleValidationError("user update cannot be nil")
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return err
 	}
-
 	// Get the existing user first
 	existingUser, err := a.Get(ctx, name)
 	if err != nil {
 		return err
 	}
-
 	// Apply updates
 	if update.DefaultAccount != nil {
-		existingUser.DefaultAccount = *update.DefaultAccount
+		if existingUser.Default == nil {
+			existingUser.Default = &types.UserDefault{}
+		}
+		existingUser.Default.Account = update.DefaultAccount
 	}
 	if update.DefaultWCKey != nil {
-		existingUser.DefaultWCKey = *update.DefaultWCKey
+		if existingUser.Default == nil {
+			existingUser.Default = &types.UserDefault{}
+		}
+		existingUser.Default.Wckey = update.DefaultWCKey
 	}
 	if update.AdminLevel != nil {
-		existingUser.AdminLevel = *update.AdminLevel
+		existingUser.AdministratorLevel = []types.AdministratorLevelValue{types.AdministratorLevelValue(*update.AdminLevel)}
 	}
-
 	// Convert to API request
 	updateReq := a.convertCommonToAPIUser(existingUser)
-
 	// Make the API call
 	resp, err := a.client.SlurmdbV0041PostUsersWithResponse(ctx, *updateReq)
 	if err != nil {
 		return a.WrapError(err, "failed to update user "+name)
 	}
-
 	// Handle response
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -284,28 +264,23 @@ func (a *UserAdapter) Delete(ctx context.Context, name string) error {
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-
 	// Validate name
 	if err := a.ValidateResourceName("user name", name); err != nil {
 		return err
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return err
 	}
-
 	// Make the API call
 	resp, err := a.client.SlurmdbV0041DeleteUserWithResponse(ctx, name)
 	if err != nil {
 		return a.WrapError(err, "failed to delete user "+name)
 	}
-
 	// Handle response
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -315,12 +290,10 @@ func (a *UserAdapter) GetAssociations(ctx context.Context, name string) (*types.
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-
 	// Validate name
 	if err := a.ValidateResourceName("user name", name); err != nil {
 		return nil, err
 	}
-
 	// v0.0.41 doesn't have a direct method to get associations for a specific user
 	// We would need to use the association manager instead
 	return nil, fmt.Errorf("getting associations for a specific user is not directly supported in API v0.0.41, use the association manager instead")
@@ -332,7 +305,6 @@ func (a *UserAdapter) AddToAccount(ctx context.Context, userName string, account
 	if err := a.ValidateContext(ctx); err != nil {
 		return err
 	}
-
 	// Validate names
 	if err := a.ValidateResourceName("user name", userName); err != nil {
 		return err
@@ -340,7 +312,6 @@ func (a *UserAdapter) AddToAccount(ctx context.Context, userName string, account
 	if err := a.ValidateResourceName("account name", accountName); err != nil {
 		return err
 	}
-
 	// v0.0.41 user association management is complex and involves undefined API types
 	// Return not implemented for now
 	return errors.NewNotImplementedError("user account association", "v0.0.41")
@@ -360,21 +331,17 @@ func (a *UserAdapter) GetWCKeys(ctx context.Context, name string) ([]types.WCKey
 	if err != nil {
 		return nil, err
 	}
-
-	// Convert string WCKeys to types.WCKey
-	wckeys := make([]types.WCKey, 0, len(user.WCKeys))
-	for _, key := range user.WCKeys {
-		wckeys = append(wckeys, types.WCKey{
-			Name: key,
-		})
+	// Return the Wckeys field directly (already []types.WCKey)
+	if user.Wckeys == nil {
+		return []types.WCKey{}, nil
 	}
-	return wckeys, nil
+	return user.Wckeys, nil
 }
 
 // SetCoordinatorStatus sets whether a user is a coordinator for accounts
 func (a *UserAdapter) SetCoordinatorStatus(ctx context.Context, name string, accounts []string, isCoordinator bool) error {
 	// v0.0.41 doesn't support setting coordinator status through the API
-	return fmt.Errorf("setting coordinator status is not supported in API v0.0.41")
+	return errors.NewNotImplementedError("Set User Coordinator Status", "v0.0.41")
 }
 
 // Helper function to create string pointer

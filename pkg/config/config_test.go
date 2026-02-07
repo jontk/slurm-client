@@ -20,7 +20,7 @@ func TestNewDefault(t *testing.T) {
 	helpers.AssertEqual(t, false, config.Debug)
 	helpers.AssertEqual(t, false, config.InsecureSkipVerify)
 	helpers.AssertEqual(t, "slurm-client/1.0", config.UserAgent)
-	helpers.AssertEqual(t, "v0.0.39", config.APIVersion)
+	helpers.AssertEqual(t, "", config.APIVersion) // Empty means auto-detect
 
 	// Verify defaults are reasonable
 	assert.Greater(t, config.Timeout, time.Duration(0))
@@ -270,8 +270,8 @@ func TestConfigDefaults(t *testing.T) {
 	// Should have default max retries
 	helpers.AssertEqual(t, 3, config.MaxRetries)
 
-	// Should have default API version
-	helpers.AssertEqual(t, "v0.0.39", config.APIVersion)
+	// Should have empty API version (auto-detect)
+	helpers.AssertEqual(t, "", config.APIVersion)
 
 	// Should have default boolean values
 	helpers.AssertEqual(t, false, config.Debug)

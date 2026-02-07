@@ -61,6 +61,9 @@ type Config struct {
 
 	// MaxResponseHeaderBytes limits response header size
 	MaxResponseHeaderBytes int64
+
+	// InsecureSkipVerify skips TLS certificate verification (for testing/dev only)
+	InsecureSkipVerify bool
 }
 
 // DefaultPoolConfig returns a pool configuration optimized for SLURM API access
@@ -162,8 +165,10 @@ func (p *HTTPClientPool) createHTTPClient() *http.Client {
 		ForceAttemptHTTP2: true,
 
 		// TLS configuration
+		// #nosec G402 -- InsecureSkipVerify is user-configurable and defaults to false (secure)
 		TLSClientConfig: &tls.Config{
-			MinVersion: tls.VersionTLS12,
+			MinVersion:         tls.VersionTLS12,
+			InsecureSkipVerify: p.config.InsecureSkipVerify,
 		},
 	}
 

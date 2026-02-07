@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package common
 
 import (
@@ -20,7 +19,6 @@ func ConvertTRESListToString(tresList []struct {
 	for _, tres := range tresList {
 		if tres.Type != nil && tres.Value != nil {
 			var valueStr string
-
 			// Handle different value types
 			switch v := tres.Value.(type) {
 			case *int64:
@@ -51,7 +49,6 @@ func ConvertTRESListToString(tresList []struct {
 				// For complex types, use fmt.Sprintf
 				valueStr = fmt.Sprintf("%v", tres.Value)
 			}
-
 			if valueStr != "" && valueStr != "<nil>" {
 				parts = append(parts, fmt.Sprintf("%s=%s", *tres.Type, valueStr))
 			}

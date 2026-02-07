@@ -5,10 +5,131 @@ package analytics
 
 import (
 	"math"
+	"strconv"
+	"strings"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 )
+
+// parseGPUCount extracts GPU count from SLURM Gres string
+// Gres format examples: "gpu:2", "gpu:tesla:2", "gpu:4,mic:1"
+func parseGPUCount(gres string) int {
+	if gres == "" {
+		return 0
+	}
+
+	// Split by comma to handle multiple Gres specs
+	parts := strings.Split(gres, ",")
+	for _, part := range parts {
+		// Check if this part is about GPUs
+		if strings.HasPrefix(strings.TrimSpace(part), "gpu") {
+			// Split by colon: gpu:type:count or gpu:count
+			segments := strings.Split(part, ":")
+			if len(segments) >= 2 {
+				// Last segment should be the count
+				countStr := segments[len(segments)-1]
+				if count, err := strconv.Atoi(strings.TrimSpace(countStr)); err == nil {
+					return count
+				}
+			}
+		}
+	}
+	return 0
+}
+
+// getJobCPUs safely extracts the CPU count from a Job
+func getJobCPUs(job *types.Job) uint32 {
+	if job == nil || job.CPUs == nil {
+		return 0
+	}
+	return *job.CPUs
+}
+
+// getJobIDFromJob safely extracts the job ID from a Job
+func getJobIDFromJob(job *types.Job) int32 {
+	if job == nil || job.JobID == nil {
+		return 0
+	}
+	return *job.JobID
+}
+
+// getJobMemoryBytes estimates total memory from available fields (returns bytes)
+func getJobMemoryBytes(job *types.Job) uint64 {
+	if job == nil {
+		return 0
+	}
+
+	// Try memory per node first
+	if job.MemoryPerNode != nil && *job.MemoryPerNode > 0 {
+		// MemoryPerNode is in MB, convert to bytes
+		return *job.MemoryPerNode * 1024 * 1024
+	}
+
+	// Try memory per CPU * CPUs
+	if job.MemoryPerCPU != nil && *job.MemoryPerCPU > 0 && job.CPUs != nil {
+		// MemoryPerCPU is in MB
+		return *job.MemoryPerCPU * uint64(*job.CPUs) * 1024 * 1024
+	}
+
+	return 0
+}
+
+// getJobGres extracts GRES info from the job
+// Returns a GRES string like "gpu:2" from available fields
+func getJobGres(job *types.Job) string {
+	if job == nil {
+		return ""
+	}
+
+	// Try TRESPerNode first (comma-separated TRES like "gres/gpu:1")
+	if job.TRESPerNode != nil && *job.TRESPerNode != "" {
+		// Parse TRES string for GPU info
+		if gres := extractGresFromTRES(*job.TRESPerNode); gres != "" {
+			return gres
+		}
+	}
+
+	// Try GRESDetail (list of detailed GRES allocations)
+	if len(job.GRESDetail) > 0 {
+		// Return first non-empty GRES detail containing gpu
+		for _, detail := range job.GRESDetail {
+			if detail != "" && strings.Contains(strings.ToLower(detail), "gpu") {
+				return detail
+			}
+		}
+		// Return first non-empty detail if no gpu found
+		for _, detail := range job.GRESDetail {
+			if detail != "" {
+				return detail
+			}
+		}
+	}
+
+	// Try TRESReqStr as fallback
+	if job.TRESReqStr != nil && *job.TRESReqStr != "" {
+		if gres := extractGresFromTRES(*job.TRESReqStr); gres != "" {
+			return gres
+		}
+	}
+
+	return ""
+}
+
+// extractGresFromTRES extracts GPU info from a TRES string
+// TRES format: "cpu=4,mem=16G,node=1,gres/gpu=2" or "gres/gpu:1"
+func extractGresFromTRES(tres string) string {
+	// Look for gres/gpu patterns
+	for _, part := range strings.Split(tres, ",") {
+		part = strings.TrimSpace(part)
+		lowerPart := strings.ToLower(part)
+		if strings.Contains(lowerPart, "gpu") {
+			// Return the part as-is
+			return part
+		}
+	}
+	return ""
+}
 
 // EfficiencyCalculator provides methods for calculating job efficiency metrics
 type EfficiencyCalculator struct {
@@ -65,12 +186,12 @@ func NewEfficiencyCalculatorWithWeights(weights ResourceWeights) *EfficiencyCalc
 
 // CalculateOverallEfficiency calculates the overall job efficiency score (0-100%)
 func (ec *EfficiencyCalculator) CalculateOverallEfficiency(
-	cpuAnalytics *interfaces.CPUAnalytics,
-	memoryAnalytics *interfaces.MemoryAnalytics,
-	ioAnalytics *interfaces.IOAnalytics,
-	gpuUtilization *interfaces.GPUUtilization,
-	networkUtilization *interfaces.NetworkUtilization,
-	energyUsage *interfaces.EnergyUsage,
+	cpuAnalytics *types.CPUAnalytics,
+	memoryAnalytics *types.MemoryAnalytics,
+	ioAnalytics *types.IOAnalytics,
+	gpuUtilization *types.GPUUtilization,
+	networkUtilization *types.NetworkUtilization,
+	energyUsage *types.EnergyUsage,
 ) float64 {
 	weights := ec.defaultWeights
 	totalWeight := 0.0
@@ -127,7 +248,7 @@ func (ec *EfficiencyCalculator) CalculateOverallEfficiency(
 }
 
 // CalculateCPUEfficiency calculates CPU efficiency percentage
-func (ec *EfficiencyCalculator) CalculateCPUEfficiency(analytics *interfaces.CPUAnalytics) float64 {
+func (ec *EfficiencyCalculator) CalculateCPUEfficiency(analytics *types.CPUAnalytics) float64 {
 	if analytics.AllocatedCores == 0 {
 		return 0.0
 	}
@@ -164,7 +285,7 @@ func (ec *EfficiencyCalculator) CalculateCPUEfficiency(analytics *interfaces.CPU
 }
 
 // CalculateMemoryEfficiency calculates memory efficiency percentage
-func (ec *EfficiencyCalculator) CalculateMemoryEfficiency(analytics *interfaces.MemoryAnalytics) float64 {
+func (ec *EfficiencyCalculator) CalculateMemoryEfficiency(analytics *types.MemoryAnalytics) float64 {
 	if analytics.AllocatedBytes == 0 {
 		return 0.0
 	}
@@ -204,7 +325,7 @@ func (ec *EfficiencyCalculator) CalculateMemoryEfficiency(analytics *interfaces.
 }
 
 // CalculateGPUEfficiency calculates GPU efficiency percentage
-func (ec *EfficiencyCalculator) CalculateGPUEfficiency(utilization *interfaces.GPUUtilization) float64 {
+func (ec *EfficiencyCalculator) CalculateGPUEfficiency(utilization *types.GPUUtilization) float64 {
 	if utilization.DeviceCount == 0 {
 		return 0.0
 	}
@@ -245,7 +366,7 @@ func (ec *EfficiencyCalculator) CalculateGPUEfficiency(utilization *interfaces.G
 }
 
 // CalculateIOEfficiency calculates I/O efficiency percentage
-func (ec *EfficiencyCalculator) CalculateIOEfficiency(analytics *interfaces.IOAnalytics) float64 {
+func (ec *EfficiencyCalculator) CalculateIOEfficiency(analytics *types.IOAnalytics) float64 {
 	// Base efficiency on bandwidth utilization vs theoretical max
 	// Assume theoretical max is 1000 MB/s for reads and 500 MB/s for writes
 	theoreticalReadBW := 1000.0
@@ -282,7 +403,7 @@ func (ec *EfficiencyCalculator) CalculateIOEfficiency(analytics *interfaces.IOAn
 }
 
 // CalculateNetworkEfficiency calculates network efficiency percentage
-func (ec *EfficiencyCalculator) CalculateNetworkEfficiency(utilization *interfaces.NetworkUtilization) float64 {
+func (ec *EfficiencyCalculator) CalculateNetworkEfficiency(utilization *types.NetworkUtilization) float64 {
 	if utilization.TotalBandwidth == nil || utilization.TotalBandwidth.UsedMax == 0 {
 		return 0.0
 	}
@@ -314,7 +435,7 @@ func (ec *EfficiencyCalculator) CalculateNetworkEfficiency(utilization *interfac
 }
 
 // CalculateEnergyEfficiency calculates energy efficiency percentage
-func (ec *EfficiencyCalculator) CalculateEnergyEfficiency(usage *interfaces.EnergyUsage) float64 {
+func (ec *EfficiencyCalculator) CalculateEnergyEfficiency(usage *types.EnergyUsage) float64 {
 	if usage.TotalEnergyJoules == 0 {
 		return 100.0 // No energy usage data means we can't penalize
 	}
@@ -354,7 +475,7 @@ func (ec *EfficiencyCalculator) CalculateEnergyEfficiency(usage *interfaces.Ener
 }
 
 // calculateCoreUtilizationVariance calculates the variance in core utilization
-func (ec *EfficiencyCalculator) calculateCoreUtilizationVariance(cores []interfaces.CPUCoreMetric) float64 {
+func (ec *EfficiencyCalculator) calculateCoreUtilizationVariance(cores []types.CPUCoreMetric) float64 {
 	if len(cores) == 0 {
 		return 0.0
 	}
@@ -379,8 +500,8 @@ func (ec *EfficiencyCalculator) calculateCoreUtilizationVariance(cores []interfa
 
 // CalculateResourceWaste calculates wasted resources for each resource type
 func (ec *EfficiencyCalculator) CalculateResourceWaste(
-	job *interfaces.Job,
-	analytics *interfaces.JobComprehensiveAnalytics,
+	job *types.Job,
+	analytics *types.JobComprehensiveAnalytics,
 	runtime time.Duration,
 ) map[string]float64 {
 	waste := make(map[string]float64)
@@ -399,8 +520,8 @@ func (ec *EfficiencyCalculator) CalculateResourceWaste(
 		waste["memory_percent"] = (float64(unusedBytes) / float64(analytics.MemoryAnalytics.AllocatedBytes)) * 100.0
 	}
 
-	// GPU waste (in GPU-hours) - using Metadata to check for GPU allocation
-	if gpuCount, ok := job.Metadata["gpus"].(int); ok && gpuCount > 0 {
+	// GPU waste (in GPU-hours) - parse from Gres field
+	if gpuCount := parseGPUCount(getJobGres(job)); gpuCount > 0 {
 		// Estimate GPU efficiency from overall efficiency if available
 		gpuEfficiency := analytics.OverallEfficiency
 		if gpuEfficiency == 0 {
@@ -422,8 +543,8 @@ func (ec *EfficiencyCalculator) CalculateResourceWaste(
 
 // GenerateOptimizationRecommendations generates specific optimization recommendations
 func (ec *EfficiencyCalculator) GenerateOptimizationRecommendations(
-	job *interfaces.Job,
-	analytics *interfaces.JobComprehensiveAnalytics,
+	job *types.Job,
+	analytics *types.JobComprehensiveAnalytics,
 ) []OptimizationRecommendation {
 	recommendations := []OptimizationRecommendation{}
 
@@ -496,7 +617,7 @@ func (ec *EfficiencyCalculator) GenerateOptimizationRecommendations(
 	}
 
 	// GPU recommendations - use overall efficiency as proxy for GPU efficiency
-	if gpuCount, ok := job.Metadata["gpus"].(int); ok && gpuCount > 0 && analytics.OverallEfficiency < 50.0 {
+	if gpuCount := parseGPUCount(getJobGres(job)); gpuCount > 0 && analytics.OverallEfficiency < 50.0 {
 		recommendations = append(recommendations, OptimizationRecommendation{
 			Resource:    "GPU",
 			Type:        "reduction",

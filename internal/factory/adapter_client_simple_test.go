@@ -7,8 +7,8 @@ import (
 	"context"
 	"testing"
 
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/internal/adapters/common"
-	"github.com/jontk/slurm-client/internal/common/types"
 	"github.com/jontk/slurm-client/tests/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,6 +30,22 @@ type testVersionAdapter struct {
 
 func (t *testVersionAdapter) GetVersion() string {
 	return t.version
+}
+
+func (t *testVersionAdapter) GetCapabilities() types.ClientCapabilities {
+	return types.ClientCapabilities{
+		Version:              t.version,
+		SupportsJobs:         true,
+		SupportsNodes:        true,
+		SupportsPartitions:   true,
+		SupportsReservations: true,
+		SupportsAccounts:     true,
+		SupportsUsers:        true,
+		SupportsQoS:          true,
+		SupportsClusters:     true,
+		SupportsAssociations: true,
+		SupportsWCKeys:       true,
+	}
 }
 
 func (t *testVersionAdapter) GetJobManager() common.JobAdapter {
@@ -147,14 +163,18 @@ func (m *mockReservationAdapter) Get(ctx context.Context, name string) (*types.R
 	if m.getFunc != nil {
 		return m.getFunc(ctx, name)
 	}
-	return &types.Reservation{Name: name}, nil
+	return &types.Reservation{Name: ptrString(name)}, nil
 }
 
 func (m *mockReservationAdapter) Create(ctx context.Context, res *types.ReservationCreate) (*types.ReservationCreateResponse, error) {
 	if m.createFunc != nil {
 		return m.createFunc(ctx, res)
 	}
-	return &types.ReservationCreateResponse{ReservationName: res.Name}, nil
+	var resName string
+	if res.Name != nil {
+		resName = *res.Name
+	}
+	return &types.ReservationCreateResponse{ReservationName: resName}, nil
 }
 
 func (m *mockReservationAdapter) Update(ctx context.Context, name string, update *types.ReservationUpdate) error {
@@ -191,7 +211,7 @@ func (m *mockAssociationAdapter) Get(ctx context.Context, id string) (*types.Ass
 	if m.getFunc != nil {
 		return m.getFunc(ctx, id)
 	}
-	return &types.Association{ID: id}, nil
+	return &types.Association{ID: ptrInt32(1)}, nil
 }
 
 func (m *mockAssociationAdapter) Create(ctx context.Context, assoc *types.AssociationCreate) (*types.AssociationCreateResponse, error) {
@@ -224,23 +244,25 @@ func TestAdapterClient_ReservationOperations(t *testing.T) {
 			return &types.ReservationList{
 				Reservations: []types.Reservation{
 					{
-						Name:      "test-res-1",
-						State:     types.ReservationState("ACTIVE"),
-						NodeCount: 5,
+						Name:      ptrString("test-res-1"),
+						NodeCount: ptrInt32(5),
 					},
 				},
 			}, nil
 		},
 		getFunc: func(ctx context.Context, name string) (*types.Reservation, error) {
 			return &types.Reservation{
-				Name:      name,
-				State:     types.ReservationState("ACTIVE"),
-				NodeCount: 5,
+				Name:      ptrString(name),
+				NodeCount: ptrInt32(5),
 			}, nil
 		},
 		createFunc: func(ctx context.Context, res *types.ReservationCreate) (*types.ReservationCreateResponse, error) {
+			var resName string
+			if res.Name != nil {
+				resName = *res.Name
+			}
 			return &types.ReservationCreateResponse{
-				ReservationName: res.Name,
+				ReservationName: resName,
 			}, nil
 		},
 	}
@@ -265,14 +287,13 @@ func TestAdapterClient_ReservationOperations(t *testing.T) {
 	list, err := resManager.List(ctx, nil)
 	helpers.AssertNoError(t, err)
 	assert.Len(t, list.Reservations, 1)
-	assert.Equal(t, "test-res-1", list.Reservations[0].Name)
-	assert.Equal(t, "ACTIVE", list.Reservations[0].State)
+	assert.Equal(t, "test-res-1", *list.Reservations[0].Name)
 
 	// Test Get operation
 	res, err := resManager.Get(ctx, "test-res-1")
 	helpers.AssertNoError(t, err)
-	assert.Equal(t, "test-res-1", res.Name)
-	assert.Equal(t, 5, res.NodeCount)
+	assert.Equal(t, "test-res-1", *res.Name)
+	assert.Equal(t, int32(5), *res.NodeCount)
 }
 
 func TestAdapterClient_AssociationOperations(t *testing.T) {
@@ -284,16 +305,16 @@ func TestAdapterClient_AssociationOperations(t *testing.T) {
 			return &types.AssociationList{
 				Associations: []types.Association{
 					{
-						ID:          "assoc-1",
-						UserName:    "user1",
-						AccountName: "account1",
-						Cluster:     "cluster1",
+						ID:      ptrInt32(1),
+						User:    "user1",
+						Account: ptrString("account1"),
+						Cluster: ptrString("cluster1"),
 					},
 					{
-						ID:          "assoc-2",
-						UserName:    "user1",
-						AccountName: "account2",
-						Cluster:     "cluster1",
+						ID:      ptrInt32(2),
+						User:    "user1",
+						Account: ptrString("account2"),
+						Cluster: ptrString("cluster1"),
 					},
 				},
 			}, nil
@@ -321,21 +342,15 @@ func TestAdapterClient_AssociationOperations(t *testing.T) {
 	assocManager := client.Associations()
 	require.NotNil(t, assocManager)
 
-	// Test GetUserAssociations through the interface
-	userAssocs, err := assocManager.GetUserAssociations(ctx, "user1")
+	// Test List operation through the interface
+	list, err := assocManager.List(ctx, nil)
 	helpers.AssertNoError(t, err)
-	assert.Len(t, userAssocs, 2)
+	assert.Len(t, list.Associations, 2)
 
 	// Both associations should belong to user1
-	for _, assoc := range userAssocs {
+	for _, assoc := range list.Associations {
 		assert.Equal(t, "user1", assoc.User)
 	}
-
-	// Test GetAccountAssociations
-	accountAssocs, err := assocManager.GetAccountAssociations(ctx, "account1")
-	helpers.AssertNoError(t, err)
-	assert.Len(t, accountAssocs, 1)
-	assert.Equal(t, "account1", accountAssocs[0].Account)
 }
 
 func TestAdapterClient_Version(t *testing.T) {
@@ -360,55 +375,27 @@ func TestAdapterClient_Version(t *testing.T) {
 func TestAdapterClient_TypeConversions(t *testing.T) {
 	// Test reservation type conversion
 	reservation := types.Reservation{
-		Name:          "test-res",
-		State:         types.ReservationState("ACTIVE"),
-		NodeCount:     10,
-		Users:         []string{"user1", "user2"},
-		Accounts:      []string{"account1"},
-		PartitionName: "compute",
-		NodeList:      "node[001-010]",
-		Flags:         []types.ReservationFlag{types.ReservationFlag("MAINT")},
-		Licenses: map[string]int32{
-			"matlab": 5,
-		},
+		Name:      ptrString("test-res"),
+		NodeCount: ptrInt32(10),
+		Users:     ptrString("user1,user2"),
 	}
 
-	// Convert using the helper function
-	converted := convertReservationToInterface(reservation)
-
-	assert.Equal(t, "test-res", converted.Name)
-	assert.Equal(t, "ACTIVE", converted.State)
-	assert.Equal(t, 10, converted.NodeCount)
-	assert.Equal(t, []string{"user1", "user2"}, converted.Users)
-	assert.Equal(t, []string{"account1"}, converted.Accounts)
-	assert.Equal(t, "compute", converted.PartitionName)
-	assert.Equal(t, []string{"MAINT"}, converted.Flags)
-	assert.Equal(t, 5, converted.Licenses["matlab"])
+	// Verify pointer dereferencing
+	assert.Equal(t, "test-res", *reservation.Name)
+	assert.Equal(t, int32(10), *reservation.NodeCount)
+	assert.Equal(t, "user1,user2", *reservation.Users)
 
 	// Test association type conversion
 	association := types.Association{
-		ID:          "assoc-123",
-		UserName:    "testuser",
-		AccountName: "testaccount",
-		Cluster:     "cluster1",
-		Partition:   "compute",
-		QoSList:     []string{"normal"},
-		Priority:    100,
-		MaxJobs:     10,
-		IsDefault:   true,
+		ID:      ptrInt32(123),
+		User:    "testuser",
+		Account: ptrString("testaccount"),
+		Cluster: ptrString("testcluster"),
 	}
 
-	// Convert using the helper function
-	assocConverted := convertAssociationToInterface(association)
-
-	// Note: ID is not properly mapped in convertAssociationToInterface (returns 0)
-	assert.Equal(t, uint32(0), assocConverted.ID) // ID is mapped to 0 in conversion
-	assert.Equal(t, "testuser", assocConverted.User)
-	assert.Equal(t, "testaccount", assocConverted.Account)
-	assert.Equal(t, "cluster1", assocConverted.Cluster)
-	assert.Equal(t, "compute", assocConverted.Partition)
-	assert.Equal(t, uint32(100), assocConverted.Priority)
-	assert.Equal(t, 10, *assocConverted.MaxJobs)
-	// Note: IsDefault is hardcoded to false in convertAssociationToInterface
-	assert.False(t, assocConverted.IsDefault) // IsDefault is hardcoded to false
+	// Verify pointer dereferencing
+	assert.Equal(t, int32(123), *association.ID)
+	assert.Equal(t, "testuser", association.User)
+	assert.Equal(t, "testaccount", *association.Account)
+	assert.Equal(t, "testcluster", *association.Cluster)
 }

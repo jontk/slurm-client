@@ -62,8 +62,8 @@ func listAllJobs(ctx context.Context, client slurm.SlurmClient) {
 		if i >= 5 {
 			break
 		}
-		fmt.Printf("Job %s: %s (User: %s, State: %s)\n",
-			job.ID, job.Name, job.UserID, job.State)
+		fmt.Printf("Job %v: %v (User: %v, State: %v)\n",
+			job.JobID, job.Name, job.UserID, job.JobState)
 	}
 }
 
@@ -81,8 +81,12 @@ func filterByState(ctx context.Context, client slurm.SlurmClient) {
 
 	fmt.Printf("Running/Pending jobs: %d\n", jobList.Total)
 	for _, job := range jobList.Jobs {
-		fmt.Printf("- Job %s: %s (State: %s, Nodes: %d)\n",
-			job.ID, job.Name, job.State, len(job.Nodes))
+		nodesCount := 0
+		if job.Nodes != nil {
+			nodesCount = len(*job.Nodes)
+		}
+		fmt.Printf("- Job %v: %v (State: %v, Nodes: %d)\n",
+			job.JobID, job.Name, job.JobState, nodesCount)
 	}
 }
 
@@ -101,8 +105,8 @@ func filterByUser(ctx context.Context, client slurm.SlurmClient) {
 
 	fmt.Printf("Jobs for alice: %d\n", jobList.Total)
 	for _, job := range jobList.Jobs {
-		fmt.Printf("- Job %s: %s (User: %s)\n",
-			job.ID, job.Name, job.UserID)
+		fmt.Printf("- Job %v: %v (User: %v)\n",
+			job.JobID, job.Name, job.UserID)
 	}
 }
 
@@ -122,13 +126,13 @@ func advancedFiltering(ctx context.Context, client slurm.SlurmClient) {
 
 	fmt.Printf("Jobs matching advanced criteria: %d\n", jobList.Total)
 	for _, job := range jobList.Jobs {
-		if job.StartTime != nil {
-			runtime := time.Since(*job.StartTime)
-			fmt.Printf("- Job %s: %s (Partition: %s, Runtime: %v)\n",
-				job.ID, job.Name, job.Partition, runtime.Round(time.Minute))
+		if !job.StartTime.IsZero() {
+			runtime := time.Since(job.StartTime)
+			fmt.Printf("- Job %v: %v (Partition: %v, Runtime: %v)\n",
+				job.JobID, job.Name, job.Partition, runtime.Round(time.Minute))
 		} else {
-			fmt.Printf("- Job %s: %s (Partition: %s, Not started)\n",
-				job.ID, job.Name, job.Partition)
+			fmt.Printf("- Job %v: %v (Partition: %v, Not started)\n",
+				job.JobID, job.Name, job.Partition)
 		}
 	}
 }

@@ -4,7 +4,7 @@
 /*
 Package slurm provides a comprehensive Go client library for the SLURM REST API.
 
-The library supports multiple API versions (v0.0.40 through v0.0.43) and provides
+The library supports multiple API versions (v0.0.40 through v0.0.44) and provides
 both high-level abstractions and direct API access for SLURM workload management.
 
 # Overview
@@ -62,21 +62,13 @@ Create a client using the adapter pattern for version-agnostic, production-ready
 
 # Architecture
 
-The library implements two complementary patterns:
+The library uses the Adapter Pattern to provide version-agnostic interfaces:
 
-1. 🎯 Adapter Pattern (Recommended for 95% of users)
   - Version-agnostic interfaces that work across all SLURM versions
   - Automatic type conversion and validation
   - Simplified error handling with structured errors
   - Production-ready with caching and optimizations
   - Best for: Applications, automation, most use cases
-
-2. ⚠️ Wrapper Pattern (Advanced users only)
-  - Direct access to version-specific APIs
-  - Full control over API calls and responses
-  - Minimal overhead but requires version knowledge
-  - Manual type conversion and error handling
-  - Best for: Debugging, performance-critical code, migration
 
 # Version Support
 
@@ -85,34 +77,35 @@ The library supports the following SLURM REST API versions:
   - v0.0.41 (SLURM 23.11.x)
   - v0.0.42 (SLURM 24.05.x)
   - v0.0.43 (SLURM 24.11.x)
+  - v0.0.44 (SLURM 25.02.x)
 
-Version detection is automatic, but can be overridden:
+Version detection is automatic, but can be overridden using NewClientWithVersion:
 
-	client, err := slurm.NewClient(ctx,
+	client, err := slurm.NewClientWithVersion(ctx, "v0.0.43",
 	    slurm.WithBaseURL("https://cluster:6820"),
-	    slurm.WithVersion("v0.0.43"),
 	    slurm.WithAuth(auth.NewTokenAuth("token")),
 	)
 
 # Authentication
 
-Multiple authentication methods are supported:
+SLURM REST API uses JWT token authentication:
 
-JWT Token (Recommended):
+JWT Token:
 
-	auth := auth.NewTokenAuth("your-jwt-token")
+	authProvider := auth.NewTokenAuth("your-jwt-token")
 
-API Key:
+User Token (with username header):
 
-	auth := auth.NewAPIKeyAuth("X-SLURM-Token", "your-api-key")
+	// Sets both X-SLURM-USER-NAME and X-SLURM-USER-TOKEN headers
+	client, err := slurm.NewClient(ctx,
+	    slurm.WithBaseURL("https://cluster:6820"),
+	    slurm.WithUserToken("username", "your-jwt-token"),
+	)
 
-Basic Authentication:
+Environment Variable:
 
-	auth := auth.NewBasicAuth("username", "password")
-
-Certificate Authentication:
-
-	auth := auth.NewCertAuth("/path/to/cert.pem", "/path/to/key.pem")
+	// Token is read from SLURM_JWT environment variable
+	export SLURM_JWT="your-jwt-token"
 
 # Error Handling
 
@@ -142,10 +135,11 @@ Connection Options:
 	    slurm.WithBaseURL("https://cluster:6820"),
 	    slurm.WithTimeout(30 * time.Second),
 	    slurm.WithMaxRetries(3),
-	    slurm.WithRateLimiter(rate.NewLimiter(10, 1)),
-	    slurm.WithTLSConfig(&tls.Config{
-	        InsecureSkipVerify: false,
-	    }),
+	    slurm.WithRetryPolicy(retry.NewExponentialBackoff(
+	        100*time.Millisecond, // initial delay
+	        5*time.Second,        // max delay
+	        2.0,                  // multiplier
+	    )),
 	)
 
 Context Usage:
@@ -224,11 +218,13 @@ Info Manager:
 
 The client respects the following environment variables:
 
-  - SLURM_API_URL: Default base URL for the SLURM REST API
-  - SLURM_API_TOKEN: Default JWT token for authentication
+  - SLURM_REST_URL: Default base URL for the SLURM REST API
+  - SLURM_JWT: JWT token for authentication
   - SLURM_API_VERSION: Force specific API version
-  - SLURM_API_TIMEOUT: Default timeout in seconds
-  - SLURM_API_INSECURE: Skip TLS verification (development only)
+  - SLURM_TIMEOUT: Request timeout duration (e.g., "30s")
+  - SLURM_INSECURE_SKIP_VERIFY: Skip TLS verification (development only)
+  - SLURM_MAX_RETRIES: Maximum number of retries for failed requests
+  - SLURM_DEBUG: Enable debug logging
 
 # Thread Safety
 

@@ -1,14 +1,25 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
+// Package watch provides polling-based watch implementations for Slurm resources.
+//
+// TODO(consolidation): This package and internal/adapters/v0_0_*/job_watch_extra.go
+// contain similar polling logic. The adapter implementations are currently used directly
+// and support additional features (MaxEvents, EventTypes filtering). Consider:
+// 1. Enhancing this package to support those features
+// 2. Migrating adapters to use this package
+// 3. Removing the adapter-specific implementations
+//
+// See plan/codex_feedback_8.md R3 for details.
 package watch
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 )
 
 // DefaultPollInterval is the default polling interval for watch operations
@@ -16,20 +27,20 @@ const DefaultPollInterval = 5 * time.Second
 
 // JobPoller implements real-time job monitoring through polling
 type JobPoller struct {
-	listFunc     func(ctx context.Context, opts *interfaces.ListJobsOptions) (*interfaces.JobList, error)
+	listFunc     func(ctx context.Context, opts *types.ListJobsOptions) (*types.JobList, error)
 	pollInterval time.Duration
 	bufferSize   int
 	mu           sync.RWMutex
-	jobStates    map[string]string // Track job states
+	jobStates    map[int32]types.JobState // Track job states by JobId
 }
 
 // NewJobPoller creates a new job poller
-func NewJobPoller(listFunc func(ctx context.Context, opts *interfaces.ListJobsOptions) (*interfaces.JobList, error)) *JobPoller {
+func NewJobPoller(listFunc func(ctx context.Context, opts *types.ListJobsOptions) (*types.JobList, error)) *JobPoller {
 	return &JobPoller{
 		listFunc:     listFunc,
 		pollInterval: DefaultPollInterval,
 		bufferSize:   100,
-		jobStates:    make(map[string]string),
+		jobStates:    make(map[int32]types.JobState),
 	}
 }
 
@@ -46,13 +57,13 @@ func (p *JobPoller) WithBufferSize(size int) *JobPoller {
 }
 
 // Watch starts watching for job state changes
-func (p *JobPoller) Watch(ctx context.Context, opts *interfaces.WatchJobsOptions) (<-chan interfaces.JobEvent, error) {
+func (p *JobPoller) Watch(ctx context.Context, opts *types.WatchJobsOptions) (<-chan types.JobEvent, error) {
 	// Create event channel
-	eventChan := make(chan interfaces.JobEvent, p.bufferSize)
+	eventChan := make(chan types.JobEvent, p.bufferSize)
 
 	// Initial state capture
 	if opts == nil {
-		opts = &interfaces.WatchJobsOptions{}
+		opts = &types.WatchJobsOptions{}
 	}
 
 	// Start polling goroutine
@@ -62,7 +73,7 @@ func (p *JobPoller) Watch(ctx context.Context, opts *interfaces.WatchJobsOptions
 }
 
 // pollLoop is the main polling loop
-func (p *JobPoller) pollLoop(ctx context.Context, opts *interfaces.WatchJobsOptions, eventChan chan<- interfaces.JobEvent) {
+func (p *JobPoller) pollLoop(ctx context.Context, opts *types.WatchJobsOptions, eventChan chan<- types.JobEvent) {
 	defer close(eventChan)
 
 	// Create a ticker for polling
@@ -84,9 +95,9 @@ func (p *JobPoller) pollLoop(ctx context.Context, opts *interfaces.WatchJobsOpti
 }
 
 // performPoll executes a single poll operation
-func (p *JobPoller) performPoll(ctx context.Context, opts *interfaces.WatchJobsOptions, eventChan chan<- interfaces.JobEvent, isInitial bool) {
+func (p *JobPoller) performPoll(ctx context.Context, opts *types.WatchJobsOptions, eventChan chan<- types.JobEvent, isInitial bool) {
 	// Convert watch options to list options
-	listOpts := &interfaces.ListJobsOptions{}
+	listOpts := &types.ListJobsOptions{}
 	if len(opts.JobIDs) > 0 {
 		// For specific job IDs, we'll fetch all jobs and filter
 		// (Most SLURM APIs don't support filtering by multiple job IDs directly)
@@ -99,12 +110,7 @@ func (p *JobPoller) performPoll(ctx context.Context, opts *interfaces.WatchJobsO
 	// Fetch current job list
 	jobList, err := p.listFunc(ctx, listOpts)
 	if err != nil {
-		// Send error event
-		eventChan <- interfaces.JobEvent{
-			Type:      "error",
-			Timestamp: time.Now(),
-			Error:     err,
-		}
+		// Error occurred - just return (errors not sent as events)
 		return
 	}
 
@@ -112,15 +118,19 @@ func (p *JobPoller) performPoll(ctx context.Context, opts *interfaces.WatchJobsO
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	currentJobs := make(map[string]bool)
+	currentJobs := make(map[int32]bool)
 
 	for _, job := range jobList.Jobs {
 		job := job // Create local copy to avoid memory aliasing
+		jobID := getJobID(&job)
+		jobState := getJobState(&job)
+
 		// Filter by job IDs if specified
 		if len(opts.JobIDs) > 0 {
 			found := false
+			jobIDStr := fmt.Sprintf("%d", jobID)
 			for _, id := range opts.JobIDs {
-				if job.ID == id {
+				if jobIDStr == id {
 					found = true
 					break
 				}
@@ -130,34 +140,34 @@ func (p *JobPoller) performPoll(ctx context.Context, opts *interfaces.WatchJobsO
 			}
 		}
 
-		currentJobs[job.ID] = true
+		currentJobs[jobID] = true
 
-		previousState, exists := p.jobStates[job.ID]
+		previousState, exists := p.jobStates[jobID]
 
 		if !exists {
 			// New job detected
-			p.jobStates[job.ID] = job.State
+			p.jobStates[jobID] = jobState
 			if !isInitial && (!opts.ExcludeNew) {
 				jobCopy := job
-				eventChan <- interfaces.JobEvent{
-					Type:      "job_new",
-					JobID:     job.ID,
-					NewState:  job.State,
-					Timestamp: time.Now(),
+				eventChan <- types.JobEvent{
+					EventType: "job_new",
+					JobId:     jobID,
+					NewState:  jobState,
+					EventTime: time.Now(),
 					Job:       &jobCopy,
 				}
 			}
-		} else if previousState != job.State {
+		} else if previousState != jobState {
 			// State change detected
-			p.jobStates[job.ID] = job.State
+			p.jobStates[jobID] = jobState
 			jobCopy := job
-			eventChan <- interfaces.JobEvent{
-				Type:      "job_state_change",
-				JobID:     job.ID,
-				OldState:  previousState,
-				NewState:  job.State,
-				Timestamp: time.Now(),
-				Job:       &jobCopy,
+			eventChan <- types.JobEvent{
+				EventType:     "job_state_change",
+				JobId:         jobID,
+				PreviousState: previousState,
+				NewState:      jobState,
+				EventTime:     time.Now(),
+				Job:           &jobCopy,
 			}
 		}
 	}
@@ -168,12 +178,14 @@ func (p *JobPoller) performPoll(ctx context.Context, opts *interfaces.WatchJobsO
 			if !currentJobs[jobID] {
 				// Job no longer in list (completed or removed)
 				delete(p.jobStates, jobID)
-				eventChan <- interfaces.JobEvent{
-					Type:      "job_completed",
-					JobID:     jobID,
-					OldState:  state,
-					NewState:  "COMPLETED", // Assume completed if no longer in list
-					Timestamp: time.Now(),
+				// Note: NewState is JobState type, need to use appropriate constant
+				completedState := types.JobState("COMPLETED")
+				eventChan <- types.JobEvent{
+					EventType:     "job_completed",
+					JobId:         jobID,
+					PreviousState: state,
+					NewState:      completedState,
+					EventTime:     time.Now(),
 				}
 			}
 		}
@@ -182,20 +194,20 @@ func (p *JobPoller) performPoll(ctx context.Context, opts *interfaces.WatchJobsO
 
 // NodePoller implements real-time node monitoring through polling
 type NodePoller struct {
-	listFunc     func(ctx context.Context, opts *interfaces.ListNodesOptions) (*interfaces.NodeList, error)
+	listFunc     func(ctx context.Context, opts *types.ListNodesOptions) (*types.NodeList, error)
 	pollInterval time.Duration
 	bufferSize   int
 	mu           sync.RWMutex
-	nodeStates   map[string]string // Track node states
+	nodeStates   map[string]types.NodeState // Track node states by name
 }
 
 // NewNodePoller creates a new node poller
-func NewNodePoller(listFunc func(ctx context.Context, opts *interfaces.ListNodesOptions) (*interfaces.NodeList, error)) *NodePoller {
+func NewNodePoller(listFunc func(ctx context.Context, opts *types.ListNodesOptions) (*types.NodeList, error)) *NodePoller {
 	return &NodePoller{
 		listFunc:     listFunc,
 		pollInterval: DefaultPollInterval,
 		bufferSize:   100,
-		nodeStates:   make(map[string]string),
+		nodeStates:   make(map[string]types.NodeState),
 	}
 }
 
@@ -212,13 +224,13 @@ func (p *NodePoller) WithBufferSize(size int) *NodePoller {
 }
 
 // Watch starts watching for node state changes
-func (p *NodePoller) Watch(ctx context.Context, opts *interfaces.WatchNodesOptions) (<-chan interfaces.NodeEvent, error) {
+func (p *NodePoller) Watch(ctx context.Context, opts *types.WatchNodesOptions) (<-chan types.NodeEvent, error) {
 	// Create event channel
-	eventChan := make(chan interfaces.NodeEvent, p.bufferSize)
+	eventChan := make(chan types.NodeEvent, p.bufferSize)
 
 	// Initial state capture
 	if opts == nil {
-		opts = &interfaces.WatchNodesOptions{}
+		opts = &types.WatchNodesOptions{}
 	}
 
 	// Start polling goroutine
@@ -228,7 +240,7 @@ func (p *NodePoller) Watch(ctx context.Context, opts *interfaces.WatchNodesOptio
 }
 
 // pollLoop is the main polling loop for nodes
-func (p *NodePoller) pollLoop(ctx context.Context, opts *interfaces.WatchNodesOptions, eventChan chan<- interfaces.NodeEvent) {
+func (p *NodePoller) pollLoop(ctx context.Context, opts *types.WatchNodesOptions, eventChan chan<- types.NodeEvent) {
 	defer close(eventChan)
 
 	// Create a ticker for polling
@@ -250,9 +262,9 @@ func (p *NodePoller) pollLoop(ctx context.Context, opts *interfaces.WatchNodesOp
 }
 
 // performPoll executes a single poll operation for nodes
-func (p *NodePoller) performPoll(ctx context.Context, opts *interfaces.WatchNodesOptions, eventChan chan<- interfaces.NodeEvent, isInitial bool) {
+func (p *NodePoller) performPoll(ctx context.Context, opts *types.WatchNodesOptions, eventChan chan<- types.NodeEvent, isInitial bool) {
 	// Convert watch options to list options
-	listOpts := &interfaces.ListNodesOptions{}
+	listOpts := &types.ListNodesOptions{}
 	if len(opts.States) > 0 {
 		listOpts.States = opts.States
 	}
@@ -260,12 +272,7 @@ func (p *NodePoller) performPoll(ctx context.Context, opts *interfaces.WatchNode
 	// Fetch current node list
 	nodeList, err := p.listFunc(ctx, listOpts)
 	if err != nil {
-		// Send error event
-		eventChan <- interfaces.NodeEvent{
-			Type:      "error",
-			Timestamp: time.Now(),
-			Error:     err,
-		}
+		// Error occurred - just return (errors not sent as events)
 		return
 	}
 
@@ -277,11 +284,14 @@ func (p *NodePoller) performPoll(ctx context.Context, opts *interfaces.WatchNode
 
 	for _, node := range nodeList.Nodes {
 		node := node // Create local copy to avoid memory aliasing
+		nodeName := getNodeName(&node)
+		nodeState := getNodeState(&node)
+
 		// Filter by node names if specified
 		if len(opts.NodeNames) > 0 {
 			found := false
 			for _, name := range opts.NodeNames {
-				if node.Name == name {
+				if nodeName == name {
 					found = true
 					break
 				}
@@ -291,34 +301,34 @@ func (p *NodePoller) performPoll(ctx context.Context, opts *interfaces.WatchNode
 			}
 		}
 
-		currentNodes[node.Name] = true
+		currentNodes[nodeName] = true
 
-		previousState, exists := p.nodeStates[node.Name]
+		previousState, exists := p.nodeStates[nodeName]
 
 		if !exists {
 			// New node detected (unusual but possible)
-			p.nodeStates[node.Name] = node.State
+			p.nodeStates[nodeName] = nodeState
 			if !isInitial {
 				nodeCopy := node
-				eventChan <- interfaces.NodeEvent{
-					Type:      "node_new",
-					NodeName:  node.Name,
-					NewState:  node.State,
-					Timestamp: time.Now(),
+				eventChan <- types.NodeEvent{
+					EventType: "node_new",
+					NodeName:  nodeName,
+					NewState:  nodeState,
+					EventTime: time.Now(),
 					Node:      &nodeCopy,
 				}
 			}
-		} else if previousState != node.State {
+		} else if previousState != nodeState {
 			// State change detected
-			p.nodeStates[node.Name] = node.State
+			p.nodeStates[nodeName] = nodeState
 			nodeCopy := node
-			eventChan <- interfaces.NodeEvent{
-				Type:      "node_state_change",
-				NodeName:  node.Name,
-				OldState:  previousState,
-				NewState:  node.State,
-				Timestamp: time.Now(),
-				Node:      &nodeCopy,
+			eventChan <- types.NodeEvent{
+				EventType:     "node_state_change",
+				NodeName:      nodeName,
+				PreviousState: previousState,
+				NewState:      nodeState,
+				EventTime:     time.Now(),
+				Node:          &nodeCopy,
 			}
 		}
 	}
@@ -326,20 +336,20 @@ func (p *NodePoller) performPoll(ctx context.Context, opts *interfaces.WatchNode
 
 // PartitionPoller implements real-time partition monitoring through polling
 type PartitionPoller struct {
-	listFunc        func(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error)
+	listFunc        func(ctx context.Context, opts *types.ListPartitionsOptions) (*types.PartitionList, error)
 	pollInterval    time.Duration
 	bufferSize      int
 	mu              sync.RWMutex
-	partitionStates map[string]string // Track partition states
+	partitionStates map[string]types.PartitionState // Track partition states by name
 }
 
 // NewPartitionPoller creates a new partition poller
-func NewPartitionPoller(listFunc func(ctx context.Context, opts *interfaces.ListPartitionsOptions) (*interfaces.PartitionList, error)) *PartitionPoller {
+func NewPartitionPoller(listFunc func(ctx context.Context, opts *types.ListPartitionsOptions) (*types.PartitionList, error)) *PartitionPoller {
 	return &PartitionPoller{
 		listFunc:        listFunc,
 		pollInterval:    DefaultPollInterval,
 		bufferSize:      100,
-		partitionStates: make(map[string]string),
+		partitionStates: make(map[string]types.PartitionState),
 	}
 }
 
@@ -356,13 +366,13 @@ func (p *PartitionPoller) WithBufferSize(size int) *PartitionPoller {
 }
 
 // Watch starts watching for partition state changes
-func (p *PartitionPoller) Watch(ctx context.Context, opts *interfaces.WatchPartitionsOptions) (<-chan interfaces.PartitionEvent, error) {
+func (p *PartitionPoller) Watch(ctx context.Context, opts *types.WatchPartitionsOptions) (<-chan types.PartitionEvent, error) {
 	// Create event channel
-	eventChan := make(chan interfaces.PartitionEvent, p.bufferSize)
+	eventChan := make(chan types.PartitionEvent, p.bufferSize)
 
 	// Initial state capture
 	if opts == nil {
-		opts = &interfaces.WatchPartitionsOptions{}
+		opts = &types.WatchPartitionsOptions{}
 	}
 
 	// Start polling goroutine
@@ -372,7 +382,7 @@ func (p *PartitionPoller) Watch(ctx context.Context, opts *interfaces.WatchParti
 }
 
 // pollLoop is the main polling loop for partitions
-func (p *PartitionPoller) pollLoop(ctx context.Context, opts *interfaces.WatchPartitionsOptions, eventChan chan<- interfaces.PartitionEvent) {
+func (p *PartitionPoller) pollLoop(ctx context.Context, opts *types.WatchPartitionsOptions, eventChan chan<- types.PartitionEvent) {
 	defer close(eventChan)
 
 	// Create a ticker for polling
@@ -394,9 +404,9 @@ func (p *PartitionPoller) pollLoop(ctx context.Context, opts *interfaces.WatchPa
 }
 
 // performPoll executes a single poll operation for partitions
-func (p *PartitionPoller) performPoll(ctx context.Context, opts *interfaces.WatchPartitionsOptions, eventChan chan<- interfaces.PartitionEvent, isInitial bool) {
+func (p *PartitionPoller) performPoll(ctx context.Context, opts *types.WatchPartitionsOptions, eventChan chan<- types.PartitionEvent, isInitial bool) {
 	// Convert watch options to list options
-	listOpts := &interfaces.ListPartitionsOptions{}
+	listOpts := &types.ListPartitionsOptions{}
 	if len(opts.States) > 0 {
 		listOpts.States = opts.States
 	}
@@ -404,12 +414,7 @@ func (p *PartitionPoller) performPoll(ctx context.Context, opts *interfaces.Watc
 	// Fetch current partition list
 	partitionList, err := p.listFunc(ctx, listOpts)
 	if err != nil {
-		// Send error event
-		eventChan <- interfaces.PartitionEvent{
-			Type:      "error",
-			Timestamp: time.Now(),
-			Error:     err,
-		}
+		// Error occurred - just return (errors not sent as events)
 		return
 	}
 
@@ -419,11 +424,14 @@ func (p *PartitionPoller) performPoll(ctx context.Context, opts *interfaces.Watc
 
 	for _, partition := range partitionList.Partitions {
 		partition := partition // Create local copy to avoid memory aliasing
+		partitionName := getPartitionName(&partition)
+		partitionState := getPartitionState(&partition)
+
 		// Filter by partition names if specified
 		if len(opts.PartitionNames) > 0 {
 			found := false
 			for _, name := range opts.PartitionNames {
-				if partition.Name == name {
+				if partitionName == name {
 					found = true
 					break
 				}
@@ -433,31 +441,31 @@ func (p *PartitionPoller) performPoll(ctx context.Context, opts *interfaces.Watc
 			}
 		}
 
-		previousState, exists := p.partitionStates[partition.Name]
+		previousState, exists := p.partitionStates[partitionName]
 
 		if !exists {
 			// First time seeing this partition
-			p.partitionStates[partition.Name] = partition.State
+			p.partitionStates[partitionName] = partitionState
 			if !isInitial {
 				partitionCopy := partition
-				eventChan <- interfaces.PartitionEvent{
-					Type:          "partition_new",
-					PartitionName: partition.Name,
-					NewState:      partition.State,
-					Timestamp:     time.Now(),
+				eventChan <- types.PartitionEvent{
+					EventType:     "partition_new",
+					PartitionName: partitionName,
+					NewState:      partitionState,
+					EventTime:     time.Now(),
 					Partition:     &partitionCopy,
 				}
 			}
-		} else if previousState != partition.State {
+		} else if previousState != partitionState {
 			// State change detected
-			p.partitionStates[partition.Name] = partition.State
+			p.partitionStates[partitionName] = partitionState
 			partitionCopy := partition
-			eventChan <- interfaces.PartitionEvent{
-				Type:          "partition_state_change",
-				PartitionName: partition.Name,
-				OldState:      previousState,
-				NewState:      partition.State,
-				Timestamp:     time.Now(),
+			eventChan <- types.PartitionEvent{
+				EventType:     "partition_state_change",
+				PartitionName: partitionName,
+				PreviousState: previousState,
+				NewState:      partitionState,
+				EventTime:     time.Now(),
 				Partition:     &partitionCopy,
 			}
 		}

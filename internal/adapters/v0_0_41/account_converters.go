@@ -1,58 +1,60 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_41
 
 import (
+	"encoding/json"
 	"fmt"
 
-	"github.com/jontk/slurm-client/internal/common/types"
+	types "github.com/jontk/slurm-client/api"
 )
 
-// convertAPIAccountToCommon converts a v0.0.41 API Account to common Account type
+// convertAPIAccountToCommon converts a v0.0.41 API Account to common Account type.
+// Uses JSON marshaling workaround for anonymous struct types in v0.0.41.
 func (a *AccountAdapter) convertAPIAccountToCommon(apiAccount interface{}) (*types.Account, error) {
-	// Type assertion to handle the anonymous struct - simplified to avoid undefined types
-	accountData, ok := apiAccount.(struct {
-		Name         *string `json:"name,omitempty"`
-		Description  *string `json:"description,omitempty"`
-		Organization *string `json:"organization,omitempty"`
-		Coordinators *[]struct {
-			Name *string `json:"name,omitempty"`
-		} `json:"coordinators,omitempty"`
-		Flags *[]string `json:"flags,omitempty"`
-	})
-	if !ok {
-		return nil, fmt.Errorf("unexpected account data type")
+	// Marshal the anonymous struct to JSON, then unmarshal to map
+	jsonBytes, err := json.Marshal(apiAccount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal account: %w", err)
+	}
+
+	var data map[string]interface{}
+	if err := json.Unmarshal(jsonBytes, &data); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal account: %w", err)
 	}
 
 	account := &types.Account{}
 
-	// Basic fields
-	if accountData.Name != nil {
-		account.Name = *accountData.Name
+	// Basic fields - safely extract from map
+	if name, ok := data["name"].(string); ok {
+		account.Name = name
 	}
-	if accountData.Description != nil {
-		account.Description = *accountData.Description
+	if desc, ok := data["description"].(string); ok {
+		account.Description = desc
 	}
-	if accountData.Organization != nil {
-		account.Organization = *accountData.Organization
+	if org, ok := data["organization"].(string); ok {
+		account.Organization = org
 	}
 
-	// Handle flags as strings to avoid undefined API types
-	if accountData.Flags != nil {
-		for _, flag := range *accountData.Flags {
-			if flag == "DELETED" || flag == "deleted" {
-				account.Deleted = true
+	// Handle flags as string array
+	if flags, ok := data["flags"].([]interface{}); ok {
+		for _, f := range flags {
+			if flag, ok := f.(string); ok {
+				if flag == "DELETED" || flag == "deleted" {
+					account.Flags = append(account.Flags, types.AccountFlagsDeleted)
+				}
 			}
 		}
 	}
 
-	// Coordinators
-	if accountData.Coordinators != nil {
-		coordinators := make([]string, 0, len(*accountData.Coordinators))
-		for _, coord := range *accountData.Coordinators {
-			if coord.Name != nil {
-				coordinators = append(coordinators, *coord.Name)
+	// Coordinators - convert from nested objects
+	if coords, ok := data["coordinators"].([]interface{}); ok {
+		coordinators := make([]types.Coord, 0, len(coords))
+		for _, c := range coords {
+			if coordMap, ok := c.(map[string]interface{}); ok {
+				if name, ok := coordMap["name"].(string); ok {
+					coordinators = append(coordinators, types.Coord{Name: name})
+				}
 			}
 		}
 		account.Coordinators = coordinators
@@ -86,9 +88,7 @@ func (a *AccountAdapter) convertCommonToAPIAccount(account *types.Account) {
 			Flags *[]string `json:"flags,omitempty"`
 		}{{}},
 	}
-
 	acc := &req.Accounts[0]
-
 	// Set basic fields
 	if account.Name != "" {
 		acc.Name = &account.Name
@@ -99,24 +99,25 @@ func (a *AccountAdapter) convertCommonToAPIAccount(account *types.Account) {
 	if account.Organization != "" {
 		acc.Organization = &account.Organization
 	}
-
-	// Handle flags as strings
-	if account.Deleted {
-		flags := []string{"DELETED"}
-		acc.Flags = &flags
+	// Handle flags - check for deleted flag in account.Flags
+	for _, flag := range account.Flags {
+		if flag == types.AccountFlagsDeleted {
+			flags := []string{"DELETED"}
+			acc.Flags = &flags
+			break
+		}
 	}
-
-	// Convert coordinators
+	// Convert coordinators - account.Coordinators is []types.Coord
 	if len(account.Coordinators) > 0 {
 		coords := make([]struct {
 			Name *string `json:"name,omitempty"`
 		}, 0, len(account.Coordinators))
-		for _, coordName := range account.Coordinators {
-			coordNameCopy := coordName // Create a copy to avoid pointer issues
+		for _, coord := range account.Coordinators {
+			coordName := coord.Name // Extract name from Coord struct
 			coords = append(coords, struct {
 				Name *string `json:"name,omitempty"`
 			}{
-				Name: &coordNameCopy,
+				Name: &coordName,
 			})
 		}
 		acc.Coordinators = &coords

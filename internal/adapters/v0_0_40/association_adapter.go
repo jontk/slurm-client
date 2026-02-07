@@ -1,32 +1,29 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_40
 
 import (
 	"context"
 	"strings"
 
-	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
+	types "github.com/jontk/slurm-client/api"
+	adapterbase "github.com/jontk/slurm-client/internal/adapters/base"
 	"github.com/jontk/slurm-client/internal/common"
-	"github.com/jontk/slurm-client/internal/common/types"
-	"github.com/jontk/slurm-client/internal/managers/base"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_40"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // AssociationAdapter implements the AssociationAdapter interface for v0.0.40
 type AssociationAdapter struct {
-	*base.BaseManager
-	client  *api.ClientWithResponses
-	wrapper *api.WrapperClient
+	*adapterbase.BaseManager
+	client *api.ClientWithResponses
 }
 
 // NewAssociationAdapter creates a new Association adapter for v0.0.40
 func NewAssociationAdapter(client *api.ClientWithResponses) *AssociationAdapter {
 	return &AssociationAdapter{
-		BaseManager: base.NewBaseManager("v0.0.40", "Association"),
+		BaseManager: adapterbase.NewBaseManager("v0.0.40", "Association"),
 		client:      client,
-		wrapper:     nil,
 	}
 }
 
@@ -36,15 +33,12 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
-
 	// Prepare parameters for the API call
 	params := &api.SlurmdbV0040GetAssociationsParams{}
-
 	// Apply filters from options
 	if opts != nil {
 		if len(opts.Accounts) > 0 {
@@ -73,24 +67,20 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 		// 	params.WithSubAccts = &withSubAccts
 		// }
 	}
-
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmdbV0040GetAssociationsWithResponse(ctx, params)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
-
 	// Use common response error handling
 	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
-
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
 		return nil, err
 	}
-
 	// Check for unexpected response format
 	if err := a.CheckNilResponse(resp.JSON200, "List Associations"); err != nil {
 		return nil, err
@@ -98,21 +88,18 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 	if err := a.CheckNilResponse(resp.JSON200.Associations, "List Associations - associations field"); err != nil {
 		return nil, err
 	}
-
 	// Convert the response to common types
 	associationList := make([]types.Association, 0, len(resp.JSON200.Associations))
 	for _, apiAssociation := range resp.JSON200.Associations {
 		association := a.convertAPIAssociationToCommon(apiAssociation)
 		associationList = append(associationList, *association)
 	}
-
 	// Apply pagination
-	listOpts := base.ListOptions{}
+	listOpts := adapterbase.ListOptions{}
 	if opts != nil {
 		listOpts.Limit = opts.Limit
 		listOpts.Offset = opts.Offset
 	}
-
 	// Apply pagination
 	start := listOpts.Offset
 	if start < 0 {
@@ -124,7 +111,6 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 			Total:        len(associationList),
 		}, nil
 	}
-
 	end := len(associationList)
 	if listOpts.Limit > 0 {
 		end = start + listOpts.Limit
@@ -132,7 +118,6 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 			end = len(associationList)
 		}
 	}
-
 	return &types.AssociationList{
 		Associations: associationList[start:end],
 		Total:        len(associationList),
@@ -148,14 +133,12 @@ func (a *AssociationAdapter) Get(ctx context.Context, associationID string) (*ty
 	if err := a.ValidateResourceName(associationID, "Association name"); err != nil {
 		return nil, err
 	}
-
 	// v0.0.40 doesn't have a single association GET endpoint
 	// We need to list all and filter
 	list, err := a.List(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-
 	// Find the association by constructing ID from fields
 	for _, assoc := range list.Associations {
 		constructedID := a.constructAssociationID(assoc)
@@ -163,7 +146,6 @@ func (a *AssociationAdapter) Get(ctx context.Context, associationID string) (*ty
 			return &assoc, nil
 		}
 	}
-
 	return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound, "Association '"+associationID+"' not found")
 }
 
@@ -179,10 +161,8 @@ func (a *AssociationAdapter) Create(ctx context.Context, association *types.Asso
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
-
 	// Convert to API format
 	apiAssociation := a.convertCommonAssociationCreateToAPI(association)
-
 	// Create request body
 	// Convert V0040AssocShort to V0040Assoc for the associations list
 	assoc := api.V0040Assoc{
@@ -191,35 +171,30 @@ func (a *AssociationAdapter) Create(ctx context.Context, association *types.Asso
 		Partition: apiAssociation.Partition,
 		Id:        apiAssociation, // V0040AssocShort is used as the Id field in V0040Assoc
 	}
-
 	reqBody := api.SlurmdbV0040PostAssociationsJSONRequestBody{
 		Associations: api.V0040AssocList{assoc},
 	}
-
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmdbV0040PostAssociationsWithResponse(ctx, reqBody)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
-
 	// Use common response error handling
 	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
-
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
 		return nil, err
 	}
-
 	return &types.AssociationCreateResponse{
 		Status:  "success",
 		Message: "Association created successfully",
 		Meta: map[string]interface{}{
 			"association_id": a.constructAssociationIDFromCreate(*association),
-			"account_name":   association.AccountName,
-			"user_name":      association.UserName,
+			"account_name":   association.Account,
+			"user_name":      association.User,
 			"cluster":        association.Cluster,
 		},
 	}, nil
@@ -234,7 +209,6 @@ func (a *AssociationAdapter) Update(ctx context.Context, associationID string, u
 	if err := a.ValidateResourceName(associationID, "Association name"); err != nil {
 		return err
 	}
-
 	// v0.0.40 may not support association updates directly
 	return errors.NewNotImplementedError("Update Association", "v0.0.40")
 }
@@ -248,7 +222,6 @@ func (a *AssociationAdapter) Delete(ctx context.Context, associationID string) e
 	if err := a.ValidateResourceName(associationID, "Association name"); err != nil {
 		return err
 	}
-
 	// v0.0.40 doesn't have a direct association delete endpoint
 	// You would typically delete by removing the user from account
 	return errors.NewNotImplementedError("Delete Association", "v0.0.40")
@@ -256,9 +229,16 @@ func (a *AssociationAdapter) Delete(ctx context.Context, associationID string) e
 
 // constructAssociationID constructs an ID from association fields
 func (a *AssociationAdapter) constructAssociationID(assoc types.Association) string {
-	parts := []string{assoc.Cluster, assoc.AccountName, assoc.UserName}
-	if assoc.Partition != "" {
-		parts = append(parts, assoc.Partition)
+	parts := []string{}
+	if assoc.Cluster != nil {
+		parts = append(parts, *assoc.Cluster)
+	}
+	if assoc.Account != nil {
+		parts = append(parts, *assoc.Account)
+	}
+	parts = append(parts, assoc.User)
+	if assoc.Partition != nil && *assoc.Partition != "" {
+		parts = append(parts, *assoc.Partition)
 	}
 	return strings.Join(parts, ":")
 }
@@ -268,11 +248,11 @@ func (a *AssociationAdapter) validateAssociationCreate(association *types.Associ
 	if association == nil {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "association creation data is required", "association", nil, nil)
 	}
-	if association.AccountName == "" {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account is required", "account", association.AccountName, nil)
+	if association.Account == "" {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "account is required", "account", association.Account, nil)
 	}
-	if association.UserName == "" {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "user is required", "user", association.UserName, nil)
+	if association.User == "" {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "user is required", "user", association.User, nil)
 	}
 	if association.Cluster == "" {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "cluster is required", "cluster", association.Cluster, nil)
@@ -282,9 +262,27 @@ func (a *AssociationAdapter) validateAssociationCreate(association *types.Associ
 
 // constructAssociationIDFromCreate constructs an ID from association create fields
 func (a *AssociationAdapter) constructAssociationIDFromCreate(assoc types.AssociationCreate) string {
-	parts := []string{assoc.Cluster, assoc.AccountName, assoc.UserName}
+	parts := []string{assoc.Cluster, assoc.Account, assoc.User}
 	if assoc.Partition != "" {
 		parts = append(parts, assoc.Partition)
 	}
 	return strings.Join(parts, ":")
+}
+
+// convertCommonAssociationCreateToAPI converts a common AssociationCreate to v0.0.40 API format
+func (a *AssociationAdapter) convertCommonAssociationCreateToAPI(assoc *types.AssociationCreate) *api.V0040AssocShort {
+	apiAssoc := &api.V0040AssocShort{
+		User: assoc.User,
+	}
+	// Set pointer fields
+	if assoc.Account != "" {
+		apiAssoc.Account = &assoc.Account
+	}
+	if assoc.Cluster != "" {
+		apiAssoc.Cluster = &assoc.Cluster
+	}
+	if assoc.Partition != "" {
+		apiAssoc.Partition = &assoc.Partition
+	}
+	return apiAssoc
 }

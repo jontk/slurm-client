@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -16,7 +19,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -70,7 +73,7 @@ func stringPtr(s string) *string {
 // GetTestConfig loads test configuration from environment variables
 func GetTestConfig(version string) *TestConfig {
 	config := &TestConfig{
-		ServerURL:           getEnvWithDefault("SLURM_SERVER_URL", "http://rocky9:6820"),
+		ServerURL:           getEnvWithDefault("SLURM_SERVER_URL", "http://localhost
 		Version:             version,
 		Timeout:             30 * time.Second,
 		MaxRetries:          3,
@@ -175,7 +178,7 @@ func (suite *IntegrationTestSuite) CreateTestJob(name string) (*interfaces.JobSu
 		Script:    "#!/bin/bash\necho 'Integration test job'\nhostname\ndate\nsleep 10",
 		Partition: "debug", // Using debug partition which should exist on test servers
 		Nodes:     1,
-		CPUs:      1,
+		Cpus:      1,
 		TimeLimit: 5, // 5 minutes
 	}
 
@@ -309,7 +312,7 @@ func getEnvBool(key string, defaultValue bool) bool {
 // fetchJWTTokenViaSSH fetches a JWT token from the server via SSH
 func fetchJWTTokenViaSSH() (string, error) {
 	// Get SSH configuration from environment
-	sshHost := getEnvWithDefault("SLURM_SSH_HOST", "rocky9")
+	sshHost := getEnvWithDefault("SLURM_SSH_HOST", "localhost
 	sshUser := getEnvWithDefault("SLURM_SSH_USER", "root")
 
 	// Command to get JWT token

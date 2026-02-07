@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -12,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/tests/helpers"
 	"github.com/jontk/slurm-client/tests/mocks"
@@ -66,7 +69,7 @@ func testJobLifecycleForVersion(t *testing.T, apiVersion string) {
 			Name:       "integration-test-job",
 			Script:     "#!/bin/bash\necho 'Integration test job'\nsleep 10",
 			Partition:  "compute",
-			CPUs:       2,
+			Cpus:       2,
 			Memory:     2 * 1024 * 1024 * 1024, // 2GB
 			TimeLimit:  30,                     // 30 minutes
 			WorkingDir: "/tmp",
@@ -96,7 +99,7 @@ func testJobLifecycleForVersion(t *testing.T, apiVersion string) {
 			assert.Equal(t, jobID, job.ID)
 			assert.Equal(t, "integration-test-job", job.Name)
 			assert.Equal(t, "compute", job.Partition)
-			assert.Equal(t, 2, job.CPUs)
+			assert.Equal(t, 2, job.Cpus)
 			assert.Equal(t, int64(2*1024*1024*1024), job.Memory)
 			assert.Equal(t, 30, job.TimeLimit)
 			assert.Contains(t, []string{"PENDING", "RUNNING"}, job.State) // Job could be in either state
@@ -205,7 +208,7 @@ func TestJobSubmissionValidation(t *testing.T) {
 				Name:      "valid-job",
 				Script:    "#!/bin/bash\necho 'test'",
 				Partition: "compute",
-				CPUs:      1,
+				Cpus:      1,
 			},
 			expectError: false,
 		},
@@ -214,7 +217,7 @@ func TestJobSubmissionValidation(t *testing.T) {
 			submission: &interfaces.JobSubmission{
 				Script:    "#!/bin/bash\necho 'test'",
 				Partition: "compute",
-				CPUs:      1,
+				Cpus:      1,
 			},
 			expectError: true,
 			errorMsg:    "Job name is required",
@@ -224,7 +227,7 @@ func TestJobSubmissionValidation(t *testing.T) {
 			submission: &interfaces.JobSubmission{
 				Name:      "test-job",
 				Partition: "compute",
-				CPUs:      1,
+				Cpus:      1,
 			},
 			expectError: true,
 			errorMsg:    "Job script is required",

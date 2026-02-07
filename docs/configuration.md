@@ -8,11 +8,11 @@ This guide covers all configuration options for the SLURM REST API Client Librar
 
 ```go
 import (
+    slurm "github.com/jontk/slurm-client"
     "github.com/jontk/slurm-client/pkg/client/factory"
-    "github.com/jontk/slurm-client/internal/interfaces"
 )
 
-config := &interfaces.ClientConfig{
+config := &slurm.ClientConfig{
     BaseURL: "http://your-slurm-host:6820",
     Version: "v0.0.43", // Optional - auto-detected if not specified
 }
@@ -23,7 +23,7 @@ client, err := factory.NewClient(config)
 ### Full Configuration Options
 
 ```go
-config := &interfaces.ClientConfig{
+config := &slurm.ClientConfig{
     // Required
     BaseURL: "http://your-slurm-host:6820",
 
@@ -41,7 +41,7 @@ config := &interfaces.ClientConfig{
     },
 
     // Optional - Authentication configuration
-    Authentication: &interfaces.AuthConfig{
+    Authentication: &slurm.AuthConfig{
         Type:     "token",  // "token", "basic", or "munge"
         Token:    "your-jwt-token",
         Username: "your-username",
@@ -49,7 +49,7 @@ config := &interfaces.ClientConfig{
     },
 
     // Optional - Request configuration
-    RequestConfig: &interfaces.RequestConfig{
+    RequestConfig: &slurm.RequestConfig{
         Timeout:     30 * time.Second,
         MaxRetries:  3,
         RetryDelay:  time.Second,
@@ -63,7 +63,7 @@ config := &interfaces.ClientConfig{
 ### Token Authentication (JWT)
 
 ```go
-config.Authentication = &interfaces.AuthConfig{
+config.Authentication = &slurm.AuthConfig{
     Type:  "token",
     Token: "eyJhbGciOiJIUzI1NiIs...", // Your JWT token
 }
@@ -72,7 +72,7 @@ config.Authentication = &interfaces.AuthConfig{
 ### Basic Authentication
 
 ```go
-config.Authentication = &interfaces.AuthConfig{
+config.Authentication = &slurm.AuthConfig{
     Type:     "basic",
     Username: "slurm-user",
     Password: "secure-password",
@@ -82,7 +82,7 @@ config.Authentication = &interfaces.AuthConfig{
 ### Munge Authentication
 
 ```go
-config.Authentication = &interfaces.AuthConfig{
+config.Authentication = &slurm.AuthConfig{
     Type: "munge",
     // Munge credentials are handled by the system
 }
@@ -116,7 +116,7 @@ func (t *customAuthTransport) RoundTrip(req *http.Request) (*http.Response, erro
 Let the client automatically detect the API version:
 
 ```go
-config := &interfaces.ClientConfig{
+config := &slurm.ClientConfig{
     BaseURL: "http://your-slurm-host:6820",
     // Version is not specified - will be auto-detected
 }
@@ -188,7 +188,7 @@ config.HTTPClient = &http.Client{
 ### Timeouts
 
 ```go
-config.RequestConfig = &interfaces.RequestConfig{
+config.RequestConfig = &slurm.RequestConfig{
     Timeout: 30 * time.Second, // Overall request timeout
 }
 
@@ -206,7 +206,7 @@ jobs, err := client.Jobs().List(ctx, nil)
 ### Retry Configuration
 
 ```go
-config.RequestConfig = &interfaces.RequestConfig{
+config.RequestConfig = &slurm.RequestConfig{
     MaxRetries:  3,
     RetryDelay:  time.Second,
     RetryPolicy: func(resp *http.Response, err error) bool {
@@ -222,7 +222,7 @@ config.RequestConfig = &interfaces.RequestConfig{
 ### Rate Limiting
 
 ```go
-config.RequestConfig = &interfaces.RequestConfig{
+config.RequestConfig = &slurm.RequestConfig{
     RateLimit: 100, // Max 100 requests per second
 }
 ```
@@ -249,15 +249,18 @@ export SLURM_API_DEBUG="true"
 Loading from environment:
 
 ```go
-import "os"
+import (
+    "os"
+    slurm "github.com/jontk/slurm-client"
+)
 
-config := &interfaces.ClientConfig{
+config := &slurm.ClientConfig{
     BaseURL: os.Getenv("SLURM_API_URL"),
     Version: os.Getenv("SLURM_API_VERSION"),
 }
 
 if authType := os.Getenv("SLURM_API_AUTH_TYPE"); authType != "" {
-    config.Authentication = &interfaces.AuthConfig{
+    config.Authentication = &slurm.AuthConfig{
         Type:  authType,
         Token: os.Getenv("SLURM_API_TOKEN"),
     }
@@ -286,10 +289,11 @@ slurm:
 
 ```go
 import (
+    slurm "github.com/jontk/slurm-client"
     "github.com/spf13/viper"
 )
 
-func LoadConfig() (*interfaces.ClientConfig, error) {
+func LoadConfig() (*slurm.ClientConfig, error) {
     viper.SetConfigFile("config.yaml")
     viper.SetEnvPrefix("SLURM")
     viper.AutomaticEnv()
@@ -298,13 +302,13 @@ func LoadConfig() (*interfaces.ClientConfig, error) {
         return nil, err
     }
 
-    config := &interfaces.ClientConfig{
+    config := &slurm.ClientConfig{
         BaseURL: viper.GetString("api.url"),
         Version: viper.GetString("api.version"),
     }
 
     if viper.IsSet("auth.type") {
-        config.Authentication = &interfaces.AuthConfig{
+        config.Authentication = &slurm.AuthConfig{
             Type:  viper.GetString("auth.type"),
             Token: viper.GetString("auth.token"),
         }

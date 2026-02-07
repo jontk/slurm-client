@@ -1,17 +1,17 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package common
 
 import (
 	"context"
 
-	"github.com/jontk/slurm-client/internal/common/types"
+	types "github.com/jontk/slurm-client/api"
 )
 
 // VersionAdapter is the main adapter interface for a specific API version
 type VersionAdapter interface {
 	GetVersion() string
+	GetCapabilities() types.ClientCapabilities
 	GetQoSManager() QoSAdapter
 	GetJobManager() JobAdapter
 	GetPartitionManager() PartitionAdapter
@@ -23,7 +23,6 @@ type VersionAdapter interface {
 	GetWCKeyManager() WCKeyAdapter
 	GetClusterManager() ClusterAdapter
 	GetInfoManager() InfoAdapter
-
 	// Standalone operations (non-CRUD)
 	GetStandaloneManager() StandaloneAdapter
 }
@@ -32,16 +31,12 @@ type VersionAdapter interface {
 type QoSAdapter interface {
 	// List retrieves a list of QoS with optional filtering
 	List(ctx context.Context, opts *types.QoSListOptions) (*types.QoSList, error)
-
 	// Get retrieves a specific QoS by name
 	Get(ctx context.Context, qosName string) (*types.QoS, error)
-
 	// Create creates a new QoS
 	Create(ctx context.Context, qos *types.QoSCreate) (*types.QoSCreateResponse, error)
-
 	// Update updates an existing QoS
 	Update(ctx context.Context, qosName string, update *types.QoSUpdate) error
-
 	// Delete deletes a QoS
 	Delete(ctx context.Context, qosName string) error
 }
@@ -123,34 +118,24 @@ type AssociationAdapter interface {
 type StandaloneAdapter interface {
 	// GetLicenses retrieves license information
 	GetLicenses(ctx context.Context) (*types.LicenseList, error)
-
 	// GetShares retrieves fairshare information with optional filtering
 	GetShares(ctx context.Context, opts *types.GetSharesOptions) (*types.SharesList, error)
-
 	// GetConfig retrieves SLURM configuration
 	GetConfig(ctx context.Context) (*types.Config, error)
-
 	// GetDiagnostics retrieves SLURM diagnostics information
 	GetDiagnostics(ctx context.Context) (*types.Diagnostics, error)
-
 	// GetDBDiagnostics retrieves SLURM database diagnostics information
 	GetDBDiagnostics(ctx context.Context) (*types.Diagnostics, error)
-
 	// GetInstance retrieves a specific database instance
 	GetInstance(ctx context.Context, opts *types.GetInstanceOptions) (*types.Instance, error)
-
 	// GetInstances retrieves multiple database instances with filtering
 	GetInstances(ctx context.Context, opts *types.GetInstancesOptions) (*types.InstanceList, error)
-
 	// GetTRES retrieves all TRES (Trackable RESources)
 	GetTRES(ctx context.Context) (*types.TRESList, error)
-
 	// CreateTRES creates a new TRES entry
 	CreateTRES(ctx context.Context, req *types.CreateTRESRequest) (*types.TRES, error)
-
 	// Reconfigure triggers a SLURM reconfiguration
 	Reconfigure(ctx context.Context) (*types.ReconfigureResponse, error)
-
 	// PingDatabase pings the SLURM database for health checks
 	PingDatabase(ctx context.Context) (*types.PingResponse, error)
 }
@@ -175,16 +160,12 @@ type ClusterAdapter interface {
 type InfoAdapter interface {
 	// Get retrieves cluster information
 	Get(ctx context.Context) (*types.ClusterInfo, error)
-
 	// Ping tests connectivity to the cluster
 	Ping(ctx context.Context) error
-
 	// PingDatabase tests connectivity to the SLURM database
 	PingDatabase(ctx context.Context) error
-
 	// Stats retrieves cluster statistics
 	Stats(ctx context.Context) (*types.ClusterStats, error)
-
 	// Version retrieves API version information
 	Version(ctx context.Context) (*types.APIVersion, error)
 }

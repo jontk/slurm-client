@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -52,7 +51,7 @@ func main() {
 	jobManager := client.Jobs()
 
 	// Set up watch options
-	watchOpts := &interfaces.WatchJobsOptions{
+	watchOpts := &slurm.WatchJobsOptions{
 		// Watch specific user's jobs (optional)
 		// UserID: "1000",
 
@@ -69,7 +68,7 @@ func main() {
 	}
 }
 
-func watchJobs(ctx context.Context, jobManager interfaces.JobManager, watchOpts *interfaces.WatchJobsOptions) error {
+func watchJobs(ctx context.Context, jobManager slurm.JobManager, watchOpts *slurm.WatchJobsOptions) error {
 	fmt.Println("Starting to watch for job events...")
 	fmt.Println("Press Ctrl+C to stop")
 
@@ -95,41 +94,41 @@ func watchJobs(ctx context.Context, jobManager interfaces.JobManager, watchOpts 
 			}
 
 			// Handle different event types
-			switch event.Type {
+			switch event.EventType {
 			case "job_new":
-				fmt.Printf("[%s] New job detected: ID=%s, State=%s\n",
-					event.Timestamp.Format(time.RFC3339),
-					event.JobID,
+				fmt.Printf("[%s] New job detected: ID=%d, State=%s\n",
+					event.EventTime.Format(time.RFC3339),
+					event.JobId,
 					event.NewState)
 				if event.Job != nil {
-					fmt.Printf("  User: %s, Partition: %s\n", event.Job.UserID, event.Job.Partition)
+					fmt.Printf("  User: %v, Partition: %v\n", event.Job.UserID, event.Job.Partition)
 				}
 
 			case "job_state_change":
-				fmt.Printf("[%s] Job state changed: ID=%s, %s -> %s\n",
-					event.Timestamp.Format(time.RFC3339),
-					event.JobID,
-					event.OldState,
+				fmt.Printf("[%s] Job state changed: ID=%d, %s -> %s\n",
+					event.EventTime.Format(time.RFC3339),
+					event.JobId,
+					event.PreviousState,
 					event.NewState)
 				if event.Job != nil {
-					fmt.Printf("  User: %s, Partition: %s\n", event.Job.UserID, event.Job.Partition)
+					fmt.Printf("  User: %v, Partition: %v\n", event.Job.UserID, event.Job.Partition)
 				}
 
 			case "job_completed":
-				fmt.Printf("[%s] Job completed: ID=%s (was %s)\n",
-					event.Timestamp.Format(time.RFC3339),
-					event.JobID,
-					event.OldState)
+				fmt.Printf("[%s] Job completed: ID=%d (was %s)\n",
+					event.EventTime.Format(time.RFC3339),
+					event.JobId,
+					event.PreviousState)
 
 			case "error":
-				fmt.Printf("[%s] Error: %v\n",
-					event.Timestamp.Format(time.RFC3339),
-					event.Error)
+				fmt.Printf("[%s] Error event: %s\n",
+					event.EventTime.Format(time.RFC3339),
+					event.Reason)
 
 			default:
 				fmt.Printf("[%s] Unknown event type: %s\n",
-					event.Timestamp.Format(time.RFC3339),
-					event.Type)
+					event.EventTime.Format(time.RFC3339),
+					event.EventType)
 			}
 
 		case <-sigChan:

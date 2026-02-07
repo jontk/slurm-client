@@ -10,17 +10,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 )
 
 // SSEServer provides Server-Sent Events interface for SLURM events
 // This wraps the existing polling-based Watch functionality
 type SSEServer struct {
-	client interfaces.SlurmClient
+	client types.SlurmClient
 }
 
 // NewSSEServer creates a new Server-Sent Events server
-func NewSSEServer(client interfaces.SlurmClient) *SSEServer {
+func NewSSEServer(client types.SlurmClient) *SSEServer {
 	return &SSEServer{
 		client: client,
 	}
@@ -79,7 +79,7 @@ func (sse *SSEServer) HandleSSE(w http.ResponseWriter, r *http.Request) {
 // streamJobsSSE streams job events via SSE
 func (sse *SSEServer) streamJobsSSE(ctx context.Context, w http.ResponseWriter, flusher http.Flusher, r *http.Request) {
 	// Parse options from query parameters
-	options := &interfaces.WatchJobsOptions{
+	options := &types.WatchJobsOptions{
 		UserID:    r.URL.Query().Get("user_id"),
 		Partition: r.URL.Query().Get("partition"),
 		States:    parseStringSlice(r.URL.Query().Get("states")),
@@ -128,7 +128,7 @@ func (sse *SSEServer) streamJobsSSE(ctx context.Context, w http.ResponseWriter, 
 // streamNodesSSE streams node events via SSE
 func (sse *SSEServer) streamNodesSSE(ctx context.Context, w http.ResponseWriter, flusher http.Flusher, r *http.Request) {
 	// Parse options from query parameters
-	options := &interfaces.WatchNodesOptions{
+	options := &types.WatchNodesOptions{
 		Partition: r.URL.Query().Get("partition"),
 		States:    parseStringSlice(r.URL.Query().Get("states")),
 		Features:  parseStringSlice(r.URL.Query().Get("features")),
@@ -177,7 +177,7 @@ func (sse *SSEServer) streamNodesSSE(ctx context.Context, w http.ResponseWriter,
 // streamPartitionsSSE streams partition events via SSE
 func (sse *SSEServer) streamPartitionsSSE(ctx context.Context, w http.ResponseWriter, flusher http.Flusher, r *http.Request) {
 	// Parse options from query parameters
-	options := &interfaces.WatchPartitionsOptions{
+	options := &types.WatchPartitionsOptions{
 		States:         parseStringSlice(r.URL.Query().Get("states")),
 		PartitionNames: parseStringSlice(r.URL.Query().Get("partition_names")),
 	}

@@ -6,7 +6,7 @@ package builders
 import (
 	"fmt"
 
-	"github.com/jontk/slurm-client/internal/common/types"
+	types "github.com/jontk/slurm-client/api"
 )
 
 // PartitionBuilder provides a fluent interface for building Partition objects

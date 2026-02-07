@@ -9,7 +9,6 @@ import (
 	"log"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -114,7 +113,7 @@ func listAccounts(ctx context.Context, cfg *config.Config, auth auth.Provider) {
 
 	// List accounts for specific organizations
 	fmt.Println("\nListing accounts for specific organizations:")
-	orgAccounts, err := client.Accounts().List(ctx, &interfaces.ListAccountsOptions{
+	orgAccounts, err := client.Accounts().List(ctx, &slurm.ListAccountsOptions{
 		Organizations: []string{"Engineering", "Research"},
 	})
 	if err != nil {
@@ -127,7 +126,7 @@ func listAccounts(ctx context.Context, cfg *config.Config, auth auth.Provider) {
 
 	// List accounts with associations
 	fmt.Println("\nListing accounts with associations:")
-	assocAccounts, err := client.Accounts().List(ctx, &interfaces.ListAccountsOptions{
+	assocAccounts, err := client.Accounts().List(ctx, &slurm.ListAccountsOptions{
 		WithAssociations: true,
 		WithCoordinators: true,
 	})
@@ -137,24 +136,21 @@ func listAccounts(ctx context.Context, cfg *config.Config, auth auth.Provider) {
 	}
 
 	for _, account := range assocAccounts.Accounts {
-		if len(account.Users) > 0 || len(account.CoordinatorUsers) > 0 {
+		if len(account.Associations) > 0 || len(account.Coordinators) > 0 {
 			fmt.Printf("\nAccount: %s\n", account.Name)
-			if len(account.CoordinatorUsers) > 0 {
-				fmt.Printf("  Coordinators: %v\n", account.CoordinatorUsers)
+			if len(account.Coordinators) > 0 {
+				fmt.Printf("  Coordinators: %v\n", account.Coordinators)
 			}
-			if len(account.Users) > 0 {
-				fmt.Printf("  Users: %v\n", account.Users)
+			if len(account.Associations) > 0 {
+				fmt.Printf("  Associations: %v\n", account.Associations)
 			}
 		}
 	}
 }
 
 // displayAccountHierarchy recursively displays account hierarchy
-func displayAccountHierarchy(accounts []interfaces.Account, parent, indent string) {
+func displayAccountHierarchy(accounts []slurm.Account, parent, indent string) {
 	for _, account := range accounts {
-		if account.ParentAccount != parent {
-			continue
-		}
 		fmt.Printf("%s%s", indent, account.Name)
 		if account.Description != "" {
 			fmt.Printf(" - %s", account.Description)
@@ -165,11 +161,8 @@ func displayAccountHierarchy(accounts []interfaces.Account, parent, indent strin
 		if account.Organization != "" {
 			fmt.Printf("%s  Organization: %s\n", indent, account.Organization)
 		}
-		if account.MaxJobs > 0 {
-			fmt.Printf("%s  Max Jobs: %d\n", indent, account.MaxJobs)
-		}
-		if len(account.AllowedPartitions) > 0 {
-			fmt.Printf("%s  Partitions: %v\n", indent, account.AllowedPartitions)
+		if len(account.Coordinators) > 0 {
+			fmt.Printf("%s  Coordinators: %v\n", indent, account.Coordinators)
 		}
 
 		// Recurse for child accounts
@@ -197,15 +190,14 @@ func createAccountHierarchy(ctx context.Context, cfg *config.Config, auth auth.P
 	// Example 1: Create root organization account
 	fmt.Println("Creating root organization account:")
 
-	rootAccount := &interfaces.AccountCreate{
-		Name:             "acme-corp",
-		Description:      "ACME Corporation - Root Account",
-		Organization:     "ACME Corporation",
-		CoordinatorUsers: []string{"admin", "finance-admin"},
-		MaxJobs:          1000,
-		MaxNodes:         100,
-		SharesPriority:   1000,
-		Flags:            []string{"AllowSubmit"},
+	rootAccount := &slurm.AccountCreate{
+		Name:         "acme-corp",
+		Description:  "ACME Corporation - Root Account",
+		Organization: "ACME Corporation",
+		Coordinators: []string{"admin", "finance-admin"},
+		MaxJobs:      1000,
+		MaxNodes:     100,
+		SharesRaw:    1000,
 	}
 
 	resp, err := client.Accounts().Create(ctx, rootAccount)
@@ -245,17 +237,16 @@ func createAccountHierarchy(ctx context.Context, cfg *config.Config, auth auth.P
 	}
 
 	for _, dept := range departments {
-		deptAccount := &interfaces.AccountCreate{
+		deptAccount := &slurm.AccountCreate{
 			Name:              dept.name,
 			Description:       dept.description,
 			Organization:      "ACME Corporation",
-			ParentAccount:     "acme-corp",
+			ParentName:        "acme-corp",
 			AllowedPartitions: dept.partitions,
-			MaxJobs:           dept.maxJobs,
+			MaxJobs:           int32(dept.maxJobs),
 			MaxJobsPerUser:    50,
 			DefaultPartition:  dept.partitions[0],
-			SharesPriority:    100,
-			Flags:             []string{"AllowSubmit"},
+			SharesRaw:         100,
 		}
 
 		resp2, err := client.Accounts().Create(ctx, deptAccount)
@@ -296,28 +287,27 @@ func createAccountHierarchy(ctx context.Context, cfg *config.Config, auth auth.P
 	}
 
 	for _, proj := range projects {
-		projAccount := &interfaces.AccountCreate{
+		projAccount := &slurm.AccountCreate{
 			Name:           proj.name,
 			Description:    proj.description,
-			ParentAccount:  proj.parent,
-			AllowedQoS:     proj.qos,
+			ParentName:     proj.parent,
+			QoSList:        proj.qos,
 			DefaultQoS:     proj.qos[0],
 			MaxJobs:        100,
 			MaxJobsPerUser: 20,
 			MaxNodes:       25,
 			// Set resource limits using TRES
-			MaxTRES: map[string]int{
+			MaxTRES: map[string]int64{
 				"cpu": 1000,
 				"mem": 4096000, // MB
 				"gpu": 10,
 			},
-			GrpTRES: map[string]int{
+			GrpTRES: map[string]int64{
 				"cpu": 500,
 				"mem": 2048000, // MB
 				"gpu": 5,
 			},
-			SharesPriority: 50,
-			Flags:          []string{"AllowSubmit"},
+			SharesRaw: 50,
 		}
 
 		resp3, err := client.Accounts().Create(ctx, projAccount)
@@ -356,26 +346,24 @@ func updateAccountLimits(ctx context.Context, cfg *config.Config, auth auth.Prov
 		return
 	}
 
-	fmt.Printf("Current settings:\n")
-	fmt.Printf("  Max Jobs: %d\n", current.MaxJobs)
-	fmt.Printf("  Max Nodes: %d\n", current.MaxNodes)
-	if current.MaxTRES != nil {
-		fmt.Printf("  Max TRES: %v\n", current.MaxTRES)
+	fmt.Printf("Current settings for: %s\n", current.Name)
+	if current.Description != "" {
+		fmt.Printf("  Description: %s\n", current.Description)
 	}
 
 	// Update account - increase limits for a big project
-	newMaxJobs := 200
-	newMaxNodes := 50
-	update := &interfaces.AccountUpdate{
+	newMaxJobs := int32(200)
+	newMaxNodes := int32(50)
+	update := &slurm.AccountUpdate{
 		MaxJobs:     &newMaxJobs,
 		MaxNodes:    &newMaxNodes,
 		Description: stringPtr("Machine Learning Research Project - Expanded Resources"),
-		MaxTRES: map[string]int{
+		MaxTRES: map[string]int64{
 			"cpu": 2000,
 			"mem": 8192000, // 8TB
 			"gpu": 20,
 		},
-		GrpTRES: map[string]int{
+		GrpTRES: map[string]int64{
 			"cpu": 1000,
 			"mem": 4096000, // 4TB
 			"gpu": 10,
@@ -383,7 +371,7 @@ func updateAccountLimits(ctx context.Context, cfg *config.Config, auth auth.Prov
 		// Update allowed partitions
 		AllowedPartitions: []string{"compute", "gpu", "highmem", "gpu-large"},
 		// Add more QoS options
-		AllowedQoS: []string{"normal", "high-priority", "urgent"},
+		QoSList: []string{"normal", "high-priority", "urgent"},
 	}
 
 	fmt.Println("\nUpdating account limits...")
@@ -402,13 +390,7 @@ func updateAccountLimits(ctx context.Context, cfg *config.Config, auth auth.Prov
 		return
 	}
 
-	fmt.Printf("New settings:\n")
-	fmt.Printf("  Max Jobs: %d\n", updated.MaxJobs)
-	fmt.Printf("  Max Nodes: %d\n", updated.MaxNodes)
-	if updated.MaxTRES != nil {
-		fmt.Printf("  Max TRES: %v\n", updated.MaxTRES)
-	}
-	fmt.Printf("  Allowed Partitions: %v\n", updated.AllowedPartitions)
+	fmt.Printf("Updated account: %s\n", updated.Name)
 }
 
 // demonstrateAccountAssociations shows account-user associations
@@ -431,9 +413,9 @@ func demonstrateAccountAssociations(ctx context.Context, cfg *config.Config, aut
 	// Example 1: Add coordinators to an account
 	fmt.Println("Adding coordinators to engineering account:")
 
-	engUpdate := &interfaces.AccountUpdate{
-		CoordinatorUsers: []string{"eng-lead", "eng-manager", "tech-lead"},
-		Description:      stringPtr("Engineering Department - Updated Coordinators"),
+	engUpdate := &slurm.AccountUpdate{
+		Coordinators: []string{"eng-lead", "eng-manager", "tech-lead"},
+		Description:  stringPtr("Engineering Department - Updated Coordinators"),
 	}
 
 	err = client.Accounts().Update(ctx, "engineering", engUpdate)
@@ -446,19 +428,17 @@ func demonstrateAccountAssociations(ctx context.Context, cfg *config.Config, aut
 	// Example 2: Update default settings for users
 	fmt.Println("\nUpdating default settings for platform-dev:")
 
-	defaultCPULimit := 100
-	defaultWallTime := 86400 // 24 hours
-	platUpdate := &interfaces.AccountUpdate{
+	defaultWallTime := int32(86400) // 24 hours
+	platUpdate := &slurm.AccountUpdate{
 		DefaultPartition: stringPtr("compute"),
 		DefaultQoS:       stringPtr("normal"),
-		CPULimit:         &defaultCPULimit,
 		MaxWallTime:      &defaultWallTime,
 		// Set fair share allocation
-		FairShareTRES: map[string]int{
+		GrpTRES: map[string]int64{
 			"cpu": 1000,
 			"mem": 2048000, // 2TB
 		},
-		SharesPriority: intPtr(75),
+		SharesRaw: intPtr(75),
 	}
 
 	err = client.Accounts().Update(ctx, "platform-dev", platUpdate)
@@ -471,31 +451,29 @@ func demonstrateAccountAssociations(ctx context.Context, cfg *config.Config, aut
 	// Example 3: Create a special account for training/education
 	fmt.Println("\nCreating training account with restrictions:")
 
-	trainingAccount := &interfaces.AccountCreate{
+	trainingAccount := &slurm.AccountCreate{
 		Name:              "training",
 		Description:       "Training and Education Account",
 		Organization:      "ACME Corporation",
-		ParentAccount:     "acme-corp",
-		CoordinatorUsers:  []string{"trainer1", "trainer2"},
+		ParentName:        "acme-corp",
+		Coordinators:      []string{"trainer1", "trainer2"},
 		AllowedPartitions: []string{"training", "compute"},
 		DefaultPartition:  "training",
-		AllowedQoS:        []string{"training-qos"},
+		QoSList:           []string{"training-qos"},
 		DefaultQoS:        "training-qos",
 		MaxJobs:           10,
 		MaxJobsPerUser:    2,
 		MaxNodes:          2,
 		MaxWallTime:       3600, // 1 hour max
-		CPULimit:          4,
 		// Strict resource limits for training
-		MaxTRES: map[string]int{
+		MaxTRES: map[string]int64{
 			"cpu": 16,
 			"mem": 32768, // 32GB
 		},
-		MaxTRESPerUser: map[string]int{
+		MaxTRESPerNode: map[string]int64{
 			"cpu": 4,
 			"mem": 8192, // 8GB
 		},
-		Flags: []string{"AllowSubmit", "RequireAssoc"},
 	}
 
 	resp, err := client.Accounts().Create(ctx, trainingAccount)
@@ -577,11 +555,20 @@ func demonstrateResourceAllocation(ctx context.Context, cfg *config.Config, auth
 	}
 
 	for _, tier := range tiers {
-		update := &interfaces.AccountUpdate{
-			SharesPriority: &tier.shares,
-			GrpTRES:        tier.grpTRES,
-			GrpTRESMinutes: tier.grpMinutes,
-			Description:    stringPtr(fmt.Sprintf("Updated with tiered allocation - %d shares", tier.shares)),
+		shares := int32(tier.shares)
+		grpTRES := make(map[string]int64)
+		for k, v := range tier.grpTRES {
+			grpTRES[k] = int64(v)
+		}
+		grpTRESMins := make(map[string]int64)
+		for k, v := range tier.grpMinutes {
+			grpTRESMins[k] = int64(v)
+		}
+		update := &slurm.AccountUpdate{
+			SharesRaw:    &shares,
+			GrpTRES:      grpTRES,
+			GrpTRESMins:  grpTRESMins,
+			Description:  stringPtr(fmt.Sprintf("Updated with tiered allocation - %d shares", tier.shares)),
 		}
 
 		err := client.Accounts().Update(ctx, tier.account, update)
@@ -595,37 +582,36 @@ func demonstrateResourceAllocation(ctx context.Context, cfg *config.Config, auth
 	// Example 2: Create a burst account for temporary high resource usage
 	fmt.Println("\nCreating burst account for temporary projects:")
 
-	burstAccount := &interfaces.AccountCreate{
+	burstAccount := &slurm.AccountCreate{
 		Name:              "burst-projects",
 		Description:       "Temporary burst capacity for urgent projects",
 		Organization:      "ACME Corporation",
-		ParentAccount:     "acme-corp",
-		CoordinatorUsers:  []string{"ops-lead", "cto"},
+		ParentName:        "acme-corp",
+		Coordinators:      []string{"ops-lead", "cto"},
 		AllowedPartitions: []string{"compute", "gpu", "highmem"},
-		AllowedQoS:        []string{"urgent", "executive"},
+		QoSList:           []string{"urgent", "executive"},
 		MaxJobs:           50,
 		MaxJobsPerUser:    10,
 		MaxNodes:          100,
 		MaxWallTime:       14400, // 4 hours max
 		// High resource limits but with usage tracking
-		MaxTRES: map[string]int{
+		MaxTRES: map[string]int64{
 			"cpu": 5000,
 			"mem": 20480000, // 20TB
 			"gpu": 50,
 		},
 		// Group limits to prevent monopolization
-		GrpTRES: map[string]int{
+		GrpTRES: map[string]int64{
 			"cpu": 2500,
 			"mem": 10240000, // 10TB
 			"gpu": 25,
 		},
 		// Time-based limits (monthly quota)
-		GrpTRESMinutes: map[string]int{
+		GrpTRESMins: map[string]int64{
 			"cpu": 30000000, // Limited monthly CPU-minutes
 			"gpu": 1000000,  // Limited monthly GPU-minutes
 		},
-		SharesPriority: 500, // High priority for burst
-		Flags:          []string{"AllowSubmit", "RequireAssoc"},
+		SharesRaw: 500, // High priority for burst
 	}
 
 	resp, err := client.Accounts().Create(ctx, burstAccount)
@@ -656,6 +642,6 @@ func stringPtr(s string) *string {
 	return &s
 }
 
-func intPtr(i int) *int {
+func intPtr(i int32) *int32 {
 	return &i
 }

@@ -6,7 +6,7 @@ package builders
 import (
 	"fmt"
 
-	"github.com/jontk/slurm-client/internal/common/types"
+	types "github.com/jontk/slurm-client/api"
 )
 
 // UserBuilder provides a fluent interface for building User objects
@@ -41,7 +41,7 @@ func (b *UserBuilder) WithUID(uid int32) *UserBuilder {
 		b.addError(fmt.Errorf("UID must be non-negative, got %d", uid))
 		return b
 	}
-	b.user.UID = uid
+	b.user.Uid = uid
 	return b
 }
 
@@ -611,7 +611,7 @@ func (b *UserBuilder) Clone() *UserBuilder {
 	newBuilder := &UserBuilder{
 		user: &types.UserCreate{
 			Name:                 b.user.Name,
-			UID:                  b.user.UID,
+			Uid:                  b.user.Uid,
 			DefaultAccount:       b.user.DefaultAccount,
 			DefaultWCKey:         b.user.DefaultWCKey,
 			AdminLevel:           b.user.AdminLevel,

@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -96,7 +99,7 @@ func TestSimpleJobSubmit(t *testing.T) {
 			jsonData, err := json.Marshal(payload.body)
 			require.NoError(t, err)
 
-			url := "http://rocky9:6820/slurm/v0.0.43/job/submit"
+			url := "http://localhost
 			req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, bytes.NewReader(jsonData))
 			require.NoError(t, err)
 

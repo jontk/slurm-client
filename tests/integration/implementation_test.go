@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -11,8 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	slurm "github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -36,7 +38,7 @@ func TestImplementationStatus(t *testing.T) {
 
 	serverURL := os.Getenv("SLURM_SERVER_URL")
 	if serverURL == "" {
-		serverURL = "http://rocky9:6820"
+		serverURL = "http://localhost
 	}
 
 	versions := []string{"v0.0.42", "v0.0.43"}
@@ -124,7 +126,7 @@ func TestImplementationStatus(t *testing.T) {
 			// Test Job Manager
 			t.Run("JobManager", func(t *testing.T) {
 				t.Run("List", func(t *testing.T) {
-					jobs, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{Limit: 5})
+					jobs, err := client.Jobs().List(ctx, &slurm.ListJobsOptions{Limit: 5})
 					if err != nil {
 						if strings.Contains(err.Error(), "nil pointer") {
 							t.Error("Method not implemented (nil pointer)")
@@ -142,7 +144,7 @@ func TestImplementationStatus(t *testing.T) {
 			// Test Node Manager
 			t.Run("NodeManager", func(t *testing.T) {
 				t.Run("List", func(t *testing.T) {
-					nodes, err := client.Nodes().List(ctx, &interfaces.ListNodesOptions{Limit: 5})
+					nodes, err := client.Nodes().List(ctx, &slurm.ListNodesOptions{Limit: 5})
 					if err != nil {
 						if strings.Contains(err.Error(), "nil pointer") {
 							t.Error("Method not implemented (nil pointer)")
@@ -160,7 +162,7 @@ func TestImplementationStatus(t *testing.T) {
 			// Test Partition Manager
 			t.Run("PartitionManager", func(t *testing.T) {
 				t.Run("List", func(t *testing.T) {
-					partitions, err := client.Partitions().List(ctx, &interfaces.ListPartitionsOptions{Limit: 5})
+					partitions, err := client.Partitions().List(ctx, &slurm.ListPartitionsOptions{Limit: 5})
 					if err != nil {
 						if strings.Contains(err.Error(), "nil pointer") {
 							t.Error("Method not implemented (nil pointer)")
@@ -196,7 +198,7 @@ func TestV42WithRealServer(t *testing.T) {
 
 	// Force v0.0.42 which has implementations
 	client, err := slurm.NewClientWithVersion(ctx, "v0.0.42",
-		slurm.WithBaseURL("http://rocky9:6820"),
+		slurm.WithBaseURL("http://localhost
 		slurm.WithAuth(auth.NewTokenAuth(token)),
 		slurm.WithConfig(&config.Config{
 			Timeout:            30 * time.Second,
@@ -228,7 +230,7 @@ func TestV42WithRealServer(t *testing.T) {
 	})
 
 	t.Run("ListJobs", func(t *testing.T) {
-		jobs, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
+		jobs, err := client.Jobs().List(ctx, &slurm.ListJobsOptions{
 			Limit:  10,
 			States: []string{"RUNNING", "PENDING"},
 		})
@@ -238,14 +240,26 @@ func TestV42WithRealServer(t *testing.T) {
 			t.Logf("Found %d jobs", len(jobs.Jobs))
 			for i, job := range jobs.Jobs {
 				if i < 3 {
-					t.Logf("  Job %s: %s (%s)", job.ID, job.Name, job.State)
+					jobID := "unknown"
+					if job.JobID != nil {
+						jobID = fmt.Sprintf("%d", *job.JobID)
+					}
+					jobName := "unknown"
+					if job.Name != nil {
+						jobName = *job.Name
+					}
+					jobState := "unknown"
+					if len(job.JobState) > 0 {
+						jobState = string(job.JobState[0])
+					}
+					t.Logf("  Job %s: %s (%s)", jobID, jobName, jobState)
 				}
 			}
 		}
 	})
 
 	t.Run("ListNodes", func(t *testing.T) {
-		nodes, err := client.Nodes().List(ctx, &interfaces.ListNodesOptions{
+		nodes, err := client.Nodes().List(ctx, &slurm.ListNodesOptions{
 			Limit: 10,
 		})
 		if err != nil {
@@ -254,14 +268,14 @@ func TestV42WithRealServer(t *testing.T) {
 			t.Logf("Found %d nodes", len(nodes.Nodes))
 			for i, node := range nodes.Nodes {
 				if i < 3 {
-					t.Logf("  Node %s: %s (CPUs: %d)", node.Name, node.State, node.CPUs)
+					t.Logf("  Node %s: %s (Cpus: %d)", node.Name, node.State, node.CPUs)
 				}
 			}
 		}
 	})
 
 	t.Run("SubmitJob", func(t *testing.T) {
-		submission := &interfaces.JobSubmission{
+		submission := &slurm.JobSubmission{
 			Name:      fmt.Sprintf("test-job-%d", time.Now().Unix()),
 			Script:    "#!/bin/bash\necho 'Hello from Go client test'\nhostname\ndate",
 			Partition: "compute",
@@ -274,14 +288,14 @@ func TestV42WithRealServer(t *testing.T) {
 		if err != nil {
 			t.Errorf("Submit job failed: %v", err)
 		} else {
-			t.Logf("Submitted job: %s", resp.JobID)
+			t.Logf("Submitted job: %d", resp.JobId)
 
 			// Try to cancel it
-			err = client.Jobs().Cancel(ctx, resp.JobID)
+			err = client.Jobs().Cancel(ctx, fmt.Sprintf("%d", resp.JobId))
 			if err != nil {
 				t.Logf("Cancel job failed (might be normal if job completed): %v", err)
 			} else {
-				t.Logf("Cancelled job: %s", resp.JobID)
+				t.Logf("Cancelled job: %d", resp.JobId)
 			}
 		}
 	})

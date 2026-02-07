@@ -7,8 +7,8 @@ This guide documents the setup and findings from testing the SLURM Go client aga
 ## Test Environment
 
 - **SLURM Version**: 25.05.0
-- **Server**: rocky9.ar.jontk.com:6820
-- **Cluster Name**: rocky9-cluster
+- **Server**: localhost:6820
+- **Cluster Name**: localhost
 - **Authentication**: JWT tokens
 
 ## Running Real Server Tests
@@ -18,7 +18,7 @@ To run tests against a real SLURM server:
 ```bash
 # Set environment variables
 export SLURM_REAL_SERVER_TEST=true
-export SLURM_SERVER_URL=http://rocky9:6820
+export SLURM_SERVER_URL=http://localhost
 export SLURM_JWT_TOKEN=<your-jwt-token>
 
 # Run specific test files
@@ -159,8 +159,8 @@ Despite the slurmdbd issue, we can test:
     Ping response received
     SLURM Version: 25.05.0
     SLURM Release: 25.05.0
-    SLURM Cluster: rocky9-cluster
-    Ping 1: hostname=rocky9.ar.jontk.com, status=UP, responding=true, latency=1296
+    SLURM Cluster: localhost
+    Ping 1: hostname=localhost, status=UP, responding=true, latency=1296
 ```
 
 ### Failed QoS Test (Expected)

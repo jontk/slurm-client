@@ -3,17 +3,17 @@
 ## Test Environment Configuration
 
 ### Server Details
-- **Server URL**: http://rocky9.ar.jontk.com:6820
+- **Server URL**: http://localhost:6820
 - **API Version**: v0.0.43
-- **JWT Token**: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjI2NTM4Mjk5NzYsImlhdCI6MTc1MzgyOTk3Niwic3VuIjoicm9vdCJ9.-z8Cq_wHuOxNJ7KHHTboX3l9r6JBtSD1RxQUgQR9owE
+- **JWT Token**: your-jwt-token-here
 
 ### Test Configuration
 ```bash
 export SLURM_REAL_SERVER_TEST=true
 export SLURM_REAL_INTEGRATION_TEST=true
-export SLURM_SERVER_URL=http://rocky9.ar.jontk.com:6820
+export SLURM_SERVER_URL=http://localhost:6820
 export SLURM_API_VERSION=v0.0.43
-export SLURM_JWT_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjI2NTM4Mjk5NzYsImlhdCI6MTc1MzgyOTk3Niwic3VuIjoicm9vdCJ9.-z8Cq_wHuOxNJ7KHHTboX3l9r6JBtSD1RxQUgQR9owE"
+export SLURM_JWT_TOKEN="your-jwt-token-here"
 export SLURM_TEST_DEBUG=true
 export SLURM_INSECURE_SKIP_VERIFY=true
 ```
@@ -259,7 +259,7 @@ export SLURM_INSECURE_SKIP_VERIFY=true
 # 1. Set environment variables (as shown above)
 # 2. Verify connectivity
 curl -H "Authorization: Bearer $SLURM_JWT_TOKEN" \
-     http://rocky9.ar.jontk.com:6820/slurm/v0.0.43/ping
+     http://localhost:6820/slurm/v0.0.43/ping
 
 # 3. Run integration tests
 go test -v ./tests/integration/v0_0_43_integration_test.go \

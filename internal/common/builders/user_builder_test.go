@@ -6,7 +6,7 @@ package builders
 import (
 	"testing"
 
-	"github.com/jontk/slurm-client/internal/common/types"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +21,7 @@ func TestUserBuilder_Basic(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Equal(t, "testuser", user.Name)
-		assert.Equal(t, int32(1001), user.UID)
+		assert.Equal(t, int32(1001), user.Uid)
 		assert.Equal(t, "research", user.DefaultAccount)
 		assert.Equal(t, "normal", user.DefaultQoS)
 		assert.Equal(t, types.AdminLevelNone, user.AdminLevel) // Default
@@ -462,14 +462,14 @@ func TestUserBuilder_Clone(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify original is unchanged
-	assert.Equal(t, int32(1001), originalUser.UID)
+	assert.Equal(t, int32(1001), originalUser.Uid)
 	assert.Equal(t, "research", originalUser.DefaultAccount)
 	assert.Equal(t, []string{"research"}, originalUser.Accounts)
 	assert.Equal(t, int64(1000), originalUser.MaxTRES["cpu"])
 	assert.Equal(t, int64(0), originalUser.MaxTRES["mem"])
 
 	// Verify clone has modifications
-	assert.Equal(t, int32(1002), clonedUser.UID)
+	assert.Equal(t, int32(1002), clonedUser.Uid)
 	assert.Equal(t, "compute", clonedUser.DefaultAccount)
 	assert.Equal(t, []string{"research", "compute"}, clonedUser.Accounts)
 	assert.Equal(t, int64(1000), clonedUser.MaxTRES["cpu"])
@@ -613,7 +613,7 @@ func TestUserBuilder_ComplexScenario(t *testing.T) {
 
 	// Verify all fields
 	assert.Equal(t, "complex-user", user.Name)
-	assert.Equal(t, int32(2001), user.UID)
+	assert.Equal(t, int32(2001), user.Uid)
 	assert.Equal(t, "research", user.DefaultAccount)
 	assert.Equal(t, []string{"research", "compute", "gpu", "highmem"}, user.Accounts)
 	assert.Equal(t, "project-alpha", user.DefaultWCKey)

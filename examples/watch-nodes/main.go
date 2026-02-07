@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -52,7 +51,7 @@ func main() {
 	nodeManager := client.Nodes()
 
 	// Set up watch options
-	watchOpts := &interfaces.WatchNodesOptions{
+	watchOpts := &slurm.WatchNodesOptions{
 		// Watch specific node states (optional)
 		// States: []string{"DOWN", "DRAINING"},
 
@@ -72,7 +71,7 @@ func main() {
 	}
 }
 
-func watchNodes(ctx context.Context, nodeManager interfaces.NodeManager, watchOpts *interfaces.WatchNodesOptions) error {
+func watchNodes(ctx context.Context, nodeManager slurm.NodeManager, watchOpts *slurm.WatchNodesOptions) error {
 	watchCtx, cancelWatch := context.WithCancel(ctx)
 	defer cancelWatch()
 
@@ -95,42 +94,42 @@ func watchNodes(ctx context.Context, nodeManager interfaces.NodeManager, watchOp
 			}
 
 			// Handle different event types
-			switch event.Type {
+			switch event.EventType {
 			case "node_new":
 				fmt.Printf("[%s] New node detected: %s, State=%s\n",
-					event.Timestamp.Format(time.RFC3339),
+					event.EventTime.Format(time.RFC3339),
 					event.NodeName,
 					event.NewState)
 				if event.Node != nil {
 					fmt.Printf("  CPUs: %d, Memory: %d MB, Partitions: %v\n",
-						event.Node.CPUs, event.Node.Memory, event.Node.Partitions)
+						event.Node.CPUs, event.Node.RealMemory, event.Node.Partitions)
 				}
 
 			case "node_state_change":
 				fmt.Printf("[%s] Node state changed: %s, %s -> %s\n",
-					event.Timestamp.Format(time.RFC3339),
+					event.EventTime.Format(time.RFC3339),
 					event.NodeName,
-					event.OldState,
+					event.PreviousState,
 					event.NewState)
 
 				// Show additional details for state changes
 				if event.Node != nil {
 					if event.NewState == "DOWN" || event.NewState == "DRAINING" {
-						fmt.Printf("  Reason: %s\n", event.Node.Reason)
+						fmt.Printf("  Reason: %v\n", event.Node.Reason)
 					}
 					fmt.Printf("  CPUs: %d, Memory: %d MB\n",
-						event.Node.CPUs, event.Node.Memory)
+						event.Node.CPUs, event.Node.RealMemory)
 				}
 
 			case "error":
-				fmt.Printf("[%s] Error: %v\n",
-					event.Timestamp.Format(time.RFC3339),
-					event.Error)
+				fmt.Printf("[%s] Error event: %s\n",
+					event.EventTime.Format(time.RFC3339),
+					event.Reason)
 
 			default:
 				fmt.Printf("[%s] Unknown event type: %s\n",
-					event.Timestamp.Format(time.RFC3339),
-					event.Type)
+					event.EventTime.Format(time.RFC3339),
+					event.EventType)
 			}
 
 		case <-sigChan:

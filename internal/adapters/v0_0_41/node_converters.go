@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_41
 
 import (
@@ -8,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	api "github.com/jontk/slurm-client/internal/api/v0_0_41"
-	"github.com/jontk/slurm-client/internal/common/types"
+	types "github.com/jontk/slurm-client/api"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_41"
 )
 
 // convertAPINodeToCommon converts a v0.0.41 API Node to common Node type
@@ -19,141 +18,135 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode interface{}) (*types.Node, 
 	if !ok {
 		return nil, fmt.Errorf("unexpected node data type: %T", apiNode)
 	}
-
 	node := &types.Node{}
-
 	// Basic fields - using safe type assertions
 	if v, ok := nodeData["name"]; ok {
 		if name, ok := v.(string); ok {
-			node.Name = name
+			n := name
+			node.Name = &n
 		}
 	}
 	if v, ok := nodeData["architecture"]; ok {
 		if arch, ok := v.(string); ok {
-			node.Arch = arch
+			a := arch
+			node.Architecture = &a
 		}
 	}
 	if v, ok := nodeData["operating_system"]; ok {
-		if os, ok := v.(string); ok {
-			node.OS = os
+		if osVal, ok := v.(string); ok {
+			o := osVal
+			node.OperatingSystem = &o
 		}
 	}
 	if v, ok := nodeData["address"]; ok {
 		if addr, ok := v.(string); ok {
-			node.NodeAddress = addr
+			a := addr
+			node.Address = &a
 		}
 	}
 	if v, ok := nodeData["hostname"]; ok {
 		if hostname, ok := v.(string); ok {
-			node.NodeHostname = hostname
+			h := hostname
+			node.Hostname = &h
 		}
 	}
-
-	// State
-	// SLURM API returns state as an array (e.g. ["IDLE", "DRAIN"])
-	// Concatenate all states with "+" to preserve all flags (e.g. "IDLE+DRAIN")
+	// State - SLURM API returns state as an array (e.g. ["IDLE", "DRAIN"])
 	if v, ok := nodeData["state"]; ok {
-		if states, ok := v.([]interface{}); ok && len(states) > 0 {
-			if len(states) == 1 {
-				if state, ok := states[0].(string); ok {
-					node.State = types.NodeState(state)
-				}
-			} else {
-				// Join multiple states with "+"
-				stateStrings := make([]string, 0, len(states))
-				for _, s := range states {
-					if state, ok := s.(string); ok {
-						stateStrings = append(stateStrings, state)
-					}
-				}
-				if len(stateStrings) > 0 {
-					node.State = types.NodeState(strings.Join(stateStrings, "+"))
+		if states, ok := v.([]interface{}); ok {
+			nodeStates := make([]types.NodeState, 0, len(states))
+			for _, s := range states {
+				if state, ok := s.(string); ok {
+					nodeStates = append(nodeStates, types.NodeState(state))
 				}
 			}
+			node.State = nodeStates
 		}
 	}
-
 	// Reason
 	if v, ok := nodeData["reason"]; ok {
 		if reason, ok := v.(string); ok {
-			node.Reason = reason
+			r := reason
+			node.Reason = &r
 		}
 	}
-
 	// Resources
 	if v, ok := nodeData["cpus"]; ok {
 		if cpus, ok := v.(float64); ok {
-			node.CPUs = int32(cpus)
+			c := int32(cpus)
+			node.CPUs = &c
 		}
 	}
 	if v, ok := nodeData["boards"]; ok {
 		if boards, ok := v.(float64); ok {
-			node.Boards = int32(boards)
+			b := int32(boards)
+			node.Boards = &b
 		}
 	}
 	if v, ok := nodeData["sockets"]; ok {
 		if sockets, ok := v.(float64); ok {
-			node.Sockets = int32(sockets)
+			s := int32(sockets)
+			node.Sockets = &s
 		}
 	}
 	if v, ok := nodeData["cores"]; ok {
 		if cores, ok := v.(float64); ok {
-			node.Cores = int32(cores)
+			c := int32(cores)
+			node.Cores = &c
 		}
 	}
 	if v, ok := nodeData["threads_per_core"]; ok {
 		if threads, ok := v.(float64); ok {
-			node.ThreadsPerCore = int32(threads)
+			t := int32(threads)
+			node.Threads = &t
 		}
 	}
-
 	// Memory
 	if v, ok := nodeData["real_memory"]; ok {
 		if mem, ok := v.(float64); ok {
-			node.RealMemory = int64(mem)
+			m := int64(mem)
+			node.RealMemory = &m
 		}
 	}
 	if v, ok := nodeData["alloc_memory"]; ok {
 		if mem, ok := v.(float64); ok {
-			node.AllocMemory = int64(mem)
+			m := int64(mem)
+			node.AllocMemory = &m
 		}
 	}
 	if v, ok := nodeData["free_memory"]; ok {
 		if mem, ok := v.(float64); ok {
-			node.FreeMemory = int64(mem)
+			m := uint64(mem)
+			node.FreeMem = &m
 		}
 	}
-
 	// CPU allocation
 	if v, ok := nodeData["alloc_cpus"]; ok {
 		if cpus, ok := v.(float64); ok {
-			node.AllocCPUs = int32(cpus)
+			c := int32(cpus)
+			node.AllocCPUs = &c
 		}
 	}
 	if v, ok := nodeData["alloc_idle_cpus"]; ok {
 		if cpus, ok := v.(float64); ok {
-			node.AllocIdleCPUs = int32(cpus)
+			c := int32(cpus)
+			node.AllocIdleCPUs = &c
 		}
 	}
-
 	// Time fields - handle both direct numbers and structured time objects
 	if v, ok := nodeData["boot_time"]; ok {
 		if timeStruct, ok := v.(map[string]interface{}); ok {
 			if number, ok := timeStruct["number"].(float64); ok && number > 0 {
-				bootTime := time.Unix(int64(number), 0)
-				node.BootTime = &bootTime
+				node.BootTime = time.Unix(int64(number), 0)
 			}
 		}
 	}
 	if v, ok := nodeData["last_busy"]; ok {
 		if timeStruct, ok := v.(map[string]interface{}); ok {
 			if number, ok := timeStruct["number"].(float64); ok && number > 0 {
-				lastBusy := time.Unix(int64(number), 0)
-				node.LastBusy = &lastBusy
+				node.LastBusy = time.Unix(int64(number), 0)
 			}
 		}
 	}
-
 	// Features
 	if v, ok := nodeData["features"]; ok {
 		if features, ok := v.(string); ok {
@@ -165,74 +158,78 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode interface{}) (*types.Node, 
 			node.ActiveFeatures = strings.Split(features, ",")
 		}
 	}
-
 	// Partitions
 	if v, ok := nodeData["partitions"]; ok {
 		if partitions, ok := v.(string); ok {
 			node.Partitions = strings.Split(partitions, ",")
 		}
 	}
-
 	// GRES
 	if v, ok := nodeData["gres"]; ok {
 		if gres, ok := v.(string); ok {
-			node.Gres = gres
+			g := gres
+			node.GRES = &g
 		}
 	}
 	if v, ok := nodeData["gres_drained"]; ok {
 		if gres, ok := v.(string); ok {
-			node.GresDrained = gres
+			g := gres
+			node.GRESDrained = &g
 		}
 	}
 	if v, ok := nodeData["gres_used"]; ok {
 		if gres, ok := v.(string); ok {
-			node.GresUsed = gres
+			g := gres
+			node.GRESUsed = &g
 		}
 	}
-
 	// Other fields
 	if v, ok := nodeData["comment"]; ok {
 		if comment, ok := v.(string); ok {
-			node.Comment = comment
+			c := comment
+			node.Comment = &c
 		}
 	}
 	if v, ok := nodeData["owner"]; ok {
 		if owner, ok := v.(string); ok {
-			node.Owner = owner
+			o := owner
+			node.Owner = &o
 		}
 	}
 	if v, ok := nodeData["mcs_label"]; ok {
 		if label, ok := v.(string); ok {
-			node.MCSLabel = label
+			l := label
+			node.MCSLabel = &l
 		}
 	}
 	if v, ok := nodeData["weight"]; ok {
 		if weight, ok := v.(float64); ok {
-			node.Weight = int32(weight)
+			w := int32(weight)
+			node.Weight = &w
 		}
 	}
 	if v, ok := nodeData["port"]; ok {
 		if port, ok := v.(float64); ok {
-			node.Port = int32(port)
+			p := int32(port)
+			node.Port = &p
 		}
 	}
-
 	// CPU load
 	if v, ok := nodeData["cpu_load"]; ok {
 		if cpuStruct, ok := v.(map[string]interface{}); ok {
 			if number, ok := cpuStruct["number"].(float64); ok {
-				node.CPULoad = number / 100.0 // Convert from centipercent
+				cl := int32(number / 100.0) // Convert from centipercent
+				node.CPULoad = &cl
 			}
 		}
 	}
-
 	// Version
 	if v, ok := nodeData["version"]; ok {
 		if version, ok := v.(string); ok {
-			node.Version = version
+			ver := version
+			node.Version = &ver
 		}
 	}
-
 	return node, nil
 }
 
@@ -240,11 +237,9 @@ func (a *NodeAdapter) convertAPINodeToCommon(apiNode interface{}) (*types.Node, 
 func (a *NodeAdapter) convertCommonToAPINodeUpdate(update *types.NodeUpdate) *api.SlurmV0041PostNodeJSONRequestBody {
 	// Create a basic update request structure
 	updateReq := &api.SlurmV0041PostNodeJSONRequestBody{}
-
 	// Note: The exact structure for node updates in v0.0.41 may be different
 	// This is a placeholder implementation that would need to be adjusted
 	// based on the actual API structure
-
 	// For now, return an empty request
 	_ = update
 	return updateReq

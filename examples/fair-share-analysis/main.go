@@ -1,7 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build ignore
+// +build ignore
+
 // Package main demonstrates fair-share analysis and job priority calculation.
+// NOTE: This example uses extended interface methods (GetUserFairShare, GetAccountFairShare,
+// GetFairShareHierarchy, CalculateJobPriority) that are planned but not yet implemented.
+// Build with: go run -tags=future examples/fair-share-analysis/main.go
 package main
 
 import (
@@ -15,10 +21,10 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	slurm "github.com/jontk/slurm-client"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/errors"
+	slurmtypes "github.com/jontk/slurm-client/api"
 )
 
 var (
@@ -60,7 +66,7 @@ func main() {
 	_ = client.Close()
 }
 
-func run(ctx context.Context, client slurm.SlurmClient) error {
+func run(ctx context.Context, client slurmtypes.SlurmClient) error {
 	fmt.Printf("Connected to SLURM REST API %s at %s\n\n", client.Version(), *baseURL)
 
 	// Perform analysis based on type
@@ -94,7 +100,7 @@ func run(ctx context.Context, client slurm.SlurmClient) error {
 	return nil
 }
 
-func analyzeUserFairShare(ctx context.Context, client interfaces.SlurmClient, userName string) {
+func analyzeUserFairShare(ctx context.Context, client slurmtypes.SlurmClient, userName string) {
 	fmt.Printf("=== Fair-Share Analysis for User: %s ===\n\n", userName)
 
 	userManager := client.Users()
@@ -145,7 +151,7 @@ func analyzeUserFairShare(ctx context.Context, client interfaces.SlurmClient, us
 	}
 }
 
-func analyzeAccountFairShare(ctx context.Context, client interfaces.SlurmClient, accountName string) {
+func analyzeAccountFairShare(ctx context.Context, client slurmtypes.SlurmClient, accountName string) {
 	fmt.Printf("=== Fair-Share Analysis for Account: %s ===\n\n", accountName)
 
 	accountManager := client.Accounts()
@@ -190,7 +196,7 @@ func analyzeAccountFairShare(ctx context.Context, client interfaces.SlurmClient,
 	}
 }
 
-func analyzeHierarchy(ctx context.Context, client interfaces.SlurmClient, rootAccount string) {
+func analyzeHierarchy(ctx context.Context, client slurmtypes.SlurmClient, rootAccount string) {
 	if rootAccount == "" {
 		rootAccount = "root"
 	}
@@ -246,7 +252,7 @@ func analyzeHierarchy(ctx context.Context, client interfaces.SlurmClient, rootAc
 	}
 }
 
-func compareUserFairShare(ctx context.Context, client interfaces.SlurmClient) {
+func compareUserFairShare(ctx context.Context, client slurmtypes.SlurmClient) {
 	fmt.Println("=== User Fair-Share Comparison ===")
 
 	// For demonstration, compare a predefined list of users
@@ -257,8 +263,8 @@ func compareUserFairShare(ctx context.Context, client interfaces.SlurmClient) {
 
 	type userFairShareData struct {
 		userName  string
-		fairShare *interfaces.UserFairShare
-		accounts  []interfaces.UserAccount
+		fairShare *slurmtypes.UserFairShare
+		accounts  []slurmtypes.UserAccount
 		err       error
 	}
 
@@ -272,7 +278,7 @@ func compareUserFairShare(ctx context.Context, client interfaces.SlurmClient) {
 		if data.err == nil {
 			pointerAccounts, _ := userManager.GetUserAccounts(ctx, userName)
 			// Convert from []*UserAccount to []UserAccount
-			data.accounts = make([]interfaces.UserAccount, len(pointerAccounts))
+			data.accounts = make([]slurmtypes.UserAccount, len(pointerAccounts))
 			for i, acc := range pointerAccounts {
 				data.accounts[i] = *acc
 			}
@@ -324,13 +330,13 @@ func compareUserFairShare(ctx context.Context, client interfaces.SlurmClient) {
 	w.Flush()
 }
 
-func compareAccountFairShare(ctx context.Context, client interfaces.SlurmClient) {
+func compareAccountFairShare(ctx context.Context, client slurmtypes.SlurmClient) {
 	fmt.Println("=== Account Fair-Share Comparison ===")
 
 	accountManager := client.Accounts()
 
 	// Get all accounts (with limited fields for efficiency)
-	opts := &interfaces.ListAccountsOptions{
+	opts := &slurmtypes.ListAccountsOptions{
 		WithQuotas: false,
 		WithUsers:  false,
 		Limit:      20, // Top 20 accounts
@@ -343,8 +349,8 @@ func compareAccountFairShare(ctx context.Context, client interfaces.SlurmClient)
 	}
 
 	type accountFairShareData struct {
-		account   interfaces.Account
-		fairShare *interfaces.AccountFairShare
+		account   slurmtypes.Account
+		fairShare *slurmtypes.AccountFairShare
 		err       error
 	}
 
@@ -392,7 +398,7 @@ func compareAccountFairShare(ctx context.Context, client interfaces.SlurmClient)
 	w.Flush()
 }
 
-func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, userName string) {
+func predictJobPriority(ctx context.Context, client slurmtypes.SlurmClient, userName string) {
 	fmt.Printf("\n\n=== Job Priority Prediction for User: %s ===\n\n", userName)
 
 	userManager := client.Users()
@@ -400,11 +406,11 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 	// Define test scenarios
 	scenarios := []struct {
 		name string
-		job  interfaces.JobSubmission
+		job  slurmtypes.JobSubmission
 	}{
 		{
 			name: "Small Job (1 CPU, 1GB, 1 hour)",
-			job: interfaces.JobSubmission{
+			job: slurmtypes.JobSubmission{
 				Script:    "#!/bin/bash\necho 'Small job'",
 				Partition: "compute",
 				CPUs:      1,
@@ -414,7 +420,7 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 		},
 		{
 			name: "Medium Job (8 CPUs, 16GB, 4 hours)",
-			job: interfaces.JobSubmission{
+			job: slurmtypes.JobSubmission{
 				Script:    "#!/bin/bash\necho 'Medium job'",
 				Partition: "compute",
 				CPUs:      8,
@@ -424,7 +430,7 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 		},
 		{
 			name: "Large Job (32 CPUs, 64GB, 24 hours)",
-			job: interfaces.JobSubmission{
+			job: slurmtypes.JobSubmission{
 				Script:    "#!/bin/bash\necho 'Large job'",
 				Partition: "compute",
 				CPUs:      32,
@@ -434,7 +440,7 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 		},
 		{
 			name: "GPU Job (4 CPUs, 16GB, 2 GPUs)",
-			job: interfaces.JobSubmission{
+			job: slurmtypes.JobSubmission{
 				Script:    "#!/bin/bash\necho 'GPU job'",
 				Partition: "gpu",
 				CPUs:      4,
@@ -532,7 +538,7 @@ func predictJobPriority(ctx context.Context, client interfaces.SlurmClient, user
 
 // Helper functions
 
-func displayUserFairShareReport(fairShare *interfaces.UserFairShare) {
+func displayUserFairShareReport(fairShare *slurmtypes.UserFairShare) {
 	fmt.Printf("User Fair-Share Report:\n")
 	fmt.Printf("  Account: %s\n", fairShare.Account)
 	fmt.Printf("  Fair-Share Factor: %.6f\n", fairShare.FairShareFactor)
@@ -558,7 +564,7 @@ func displayUserFairShareReport(fairShare *interfaces.UserFairShare) {
 	}
 }
 
-func displayAccountFairShareReport(fairShare *interfaces.AccountFairShare) {
+func displayAccountFairShareReport(fairShare *slurmtypes.AccountFairShare) {
 	fmt.Printf("Account Fair-Share Report:\n")
 	fmt.Printf("  Account Name: %s\n", fairShare.AccountName)
 	fmt.Printf("  Parent Account: %s\n", fairShare.Parent)
@@ -581,7 +587,7 @@ func displayAccountFairShareReport(fairShare *interfaces.AccountFairShare) {
 	}
 }
 
-func displayFairShareTree(node *interfaces.FairShareNode, level int, format string) {
+func displayFairShareTree(node *slurmtypes.FairShareNode, level int, format string) {
 	if format == "csv" {
 		// CSV format
 		if level == 0 {
@@ -613,7 +619,7 @@ func displayFairShareTree(node *interfaces.FairShareNode, level int, format stri
 	}
 }
 
-func displayFairShareTrend(fairShare *interfaces.UserFairShare) {
+func displayFairShareTrend(fairShare *slurmtypes.UserFairShare) {
 	fmt.Printf("\n\nFair-Share Trend Analysis:\n")
 	fmt.Println("(Historical data would be displayed here if available)")
 
@@ -639,7 +645,7 @@ func displayFairShareTrend(fairShare *interfaces.UserFairShare) {
 		(fairShare.EffectiveUsage/fairShare.NormalizedShares)*100)
 }
 
-func displayPriorityFactors(factors *interfaces.JobPriorityFactors) {
+func displayPriorityFactors(factors *slurmtypes.JobPriorityFactors) {
 	fmt.Println("\nPriority Factor Breakdown:")
 
 	// Calculate percentages
@@ -678,7 +684,7 @@ type hierarchyStats struct {
 	fairShareSum  float64
 }
 
-func calculateHierarchyStats(node *interfaces.FairShareNode) hierarchyStats {
+func calculateHierarchyStats(node *slurmtypes.FairShareNode) hierarchyStats {
 	stats := hierarchyStats{
 		minFairShare: 1.0,
 		maxFairShare: 0.0,
@@ -693,7 +699,7 @@ func calculateHierarchyStats(node *interfaces.FairShareNode) hierarchyStats {
 	return stats
 }
 
-func calculateNodeStats(node *interfaces.FairShareNode, depth int, stats *hierarchyStats) {
+func calculateNodeStats(node *slurmtypes.FairShareNode, depth int, stats *hierarchyStats) {
 	stats.totalNodes++
 	stats.fairShareSum += node.FairShareFactor
 

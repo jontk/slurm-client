@@ -11,18 +11,18 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 )
 
 // WebSocketServer provides a WebSocket interface for SLURM events
 // This wraps the existing polling-based Watch functionality
 type WebSocketServer struct {
-	client   interfaces.SlurmClient
+	client   types.SlurmClient
 	upgrader websocket.Upgrader
 }
 
 // NewWebSocketServer creates a new WebSocket server
-func NewWebSocketServer(client interfaces.SlurmClient) *WebSocketServer {
+func NewWebSocketServer(client types.SlurmClient) *WebSocketServer {
 	return &WebSocketServer{
 		client: client,
 		upgrader: websocket.Upgrader{
@@ -146,12 +146,12 @@ func (ws *WebSocketServer) handleStreamRequest(ctx context.Context, conn *websoc
 // streamJobs streams job events
 func (ws *WebSocketServer) streamJobs(ctx context.Context, conn *websocket.Conn, optionsData interface{}) {
 	// Convert options
-	var options *interfaces.WatchJobsOptions
+	var options *types.WatchJobsOptions
 	if optionsData != nil {
 		if optsBytes, err := json.Marshal(optionsData); err == nil {
 			var jobOpts JobStreamOptions
 			if err := json.Unmarshal(optsBytes, &jobOpts); err == nil {
-				options = &interfaces.WatchJobsOptions{
+				options = &types.WatchJobsOptions{
 					UserID:           jobOpts.UserID,
 					States:           jobOpts.States,
 					Partition:        jobOpts.Partition,
@@ -198,12 +198,12 @@ func (ws *WebSocketServer) streamJobs(ctx context.Context, conn *websocket.Conn,
 // streamNodes streams node events
 func (ws *WebSocketServer) streamNodes(ctx context.Context, conn *websocket.Conn, optionsData interface{}) {
 	// Convert options
-	var options *interfaces.WatchNodesOptions
+	var options *types.WatchNodesOptions
 	if optionsData != nil {
 		if optsBytes, err := json.Marshal(optionsData); err == nil {
 			var nodeOpts NodeStreamOptions
 			if err := json.Unmarshal(optsBytes, &nodeOpts); err == nil {
-				options = &interfaces.WatchNodesOptions{
+				options = &types.WatchNodesOptions{
 					States:    nodeOpts.States,
 					Partition: nodeOpts.Partition,
 					Features:  nodeOpts.Features,
@@ -248,12 +248,12 @@ func (ws *WebSocketServer) streamNodes(ctx context.Context, conn *websocket.Conn
 // streamPartitions streams partition events
 func (ws *WebSocketServer) streamPartitions(ctx context.Context, conn *websocket.Conn, optionsData interface{}) {
 	// Convert options
-	var options *interfaces.WatchPartitionsOptions
+	var options *types.WatchPartitionsOptions
 	if optionsData != nil {
 		if optsBytes, err := json.Marshal(optionsData); err == nil {
 			var partOpts PartitionStreamOptions
 			if err := json.Unmarshal(optsBytes, &partOpts); err == nil {
-				options = &interfaces.WatchPartitionsOptions{
+				options = &types.WatchPartitionsOptions{
 					States:         partOpts.States,
 					PartitionNames: partOpts.PartitionNames,
 				}

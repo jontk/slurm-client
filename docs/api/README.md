@@ -27,12 +27,12 @@ The SLURM REST API Client Library provides a unified interface for interacting w
 ```go
 import (
     "context"
+    slurm "github.com/jontk/slurm-client"
     "github.com/jontk/slurm-client/pkg/client/factory"
-    "github.com/jontk/slurm-client/internal/interfaces"
 )
 
 // Create client
-config := &interfaces.ClientConfig{
+config := &slurm.ClientConfig{
     BaseURL: "http://slurm-host:6820",
 }
 client, err := factory.NewClient(config)
@@ -106,7 +106,7 @@ The client supports multiple authentication methods:
 
 ### Token Authentication
 ```go
-config.Authentication = &interfaces.AuthConfig{
+config.Authentication = &slurm.AuthConfig{
     Type:  "token",
     Token: "your-jwt-token",
 }
@@ -114,7 +114,7 @@ config.Authentication = &interfaces.AuthConfig{
 
 ### Basic Authentication
 ```go
-config.Authentication = &interfaces.AuthConfig{
+config.Authentication = &slurm.AuthConfig{
     Type:     "basic",
     Username: "username",
     Password: "password",
@@ -127,12 +127,12 @@ The client automatically handles API version differences. You can specify a vers
 
 ```go
 // Auto-detect
-config := &interfaces.ClientConfig{
+config := &slurm.ClientConfig{
     BaseURL: "http://slurm-host:6820",
 }
 
 // Specific version
-config := &interfaces.ClientConfig{
+config := &slurm.ClientConfig{
     BaseURL: "http://slurm-host:6820",
     Version: "v0.0.43",
 }
@@ -143,7 +143,7 @@ config := &interfaces.ClientConfig{
 The client includes built-in rate limiting:
 
 ```go
-config.RequestConfig = &interfaces.RequestConfig{
+config.RequestConfig = &slurm.RequestConfig{
     RateLimit: 100, // requests per second
 }
 ```

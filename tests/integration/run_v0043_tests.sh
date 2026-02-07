@@ -6,7 +6,7 @@
 set -e
 
 echo "=== V0.0.43 New Features Integration Test Runner ==="
-echo "Server: rocky9.ar.jontk.com:6820"
+echo "Server: localhost:6820"
 echo "API Version: v0.0.43"
 echo
 

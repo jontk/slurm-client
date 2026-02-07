@@ -6,7 +6,7 @@ package builders
 import (
 	"fmt"
 
-	"github.com/jontk/slurm-client/internal/common/types"
+	types "github.com/jontk/slurm-client/api"
 )
 
 // AccountBuilder provides a fluent interface for building Account objects

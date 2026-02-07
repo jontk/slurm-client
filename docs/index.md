@@ -27,8 +27,6 @@ The definitive solution addressing Go SLURM client ecosystem fragmentation throu
 
 ## 🚀 Multi-Version Architecture
 
-> **🎯 Default Choice**: Use the **Adapter Pattern** for version-agnostic, production-ready code. The wrapper pattern is only for advanced use cases.
-
 Unlike existing solutions that support single API versions, this library provides seamless compatibility across all active SLURM REST API versions:
 
 ### Adapter Pattern Implementation (Recommended)
@@ -100,19 +98,6 @@ func main() {
         fmt.Printf("Reservation: %s, Nodes: %v\n", res.Name, res.Nodes)
     }
 }
-
-// Using Wrapper Pattern (Advanced)
-func advancedExample() {
-    // Direct access to specific version wrapper
-    wrapper, err := slurm.NewVersionWrapper(ctx, "v0.0.43", options...)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Direct API calls - requires version-specific knowledge
-    reservations, err := wrapper.ReservationAPI.SlurmV0043GetReservations(ctx)
-    // Handle version-specific response types manually...
-}
 ```
 
 #### Advanced Adapter Features
@@ -156,22 +141,7 @@ if err != nil {
 // - Intelligent field mapping to avoid unnecessary allocations
 // - Response caching for expensive operations like cluster info
 // - Connection pooling managed at the adapter level
-
-// Benchmark results show 15-25% performance improvement over direct wrappers
-// when handling large datasets due to optimized type conversions
 ```
-
-#### Migration Guide: Wrapper to Adapter
-
-For users currently using the wrapper pattern:
-
-```go
-// Before: Version-specific wrapper (v0.0.43)
-wrapper, err := slurm.NewVersionWrapper(ctx, "v0.0.43", opts...)
-response, err := wrapper.ReservationAPI.SlurmV0043GetReservations(ctx)
-// Manual handling of version-specific types
-for _, res := range response.Reservations {
-    // Direct access to internal API types
     fmt.Printf("Reservation: %s\n", *res.Name)
 }
 
@@ -320,7 +290,6 @@ import (
     "github.com/jontk/slurm-client"
     "github.com/jontk/slurm-client/pkg/auth"
     "github.com/jontk/slurm-client/pkg/errors"
-    "github.com/jontk/slurm-client/internal/interfaces"
 )
 
 func main() {
@@ -420,35 +389,7 @@ Do you need direct API access or debugging? ── YES ──→ Use Wrapper Pat
 | ✅ **You want simple error handling** | ⚠️ **You need version-specific features** |
 | ✅ **You want automatic type conversion** | ⚠️ **You're migrating from direct API calls** |
 
-> **🎯 Recommendation**: **95% of users should use the Adapter Pattern**. You can always switch to the Wrapper Pattern later if you have specific advanced needs.
-
-### Advanced Usage: Wrapper Pattern
-
-Only use the wrapper pattern if you need direct access to version-specific APIs:
-
-```go
-// ⚠️ Advanced: Direct API access with version-specific code
-import "github.com/jontk/slurm-client/internal/api/v0_0_43"
-
-func advancedExample() {
-    // Direct access to v0.0.43 API - requires version knowledge
-    config := &interfaces.ClientConfig{
-        BaseURL: "https://slurm-server:6820",
-        Version: "v0.0.43", // Must specify exact version
-    }
-
-    wrapper, err := v0_0_43.NewWrapperClient(config)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Direct API call - you handle all type conversions
-    response, err := wrapper.GetJobs(ctx, &v0_0_43.GetJobsParams{})
-    // Manual error handling and type conversion required...
-}
-```
-
-> **📚 Need wrapper documentation?** See [Advanced Wrapper Usage](wrapper-advanced.md)
+> **🎯 Recommendation**: **The Adapter Pattern is recommended for all users**. It provides version abstraction with optimal performance.
 
 #### Adapter Configuration Options
 

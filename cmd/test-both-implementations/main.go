@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/internal/factory"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
@@ -32,7 +32,7 @@ func main() {
 
 	// Create configuration
 	cfg := config.NewDefault()
-	cfg.BaseURL = "http://rocky9.ar.jontk.com:6820"
+	cfg.BaseURL = "http://localhost:6820"
 	cfg.Debug = false
 
 	// Create JWT authentication provider
@@ -42,24 +42,18 @@ func main() {
 	fmt.Println("Testing SLURM Client Implementations")
 	fmt.Println("===========================================")
 
-	// Test wrapper implementation (default)
-	fmt.Printf("\n1. Testing WRAPPER implementation (default) with %s\n", version)
-	fmt.Println("-------------------------------------------")
-	testImplementation(cfg, authProvider, version, false)
-
 	// Test adapter implementation
 	fmt.Printf("\n2. Testing ADAPTER implementation with %s\n", version)
 	fmt.Println("-------------------------------------------")
-	testImplementation(cfg, authProvider, version, true)
+	testImplementation(cfg, authProvider, version)
 }
 
-func testImplementation(cfg *config.Config, authProvider auth.Provider, version string, useAdapters bool) {
+func testImplementation(cfg *config.Config, authProvider auth.Provider, version string) {
 	// Create factory with adapter option
 	clientFactory, err := factory.NewClientFactory(
 		factory.WithConfig(cfg),
 		factory.WithAuth(authProvider),
 		factory.WithBaseURL(cfg.BaseURL),
-		factory.WithUseAdapters(useAdapters),
 	)
 	if err != nil {
 		log.Printf("❌ Failed to create factory: %v", err)
@@ -73,11 +67,7 @@ func testImplementation(cfg *config.Config, authProvider auth.Provider, version 
 		return
 	}
 
-	implType := "wrapper"
-	if useAdapters {
-		implType = "adapter"
-	}
-	fmt.Printf("✅ Successfully created %s client using %s implementation!\n", version, implType)
+	fmt.Printf("✅ Successfully created %s client using adapter implementation!\n", version)
 
 	ctx := context.Background()
 
@@ -92,7 +82,7 @@ func testImplementation(cfg *config.Config, authProvider auth.Provider, version 
 
 	// Test 2: List Jobs
 	fmt.Print("  • Testing List Jobs... ")
-	jobs, err := client.Jobs().List(ctx, &interfaces.ListJobsOptions{
+	jobs, err := client.Jobs().List(ctx, &types.ListJobsOptions{
 		Limit: 3,
 	})
 	if err != nil {
@@ -103,7 +93,7 @@ func testImplementation(cfg *config.Config, authProvider auth.Provider, version 
 
 	// Test 3: List Nodes
 	fmt.Print("  • Testing List Nodes... ")
-	nodes, err := client.Nodes().List(ctx, &interfaces.ListNodesOptions{
+	nodes, err := client.Nodes().List(ctx, &types.ListNodesOptions{
 		Limit: 3,
 	})
 	if err != nil {
@@ -114,7 +104,7 @@ func testImplementation(cfg *config.Config, authProvider auth.Provider, version 
 
 	// Test 4: List Partitions
 	fmt.Print("  • Testing List Partitions... ")
-	partitions, err := client.Partitions().List(ctx, &interfaces.ListPartitionsOptions{
+	partitions, err := client.Partitions().List(ctx, &types.ListPartitionsOptions{
 		Limit: 3,
 	})
 	if err != nil {

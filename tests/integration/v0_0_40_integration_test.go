@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -11,7 +14,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 )
 
 // V0040IntegrationTestSuite tests v0.0.40 API integration
@@ -113,8 +116,8 @@ func (suite *V0040IntegrationTestSuite) TestNodeOperations() {
 			node, err := suite.client.Nodes().Get(ctx, firstNode.Name)
 			suite.NoError(err, "Should be able to get specific node")
 			suite.Equal(firstNode.Name, node.Name, "Node names should match")
-			suite.T().Logf("Retrieved node: %s, State: %s, CPUs: %d",
-				node.Name, node.State, node.CPUs)
+			suite.T().Logf("Retrieved node: %s, State: %s, Cpus: %d",
+				node.Name, node.State, node.Cpus)
 		}
 	})
 }
@@ -196,7 +199,7 @@ func (suite *V0040IntegrationTestSuite) TestErrorHandling() {
 	// Test malformed job submission
 	submission := &interfaces.JobSubmission{
 		Name: "", // Empty name should cause error
-		CPUs: -1, // Invalid CPU count
+		Cpus: -1, // Invalid CPU count
 	}
 	_, err = suite.client.Jobs().Submit(ctx, submission)
 	suite.Error(err, "Should fail for malformed submission")
@@ -268,7 +271,7 @@ func (suite *V0040IntegrationTestSuite) TestClusterStatistics() {
 	stats, err := suite.client.Info().Stats(ctx)
 	suite.NoError(err, "Should be able to get cluster statistics")
 	suite.NotNil(stats, "Stats should not be nil")
-	suite.T().Logf("Cluster Stats - Nodes: %d, CPUs: %d, Jobs: %d",
+	suite.T().Logf("Cluster Stats - Nodes: %d, Cpus: %d, Jobs: %d",
 		stats.TotalNodes, stats.TotalCPUs, stats.TotalJobs)
 
 	// Validate stats make sense

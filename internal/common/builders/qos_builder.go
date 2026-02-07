@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jontk/slurm-client/internal/common/types"
+	types "github.com/jontk/slurm-client/api"
 )
 
 // QoSBuilder provides a fluent interface for building QoS objects
@@ -263,68 +263,112 @@ func (b *QoSBuilder) hasFlag(flag string) bool {
 
 // cloneLimits creates a deep copy of QoS limits
 func (b *QoSBuilder) cloneLimits(src *types.QoSLimits) *types.QoSLimits {
+	if src == nil {
+		return nil
+	}
 	dst := &types.QoSLimits{}
 
-	// Clone all pointer fields
-	if src.MaxCPUsPerUser != nil {
-		v := *src.MaxCPUsPerUser
-		dst.MaxCPUsPerUser = &v
+	// Clone top-level fields
+	if src.Factor != nil {
+		v := *src.Factor
+		dst.Factor = &v
 	}
-	if src.MaxJobsPerUser != nil {
-		v := *src.MaxJobsPerUser
-		dst.MaxJobsPerUser = &v
+	if src.GraceTime != nil {
+		v := *src.GraceTime
+		dst.GraceTime = &v
 	}
-	if src.MaxNodesPerUser != nil {
-		v := *src.MaxNodesPerUser
-		dst.MaxNodesPerUser = &v
+
+	// Clone Max limits
+	if src.Max != nil {
+		dst.Max = b.cloneLimitsMax(src.Max)
 	}
-	if src.MaxSubmitJobsPerUser != nil {
-		v := *src.MaxSubmitJobsPerUser
-		dst.MaxSubmitJobsPerUser = &v
+
+	// Clone Min limits
+	if src.Min != nil {
+		dst.Min = b.cloneLimitsMin(src.Min)
 	}
-	if src.MaxCPUsPerAccount != nil {
-		v := *src.MaxCPUsPerAccount
-		dst.MaxCPUsPerAccount = &v
+
+	return dst
+}
+
+// cloneLimitsMax creates a deep copy of QoSLimitsMax
+func (b *QoSBuilder) cloneLimitsMax(src *types.QoSLimitsMax) *types.QoSLimitsMax {
+	if src == nil {
+		return nil
 	}
-	if src.MaxJobsPerAccount != nil {
-		v := *src.MaxJobsPerAccount
-		dst.MaxJobsPerAccount = &v
+	dst := &types.QoSLimitsMax{}
+
+	if src.ActiveJobs != nil {
+		dst.ActiveJobs = &types.QoSLimitsMaxActiveJobs{}
+		if src.ActiveJobs.Accruing != nil {
+			v := *src.ActiveJobs.Accruing
+			dst.ActiveJobs.Accruing = &v
+		}
+		if src.ActiveJobs.Count != nil {
+			v := *src.ActiveJobs.Count
+			dst.ActiveJobs.Count = &v
+		}
 	}
-	if src.MaxNodesPerAccount != nil {
-		v := *src.MaxNodesPerAccount
-		dst.MaxNodesPerAccount = &v
+
+	if src.Jobs != nil {
+		dst.Jobs = &types.QoSLimitsMaxJobs{}
+		if src.Jobs.Count != nil {
+			v := *src.Jobs.Count
+			dst.Jobs.Count = &v
+		}
+		if src.Jobs.ActiveJobs != nil && src.Jobs.ActiveJobs.Per != nil {
+			dst.Jobs.ActiveJobs = &types.QoSLimitsMaxJobsActiveJobs{
+				Per: &types.QoSLimitsMaxJobsActiveJobsPer{},
+			}
+			if src.Jobs.ActiveJobs.Per.User != nil {
+				v := *src.Jobs.ActiveJobs.Per.User
+				dst.Jobs.ActiveJobs.Per.User = &v
+			}
+			if src.Jobs.ActiveJobs.Per.Account != nil {
+				v := *src.Jobs.ActiveJobs.Per.Account
+				dst.Jobs.ActiveJobs.Per.Account = &v
+			}
+		}
+		if src.Jobs.Per != nil {
+			dst.Jobs.Per = &types.QoSLimitsMaxJobsPer{}
+			if src.Jobs.Per.User != nil {
+				v := *src.Jobs.Per.User
+				dst.Jobs.Per.User = &v
+			}
+			if src.Jobs.Per.Account != nil {
+				v := *src.Jobs.Per.Account
+				dst.Jobs.Per.Account = &v
+			}
+		}
 	}
-	if src.MaxCPUsPerJob != nil {
-		v := *src.MaxCPUsPerJob
-		dst.MaxCPUsPerJob = &v
+
+	if src.WallClock != nil && src.WallClock.Per != nil {
+		dst.WallClock = &types.QoSLimitsMaxWallClock{
+			Per: &types.QoSLimitsMaxWallClockPer{},
+		}
+		if src.WallClock.Per.Job != nil {
+			v := *src.WallClock.Per.Job
+			dst.WallClock.Per.Job = &v
+		}
+		if src.WallClock.Per.QoS != nil {
+			v := *src.WallClock.Per.QoS
+			dst.WallClock.Per.QoS = &v
+		}
 	}
-	if src.MaxNodesPerJob != nil {
-		v := *src.MaxNodesPerJob
-		dst.MaxNodesPerJob = &v
+
+	return dst
+}
+
+// cloneLimitsMin creates a deep copy of QoSLimitsMin
+func (b *QoSBuilder) cloneLimitsMin(src *types.QoSLimitsMin) *types.QoSLimitsMin {
+	if src == nil {
+		return nil
 	}
-	if src.MaxWallTimePerJob != nil {
-		v := *src.MaxWallTimePerJob
-		dst.MaxWallTimePerJob = &v
-	}
-	if src.MaxMemoryPerNode != nil {
-		v := *src.MaxMemoryPerNode
-		dst.MaxMemoryPerNode = &v
-	}
-	if src.MaxMemoryPerCPU != nil {
-		v := *src.MaxMemoryPerCPU
-		dst.MaxMemoryPerCPU = &v
-	}
-	if src.MaxBurstBuffer != nil {
-		v := *src.MaxBurstBuffer
-		dst.MaxBurstBuffer = &v
-	}
-	if src.MinCPUsPerJob != nil {
-		v := *src.MinCPUsPerJob
-		dst.MinCPUsPerJob = &v
-	}
-	if src.MinNodesPerJob != nil {
-		v := *src.MinNodesPerJob
-		dst.MinNodesPerJob = &v
+	dst := &types.QoSLimitsMin{}
+
+	if src.PriorityThreshold != nil {
+		v := *src.PriorityThreshold
+		dst.PriorityThreshold = &v
 	}
 
 	return dst
@@ -336,33 +380,69 @@ type QoSLimitsBuilder struct {
 	limits *types.QoSLimits
 }
 
-// WithMaxCPUsPerUser sets the maximum CPUs per user
-func (l *QoSLimitsBuilder) WithMaxCPUsPerUser(cpus int) *QoSLimitsBuilder {
-	if cpus < 0 {
-		l.parent.addError(fmt.Errorf("max CPUs per user must be non-negative, got %d", cpus))
-		return l
+// ensureMaxJobs ensures the Max.Jobs structure is initialized
+func (l *QoSLimitsBuilder) ensureMaxJobs() {
+	if l.limits.Max == nil {
+		l.limits.Max = &types.QoSLimitsMax{}
 	}
-	l.limits.MaxCPUsPerUser = &cpus
-	return l
+	if l.limits.Max.Jobs == nil {
+		l.limits.Max.Jobs = &types.QoSLimitsMaxJobs{}
+	}
 }
 
-// WithMaxJobsPerUser sets the maximum jobs per user
+// ensureMaxJobsActiveJobsPer ensures the Max.Jobs.ActiveJobs.Per structure is initialized
+func (l *QoSLimitsBuilder) ensureMaxJobsActiveJobsPer() {
+	l.ensureMaxJobs()
+	if l.limits.Max.Jobs.ActiveJobs == nil {
+		l.limits.Max.Jobs.ActiveJobs = &types.QoSLimitsMaxJobsActiveJobs{}
+	}
+	if l.limits.Max.Jobs.ActiveJobs.Per == nil {
+		l.limits.Max.Jobs.ActiveJobs.Per = &types.QoSLimitsMaxJobsActiveJobsPer{}
+	}
+}
+
+// ensureMaxJobsPer ensures the Max.Jobs.Per structure is initialized
+func (l *QoSLimitsBuilder) ensureMaxJobsPer() {
+	l.ensureMaxJobs()
+	if l.limits.Max.Jobs.Per == nil {
+		l.limits.Max.Jobs.Per = &types.QoSLimitsMaxJobsPer{}
+	}
+}
+
+// ensureMaxWallClockPer ensures the Max.WallClock.Per structure is initialized
+func (l *QoSLimitsBuilder) ensureMaxWallClockPer() {
+	if l.limits.Max == nil {
+		l.limits.Max = &types.QoSLimitsMax{}
+	}
+	if l.limits.Max.WallClock == nil {
+		l.limits.Max.WallClock = &types.QoSLimitsMaxWallClock{}
+	}
+	if l.limits.Max.WallClock.Per == nil {
+		l.limits.Max.WallClock.Per = &types.QoSLimitsMaxWallClockPer{}
+	}
+}
+
+// WithMaxJobsPerUser sets the maximum running jobs per user
 func (l *QoSLimitsBuilder) WithMaxJobsPerUser(jobs int) *QoSLimitsBuilder {
 	if jobs < 0 {
 		l.parent.addError(fmt.Errorf("max jobs per user must be non-negative, got %d", jobs))
 		return l
 	}
-	l.limits.MaxJobsPerUser = &jobs
+	l.ensureMaxJobsActiveJobsPer()
+	v := uint32(jobs)
+	l.limits.Max.Jobs.ActiveJobs.Per.User = &v
 	return l
 }
 
-// WithMaxNodesPerUser sets the maximum nodes per user
-func (l *QoSLimitsBuilder) WithMaxNodesPerUser(nodes int) *QoSLimitsBuilder {
-	if nodes < 0 {
-		l.parent.addError(fmt.Errorf("max nodes per user must be non-negative, got %d", nodes))
+// WithMaxJobsPerAccount sets the maximum running jobs per account
+func (l *QoSLimitsBuilder) WithMaxJobsPerAccount(jobs int) *QoSLimitsBuilder {
+	if jobs < 0 {
+		l.parent.addError(fmt.Errorf("max jobs per account must be non-negative, got %d", jobs))
 		return l
 	}
-	l.limits.MaxNodesPerUser = &nodes
+	l.ensureMaxJobsActiveJobsPer()
+	v := uint32(jobs)
+	l.limits.Max.Jobs.ActiveJobs.Per.Account = &v
 	return l
 }
 
@@ -372,57 +452,50 @@ func (l *QoSLimitsBuilder) WithMaxSubmitJobsPerUser(jobs int) *QoSLimitsBuilder 
 		l.parent.addError(fmt.Errorf("max submit jobs per user must be non-negative, got %d", jobs))
 		return l
 	}
-	l.limits.MaxSubmitJobsPerUser = &jobs
+	l.ensureMaxJobsPer()
+	v := uint32(jobs)
+	l.limits.Max.Jobs.Per.User = &v
 	return l
 }
 
-// WithMaxCPUsPerAccount sets the maximum CPUs per account
-func (l *QoSLimitsBuilder) WithMaxCPUsPerAccount(cpus int) *QoSLimitsBuilder {
-	if cpus < 0 {
-		l.parent.addError(fmt.Errorf("max CPUs per account must be non-negative, got %d", cpus))
-		return l
-	}
-	l.limits.MaxCPUsPerAccount = &cpus
-	return l
-}
-
-// WithMaxJobsPerAccount sets the maximum jobs per account
-func (l *QoSLimitsBuilder) WithMaxJobsPerAccount(jobs int) *QoSLimitsBuilder {
+// WithMaxSubmitJobsPerAccount sets the maximum submitted jobs per account
+func (l *QoSLimitsBuilder) WithMaxSubmitJobsPerAccount(jobs int) *QoSLimitsBuilder {
 	if jobs < 0 {
-		l.parent.addError(fmt.Errorf("max jobs per account must be non-negative, got %d", jobs))
+		l.parent.addError(fmt.Errorf("max submit jobs per account must be non-negative, got %d", jobs))
 		return l
 	}
-	l.limits.MaxJobsPerAccount = &jobs
+	l.ensureMaxJobsPer()
+	v := uint32(jobs)
+	l.limits.Max.Jobs.Per.Account = &v
 	return l
 }
 
-// WithMaxNodesPerAccount sets the maximum nodes per account
-func (l *QoSLimitsBuilder) WithMaxNodesPerAccount(nodes int) *QoSLimitsBuilder {
-	if nodes < 0 {
-		l.parent.addError(fmt.Errorf("max nodes per account must be non-negative, got %d", nodes))
+// WithGrpJobs sets the maximum number of running jobs for this QoS
+func (l *QoSLimitsBuilder) WithGrpJobs(jobs int) *QoSLimitsBuilder {
+	if jobs < 0 {
+		l.parent.addError(fmt.Errorf("grp jobs must be non-negative, got %d", jobs))
 		return l
 	}
-	l.limits.MaxNodesPerAccount = &nodes
+	if l.limits.Max == nil {
+		l.limits.Max = &types.QoSLimitsMax{}
+	}
+	if l.limits.Max.ActiveJobs == nil {
+		l.limits.Max.ActiveJobs = &types.QoSLimitsMaxActiveJobs{}
+	}
+	v := uint32(jobs)
+	l.limits.Max.ActiveJobs.Count = &v
 	return l
 }
 
-// WithMaxCPUsPerJob sets the maximum CPUs per job
-func (l *QoSLimitsBuilder) WithMaxCPUsPerJob(cpus int) *QoSLimitsBuilder {
-	if cpus < 0 {
-		l.parent.addError(fmt.Errorf("max CPUs per job must be non-negative, got %d", cpus))
+// WithGrpSubmitJobs sets the maximum submitted jobs for this QoS
+func (l *QoSLimitsBuilder) WithGrpSubmitJobs(jobs int) *QoSLimitsBuilder {
+	if jobs < 0 {
+		l.parent.addError(fmt.Errorf("grp submit jobs must be non-negative, got %d", jobs))
 		return l
 	}
-	l.limits.MaxCPUsPerJob = &cpus
-	return l
-}
-
-// WithMaxNodesPerJob sets the maximum nodes per job
-func (l *QoSLimitsBuilder) WithMaxNodesPerJob(nodes int) *QoSLimitsBuilder {
-	if nodes < 0 {
-		l.parent.addError(fmt.Errorf("max nodes per job must be non-negative, got %d", nodes))
-		return l
-	}
-	l.limits.MaxNodesPerJob = &nodes
+	l.ensureMaxJobs()
+	v := uint32(jobs)
+	l.limits.Max.Jobs.Count = &v
 	return l
 }
 
@@ -433,47 +506,57 @@ func (l *QoSLimitsBuilder) WithMaxWallTime(duration time.Duration) *QoSLimitsBui
 		l.parent.addError(fmt.Errorf("max wall time must be non-negative, got %v", duration))
 		return l
 	}
-	l.limits.MaxWallTimePerJob = &minutes
+	l.ensureMaxWallClockPer()
+	v := uint32(minutes)
+	l.limits.Max.WallClock.Per.Job = &v
 	return l
 }
 
-// WithMaxMemoryPerNode sets the maximum memory per node in MB
-func (l *QoSLimitsBuilder) WithMaxMemoryPerNode(mb int64) *QoSLimitsBuilder {
-	if mb < 0 {
-		l.parent.addError(fmt.Errorf("max memory per node must be non-negative, got %d", mb))
+// WithGrpWallTime sets the maximum wall time for all jobs in this QoS
+func (l *QoSLimitsBuilder) WithGrpWallTime(duration time.Duration) *QoSLimitsBuilder {
+	minutes := int(duration.Minutes())
+	if minutes < 0 {
+		l.parent.addError(fmt.Errorf("grp wall time must be non-negative, got %v", duration))
 		return l
 	}
-	l.limits.MaxMemoryPerNode = &mb
+	l.ensureMaxWallClockPer()
+	v := uint32(minutes)
+	l.limits.Max.WallClock.Per.QoS = &v
 	return l
 }
 
-// WithMaxMemoryPerCPU sets the maximum memory per CPU in MB
-func (l *QoSLimitsBuilder) WithMaxMemoryPerCPU(mb int64) *QoSLimitsBuilder {
-	if mb < 0 {
-		l.parent.addError(fmt.Errorf("max memory per CPU must be non-negative, got %d", mb))
+// WithGraceTime sets the preemption grace time in seconds
+func (l *QoSLimitsBuilder) WithGraceTime(seconds int) *QoSLimitsBuilder {
+	if seconds < 0 {
+		l.parent.addError(fmt.Errorf("grace time must be non-negative, got %d", seconds))
 		return l
 	}
-	l.limits.MaxMemoryPerCPU = &mb
+	v := int32(seconds)
+	l.limits.GraceTime = &v
 	return l
 }
 
-// WithMinCPUsPerJob sets the minimum CPUs per job
-func (l *QoSLimitsBuilder) WithMinCPUsPerJob(cpus int) *QoSLimitsBuilder {
-	if cpus < 0 {
-		l.parent.addError(fmt.Errorf("min CPUs per job must be non-negative, got %d", cpus))
+// WithFactor sets the limit factor for TRES
+func (l *QoSLimitsBuilder) WithFactor(factor float64) *QoSLimitsBuilder {
+	if factor < 0 {
+		l.parent.addError(fmt.Errorf("factor must be non-negative, got %f", factor))
 		return l
 	}
-	l.limits.MinCPUsPerJob = &cpus
+	l.limits.Factor = &factor
 	return l
 }
 
-// WithMinNodesPerJob sets the minimum nodes per job
-func (l *QoSLimitsBuilder) WithMinNodesPerJob(nodes int) *QoSLimitsBuilder {
-	if nodes < 0 {
-		l.parent.addError(fmt.Errorf("min nodes per job must be non-negative, got %d", nodes))
+// WithMinPriorityThreshold sets the minimum priority threshold
+func (l *QoSLimitsBuilder) WithMinPriorityThreshold(threshold int) *QoSLimitsBuilder {
+	if threshold < 0 {
+		l.parent.addError(fmt.Errorf("min priority threshold must be non-negative, got %d", threshold))
 		return l
 	}
-	l.limits.MinNodesPerJob = &nodes
+	if l.limits.Min == nil {
+		l.limits.Min = &types.QoSLimitsMin{}
+	}
+	v := uint32(threshold)
+	l.limits.Min.PriorityThreshold = &v
 	return l
 }
 

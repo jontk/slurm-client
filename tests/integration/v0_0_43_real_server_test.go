@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
@@ -15,7 +18,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	"github.com/jontk/slurm-client/pkg/errors"
@@ -32,9 +35,9 @@ type V0043RealServerTestSuite struct {
 
 func (suite *V0043RealServerTestSuite) SetupSuite() {
 	// Use the provided configuration
-	suite.serverURL = "http://rocky9.ar.jontk.com:6820"
+	suite.serverURL = "http://localhost:6820"
 	suite.version = "v0.0.43"
-	suite.token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjI2NTM4Mjk5NzYsImlhdCI6MTc1MzgyOTk3Niwic3VuIjoicm9vdCJ9.-z8Cq_wHuOxNJ7KHHTboX3l9r6JBtSD1RxQUgQR9owE"
+	suite.token = "your-jwt-token-here"
 
 	// Create client
 	ctx := context.Background()
@@ -127,7 +130,7 @@ func (suite *V0043RealServerTestSuite) TestJobManager() {
 			Script:    "#!/bin/bash\necho 'Testing v0.0.43'\nhostname\ndate\nsleep 10",
 			Partition: "debug",
 			Nodes:     1,
-			CPUs:      1,
+			Cpus:      1,
 			TimeLimit: 5,
 		}
 
@@ -176,8 +179,8 @@ func (suite *V0043RealServerTestSuite) TestNodeManager() {
 
 		for i, node := range nodes.Nodes {
 			if i < 3 {
-				suite.T().Logf("  Node: %s, State: %s, CPUs: %d",
-					node.Name, node.State, node.CPUs)
+				suite.T().Logf("  Node: %s, State: %s, Cpus: %d",
+					node.Name, node.State, node.Cpus)
 			}
 		}
 	})

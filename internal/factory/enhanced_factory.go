@@ -5,6 +5,7 @@ package factory
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"time"
 
@@ -199,7 +200,7 @@ func (f *ClientFactory) buildEnhancedHTTPClient(ctx context.Context) *http.Clien
 	// Start with base client or pooled client
 	var baseClient *http.Client
 
-	// Use connection pool if configured
+	// Use connection pool if configured (pool handles InsecureSkipVerify via its config)
 	if f.enhanced != nil && f.enhanced.PoolConfig != nil {
 		logger := f.enhanced.Logger
 		if logger == nil {
@@ -212,8 +213,20 @@ func (f *ClientFactory) buildEnhancedHTTPClient(ctx context.Context) *http.Clien
 	} else if f.httpClient != nil {
 		baseClient = f.httpClient
 	} else {
+		// Create default client with TLS config from factory config
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+
+		// Apply InsecureSkipVerify from config if set
+		if f.config != nil && f.config.InsecureSkipVerify {
+			// #nosec G402 -- InsecureSkipVerify is user-configurable and defaults to false (secure)
+			transport.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true,
+			}
+		}
+
 		baseClient = &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout:   30 * time.Second,
+			Transport: transport,
 		}
 	}
 
@@ -249,7 +262,17 @@ func (f *ClientFactory) buildMiddlewareChain(ctx context.Context) []middleware.M
 	_ = ctx // Ensure context is used for proper contextcheck linting
 
 	// Add timeout middleware
-	if f.enhanced.DefaultTimeout > 0 {
+	if f.enhanced.TimeoutConfig != nil {
+		// Use operation-specific timeouts
+		middlewares = append(middlewares, middleware.WithTimeoutConfig(&middleware.TimeoutConfig{
+			Default: f.enhanced.TimeoutConfig.Default,
+			Read:    f.enhanced.TimeoutConfig.Read,
+			Write:   f.enhanced.TimeoutConfig.Write,
+			List:    f.enhanced.TimeoutConfig.List,
+			Watch:   f.enhanced.TimeoutConfig.Watch,
+		}))
+	} else if f.enhanced.DefaultTimeout > 0 {
+		// Fallback to simple timeout
 		middlewares = append(middlewares, middleware.WithTimeout(f.enhanced.DefaultTimeout))
 	}
 
@@ -264,12 +287,12 @@ func (f *ClientFactory) buildMiddlewareChain(ctx context.Context) []middleware.M
 	}
 
 	// Add retry middleware
-	if f.enhanced.RetryBackoff != nil || f.enhanced.MaxRetries > 0 {
-		maxRetries := f.enhanced.MaxRetries
-		if maxRetries == 0 {
-			maxRetries = 3 // default
-		}
-		middlewares = append(middlewares, middleware.WithRetry(maxRetries, middleware.DefaultShouldRetry))
+	if f.enhanced.RetryBackoff != nil {
+		// Use custom retry policy with configurable backoff
+		middlewares = append(middlewares, middleware.WithRetryPolicy(f.enhanced.RetryBackoff))
+	} else if f.enhanced.MaxRetries > 0 {
+		// Fallback to simple retry with default backoff
+		middlewares = append(middlewares, middleware.WithRetry(f.enhanced.MaxRetries, middleware.DefaultShouldRetry))
 	}
 
 	// Add circuit breaker

@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/internal/factory"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
@@ -33,7 +33,7 @@ func main() {
 
 	// Create configuration
 	cfg := config.NewDefault()
-	cfg.BaseURL = "http://rocky9.ar.jontk.com:6820"
+	cfg.BaseURL = "http://localhost:6820"
 	cfg.Debug = true
 
 	// Create JWT authentication provider
@@ -60,11 +60,11 @@ func main() {
 	// Test job submission
 	ctx := context.Background()
 
-	fmt.Println("\n=== Testing Job Submission with Wrapper Client ===")
-	testJob := &interfaces.JobSubmission{
-		Name:       fmt.Sprintf("wrapper-test-%s-%d", version, time.Now().Unix()),
+	fmt.Println("\n=== Testing Job Submission with Adapter Client ===")
+	testJob := &types.JobSubmission{
+		Name:       fmt.Sprintf("adapter-test-%s-%d", version, time.Now().Unix()),
 		Partition:  "normal",
-		Script:     "#!/bin/bash\necho 'Hello from wrapper test'\necho 'PATH=$PATH'\necho 'TEST_VAR=$TEST_VAR'\nsleep 10\necho 'Done'",
+		Script:     "#!/bin/bash\necho 'Hello from adapter test'\necho 'PATH=$PATH'\necho 'TEST_VAR=$TEST_VAR'\nsleep 10\necho 'Done'",
 		TimeLimit:  1, // 1 minute
 		Nodes:      1,
 		WorkingDir: "/tmp", // Add working directory
@@ -72,7 +72,7 @@ func main() {
 			"PATH":     "/usr/bin:/bin",
 			"USER":     "root",
 			"HOME":     "/tmp",
-			"TEST_VAR": "wrapper_test",
+			"TEST_VAR": "adapter_test",
 		},
 	}
 
@@ -81,15 +81,15 @@ func main() {
 		log.Fatalf("Failed to submit job: %v", err)
 	}
 
-	fmt.Printf("Successfully submitted job with ID: %s\n", submitResp.JobID)
+	fmt.Printf("Successfully submitted job with ID: %d\n", submitResp.JobId)
 
 	// Cancel the job
-	fmt.Printf("\nCancelling job %s...\n", submitResp.JobID)
-	err = client.Jobs().Cancel(ctx, submitResp.JobID)
+	fmt.Printf("\nCancelling job %d...\n", submitResp.JobId)
+	err = client.Jobs().Cancel(ctx, fmt.Sprintf("%d", submitResp.JobId))
 	if err != nil {
-		log.Printf("Failed to cancel job %s: %v", submitResp.JobID, err)
+		log.Printf("Failed to cancel job %d: %v", submitResp.JobId, err)
 	} else {
-		fmt.Printf("Successfully cancelled job %s\n", submitResp.JobID)
+		fmt.Printf("Successfully cancelled job %d\n", submitResp.JobId)
 	}
 
 	fmt.Println("\n=== Test completed successfully! ===")

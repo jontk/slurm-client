@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
+// NOTE: Tests updated for api/ package type changes.
+// Job struct fields: ID->JobID (*int32), CPUs (*uint32), Memory->MemoryPerNode (*uint64 in MB)
+// StartTime/EndTime are now value types (time.Time), not pointers
+
 package history
 
 import (
@@ -9,10 +13,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jontk/slurm-client/interfaces"
+	types "github.com/jontk/slurm-client/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// Helper functions for pointer types
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(u uint32) *uint32 { return &u }
+func ptrUint64(u uint64) *uint64 { return &u }
+func ptrString(s string) *string { return &s }
 
 func TestPerformanceHistoryTracker_GetJobPerformanceHistory(t *testing.T) {
 	tracker := NewPerformanceHistoryTracker()
@@ -20,13 +30,13 @@ func TestPerformanceHistoryTracker_GetJobPerformanceHistory(t *testing.T) {
 	// Create test job
 	startTime := time.Now().Add(-2 * time.Hour)
 	endTime := time.Now()
-	job := &interfaces.Job{
-		ID:        "test-job-123",
-		Name:      "test-job",
-		CPUs:      16,
-		Memory:    64 * 1024 * 1024 * 1024,
-		StartTime: &startTime,
-		EndTime:   &endTime,
+	job := &types.Job{
+		JobID:         ptrInt32(123),
+		Name:          ptrString("test-job"),
+		CPUs:          ptrUint32(16),
+		MemoryPerNode: ptrUint64(64 * 1024), // 64GB in MB
+		StartTime:     startTime,
+		EndTime:       endTime,
 	}
 
 	// Create test samples
@@ -38,8 +48,8 @@ func TestPerformanceHistoryTracker_GetJobPerformanceHistory(t *testing.T) {
 	require.NotNil(t, history)
 
 	// Verify basic structure
-	assert.Equal(t, job.ID, history.JobID)
-	assert.Equal(t, job.Name, history.JobName)
+	assert.Equal(t, "123", history.JobID)
+	assert.Equal(t, "test-job", history.JobName)
 	assert.Equal(t, startTime, history.StartTime)
 	assert.Equal(t, endTime, history.EndTime)
 
@@ -65,13 +75,13 @@ func TestPerformanceHistoryTracker_GetJobPerformanceHistory_WithOptions(t *testi
 
 	startTime := time.Now().Add(-4 * time.Hour)
 	endTime := time.Now()
-	job := &interfaces.Job{
-		ID:        "test-job-456",
-		Name:      "filtered-job",
-		CPUs:      8,
-		Memory:    32 * 1024 * 1024 * 1024,
-		StartTime: &startTime,
-		EndTime:   &endTime,
+	job := &types.Job{
+		JobID:         ptrInt32(456),
+		Name:          ptrString("filtered-job"),
+		CPUs:          ptrUint32(8),
+		MemoryPerNode: ptrUint64(32 * 1024), // 32GB in MB
+		StartTime:     startTime,
+		EndTime:       endTime,
 	}
 
 	samples := generateTestSamples(startTime, endTime, 24) // 24 samples over 4 hours
@@ -79,7 +89,7 @@ func TestPerformanceHistoryTracker_GetJobPerformanceHistory_WithOptions(t *testi
 	// Test with time range filtering
 	filterStart := startTime.Add(1 * time.Hour)
 	filterEnd := endTime.Add(-1 * time.Hour)
-	opts := &interfaces.PerformanceHistoryOptions{
+	opts := &types.PerformanceHistoryOptions{
 		StartTime:     &filterStart,
 		EndTime:       &filterEnd,
 		Interval:      "hourly",
@@ -103,7 +113,7 @@ func TestPerformanceHistoryTracker_FilterSamplesByTimeRange(t *testing.T) {
 	tracker := NewPerformanceHistoryTracker()
 
 	baseTime := time.Now()
-	samples := []interfaces.JobComprehensiveAnalytics{
+	samples := []types.JobComprehensiveAnalytics{
 		{StartTime: baseTime.Add(-3 * time.Hour)},
 		{StartTime: baseTime.Add(-2 * time.Hour)},
 		{StartTime: baseTime.Add(-1 * time.Hour)},
@@ -112,7 +122,7 @@ func TestPerformanceHistoryTracker_FilterSamplesByTimeRange(t *testing.T) {
 
 	// Test with start time filter
 	startTime := baseTime.Add(-2*time.Hour - 30*time.Minute)
-	opts := &interfaces.PerformanceHistoryOptions{
+	opts := &types.PerformanceHistoryOptions{
 		StartTime: &startTime,
 	}
 
@@ -121,7 +131,7 @@ func TestPerformanceHistoryTracker_FilterSamplesByTimeRange(t *testing.T) {
 
 	// Test with end time filter
 	endTime := baseTime.Add(-30 * time.Minute)
-	opts = &interfaces.PerformanceHistoryOptions{
+	opts = &types.PerformanceHistoryOptions{
 		EndTime: &endTime,
 	}
 
@@ -129,7 +139,7 @@ func TestPerformanceHistoryTracker_FilterSamplesByTimeRange(t *testing.T) {
 	assert.Len(t, filtered, 3) // Should exclude the last sample
 
 	// Test with both filters
-	opts = &interfaces.PerformanceHistoryOptions{
+	opts = &types.PerformanceHistoryOptions{
 		StartTime: &startTime,
 		EndTime:   &endTime,
 	}
@@ -177,7 +187,7 @@ func TestPerformanceHistoryTracker_DetermineInterval(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			samples := make([]interfaces.JobComprehensiveAnalytics, tt.sampleCount)
+			samples := make([]types.JobComprehensiveAnalytics, tt.sampleCount)
 			for i := range samples {
 				samples[i].StartTime = baseTime.Add(time.Duration(i) * tt.duration / time.Duration(tt.sampleCount))
 			}
@@ -188,11 +198,11 @@ func TestPerformanceHistoryTracker_DetermineInterval(t *testing.T) {
 	}
 
 	// Test with explicit interval option
-	samples := []interfaces.JobComprehensiveAnalytics{
+	samples := []types.JobComprehensiveAnalytics{
 		{StartTime: baseTime},
 		{StartTime: baseTime.Add(time.Hour)},
 	}
-	opts := &interfaces.PerformanceHistoryOptions{
+	opts := &types.PerformanceHistoryOptions{
 		Interval: "daily",
 	}
 
@@ -241,7 +251,7 @@ func TestPerformanceHistoryTracker_DetectAnomalies(t *testing.T) {
 
 	// Create snapshots with some anomalies
 	baseTime := time.Now()
-	snapshots := []interfaces.PerformanceSnapshot{
+	snapshots := []types.PerformanceSnapshot{
 		{Timestamp: baseTime.Add(-4 * time.Hour), CPUUtilization: 75.0, MemoryUtilization: 60.0, Efficiency: 70.0},
 		{Timestamp: baseTime.Add(-3 * time.Hour), CPUUtilization: 78.0, MemoryUtilization: 62.0, Efficiency: 72.0},
 		{Timestamp: baseTime.Add(-2 * time.Hour), CPUUtilization: 95.0, MemoryUtilization: 58.0, Efficiency: 68.0}, // CPU spike
@@ -249,7 +259,7 @@ func TestPerformanceHistoryTracker_DetectAnomalies(t *testing.T) {
 		{Timestamp: baseTime, CPUUtilization: 74.0, MemoryUtilization: 61.0, Efficiency: 45.0},                     // Efficiency drop
 	}
 
-	stats := interfaces.PerformanceStatistics{
+	stats := types.PerformanceStatistics{
 		AverageCPU:        75.6,
 		AverageMemory:     66.2,
 		AverageIO:         150.0,
@@ -298,23 +308,23 @@ func TestPerformanceHistoryTracker_DetectAnomalies(t *testing.T) {
 func TestPerformanceHistoryTracker_CalculatePerformanceStatistics(t *testing.T) {
 	tracker := NewPerformanceHistoryTracker()
 
-	samples := []interfaces.JobComprehensiveAnalytics{
+	samples := []types.JobComprehensiveAnalytics{
 		{
-			CPUAnalytics:      &interfaces.CPUAnalytics{UtilizationPercent: 70.0},
-			MemoryAnalytics:   &interfaces.MemoryAnalytics{UtilizationPercent: 65.0},
-			IOAnalytics:       &interfaces.IOAnalytics{AverageReadBandwidth: 100.0, AverageWriteBandwidth: 50.0},
+			CPUAnalytics:      &types.CPUAnalytics{UtilizationPercent: 70.0},
+			MemoryAnalytics:   &types.MemoryAnalytics{UtilizationPercent: 65.0},
+			IOAnalytics:       &types.IOAnalytics{AverageReadBandwidth: 100.0, AverageWriteBandwidth: 50.0},
 			OverallEfficiency: 68.0,
 		},
 		{
-			CPUAnalytics:      &interfaces.CPUAnalytics{UtilizationPercent: 80.0},
-			MemoryAnalytics:   &interfaces.MemoryAnalytics{UtilizationPercent: 75.0},
-			IOAnalytics:       &interfaces.IOAnalytics{AverageReadBandwidth: 120.0, AverageWriteBandwidth: 60.0},
+			CPUAnalytics:      &types.CPUAnalytics{UtilizationPercent: 80.0},
+			MemoryAnalytics:   &types.MemoryAnalytics{UtilizationPercent: 75.0},
+			IOAnalytics:       &types.IOAnalytics{AverageReadBandwidth: 120.0, AverageWriteBandwidth: 60.0},
 			OverallEfficiency: 78.0,
 		},
 		{
-			CPUAnalytics:      &interfaces.CPUAnalytics{UtilizationPercent: 75.0},
-			MemoryAnalytics:   &interfaces.MemoryAnalytics{UtilizationPercent: 70.0},
-			IOAnalytics:       &interfaces.IOAnalytics{AverageReadBandwidth: 110.0, AverageWriteBandwidth: 55.0},
+			CPUAnalytics:      &types.CPUAnalytics{UtilizationPercent: 75.0},
+			MemoryAnalytics:   &types.MemoryAnalytics{UtilizationPercent: 70.0},
+			IOAnalytics:       &types.IOAnalytics{AverageReadBandwidth: 110.0, AverageWriteBandwidth: 55.0},
 			OverallEfficiency: 73.0,
 		},
 	}
@@ -376,32 +386,32 @@ func TestPerformanceHistoryTracker_ErrorCases(t *testing.T) {
 	tracker := NewPerformanceHistoryTracker()
 
 	// Test with nil job
-	_, err := tracker.GetJobPerformanceHistory(context.Background(), nil, []interfaces.JobComprehensiveAnalytics{}, nil)
+	_, err := tracker.GetJobPerformanceHistory(context.Background(), nil, []types.JobComprehensiveAnalytics{}, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "job cannot be nil")
 
 	// Test with empty samples
-	job := &interfaces.Job{ID: "test"}
-	_, err = tracker.GetJobPerformanceHistory(context.Background(), job, []interfaces.JobComprehensiveAnalytics{}, nil)
+	job := &types.Job{JobID: ptrInt32(999)}
+	_, err = tracker.GetJobPerformanceHistory(context.Background(), job, []types.JobComprehensiveAnalytics{}, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "no performance samples provided")
 
 	// Test with samples filtered out
 	startTime := time.Now().Add(-2 * time.Hour)
 	endTime := time.Now()
-	job = &interfaces.Job{
-		ID:        "test",
-		StartTime: &startTime,
-		EndTime:   &endTime,
+	job = &types.Job{
+		JobID:     ptrInt32(999),
+		StartTime: startTime,
+		EndTime:   endTime,
 	}
 
-	samples := []interfaces.JobComprehensiveAnalytics{
+	samples := []types.JobComprehensiveAnalytics{
 		{StartTime: time.Now().Add(-5 * time.Hour)}, // Outside range
 	}
 
 	filterStart := time.Now().Add(-1 * time.Hour)
 	filterEnd := time.Now()
-	opts := &interfaces.PerformanceHistoryOptions{
+	opts := &types.PerformanceHistoryOptions{
 		StartTime: &filterStart,
 		EndTime:   &filterEnd,
 	}
@@ -415,7 +425,7 @@ func TestPerformanceHistoryTracker_GroupSamplesByInterval(t *testing.T) {
 	tracker := NewPerformanceHistoryTracker()
 
 	baseTime := time.Now().Truncate(time.Hour)
-	samples := []interfaces.JobComprehensiveAnalytics{
+	samples := []types.JobComprehensiveAnalytics{
 		{StartTime: baseTime},
 		{StartTime: baseTime.Add(30 * time.Minute)},             // Same hour
 		{StartTime: baseTime.Add(1*time.Hour + 15*time.Minute)}, // Next hour
@@ -442,19 +452,19 @@ func TestPerformanceHistoryTracker_CreateSnapshot(t *testing.T) {
 	tracker := NewPerformanceHistoryTracker()
 
 	baseTime := time.Now()
-	group := []interfaces.JobComprehensiveAnalytics{
+	group := []types.JobComprehensiveAnalytics{
 		{
 			StartTime:         baseTime,
-			CPUAnalytics:      &interfaces.CPUAnalytics{UtilizationPercent: 70.0},
-			MemoryAnalytics:   &interfaces.MemoryAnalytics{UtilizationPercent: 60.0},
-			IOAnalytics:       &interfaces.IOAnalytics{AverageReadBandwidth: 100.0, AverageWriteBandwidth: 50.0},
+			CPUAnalytics:      &types.CPUAnalytics{UtilizationPercent: 70.0},
+			MemoryAnalytics:   &types.MemoryAnalytics{UtilizationPercent: 60.0},
+			IOAnalytics:       &types.IOAnalytics{AverageReadBandwidth: 100.0, AverageWriteBandwidth: 50.0},
 			OverallEfficiency: 65.0,
 		},
 		{
 			StartTime:         baseTime.Add(15 * time.Minute),
-			CPUAnalytics:      &interfaces.CPUAnalytics{UtilizationPercent: 80.0},
-			MemoryAnalytics:   &interfaces.MemoryAnalytics{UtilizationPercent: 70.0},
-			IOAnalytics:       &interfaces.IOAnalytics{AverageReadBandwidth: 120.0, AverageWriteBandwidth: 60.0},
+			CPUAnalytics:      &types.CPUAnalytics{UtilizationPercent: 80.0},
+			MemoryAnalytics:   &types.MemoryAnalytics{UtilizationPercent: 70.0},
+			IOAnalytics:       &types.IOAnalytics{AverageReadBandwidth: 120.0, AverageWriteBandwidth: 60.0},
 			OverallEfficiency: 75.0,
 		},
 	}
@@ -472,8 +482,8 @@ func TestPerformanceHistoryTracker_CreateSnapshot(t *testing.T) {
 }
 
 // Helper function to generate test samples
-func generateTestSamples(startTime, endTime time.Time, count int) []interfaces.JobComprehensiveAnalytics {
-	samples := make([]interfaces.JobComprehensiveAnalytics, count)
+func generateTestSamples(startTime, endTime time.Time, count int) []types.JobComprehensiveAnalytics {
+	samples := make([]types.JobComprehensiveAnalytics, count)
 	duration := endTime.Sub(startTime)
 	interval := duration / time.Duration(count)
 
@@ -487,16 +497,16 @@ func generateTestSamples(startTime, endTime time.Time, count int) []interfaces.J
 		ioUtil := 50.0 + 20.0*(1.0-progress)                // Gradually decreasing 70-50%
 		efficiency := (cpuUtil + memUtil + ioUtil) / 3.0
 
-		samples[i] = interfaces.JobComprehensiveAnalytics{
+		samples[i] = types.JobComprehensiveAnalytics{
 			JobID:     1,
 			StartTime: timestamp,
-			CPUAnalytics: &interfaces.CPUAnalytics{
+			CPUAnalytics: &types.CPUAnalytics{
 				UtilizationPercent: cpuUtil,
 			},
-			MemoryAnalytics: &interfaces.MemoryAnalytics{
+			MemoryAnalytics: &types.MemoryAnalytics{
 				UtilizationPercent: memUtil,
 			},
-			IOAnalytics: &interfaces.IOAnalytics{
+			IOAnalytics: &types.IOAnalytics{
 				AverageReadBandwidth:  ioUtil * 2.0,
 				AverageWriteBandwidth: ioUtil * 1.0,
 			},

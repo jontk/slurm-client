@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client/pkg/logging"
+	"github.com/jontk/slurm-client/pkg/retry"
 )
 
 // Middleware is a function that wraps an http.RoundTripper
@@ -64,6 +65,57 @@ func WithTimeout(timeout time.Duration) Middleware {
 			return next.RoundTrip(req)
 		})
 	}
+}
+
+// TimeoutConfig holds operation-specific timeout configuration
+type TimeoutConfig struct {
+	Default time.Duration // Default timeout for all operations
+	Read    time.Duration // Timeout for GET requests
+	Write   time.Duration // Timeout for POST, PUT, DELETE requests
+	List    time.Duration // Timeout for list operations (not distinguishable at middleware level, uses Read)
+	Watch   time.Duration // Timeout for watch operations (long-polling)
+}
+
+// WithTimeoutConfig adds operation-specific timeouts based on HTTP method
+func WithTimeoutConfig(config *TimeoutConfig) Middleware {
+	return func(next http.RoundTripper) http.RoundTripper {
+		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			ctx := req.Context()
+
+			// Only add timeout if context doesn't already have a deadline
+			if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+				timeout := selectTimeout(config, req.Method)
+				if timeout > 0 {
+					var cancel context.CancelFunc
+					ctx, cancel = context.WithTimeout(ctx, timeout)
+					defer cancel()
+					req = req.WithContext(ctx)
+				}
+			}
+
+			return next.RoundTrip(req)
+		})
+	}
+}
+
+// selectTimeout returns the appropriate timeout based on HTTP method
+func selectTimeout(config *TimeoutConfig, method string) time.Duration {
+	if config == nil {
+		return 0
+	}
+
+	switch method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions:
+		if config.Read > 0 {
+			return config.Read
+		}
+	case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
+		if config.Write > 0 {
+			return config.Write
+		}
+	}
+
+	return config.Default
 }
 
 // WithLogging adds structured logging to requests
@@ -192,6 +244,55 @@ func calculateBackoff(attempt int) time.Duration {
 	base := time.Duration(1<<uint(attempt)) * time.Second
 	jitter := time.Duration(float64(base) * 0.1)
 	return base + jitter
+}
+
+// WithRetryPolicy adds retry logic using a custom retry.Policy for backoff configuration
+func WithRetryPolicy(policy retry.Policy) Middleware {
+	return func(next http.RoundTripper) http.RoundTripper {
+		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			var lastErr error
+			var lastResp *http.Response
+
+			maxAttempts := policy.MaxRetries() + 1 // MaxRetries is number of retries, not total attempts
+			for attempt := range maxAttempts {
+				// Clone request for retry
+				reqCopy := cloneRequest(req)
+
+				resp, err := next.RoundTrip(reqCopy)
+
+				// Check if we should retry using the policy
+				if !policy.ShouldRetry(req.Context(), resp, err, attempt) {
+					return resp, err
+				}
+
+				// Close response body if present
+				if resp != nil && resp.Body != nil {
+					_, _ = io.Copy(io.Discard, resp.Body)
+					_ = resp.Body.Close()
+				}
+
+				lastErr = err
+				lastResp = resp
+
+				// Use policy's wait time for backoff
+				if attempt < maxAttempts-1 {
+					waitTime := policy.WaitTime(attempt)
+					select {
+					case <-time.After(waitTime):
+						// Continue to next attempt
+					case <-req.Context().Done():
+						return nil, req.Context().Err()
+					}
+				}
+			}
+
+			// Return last response/error
+			if lastErr != nil {
+				return nil, fmt.Errorf("all %d attempts failed: %w", maxAttempts, lastErr)
+			}
+			return lastResp, nil
+		})
+	}
 }
 
 // WithHeaders adds custom headers to requests

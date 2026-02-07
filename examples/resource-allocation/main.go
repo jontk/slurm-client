@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
@@ -58,7 +57,7 @@ func main() {
 // allocateGPUResources demonstrates GPU resource allocation patterns
 func allocateGPUResources(ctx context.Context, client slurm.SlurmClient) {
 	// Single GPU job
-	singleGPUJob := &interfaces.JobSubmission{
+	singleGPUJob := &slurm.JobSubmission{
 		Name: "single-gpu-job",
 		Script: `#!/bin/bash
 #SBATCH --gres=gpu:1
@@ -85,11 +84,11 @@ python3 train_model.py --gpu 0 --batch-size 128
 	if err != nil {
 		log.Printf("Failed to submit single GPU job: %v", err)
 	} else {
-		fmt.Printf("Single GPU job submitted: %s\n", resp1.JobID)
+		fmt.Printf("Single GPU job submitted: %s\n", fmt.Sprintf("%d", resp1.JobId))
 	}
 
 	// Multi-GPU job
-	multiGPUJob := &interfaces.JobSubmission{
+	multiGPUJob := &slurm.JobSubmission{
 		Name: "multi-gpu-job",
 		Script: `#!/bin/bash
 #SBATCH --gres=gpu:4
@@ -124,11 +123,11 @@ srun python3 distributed_train.py \
 	if err != nil {
 		log.Printf("Failed to submit multi-GPU job: %v", err)
 	} else {
-		fmt.Printf("Multi-GPU job submitted: %s\n", resp2.JobID)
+		fmt.Printf("Multi-GPU job submitted: %s\n", fmt.Sprintf("%d", resp2.JobId))
 	}
 
 	// GPU type-specific job
-	gpuTypeJob := &interfaces.JobSubmission{
+	gpuTypeJob := &slurm.JobSubmission{
 		Name: "gpu-type-specific",
 		Script: `#!/bin/bash
 #SBATCH --gres=gpu:a100:2
@@ -154,14 +153,14 @@ python3 inference.py --model large_model.pt --precision fp16
 	if err != nil {
 		log.Printf("Failed to submit GPU type-specific job: %v", err)
 	} else {
-		fmt.Printf("GPU type-specific job submitted: %s\n", resp3.JobID)
+		fmt.Printf("GPU type-specific job submitted: %s\n", fmt.Sprintf("%d", resp3.JobId))
 	}
 }
 
 // allocateHighMemoryJobs demonstrates memory-intensive job patterns
 func allocateHighMemoryJobs(ctx context.Context, client slurm.SlurmClient) {
 	// Standard memory job
-	standardMemJob := &interfaces.JobSubmission{
+	standardMemJob := &slurm.JobSubmission{
 		Name: "standard-memory-job",
 		Script: `#!/bin/bash
 echo "Allocated memory: ${SLURM_MEM_PER_NODE}MB"
@@ -180,11 +179,11 @@ python3 analyze_data.py --max-memory ${SLURM_MEM_PER_NODE}
 	if err != nil {
 		log.Printf("Failed to submit standard memory job: %v", err)
 	} else {
-		fmt.Printf("Standard memory job submitted: %s (4GB per CPU)\n", resp1.JobID)
+		fmt.Printf("Standard memory job submitted: %s (4GB per CPU)\n", fmt.Sprintf("%d", resp1.JobId))
 	}
 
 	// High memory job with specific memory-per-cpu
-	highMemJob := &interfaces.JobSubmission{
+	highMemJob := &slurm.JobSubmission{
 		Name: "high-memory-job",
 		Script: `#!/bin/bash
 #SBATCH --mem-per-cpu=32G
@@ -211,11 +210,11 @@ python3 process_large_dataset.py --input /data/huge_file.csv
 	if err != nil {
 		log.Printf("Failed to submit high memory job: %v", err)
 	} else {
-		fmt.Printf("High memory job submitted: %s (32GB per CPU)\n", resp2.JobID)
+		fmt.Printf("High memory job submitted: %s (32GB per CPU)\n", fmt.Sprintf("%d", resp2.JobId))
 	}
 
 	// Memory reservation pattern
-	memReserveJob := &interfaces.JobSubmission{
+	memReserveJob := &slurm.JobSubmission{
 		Name: "memory-reservation",
 		Script: `#!/bin/bash
 #SBATCH --mem=0  # Request all available memory on the node
@@ -242,14 +241,14 @@ echo "Total node memory: $(free -h | grep Mem | awk '{print $2}')"
 	if err != nil {
 		log.Printf("Failed to submit memory reservation job: %v", err)
 	} else {
-		fmt.Printf("Memory reservation job submitted: %s (exclusive node)\n", resp3.JobID)
+		fmt.Printf("Memory reservation job submitted: %s (exclusive node)\n", fmt.Sprintf("%d", resp3.JobId))
 	}
 }
 
 // allocateWithNodeConstraints demonstrates node-specific resource constraints
 func allocateWithNodeConstraints(ctx context.Context, client slurm.SlurmClient) {
 	// CPU architecture constraint
-	archJob := &interfaces.JobSubmission{
+	archJob := &slurm.JobSubmission{
 		Name: "arch-specific-job",
 		Script: `#!/bin/bash
 #SBATCH --constraint="haswell|broadwell"
@@ -274,11 +273,11 @@ echo "Node: $SLURMD_NODENAME"
 	if err != nil {
 		log.Printf("Failed to submit architecture-specific job: %v", err)
 	} else {
-		fmt.Printf("Architecture-specific job submitted: %s\n", resp1.JobID)
+		fmt.Printf("Architecture-specific job submitted: %s\n", fmt.Sprintf("%d", resp1.JobId))
 	}
 
 	// Network topology constraint
-	networkJob := &interfaces.JobSubmission{
+	networkJob := &slurm.JobSubmission{
 		Name: "network-topology-job",
 		Script: `#!/bin/bash
 #SBATCH --constraint="ib&rack3"
@@ -307,11 +306,11 @@ mpirun -np $SLURM_NTASKS ./mpi_application
 	if err != nil {
 		log.Printf("Failed to submit network topology job: %v", err)
 	} else {
-		fmt.Printf("Network topology job submitted: %s\n", resp2.JobID)
+		fmt.Printf("Network topology job submitted: %s\n", fmt.Sprintf("%d", resp2.JobId))
 	}
 
 	// Feature-based constraint
-	featureJob := &interfaces.JobSubmission{
+	featureJob := &slurm.JobSubmission{
 		Name: "feature-based-job",
 		Script: `#!/bin/bash
 #SBATCH --constraint="ssd&gpu&centos7"
@@ -339,14 +338,14 @@ cat /etc/redhat-release      # Show OS version
 	if err != nil {
 		log.Printf("Failed to submit feature-based job: %v", err)
 	} else {
-		fmt.Printf("Feature-based job submitted: %s\n", resp3.JobID)
+		fmt.Printf("Feature-based job submitted: %s\n", fmt.Sprintf("%d", resp3.JobId))
 	}
 }
 
 // demonstrateResourceSharing shows different resource sharing patterns
 func demonstrateResourceSharing(ctx context.Context, client slurm.SlurmClient) {
 	// Exclusive node allocation
-	exclusiveJob := &interfaces.JobSubmission{
+	exclusiveJob := &slurm.JobSubmission{
 		Name: "exclusive-node",
 		Script: `#!/bin/bash
 #SBATCH --exclusive
@@ -371,11 +370,11 @@ scontrol show node $SLURM_JOB_NODELIST
 	if err != nil {
 		log.Printf("Failed to submit exclusive job: %v", err)
 	} else {
-		fmt.Printf("Exclusive node job submitted: %s\n", resp1.JobID)
+		fmt.Printf("Exclusive node job submitted: %s\n", fmt.Sprintf("%d", resp1.JobId))
 	}
 
 	// Shared node allocation
-	sharedJob := &interfaces.JobSubmission{
+	sharedJob := &slurm.JobSubmission{
 		Name: "shared-resources",
 		Script: `#!/bin/bash
 #SBATCH --oversubscribe
@@ -400,11 +399,11 @@ echo "Allocated memory: ${SLURM_MEM_PER_NODE}MB"
 	if err != nil {
 		log.Printf("Failed to submit shared job: %v", err)
 	} else {
-		fmt.Printf("Shared resource job submitted: %s\n", resp2.JobID)
+		fmt.Printf("Shared resource job submitted: %s\n", fmt.Sprintf("%d", resp2.JobId))
 	}
 
 	// Core binding pattern
-	coreBindJob := &interfaces.JobSubmission{
+	coreBindJob := &slurm.JobSubmission{
 		Name: "core-binding",
 		Script: `#!/bin/bash
 #SBATCH --cpu-bind=cores
@@ -434,7 +433,7 @@ srun ./numa_optimized_app
 	if err != nil {
 		log.Printf("Failed to submit core binding job: %v", err)
 	} else {
-		fmt.Printf("Core binding job submitted: %s\n", resp3.JobID)
+		fmt.Printf("Core binding job submitted: %s\n", fmt.Sprintf("%d", resp3.JobId))
 	}
 }
 
@@ -451,11 +450,31 @@ func discoverAndAllocateResources(ctx context.Context, client slurm.SlurmClient)
 	}
 
 	// Find best partition for our needs
-	var bestPartition *interfaces.Partition
+	var bestPartition *slurm.Partition
 	for _, p := range partitions.Partitions {
-		if p.State == "UP" && p.TotalCPUs >= 16 && p.TotalNodes >= 1 {
-			if bestPartition == nil || p.TotalCPUs > bestPartition.TotalCPUs {
-				bestPartition = &p
+		// Check if partition has sufficient resources
+		totalCPUs := int32(0)
+		if p.CPUs != nil && p.CPUs.Total != nil {
+			totalCPUs = *p.CPUs.Total
+		}
+		totalNodes := int32(0)
+		if p.Nodes != nil && p.Nodes.Total != nil {
+			totalNodes = *p.Nodes.Total
+		}
+
+		if totalCPUs >= 16 && totalNodes >= 1 {
+			if bestPartition == nil {
+				pCopy := p
+				bestPartition = &pCopy
+			} else {
+				bestCPUs := int32(0)
+				if bestPartition.CPUs != nil && bestPartition.CPUs.Total != nil {
+					bestCPUs = *bestPartition.CPUs.Total
+				}
+				if totalCPUs > bestCPUs {
+					pCopy := p
+					bestPartition = &pCopy
+				}
 			}
 		}
 	}
@@ -465,12 +484,27 @@ func discoverAndAllocateResources(ctx context.Context, client slurm.SlurmClient)
 		return
 	}
 
-	fmt.Printf("Selected partition: %s (CPUs: %d, Nodes: %d)\n",
-		bestPartition.Name, bestPartition.TotalCPUs, bestPartition.TotalNodes)
+	name := ""
+	if bestPartition.Name != nil {
+		name = *bestPartition.Name
+	}
+	totalCPUs := int32(0)
+	if bestPartition.CPUs != nil && bestPartition.CPUs.Total != nil {
+		totalCPUs = *bestPartition.CPUs.Total
+	}
+	totalNodes := int32(0)
+	if bestPartition.Nodes != nil && bestPartition.Nodes.Total != nil {
+		totalNodes = *bestPartition.Nodes.Total
+	}
+	fmt.Printf("Selected partition: %s (CPUs: %d, Nodes: %d)\n", name, totalCPUs, totalNodes)
 
 	// Get node information for the partition
-	nodes, err := client.Nodes().List(ctx, &interfaces.ListNodesOptions{
-		Partition: bestPartition.Name,
+	partitionName := ""
+	if bestPartition.Name != nil {
+		partitionName = *bestPartition.Name
+	}
+	nodes, err := client.Nodes().List(ctx, &slurm.ListNodesOptions{
+		Partition: partitionName,
 		States:    []string{"IDLE", "MIXED"},
 	})
 	if err != nil {
@@ -483,17 +517,22 @@ func discoverAndAllocateResources(ctx context.Context, client slurm.SlurmClient)
 	var highMemNodes []string
 
 	for _, node := range nodes.Nodes {
+		nodeName := ""
+		if node.Name != nil {
+			nodeName = *node.Name
+		}
+
 		// Check for GPU nodes
 		for _, feature := range node.Features {
 			if strings.Contains(strings.ToLower(feature), "gpu") {
-				gpuNodes = append(gpuNodes, node.Name)
+				gpuNodes = append(gpuNodes, nodeName)
 				break
 			}
 		}
 
 		// Check for high memory nodes (>256GB)
-		if node.Memory > 262144 {
-			highMemNodes = append(highMemNodes, node.Name)
+		if node.RealMemory != nil && *node.RealMemory > 262144 {
+			highMemNodes = append(highMemNodes, nodeName)
 		}
 	}
 
@@ -502,7 +541,11 @@ func discoverAndAllocateResources(ctx context.Context, client slurm.SlurmClient)
 
 	// Submit job based on discovered resources
 	if len(gpuNodes) > 0 {
-		gpuJob := &interfaces.JobSubmission{
+		partName := ""
+		if bestPartition.Name != nil {
+			partName = *bestPartition.Name
+		}
+		gpuJob := &slurm.JobSubmission{
 			Name: "dynamic-gpu-job",
 			Script: fmt.Sprintf(`#!/bin/bash
 #SBATCH --nodelist=%s
@@ -511,7 +554,7 @@ echo "Running on discovered GPU node: $SLURMD_NODENAME"
 nvidia-smi
 python3 gpu_workload.py
 `, gpuNodes[0]),
-			Partition: bestPartition.Name,
+			Partition: partName,
 			CPUs:      8,
 			Memory:    32768,
 			TimeLimit: 60,
@@ -526,13 +569,17 @@ python3 gpu_workload.py
 		if err != nil {
 			log.Printf("Failed to submit GPU job: %v", err)
 		} else {
-			fmt.Printf("GPU job submitted to discovered node: %s\n", resp.JobID)
+			fmt.Printf("GPU job submitted to discovered node: %s\n", fmt.Sprintf("%d", resp.JobId))
 		}
 	}
 
 	// Submit job to high memory node if available
 	if len(highMemNodes) > 0 {
-		memJob := &interfaces.JobSubmission{
+		partName := ""
+		if bestPartition.Name != nil {
+			partName = *bestPartition.Name
+		}
+		memJob := &slurm.JobSubmission{
 			Name: "dynamic-highmem-job",
 			Script: fmt.Sprintf(`#!/bin/bash
 #SBATCH --nodelist=%s
@@ -541,7 +588,7 @@ echo "Running on high-memory node: $SLURMD_NODENAME"
 free -h
 python3 memory_analysis.py --use-all-memory
 `, highMemNodes[0]),
-			Partition: bestPartition.Name,
+			Partition: partName,
 			CPUs:      16,
 			Memory:    262144, // 256GB
 			TimeLimit: 90,
@@ -555,7 +602,7 @@ python3 memory_analysis.py --use-all-memory
 		if err != nil {
 			log.Printf("Failed to submit high-memory job: %v", err)
 		} else {
-			fmt.Printf("High-memory job submitted to discovered node: %s\n", resp.JobID)
+			fmt.Printf("High-memory job submitted to discovered node: %s\n", fmt.Sprintf("%d", resp.JobId))
 		}
 	}
 }

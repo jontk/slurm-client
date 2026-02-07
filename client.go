@@ -11,6 +11,7 @@ import (
 	"github.com/jontk/slurm-client/internal/versioning"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
+	"github.com/jontk/slurm-client/pkg/errors"
 	"github.com/jontk/slurm-client/pkg/retry"
 )
 
@@ -139,22 +140,31 @@ func GetVersionCompatibility() *versioning.VersionCompatibilityMatrix {
 	return versioning.DefaultCompatibilityMatrix()
 }
 
-// Error types
+// Error types - aliases to pkg/errors for single import path
 
-// SlurmError represents an error from the Slurm REST API
-type SlurmError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	Source  string `json:"source"`
-	Version string `json:"version,omitempty"`
-}
+// SlurmError is the canonical error type for all Slurm client errors.
+// It provides structured error information including error codes, categories,
+// retryability, and underlying cause.
+type SlurmError = errors.SlurmError
 
-func (e *SlurmError) Error() string {
-	if e.Version != "" {
-		return fmt.Sprintf("Slurm API %s error %d: %s", e.Version, e.Code, e.Message)
-	}
-	return fmt.Sprintf("Slurm API error %d: %s", e.Code, e.Message)
-}
+// Error code and category types for error handling
+type (
+	ErrorCode     = errors.ErrorCode
+	ErrorCategory = errors.ErrorCategory
+)
+
+// Common error codes - re-exported for convenience
+const (
+	ErrorCodeUnknown          = errors.ErrorCodeUnknown
+	ErrorCodeNetworkTimeout   = errors.ErrorCodeNetworkTimeout
+	ErrorCodeConnectionRefused = errors.ErrorCodeConnectionRefused
+	ErrorCodeUnauthorized     = errors.ErrorCodeUnauthorized
+	ErrorCodePermissionDenied = errors.ErrorCodePermissionDenied
+	ErrorCodeResourceNotFound = errors.ErrorCodeResourceNotFound
+	ErrorCodeValidationFailed = errors.ErrorCodeValidationFailed
+	ErrorCodeServerInternal   = errors.ErrorCodeServerInternal
+	ErrorCodeRateLimited      = errors.ErrorCodeRateLimited
+)
 
 // VersionError represents a version-related error
 type VersionError struct {

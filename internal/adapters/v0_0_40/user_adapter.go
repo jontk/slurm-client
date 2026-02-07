@@ -1,31 +1,28 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
-
 package v0_0_40
 
 import (
 	"context"
 
-	api "github.com/jontk/slurm-client/internal/api/v0_0_40"
+	types "github.com/jontk/slurm-client/api"
+	adapterbase "github.com/jontk/slurm-client/internal/adapters/base"
 	"github.com/jontk/slurm-client/internal/common"
-	"github.com/jontk/slurm-client/internal/common/types"
-	"github.com/jontk/slurm-client/internal/managers/base"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_40"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
 // UserAdapter implements the UserAdapter interface for v0.0.40
 type UserAdapter struct {
-	*base.BaseManager
-	client  *api.ClientWithResponses
-	wrapper *api.WrapperClient
+	*adapterbase.BaseManager
+	client *api.ClientWithResponses
 }
 
 // NewUserAdapter creates a new User adapter for v0.0.40
 func NewUserAdapter(client *api.ClientWithResponses) *UserAdapter {
 	return &UserAdapter{
-		BaseManager: base.NewBaseManager("v0.0.40", "User"),
+		BaseManager: adapterbase.NewBaseManager("v0.0.40", "User"),
 		client:      client,
-		wrapper:     nil, // We'll implement this later
 	}
 }
 
@@ -35,15 +32,12 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 	if err := a.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
-
 	// Check client initialization
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
-
 	// Prepare parameters for the API call
 	params := &api.SlurmdbV0040GetUsersParams{}
-
 	// Apply filters from options
 	if opts != nil {
 		// v0.0.40 doesn't support user name filtering in params
@@ -64,24 +58,20 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 			params.WithCoords = &withCoords
 		}
 	}
-
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmdbV0040GetUsersWithResponse(ctx, params)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
-
 	// Use common response error handling
 	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
-
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
 		return nil, err
 	}
-
 	// Check for unexpected response format
 	if err := a.CheckNilResponse(resp.JSON200, "List Users"); err != nil {
 		return nil, err
@@ -89,26 +79,22 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 	if err := a.CheckNilResponse(resp.JSON200.Users, "List Users - users field"); err != nil {
 		return nil, err
 	}
-
 	// Convert the response to common types
 	userList := make([]types.User, 0, len(resp.JSON200.Users))
 	for _, apiUser := range resp.JSON200.Users {
 		user := a.convertAPIUserToCommon(apiUser)
 		userList = append(userList, *user)
 	}
-
 	// Apply client-side filtering if needed
 	if opts != nil {
 		userList = a.filterUserList(userList, opts)
 	}
-
 	// Apply pagination
-	listOpts := base.ListOptions{}
+	listOpts := adapterbase.ListOptions{}
 	if opts != nil {
 		listOpts.Limit = opts.Limit
 		listOpts.Offset = opts.Offset
 	}
-
 	// Apply pagination
 	start := listOpts.Offset
 	if start < 0 {
@@ -120,7 +106,6 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 			Total: len(userList),
 		}, nil
 	}
-
 	end := len(userList)
 	if listOpts.Limit > 0 {
 		end = start + listOpts.Limit
@@ -128,7 +113,6 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 			end = len(userList)
 		}
 	}
-
 	return &types.UserList{
 		Users: userList[start:end],
 		Total: len(userList),
@@ -147,27 +131,22 @@ func (a *UserAdapter) Get(ctx context.Context, userName string) (*types.User, er
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
-
 	// Prepare parameters for the API call
 	params := &api.SlurmdbV0040GetUserParams{}
-
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmdbV0040GetUserWithResponse(ctx, userName, params)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
-
 	// Use common response error handling
 	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
-
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
 		return nil, err
 	}
-
 	// Check for unexpected response format
 	if err := a.CheckNilResponse(resp.JSON200, "Get User"); err != nil {
 		return nil, err
@@ -175,15 +154,12 @@ func (a *UserAdapter) Get(ctx context.Context, userName string) (*types.User, er
 	if err := a.CheckNilResponse(resp.JSON200.Users, "Get User - users field"); err != nil {
 		return nil, err
 	}
-
 	// Check if we got any user entries
 	if len(resp.JSON200.Users) == 0 {
 		return nil, common.NewResourceNotFoundError("User", userName)
 	}
-
 	// Convert the first user (should be the only one)
 	user := a.convertAPIUserToCommon(resp.JSON200.Users[0])
-
 	return user, nil
 }
 
@@ -199,38 +175,31 @@ func (a *UserAdapter) Create(ctx context.Context, user *types.UserCreate) (*type
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return nil, err
 	}
-
 	// Convert to API format
 	apiUser := a.convertCommonUserCreateToAPI(user)
-
 	// Create request body
 	reqBody := api.SlurmdbV0040PostUsersJSONRequestBody{
 		Users: []api.V0040User{*apiUser},
 	}
-
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmdbV0040PostUsersWithResponse(ctx, reqBody)
 	if err != nil {
 		return nil, a.HandleAPIError(err)
 	}
-
 	// Use common response error handling
 	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
-
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.40"); err != nil {
 		return nil, err
 	}
-
 	// Create response object with created user information
 	createResponse := &types.UserCreateResponse{
 		UserName: user.Name,
 		// Add any additional response fields from API if available
 	}
-
 	return createResponse, nil
 }
 
@@ -249,33 +218,27 @@ func (a *UserAdapter) Update(ctx context.Context, userName string, update *types
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return err
 	}
-
 	// First, get the existing user to merge updates
 	existingUser, err := a.Get(ctx, userName)
 	if err != nil {
 		return err
 	}
-
 	// Convert to API format and apply updates
 	apiUser := a.convertCommonUserUpdateToAPI(existingUser, update)
-
 	// Create request body
 	reqBody := api.SlurmdbV0040PostUsersJSONRequestBody{
 		Users: []api.V0040User{*apiUser},
 	}
-
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmdbV0040PostUsersWithResponse(ctx, reqBody)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
-
 	// Use common response error handling
 	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
-
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
 }
@@ -292,46 +255,39 @@ func (a *UserAdapter) Delete(ctx context.Context, userName string) error {
 	if err := a.CheckClientInitialized(a.client); err != nil {
 		return err
 	}
-
 	// Call the generated OpenAPI client
 	resp, err := a.client.SlurmdbV0040DeleteUserWithResponse(ctx, userName)
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
-
 	// Use common response error handling
 	var apiErrors *api.V0040OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
 	}
-
 	// Create adapter with special handling for 204 (No Content) status
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-
 	// For DELETE operations, 204 is also a success
 	if resp.StatusCode() == 204 {
 		return nil
 	}
-
 	return common.HandleAPIResponse(responseAdapter, "v0.0.40")
 }
 
 // filterUserList applies client-side filtering to the user list
 func (a *UserAdapter) filterUserList(users []types.User, opts *types.UserListOptions) []types.User {
 	filtered := make([]types.User, 0, len(users))
-
 	for _, user := range users {
 		// Apply DefaultAccount filter
-		if opts.DefaultAccount != "" && user.DefaultAccount != opts.DefaultAccount {
-			continue
+		if opts.DefaultAccount != "" {
+			if user.Default == nil || user.Default.Account == nil || *user.Default.Account != opts.DefaultAccount {
+				continue
+			}
 		}
-
 		// v0.0.40 doesn't support DefaultWCKey or AdminLevel filters in options
 		// Skip these filters
-
 		filtered = append(filtered, user)
 	}
-
 	return filtered
 }
 
@@ -361,4 +317,19 @@ func (a *UserAdapter) validateUserUpdate(update *types.UserUpdate) error {
 // CreateAssociation creates associations for users (not supported in v0.0.40)
 func (a *UserAdapter) CreateAssociation(ctx context.Context, req *types.UserAssociationRequest) (*types.AssociationCreateResponse, error) {
 	return nil, errors.NewNotImplementedError("CreateAssociation", a.GetVersion())
+}
+
+// convertCommonUserCreateToAPI converts a common UserCreate to v0.0.40 API format
+func (a *UserAdapter) convertCommonUserCreateToAPI(user *types.UserCreate) *api.V0040User {
+	return &api.V0040User{
+		Name: user.Name,
+	}
+}
+
+// convertCommonUserUpdateToAPI converts a common UserUpdate merged with existing User to v0.0.40 API format
+func (a *UserAdapter) convertCommonUserUpdateToAPI(existing *types.User, update *types.UserUpdate) *api.V0040User {
+	apiUser := &api.V0040User{
+		Name: existing.Name,
+	}
+	return apiUser
 }

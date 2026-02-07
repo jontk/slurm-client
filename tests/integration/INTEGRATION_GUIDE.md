@@ -118,12 +118,12 @@ export SLURM_PERFORMANCE_TEST=true
 export SLURM_COMPATIBILITY_TEST=true
 
 # Server configuration
-export SLURM_SERVER_URL=http://rocky9:6820
+export SLURM_SERVER_URL=http://localhost
 export SLURM_API_VERSION=v0.0.43
 export SLURM_JWT_TOKEN=your-token-here
 
 # SSH configuration for token fetching
-export SLURM_SSH_HOST=rocky9
+export SLURM_SSH_HOST=localhost
 export SLURM_SSH_USER=root
 ```
 

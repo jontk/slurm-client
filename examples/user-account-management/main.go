@@ -1,6 +1,14 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build ignore
+// +build ignore
+
+// Package main demonstrates user and account management features.
+// NOTE: This example uses extended interface methods (GetAccountHierarchy, GetUserQuotas,
+// GetAccountFairShare, CalculateJobPriority) that are planned but not yet implemented.
+// Build with: go run -tags=future examples/user-account-management/main.go
+
 package main
 
 import (
@@ -14,7 +22,6 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/interfaces"
 	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/errors"
 	"golang.org/x/text/cases"
@@ -84,7 +91,7 @@ func main() {
 	}
 }
 
-func demonstrateHierarchyNavigation(ctx context.Context, client interfaces.SlurmClient) {
+func demonstrateHierarchyNavigation(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("=== Account Hierarchy Navigation ===")
 
 	accountManager := client.Accounts()
@@ -146,7 +153,7 @@ func demonstrateHierarchyNavigation(ctx context.Context, client interfaces.Slurm
 	}
 }
 
-func demonstrateQuotaMonitoring(ctx context.Context, client interfaces.SlurmClient, userName, accountName string) {
+func demonstrateQuotaMonitoring(ctx context.Context, client slurm.SlurmClient, userName, accountName string) {
 	fmt.Println("\n=== Quota Monitoring ===")
 
 	userManager := client.Users()
@@ -192,7 +199,7 @@ func demonstrateQuotaMonitoring(ctx context.Context, client interfaces.SlurmClie
 	}
 }
 
-func demonstrateFairShareAnalysis(ctx context.Context, client interfaces.SlurmClient, userName, accountName string) {
+func demonstrateFairShareAnalysis(ctx context.Context, client slurm.SlurmClient, userName, accountName string) {
 	fmt.Println("\n=== Fair-Share Analysis ===")
 
 	userManager := client.Users()
@@ -228,7 +235,7 @@ func demonstrateFairShareAnalysis(ctx context.Context, client interfaces.SlurmCl
 
 	// Demonstrate job priority calculation
 	fmt.Printf("\n\nJob Priority Calculation for %s:\n", userName)
-	jobSubmission := &interfaces.JobSubmission{
+	jobSubmission := &slurm.JobSubmission{
 		Script: "#!/bin/bash\necho 'Test job for priority calculation'",
 		// Account field doesn't exist in JobSubmission
 		Partition: "compute",
@@ -258,7 +265,7 @@ func demonstrateFairShareAnalysis(ctx context.Context, client interfaces.SlurmCl
 	}
 }
 
-func validateUserAccountAccess(ctx context.Context, client interfaces.SlurmClient, userName, accountName string) {
+func validateUserAccountAccess(ctx context.Context, client slurm.SlurmClient, userName, accountName string) {
 	fmt.Printf("\n=== Validating Access: %s → %s ===\n", userName, accountName)
 
 	userManager := client.Users()
@@ -299,7 +306,7 @@ func validateUserAccountAccess(ctx context.Context, client interfaces.SlurmClien
 	}
 }
 
-func showUserAccountAssociations(ctx context.Context, client interfaces.SlurmClient, userName string) {
+func showUserAccountAssociations(ctx context.Context, client slurm.SlurmClient, userName string) {
 	fmt.Printf("\n=== User Account Associations for %s ===\n", userName)
 
 	userManager := client.Users()
@@ -343,7 +350,7 @@ func showUserAccountAssociations(ctx context.Context, client interfaces.SlurmCli
 
 	// Get detailed associations with filtering
 	fmt.Printf("\n\nDetailed Account Associations:\n")
-	opts := &interfaces.ListUserAccountAssociationsOptions{
+	opts := &slurm.ListUserAccountAssociationsOptions{
 		ActiveOnly: true,
 	}
 
@@ -360,7 +367,7 @@ func showUserAccountAssociations(ctx context.Context, client interfaces.SlurmCli
 	}
 }
 
-func demonstrateBulkOperations(ctx context.Context, client interfaces.SlurmClient) {
+func demonstrateBulkOperations(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("\n=== Bulk Operations Demo ===")
 
 	userManager := client.Users()
@@ -409,7 +416,7 @@ func demonstrateBulkOperations(ctx context.Context, client interfaces.SlurmClien
 
 // Helper functions for displaying data
 
-func printAccountHierarchy(hierarchy *interfaces.AccountHierarchy, depth int) {
+func printAccountHierarchy(hierarchy *slurm.AccountHierarchy, depth int) {
 	indent := strings.Repeat("  ", depth)
 	if hierarchy.Account != nil {
 		fmt.Printf("%s├─ %s (users: %d)\n", indent, hierarchy.Account.Name, hierarchy.TotalUsers)
@@ -420,7 +427,7 @@ func printAccountHierarchy(hierarchy *interfaces.AccountHierarchy, depth int) {
 	}
 }
 
-func displayUserQuotas(quotas *interfaces.UserQuota) {
+func displayUserQuotas(quotas *slurm.UserQuota) {
 	fmt.Printf("  Default Account: %s\n", quotas.DefaultAccount)
 	fmt.Printf("  Max Jobs: %d\n", quotas.MaxJobs)
 	fmt.Printf("  Max Submit Jobs: %d\n", quotas.MaxSubmitJobs)
@@ -436,7 +443,7 @@ func displayUserQuotas(quotas *interfaces.UserQuota) {
 	}
 }
 
-func displayAccountQuotas(quotas *interfaces.AccountQuota) {
+func displayAccountQuotas(quotas *slurm.AccountQuota) {
 	// AccountName and Description fields don't exist in AccountQuota
 	fmt.Printf("  CPU Limit: %d\n", quotas.CPULimit)
 	fmt.Printf("  Max Jobs: %d\n", quotas.MaxJobs)
@@ -451,17 +458,16 @@ func displayAccountQuotas(quotas *interfaces.AccountQuota) {
 	}
 }
 
-func displayAccountUsage(usage *interfaces.AccountUsage) {
-	fmt.Printf("  CPU Hours: %.2f\n", usage.CPUHours)
-	fmt.Printf("  Jobs Completed: %d\n", usage.JobsCompleted)
-	fmt.Printf("  Jobs Failed: %d\n", usage.JobsFailed)
+func displayAccountUsage(usage *slurm.AccountUsage) {
+	cpuHours := float64(usage.CPUSeconds) / 3600.0
+	fmt.Printf("  CPU Hours: %.2f\n", cpuHours)
 	fmt.Printf("  Total Jobs: %d\n", usage.JobCount)
 	fmt.Printf("  Period: %s to %s\n",
 		usage.StartTime.Format(time.DateOnly),
 		usage.EndTime.Format(time.DateOnly))
 }
 
-func displayUserFairShare(fairShare *interfaces.UserFairShare) {
+func displayUserFairShare(fairShare *slurm.UserFairShare) {
 	fmt.Printf("  Account: %s\n", fairShare.Account)
 	fmt.Printf("  Fair-Share Factor: %.4f\n", fairShare.FairShareFactor)
 	fmt.Printf("  Normalized Shares: %.4f\n", fairShare.NormalizedShares)
@@ -477,7 +483,7 @@ func displayUserFairShare(fairShare *interfaces.UserFairShare) {
 	}
 }
 
-func displayAccountFairShare(fairShare *interfaces.AccountFairShare) {
+func displayAccountFairShare(fairShare *slurm.AccountFairShare) {
 	fmt.Printf("  Account: %s\n", fairShare.AccountName)
 	fmt.Printf("  Parent: %s\n", fairShare.Parent)
 	fmt.Printf("  Shares: %d (Raw: %d)\n", fairShare.Shares, fairShare.RawShares)
@@ -488,7 +494,7 @@ func displayAccountFairShare(fairShare *interfaces.AccountFairShare) {
 	fmt.Printf("  Job Count: %d\n", fairShare.JobCount)
 }
 
-func displayJobPriority(priority *interfaces.JobPriorityInfo) {
+func displayJobPriority(priority *slurm.JobPriorityInfo) {
 	fmt.Printf("  Calculated Priority: %d\n", priority.Priority)
 	fmt.Printf("  Priority Tier: %s\n", priority.PriorityTier)
 	fmt.Printf("  Estimated Start: %v\n", priority.EstimatedStart)
@@ -505,7 +511,7 @@ func displayJobPriority(priority *interfaces.JobPriorityInfo) {
 	}
 }
 
-func displayFairShareHierarchy(hierarchy *interfaces.FairShareHierarchy) {
+func displayFairShareHierarchy(hierarchy *slurm.FairShareHierarchy) {
 	fmt.Printf("  Root Account: %s\n", hierarchy.RootAccount)
 	fmt.Printf("  Total Shares: %d\n", hierarchy.TotalShares)
 	fmt.Printf("  Total Usage: %.4f\n", hierarchy.TotalUsage)
@@ -519,7 +525,7 @@ func displayFairShareHierarchy(hierarchy *interfaces.FairShareHierarchy) {
 	}
 }
 
-func printFairShareTree(node *interfaces.FairShareNode, level int) {
+func printFairShareTree(node *slurm.FairShareNode, level int) {
 	indent := strings.Repeat("  ", level)
 	nodeType := "Account"
 	if node.User != "" {
