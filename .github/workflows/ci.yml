@@ -158,6 +158,11 @@ jobs:
       run: |
         for dir in examples/*/; do
           if [ -f "${dir}main.go" ]; then
+            # Skip examples with //go:build ignore (e.g., unimplemented features)
+            if grep -q "//go:build ignore" "${dir}main.go" 2>/dev/null; then
+              echo "Skipping ${dir} (has //go:build ignore tag)"
+              continue
+            fi
             echo "Building ${dir}..."
             (cd "$dir" && go build -v .)
           fi

@@ -424,6 +424,55 @@ linters:
       - linters:
           - goheader
         path: vendor/  # Third-party dependencies
+      - linters:
+          - goheader
+        path: ^internal/adapters/.*goverter.*\.go$  # Goverter helper files
+      # Goverter comments use "goverter:map Field Field" syntax which triggers dupword
+      - linters:
+          - dupword
+        path: ^internal/adapters/.*goverter.*\.go$
+      # Examples legitimately use context.Background() as entry points
+      - linters:
+          - contextcheck
+        path: ^examples/
+      # Examples don't always need Output comments
+      - linters:
+          - testableexamples
+        path: ^examples/
+      - linters:
+          - testableexamples
+        path: examples_test\.go$
+      # Performance sprint suggestions often not applicable in tools/examples/adapters
+      - linters:
+          - perfsprint
+        path: ^internal/adapters/
+      - linters:
+          - perfsprint
+        path: ^examples/
+      - linters:
+          - perfsprint
+        path: ^cmd/
+      - linters:
+          - perfsprint
+        path: ^internal/factory/
+      # Unconvert often flags valid type conversions in generated/adapter code
+      - linters:
+          - unconvert
+        path: \.gen\.go$
+      - linters:
+          - unconvert
+        path: ^internal/adapters/
+      # Converter helper functions prepared for future use in adapters
+      - linters:
+          - unused
+        path: ^internal/adapters/.*_converters.*\.go$
+      - linters:
+          - unused
+        path: ^internal/adapters/.*/goverter_bridge\.go$
+      # Example helper functions
+      - linters:
+          - unused
+        path: ^examples/
     paths:
       - .*\.pb\.go$
       - .*\.gen\.go$
