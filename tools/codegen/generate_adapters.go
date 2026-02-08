@@ -1215,7 +1215,11 @@ func (a *{{.Entity}}Adapter) List(ctx context.Context, opts *types.{{.ListOption
 		item := a.convertAPI{{.Entity}}ToCommon(apiItem)
 		items = append(items, *item)
 	}
-
+{{if eq .Entity "Job"}}
+	// Apply filtering before pagination
+	{{.EntityLower}}BaseManager := adapterbase.New{{.Entity}}BaseManager("{{.Version}}")
+	items = {{.EntityLower}}BaseManager.Filter{{.Entity}}List(items, opts)
+{{end}}
 	// Apply pagination
 	listOpts := adapterbase.ListOptions{}
 	if opts != nil {
