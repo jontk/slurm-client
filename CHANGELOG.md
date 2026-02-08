@@ -7,6 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-02-08
+
+### Added
+- **SDK Architectural Refactor** (#94): Complete restructure with unified adapter pattern
+  - Squashed 300+ commits of development work into production-ready SDK
+  - Clean type system in `api/` package with generated and hand-written types
+  - Version-agnostic client interface via `NewClient`/`NewClientWithVersion`
+  - JWT-based authentication (`NewTokenAuth`, `NewJWTAuth`)
+  - Connection pooling, retry middleware, streaming support
+  - Comprehensive analytics (job efficiency, performance metrics, resource utilization)
+  - Builder pattern for jobs, partitions, accounts, users, QoS
+  - Multi-version support with automatic version detection for v0.0.40-v0.0.44
+- **Documentation Enhancements** (#99): Comprehensive review and expansion
+  - New adapter pattern deep dive guide (526 lines)
+  - New testing and mocking guide (721 lines)
+  - Expanded troubleshooting guide (+305 lines)
+  - Fixed all import paths to use public API only
+  - Standardized client creation with functional options pattern
+  - Updated version support information and EOL dates
+  - 13 files changed, 1742 insertions, 1157 deletions
+
+### Changed
+- **Package Restructure** (#94): Complete SDK reorganization
+  - `api/` - Public types and interfaces for consumers
+  - `internal/adapters/` - Version-specific adapter implementations
+  - `internal/factory/` - Client factory and adapter client
+  - `pkg/` - Middleware, streaming, analytics, connection pooling
+  - `tools/codegen/` - Code generation for types and converters
+- **Code Quality** (#95): Post-refactor CI improvements
+  - Added lint exclusions for goverter-generated files
+  - Added lint exclusions for examples and converter helpers
+  - Reduced lint errors from 1523 to 333 (78% reduction)
+  - Fixed build constraints for examples with `//go:build ignore`
+
+### Fixed
+- **Circuit Breaker Concurrency** (#100): Added `sync.RWMutex` for thread-safe concurrent access
+  - Prevents data races in middleware circuit breaker during concurrent requests
+  - Added mutex locking in `Allow()`, `RecordFailure()`, and `RecordSuccess()` methods
+  - Critical fix for production environments with high concurrency
+- **Pagination Metadata** (#100): Fixed `Total` field returning page size instead of total count
+  - Pagination now correctly returns total count before pagination in `adapter_client.go`
+  - Clients can now accurately display total available records
+- **Job List Filters** (#100): Fixed filters being dropped before pagination
+  - Root cause: Generator template was missing filter application step
+  - Updated adapter generator to apply `FilterJobList` before pagination
+  - Regenerated all adapter versions (v0.0.42, v0.0.43, v0.0.44)
+  - Future generator runs will preserve the fix (no more manual patches needed)
+- **Watch Options Semantics** (#100): Removed incorrect States to EventTypes mapping
+  - States (job states like RUNNING, PENDING) and EventTypes (event names like start, end, fail) are fundamentally different
+  - Added clarifying comment explaining the semantic difference
+  - State filtering must be implemented at higher level through event filtering
+- **Account Hierarchy Error Suppression** (#100): Added proper error handling to `buildHierarchyNode`
+  - Changed function signature to return `(*types.AccountHierarchy, error)`
+  - Errors from `adapter.Get()` are now surfaced instead of being silently ignored
+  - Prevents returning incomplete account hierarchy data
+
+### Improved
+- **Code Generator** (#100): Fixed test generator producing incorrect types
+  - Node State field: Now generates `[]types.NodeState{...}` instead of `ptrNodeState(...)`
+  - Reservation Name field: Now generates `&testName` instead of `testName`
+  - Future test regenerations will produce correct types
+  - Eliminates CI failures from type mismatches in generated tests
+
+### Technical Debt
+- **Generator Maintenance**: All manual fixes converted to permanent generator improvements
+  - No more `.gen.go` files requiring manual patches after regeneration
+  - Closed tracking issue `slurm-client-433`
+
 ## [0.2.4] - 2026-01-30
 
 ### Fixed

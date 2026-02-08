@@ -160,6 +160,7 @@
     "errcheck",
     "staticcheck",
     "goheader",
+    "goverter",
     "depguard",
     "embeddedstructfieldcheck",
     "funcorder",
