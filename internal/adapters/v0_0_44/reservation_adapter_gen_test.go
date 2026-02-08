@@ -193,29 +193,6 @@ func TestReservationAdapter_UpdateConverter(t *testing.T) {
 	require.NotNil(t, apiObj)
 }
 
-func TestReservationAdapter_ValidateUpdate(t *testing.T) {
-	adapter := NewReservationAdapter(&api.ClientWithResponses{})
-
-	t.Run("nil input returns error", func(t *testing.T) {
-		err := adapter.validateReservationUpdate(nil)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "reservation update data is required")
-	})
-
-	t.Run("empty fields returns error", func(t *testing.T) {
-		input := &types.ReservationUpdate{}
-		err := adapter.validateReservationUpdate(input)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "at least one field must be provided for update")
-	})
-
-	t.Run("valid input passes", func(t *testing.T) {
-		input := &types.ReservationUpdate{Comment: ptrString("test")}
-		err := adapter.validateReservationUpdate(input)
-		require.NoError(t, err)
-	})
-}
-
 func TestReservationAdapter_ValidateCreate(t *testing.T) {
 	adapter := NewReservationAdapter(&api.ClientWithResponses{})
 
@@ -242,6 +219,29 @@ func TestReservationAdapter_ValidateCreate(t *testing.T) {
 	t.Run("valid input passes", func(t *testing.T) {
 		input := &types.ReservationCreate{Name: ptrString("test"), StartTime: time.Now()}
 		err := adapter.ValidateReservationCreate(input)
+		require.NoError(t, err)
+	})
+}
+
+func TestReservationAdapter_ValidateUpdate(t *testing.T) {
+	adapter := NewReservationAdapter(&api.ClientWithResponses{})
+
+	t.Run("nil input returns error", func(t *testing.T) {
+		err := adapter.validateReservationUpdate(nil)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "reservation update data is required")
+	})
+
+	t.Run("empty fields returns error", func(t *testing.T) {
+		input := &types.ReservationUpdate{}
+		err := adapter.validateReservationUpdate(input)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "at least one field must be provided for update")
+	})
+
+	t.Run("valid input passes", func(t *testing.T) {
+		input := &types.ReservationUpdate{Comment: ptrString("test")}
+		err := adapter.validateReservationUpdate(input)
 		require.NoError(t, err)
 	})
 }

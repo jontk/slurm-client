@@ -9,14 +9,6 @@ import (
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
-// validateQoSUpdate validates qos update data
-func (a *QoSAdapter) validateQoSUpdate(update *types.QoSUpdate) error {
-	if update == nil {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS update data is required", "update", nil, nil)
-	}
-	return nil
-}
-
 // ValidateQoSCreate validates qos create data
 func (a *QoSAdapter) ValidateQoSCreate(create *types.QoSCreate) error {
 	if create == nil {
@@ -24,6 +16,14 @@ func (a *QoSAdapter) ValidateQoSCreate(create *types.QoSCreate) error {
 	}
 	if create.Name == "" {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS name is required", "name", nil, nil)
+	}
+	return nil
+}
+
+// validateQoSUpdate validates qos update data
+func (a *QoSAdapter) validateQoSUpdate(update *types.QoSUpdate) error {
+	if update == nil {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "QoS update data is required", "update", nil, nil)
 	}
 	return nil
 }

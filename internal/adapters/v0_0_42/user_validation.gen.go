@@ -9,6 +9,14 @@ import (
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
+// validateUserUpdate validates user update data
+func (a *UserAdapter) validateUserUpdate(update *types.UserUpdate) error {
+	if update == nil {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "user update data is required", "update", nil, nil)
+	}
+	return nil
+}
+
 // ValidateUserCreate validates user create data
 func (a *UserAdapter) ValidateUserCreate(create *types.UserCreate) error {
 	if create == nil {
@@ -16,14 +24,6 @@ func (a *UserAdapter) ValidateUserCreate(create *types.UserCreate) error {
 	}
 	if create.Name == "" {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "user name is required", "name", nil, nil)
-	}
-	return nil
-}
-
-// validateUserUpdate validates user update data
-func (a *UserAdapter) validateUserUpdate(update *types.UserUpdate) error {
-	if update == nil {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "user update data is required", "update", nil, nil)
 	}
 	return nil
 }

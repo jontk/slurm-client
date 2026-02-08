@@ -3185,7 +3185,7 @@ func generateTestInputForType(entityName, inputType, operation string) string {
 		if operation == "Create" {
 			return `testName := "test-reservation"
 	input := &types.ReservationCreate{
-		Name: testName,
+		Name: &testName,
 	}`
 		} else {
 			// ReservationUpdate fields
@@ -3358,7 +3358,8 @@ func getFieldValueForEntity(entityName, fieldName string) string {
 	case "Node":
 		switch fieldName {
 		case "State", "NextStateAfterReboot":
-			return "ptrNodeState(types.NodeStateIdle)"
+			// NodeUpdate.State is []NodeState, not *NodeState
+			return "[]types.NodeState{types.NodeStateIdle}"
 		}
 	}
 	// Default: pointer to string

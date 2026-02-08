@@ -9,17 +9,6 @@ import (
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
-// validateReservationUpdate validates reservation update data
-func (a *ReservationAdapter) validateReservationUpdate(update *types.ReservationUpdate) error {
-	if update == nil {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "reservation update data is required", "update", nil, nil)
-	}
-	if update.Comment == nil && update.Partition == nil && len(update.Accounts) == 0 && len(update.Users) == 0 && update.Duration == nil && update.NodeCount == nil && update.NodeList == nil && len(update.Flags) == 0 && len(update.Groups) == 0 && len(update.Features) == 0 {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one field must be provided for update", "update", nil, nil)
-	}
-	return nil
-}
-
 // ValidateReservationCreate validates reservation create data
 func (a *ReservationAdapter) ValidateReservationCreate(create *types.ReservationCreate) error {
 	if create == nil {
@@ -30,6 +19,17 @@ func (a *ReservationAdapter) ValidateReservationCreate(create *types.Reservation
 	}
 	if create.StartTime.IsZero() {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "start time is required", "starttime", nil, nil)
+	}
+	return nil
+}
+
+// validateReservationUpdate validates reservation update data
+func (a *ReservationAdapter) validateReservationUpdate(update *types.ReservationUpdate) error {
+	if update == nil {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "reservation update data is required", "update", nil, nil)
+	}
+	if update.Comment == nil && update.Partition == nil && len(update.Accounts) == 0 && len(update.Users) == 0 && update.Duration == nil && update.NodeCount == nil && update.NodeList == nil && len(update.Flags) == 0 && len(update.Groups) == 0 && len(update.Features) == 0 {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one field must be provided for update", "update", nil, nil)
 	}
 	return nil
 }

@@ -9,14 +9,6 @@ import (
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
-// validateJobUpdate validates job update data
-func (a *JobAdapter) validateJobUpdate(update *types.JobUpdate) error {
-	if update == nil {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "job update data is required", "update", nil, nil)
-	}
-	return nil
-}
-
 // ValidateJobCreate validates job create data
 func (a *JobAdapter) ValidateJobCreate(create *types.JobCreate) error {
 	if create == nil {
@@ -24,6 +16,14 @@ func (a *JobAdapter) ValidateJobCreate(create *types.JobCreate) error {
 	}
 	if create.Script == nil || *create.Script == "" {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "job script is required", "script", nil, nil)
+	}
+	return nil
+}
+
+// validateJobUpdate validates job update data
+func (a *JobAdapter) validateJobUpdate(update *types.JobUpdate) error {
+	if update == nil {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "job update data is required", "update", nil, nil)
 	}
 	return nil
 }
