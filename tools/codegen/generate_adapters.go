@@ -1215,7 +1215,11 @@ func (a *{{.Entity}}Adapter) List(ctx context.Context, opts *types.{{.ListOption
 		item := a.convertAPI{{.Entity}}ToCommon(apiItem)
 		items = append(items, *item)
 	}
-
+{{if eq .Entity "Job"}}
+	// Apply filtering before pagination
+	{{.EntityLower}}BaseManager := adapterbase.New{{.Entity}}BaseManager("{{.Version}}")
+	items = {{.EntityLower}}BaseManager.Filter{{.Entity}}List(items, opts)
+{{end}}
 	// Apply pagination
 	listOpts := adapterbase.ListOptions{}
 	if opts != nil {
@@ -3181,7 +3185,7 @@ func generateTestInputForType(entityName, inputType, operation string) string {
 		if operation == "Create" {
 			return `testName := "test-reservation"
 	input := &types.ReservationCreate{
-		Name: testName,
+		Name: &testName,
 	}`
 		} else {
 			// ReservationUpdate fields
@@ -3354,7 +3358,8 @@ func getFieldValueForEntity(entityName, fieldName string) string {
 	case "Node":
 		switch fieldName {
 		case "State", "NextStateAfterReboot":
-			return "ptrNodeState(types.NodeStateIdle)"
+			// NodeUpdate.State is []NodeState, not *NodeState
+			return "[]types.NodeState{types.NodeStateIdle}"
 		}
 	}
 	// Default: pointer to string

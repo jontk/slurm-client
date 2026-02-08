@@ -370,7 +370,7 @@ func (m *adapterJobManager) List(ctx context.Context, opts *types.ListJobsOption
 	// Convert result
 	jobList := &types.JobList{
 		Jobs:  append([]types.Job{}, result.Jobs...),
-		Total: len(result.Jobs), // Use actual count since Meta may not exist
+		Total: result.Total, // Total from adapter is full count before pagination
 	}
 
 	return jobList, nil
@@ -547,10 +547,10 @@ func (m *adapterJobManager) Watch(ctx context.Context, opts *types.WatchJobsOpti
 			}
 		}
 
-		// Convert state filters
-		if len(opts.States) > 0 {
-			adapterOpts.EventTypes = opts.States
-		}
+		// Note: WatchJobsOptions.States (job states like RUNNING, PENDING) are not
+		// mapped to JobWatchOptions.EventTypes (event names like start, end, fail)
+		// as they represent fundamentally different concepts.
+		// State filtering must be implemented at a higher level through event filtering.
 	}
 
 	// Call adapter's Watch method
