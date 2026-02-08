@@ -65,6 +65,12 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 		item := a.convertAPIJobToCommon(apiItem)
 		items = append(items, *item)
 	}
+
+	// MANUAL FIX: Apply filtering before pagination (TODO: update generator)
+	// BUG: slurm-client-433 - filters were being dropped
+	jobBaseManager := adapterbase.NewJobBaseManager("v0.0.42")
+	items = jobBaseManager.FilterJobList(items, opts)
+
 	// Apply pagination
 	listOpts := adapterbase.ListOptions{}
 	if opts != nil {
