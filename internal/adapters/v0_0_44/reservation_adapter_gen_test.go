@@ -171,7 +171,7 @@ func TestReservationAdapter_CreateConverter(t *testing.T) {
 	// Create test input with known values
 	testName := "test-reservation"
 	input := &types.ReservationCreate{
-		Name: testName,
+		Name: &testName,
 	}
 
 	// Convert Common → API
