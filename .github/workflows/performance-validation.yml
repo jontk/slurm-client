@@ -61,7 +61,7 @@ jobs:
           fi
 
       - name: Upload results
-        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
+        uses: actions/upload-artifact@47309c993abb98030a35d55ef7ff34b7fa1074b5 # v4.5.0
         with:
           name: performance-validation-${{ github.run_number }}
           path: |
