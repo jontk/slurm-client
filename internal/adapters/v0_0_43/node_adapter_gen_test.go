@@ -161,7 +161,7 @@ func TestNodeAdapter_ValidateUpdate(t *testing.T) {
 	})
 
 	t.Run("valid input passes", func(t *testing.T) {
-		input := &types.NodeUpdate{State: ptrNodeState(types.NodeStateIdle)}
+		input := &types.NodeUpdate{State: []types.NodeState{types.NodeStateIdle}}
 		err := adapter.validateNodeUpdate(input)
 		require.NoError(t, err)
 	})
