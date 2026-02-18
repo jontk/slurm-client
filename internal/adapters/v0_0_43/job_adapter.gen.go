@@ -182,6 +182,8 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 	var apiErrors *api.V0043OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
