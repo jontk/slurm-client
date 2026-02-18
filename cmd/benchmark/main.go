@@ -7,14 +7,30 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
 	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/internal/factory"
-	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
+
+// userTokenAuth implements authentication with both username and token headers
+type userTokenAuth struct {
+	username string
+	token    string
+}
+
+func (u *userTokenAuth) Authenticate(_ context.Context, req *http.Request) error {
+	req.Header.Set("X-SLURM-USER-NAME", u.username)
+	req.Header.Set("X-SLURM-USER-TOKEN", u.token)
+	return nil
+}
+
+func (u *userTokenAuth) Type() string {
+	return "user-token"
+}
 
 type BenchmarkResult struct {
 	Implementation string
@@ -32,10 +48,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Get JWT token from environment
+	// Get JWT token and username from environment
 	jwtToken := os.Getenv("SLURM_JWT")
 	if jwtToken == "" {
 		log.Fatal("SLURM_JWT environment variable is required")
+	}
+	username := os.Getenv("SLURM_USER")
+	if username == "" {
+		username = "root" // Default username for testing
 	}
 
 	var versions []string
@@ -53,16 +73,16 @@ func main() {
 
 		// Benchmark adapter implementation
 		fmt.Printf("\n--- Adapter Implementation ---\n")
-		benchmarkImplementation(version, jwtToken)
+		benchmarkImplementation(version, username, jwtToken)
 	}
 }
 
-func benchmarkImplementation(version, jwtToken string) {
+func benchmarkImplementation(version, username, jwtToken string) {
 	implName := "Adapter"
 
 	// Benchmark initialization
 	initStart := time.Now()
-	client, err := createClient(version, jwtToken)
+	client, err := createClient(version, username, jwtToken)
 	initDuration := time.Since(initStart)
 
 	if err != nil {
@@ -133,14 +153,17 @@ func benchmarkImplementation(version, jwtToken string) {
 	}
 }
 
-func createClient(version, jwtToken string) (types.SlurmClient, error) {
+func createClient(version, username, jwtToken string) (types.SlurmClient, error) {
 	// Create configuration
 	cfg := config.NewDefault()
 	cfg.BaseURL = "http://localhost:6820"
 	cfg.Debug = false
 
-	// Create JWT authentication provider
-	authProvider := auth.NewTokenAuth(jwtToken)
+	// Create JWT authentication provider with both headers
+	authProvider := &userTokenAuth{
+		username: username,
+		token:    jwtToken,
+	}
 
 	// Create factory
 	clientFactory, err := factory.NewClientFactory(

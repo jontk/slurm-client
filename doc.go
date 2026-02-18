@@ -90,17 +90,19 @@ Version detection is automatic, but can be overridden using NewClientWithVersion
 
 SLURM REST API uses JWT token authentication:
 
-JWT Token:
-
-	authProvider := auth.NewTokenAuth("your-jwt-token")
-
-User Token (with username header):
+User Token (RECOMMENDED - with username header):
 
 	// Sets both X-SLURM-USER-NAME and X-SLURM-USER-TOKEN headers
+	// This is required by most SLURM deployments
 	client, err := slurm.NewClient(ctx,
 	    slurm.WithBaseURL("https://cluster:6820"),
 	    slurm.WithUserToken("username", "your-jwt-token"),
 	)
+
+JWT Token (DEPRECATED - missing username header):
+
+	// WARNING: Only sets X-SLURM-USER-TOKEN, will fail with most slurmrestd deployments
+	authProvider := auth.NewTokenAuth("your-jwt-token")  // Deprecated: Use WithUserToken instead
 
 Environment Variable:
 

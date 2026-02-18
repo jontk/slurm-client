@@ -7,12 +7,28 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	slurm "github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
+
+// userTokenAuth implements authentication with both username and token headers
+type userTokenAuth struct {
+	username string
+	token    string
+}
+
+func (u *userTokenAuth) Authenticate(_ context.Context, req *http.Request) error {
+	req.Header.Set("X-SLURM-USER-NAME", u.username)
+	req.Header.Set("X-SLURM-USER-TOKEN", u.token)
+	return nil
+}
+
+func (u *userTokenAuth) Type() string {
+	return "user-token"
+}
 
 func main() {
 	serverURL := "http://localhost:6820"
@@ -37,10 +53,15 @@ func main() {
 func testVersion(ctx context.Context, version, serverURL, token string) {
 	fmt.Printf("=== Testing API Version %s ===\n", version)
 
+	username := "root" // Default username for testing
+
 	// Create client for this version
 	client, err := slurm.NewClientWithVersion(ctx, version,
 		slurm.WithBaseURL(serverURL),
-		slurm.WithAuth(auth.NewTokenAuth(token)),
+		slurm.WithAuth(&userTokenAuth{
+			username: username,
+			token:    token,
+		}),
 		slurm.WithConfig(&config.Config{
 			Timeout:            30 * time.Second,
 			MaxRetries:         3,

@@ -22,12 +22,27 @@ type TokenAuth struct {
 	token string
 }
 
-// NewTokenAuth creates a new token-based authentication provider
+// NewTokenAuth creates a new token-based authentication provider (DEPRECATED)
+//
+// IMPORTANT: Most SLURM deployments require both X-SLURM-USER-NAME and
+// X-SLURM-USER-TOKEN headers. This function only sets X-SLURM-USER-TOKEN,
+// which will cause authentication failures with slurmrestd.
+//
+// Deprecated: Use slurm.WithUserToken(username, token) for full authentication.
+// Example:
+//
+//	client, err := slurm.NewClient(ctx,
+//	    slurm.WithBaseURL("https://cluster:6820"),
+//	    slurm.WithUserToken("username", "your-jwt-token"),
+//	)
 func NewTokenAuth(token string) *TokenAuth {
 	return &TokenAuth{token: token}
 }
 
 // Authenticate adds the token to the request
+//
+// WARNING: This only sets X-SLURM-USER-TOKEN header. Most SLURM deployments
+// also require X-SLURM-USER-NAME header. Use slurm.WithUserToken() instead.
 func (t *TokenAuth) Authenticate(_ context.Context, req *http.Request) error {
 	req.Header.Set("X-SLURM-USER-TOKEN", t.token)
 	return nil

@@ -250,6 +250,29 @@ make test
 
 ## ⚡ Quick Start
 
+### ⚠️ **IMPORTANT: Authentication Requirements**
+
+Most SLURM REST API deployments require **both** headers for authentication:
+- `X-SLURM-USER-NAME` - Your username
+- `X-SLURM-USER-TOKEN` - Your JWT token
+
+**✅ Correct (Recommended):**
+```go
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("https://your-slurm-server:6820"),
+    slurm.WithUserToken("your-username", "your-jwt-token"),  // Sets BOTH headers
+)
+```
+
+**❌ Incorrect (Deprecated - Will Fail):**
+```go
+// This only sets X-SLURM-USER-TOKEN and will cause auth failures
+client, err := slurm.NewClient(ctx,
+    slurm.WithBaseURL("https://your-slurm-server:6820"),
+    slurm.WithAuth(auth.NewTokenAuth("your-token")),  // Missing username header!
+)
+```
+
 ### Basic Example
 
 ```go
@@ -261,7 +284,6 @@ import (
     "log"
 
     slurm "github.com/jontk/slurm-client"
-    "github.com/jontk/slurm-client/pkg/auth"
     "github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -269,7 +291,7 @@ func main() {
     // Create client - automatically detects the best compatible API version
     client, err := slurm.NewClient(context.Background(),
         slurm.WithBaseURL("https://your-slurm-server:6820"),
-        slurm.WithAuth(auth.NewTokenAuth("your-token")),
+        slurm.WithUserToken("your-username", "your-jwt-token"),  // Sets both required headers
         // Version auto-detected - no need to specify!
     )
     if err != nil {
