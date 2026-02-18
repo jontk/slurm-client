@@ -19,7 +19,7 @@ type userTokenAuth struct {
 	token    string
 }
 
-func (u *userTokenAuth) Authenticate(ctx context.Context, req *http.Request) error {
+func (u *userTokenAuth) Authenticate(_ context.Context, req *http.Request) error {
 	req.Header.Set("X-SLURM-USER-NAME", u.username)
 	req.Header.Set("X-SLURM-USER-TOKEN", u.token)
 	return nil
