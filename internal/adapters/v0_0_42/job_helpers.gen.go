@@ -55,6 +55,8 @@ func (a *JobAdapter) holdJobImpl(ctx context.Context, req *types.JobHoldRequest)
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
@@ -101,6 +103,8 @@ func (a *JobAdapter) signalJobImpl(ctx context.Context, req *types.JobSignalRequ
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
@@ -168,6 +172,8 @@ func (a *JobAdapter) requeueJobImpl(ctx context.Context, jobID int32) error {
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
@@ -271,6 +277,8 @@ func (a *JobAdapter) allocateJobImpl(ctx context.Context, req *types.JobAllocate
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "V0042"); err != nil {

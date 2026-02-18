@@ -195,6 +195,22 @@ func TestUserAdapter_UpdateConverter(t *testing.T) {
 	require.NotNil(t, apiObj)
 }
 
+func TestUserAdapter_ValidateUpdate(t *testing.T) {
+	adapter := NewUserAdapter(&api.ClientWithResponses{})
+
+	t.Run("nil input returns error", func(t *testing.T) {
+		err := adapter.validateUserUpdate(nil)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "user update data is required")
+	})
+
+	t.Run("valid input passes", func(t *testing.T) {
+		input := &types.UserUpdate{}
+		err := adapter.validateUserUpdate(input)
+		require.NoError(t, err)
+	})
+}
+
 func TestUserAdapter_ValidateCreate(t *testing.T) {
 	adapter := NewUserAdapter(&api.ClientWithResponses{})
 
@@ -214,22 +230,6 @@ func TestUserAdapter_ValidateCreate(t *testing.T) {
 	t.Run("valid input passes", func(t *testing.T) {
 		input := &types.UserCreate{Name: "test"}
 		err := adapter.ValidateUserCreate(input)
-		require.NoError(t, err)
-	})
-}
-
-func TestUserAdapter_ValidateUpdate(t *testing.T) {
-	adapter := NewUserAdapter(&api.ClientWithResponses{})
-
-	t.Run("nil input returns error", func(t *testing.T) {
-		err := adapter.validateUserUpdate(nil)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "user update data is required")
-	})
-
-	t.Run("valid input passes", func(t *testing.T) {
-		input := &types.UserUpdate{}
-		err := adapter.validateUserUpdate(input)
 		require.NoError(t, err)
 	})
 }

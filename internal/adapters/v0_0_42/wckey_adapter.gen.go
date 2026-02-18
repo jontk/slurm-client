@@ -54,6 +54,8 @@ func (a *WCKeyAdapter) List(ctx context.Context, opts *types.WCKeyListOptions) (
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
@@ -127,6 +129,8 @@ func (a *WCKeyAdapter) Get(ctx context.Context, wckeyName string) (*types.WCKey,
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
@@ -179,6 +183,8 @@ func (a *WCKeyAdapter) Create(ctx context.Context, input *types.WCKeyCreate) (*t
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
@@ -211,6 +217,8 @@ func (a *WCKeyAdapter) Delete(ctx context.Context, wckeyName string) error {
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 

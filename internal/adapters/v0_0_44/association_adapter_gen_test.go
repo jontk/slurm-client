@@ -205,6 +205,29 @@ func TestAssociationAdapter_UpdateConverter(t *testing.T) {
 	require.NotNil(t, apiObj)
 }
 
+func TestAssociationAdapter_ValidateUpdate(t *testing.T) {
+	adapter := NewAssociationAdapter(&api.ClientWithResponses{})
+
+	t.Run("nil input returns error", func(t *testing.T) {
+		err := adapter.validateAssociationUpdate(nil)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "association update data is required")
+	})
+
+	t.Run("empty fields returns error", func(t *testing.T) {
+		input := &types.AssociationUpdate{}
+		err := adapter.validateAssociationUpdate(input)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "at least one field must be provided for update")
+	})
+
+	t.Run("valid input passes", func(t *testing.T) {
+		input := &types.AssociationUpdate{DefaultQoS: ptrString("test")}
+		err := adapter.validateAssociationUpdate(input)
+		require.NoError(t, err)
+	})
+}
+
 func TestAssociationAdapter_ValidateCreate(t *testing.T) {
 	adapter := NewAssociationAdapter(&api.ClientWithResponses{})
 
@@ -231,29 +254,6 @@ func TestAssociationAdapter_ValidateCreate(t *testing.T) {
 	t.Run("valid input passes", func(t *testing.T) {
 		input := &types.AssociationCreate{Account: "test", User: "test"}
 		err := adapter.ValidateAssociationCreate(input)
-		require.NoError(t, err)
-	})
-}
-
-func TestAssociationAdapter_ValidateUpdate(t *testing.T) {
-	adapter := NewAssociationAdapter(&api.ClientWithResponses{})
-
-	t.Run("nil input returns error", func(t *testing.T) {
-		err := adapter.validateAssociationUpdate(nil)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "association update data is required")
-	})
-
-	t.Run("empty fields returns error", func(t *testing.T) {
-		input := &types.AssociationUpdate{}
-		err := adapter.validateAssociationUpdate(input)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "at least one field must be provided for update")
-	})
-
-	t.Run("valid input passes", func(t *testing.T) {
-		input := &types.AssociationUpdate{DefaultQoS: ptrString("test")}
-		err := adapter.validateAssociationUpdate(input)
 		require.NoError(t, err)
 	})
 }

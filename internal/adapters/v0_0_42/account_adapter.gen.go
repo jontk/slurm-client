@@ -54,6 +54,8 @@ func (a *AccountAdapter) List(ctx context.Context, opts *types.AccountListOption
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
@@ -130,6 +132,8 @@ func (a *AccountAdapter) Get(ctx context.Context, accountName string) (*types.Ac
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
@@ -182,6 +186,8 @@ func (a *AccountAdapter) Create(ctx context.Context, input *types.AccountCreate)
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
@@ -227,6 +233,8 @@ func (a *AccountAdapter) Update(ctx context.Context, accountName string, update 
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	return common.HandleAPIResponse(responseAdapter, "v0.0.42")
@@ -255,6 +263,8 @@ func (a *AccountAdapter) Delete(ctx context.Context, accountName string) error {
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 

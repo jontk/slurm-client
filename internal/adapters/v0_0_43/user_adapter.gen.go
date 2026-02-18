@@ -54,6 +54,8 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 	var apiErrors *api.V0043OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
@@ -130,6 +132,8 @@ func (a *UserAdapter) Get(ctx context.Context, userName string) (*types.User, er
 	var apiErrors *api.V0043OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
@@ -182,6 +186,8 @@ func (a *UserAdapter) Create(ctx context.Context, input *types.UserCreate) (*typ
 	var apiErrors *api.V0043OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
@@ -227,6 +233,8 @@ func (a *UserAdapter) Update(ctx context.Context, userName string, update *types
 	var apiErrors *api.V0043OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
@@ -255,6 +263,8 @@ func (a *UserAdapter) Delete(ctx context.Context, userName string) error {
 	var apiErrors *api.V0043OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 

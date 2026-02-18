@@ -54,6 +54,8 @@ func (a *ClusterAdapter) List(ctx context.Context, opts *types.ClusterListOption
 	var apiErrors *api.V0044OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.44"); err != nil {
@@ -130,6 +132,8 @@ func (a *ClusterAdapter) Get(ctx context.Context, clusterName string) (*types.Cl
 	var apiErrors *api.V0044OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.44"); err != nil {
@@ -182,6 +186,8 @@ func (a *ClusterAdapter) Create(ctx context.Context, input *types.ClusterCreate)
 	var apiErrors *api.V0044OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.44"); err != nil {
@@ -214,6 +220,8 @@ func (a *ClusterAdapter) Delete(ctx context.Context, clusterName string) error {
 	var apiErrors *api.V0044OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 
