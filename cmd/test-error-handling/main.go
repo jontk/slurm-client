@@ -8,16 +8,32 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/internal/factory"
-	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 	pkgerrors "github.com/jontk/slurm-client/pkg/errors"
 )
+
+// userTokenAuth implements authentication with both username and token headers
+type userTokenAuth struct {
+	username string
+	token    string
+}
+
+func (u *userTokenAuth) Authenticate(ctx context.Context, req *http.Request) error {
+	req.Header.Set("X-SLURM-USER-NAME", u.username)
+	req.Header.Set("X-SLURM-USER-TOKEN", u.token)
+	return nil
+}
+
+func (u *userTokenAuth) Type() string {
+	return "user-token"
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -40,10 +56,15 @@ func main() {
 		log.Fatal("SLURM_JWT environment variable is required")
 	}
 
+	username := os.Getenv("SLURM_USER")
+	if username == "" {
+		username = "root" // Default username for testing
+	}
+
 	testType := os.Args[1]
 
 	// Create client
-	client, err := createClient(jwtToken)
+	client, err := createClient(jwtToken, username)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
@@ -88,14 +109,17 @@ func main() {
 	}
 }
 
-func createClient(jwtToken string) (types.SlurmClient, error) {
+func createClient(jwtToken string, username string) (types.SlurmClient, error) {
 	// Create configuration
 	cfg := config.NewDefault()
 	cfg.BaseURL = "http://localhost:6820"
 	cfg.Debug = false
 
 	// Create JWT authentication provider
-	authProvider := auth.NewTokenAuth(jwtToken)
+	authProvider := &userTokenAuth{
+		username: username,
+		token:    jwtToken,
+	}
 
 	// Create factory with adapter option
 	clientFactory, err := factory.NewClientFactory(

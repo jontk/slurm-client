@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
@@ -22,7 +21,7 @@ func Example_createClient() {
 	// Create a client with automatic version detection
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://your-slurm-server:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-token")),
+		slurm.WithUserToken("your-username", "your-token"),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -41,7 +40,7 @@ func Example_createClientWithVersion() {
 	// Create a client with a specific API version
 	client, err := slurm.NewClientWithVersion(ctx, "v0.0.44",
 		slurm.WithBaseURL("https://your-slurm-server:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-token")),
+		slurm.WithUserToken("your-username", "your-token"),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -57,7 +56,7 @@ func Example_listJobs() {
 
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://your-slurm-server:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-token")),
+		slurm.WithUserToken("your-username", "your-token"),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -83,7 +82,7 @@ func Example_listJobsWithFilters() {
 
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://your-slurm-server:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-token")),
+		slurm.WithUserToken("your-username", "your-token"),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -107,7 +106,7 @@ func Example_submitJob() {
 
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://your-slurm-server:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-token")),
+		slurm.WithUserToken("your-username", "your-token"),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -137,7 +136,7 @@ func Example_getNode() {
 
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://your-slurm-server:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-token")),
+		slurm.WithUserToken("your-username", "your-token"),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -162,7 +161,7 @@ func Example_listNodes() {
 
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://your-slurm-server:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-token")),
+		slurm.WithUserToken("your-username", "your-token"),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -188,7 +187,7 @@ func Example_errorHandling() {
 
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://your-slurm-server:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-token")),
+		slurm.WithUserToken("your-username", "your-token"),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -221,7 +220,7 @@ func Example_withTimeout() {
 	// Create a client with a custom timeout
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://your-slurm-server:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-token")),
+		slurm.WithUserToken("your-username", "your-token"),
 		slurm.WithTimeout(10*time.Second), // 10 second timeout for all operations
 	)
 	if err != nil {

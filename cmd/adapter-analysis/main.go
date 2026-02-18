@@ -7,14 +7,30 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
 	types "github.com/jontk/slurm-client/api"
 	"github.com/jontk/slurm-client/internal/factory"
-	"github.com/jontk/slurm-client/pkg/auth"
 	"github.com/jontk/slurm-client/pkg/config"
 )
+
+// userTokenAuth implements authentication with both username and token headers
+type userTokenAuth struct {
+	username string
+	token    string
+}
+
+func (u *userTokenAuth) Authenticate(ctx context.Context, req *http.Request) error {
+	req.Header.Set("X-SLURM-USER-NAME", u.username)
+	req.Header.Set("X-SLURM-USER-TOKEN", u.token)
+	return nil
+}
+
+func (u *userTokenAuth) Type() string {
+	return "user-token"
+}
 
 // This program analyzes adapter functionality by testing wrapper clients
 // and documenting what adapter methods would need to be implemented
@@ -28,10 +44,14 @@ func main() {
 
 	version := os.Args[1]
 
-	// Get JWT token from environment
+	// Get JWT token and username from environment
 	jwtToken := os.Getenv("SLURM_JWT")
 	if jwtToken == "" {
 		log.Fatal("SLURM_JWT environment variable is required")
+	}
+	username := os.Getenv("SLURM_USER")
+	if username == "" {
+		username = "root" // Default username for testing
 	}
 
 	// Create configuration
@@ -39,8 +59,11 @@ func main() {
 	cfg.BaseURL = "http://localhost:6820"
 	cfg.Debug = false
 
-	// Create JWT authentication provider
-	authProvider := auth.NewTokenAuth(jwtToken)
+	// Create JWT authentication provider with both headers
+	authProvider := &userTokenAuth{
+		username: username,
+		token:    jwtToken,
+	}
 
 	// Create factory
 	clientFactory, err := factory.NewClientFactory(
