@@ -449,6 +449,8 @@ func (a *JobAdapter) holdJobImpl(ctx context.Context, req *types.JobHoldRequest)
 	var apiErrors *api.%sOpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "%s"); err != nil {
@@ -495,6 +497,8 @@ func (a *JobAdapter) signalJobImpl(ctx context.Context, req *types.JobSignalRequ
 	var apiErrors *api.%sOpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "%s"); err != nil {
@@ -562,6 +566,8 @@ func (a *JobAdapter) requeueJobImpl(ctx context.Context, jobID int32) error {
 	var apiErrors *api.%sOpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "%s"); err != nil {
@@ -665,6 +671,8 @@ func (a *JobAdapter) allocateJobImpl(ctx context.Context, req *types.JobAllocate
 	var apiErrors *api.%sOpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "%s"); err != nil {
@@ -835,6 +843,8 @@ func (a *NodeAdapter) drainNodeImpl(ctx context.Context, nodeName string, reason
 	var apiErrors *api.%sOpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "%s"); err != nil {
@@ -874,6 +884,8 @@ func (a *NodeAdapter) resumeNodeImpl(ctx context.Context, nodeName string) error
 	var apiErrors *api.%sOpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "%s"); err != nil {
@@ -1198,6 +1210,8 @@ func (a *{{.Entity}}Adapter) List(ctx context.Context, opts *types.{{.ListOption
 	var apiErrors *api.{{.APIPrefix}}OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "{{.Version}}"); err != nil {
@@ -1317,6 +1331,8 @@ func (a *{{.Entity}}Adapter) Get(ctx context.Context, {{.Identifier}} {{.Identif
 	var apiErrors *api.{{.APIPrefix}}OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "{{.Version}}"); err != nil {
@@ -1396,6 +1412,8 @@ func (a *{{.Entity}}Adapter) Delete(ctx context.Context, {{.Identifier}} {{.Iden
 	var apiErrors *api.{{.APIPrefix}}OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 
@@ -1436,6 +1454,8 @@ func (a *{{.Entity}}Adapter) Delete(ctx context.Context, {{.Identifier}} {{.Iden
 	var apiErrors *api.{{.APIPrefix}}OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 
@@ -1505,6 +1525,8 @@ func (a *{{.Entity}}Adapter) Create(ctx context.Context, input *types.{{.CreateI
 	var apiErrors *api.{{.APIPrefix}}OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "{{.Version}}"); err != nil {
@@ -1547,6 +1569,8 @@ func (a *{{.Entity}}Adapter) Create(ctx context.Context, input *types.{{.CreateI
 	var apiErrors *api.{{.APIPrefix}}OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "{{.Version}}"); err != nil {
@@ -1636,6 +1660,8 @@ func (a *{{.Entity}}Adapter) Update(ctx context.Context, {{.Identifier}} {{.Iden
 	var apiErrors *api.{{.APIPrefix}}OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	return common.HandleAPIResponse(responseAdapter, "{{.Version}}")
@@ -1736,6 +1762,8 @@ func (a *JobAdapter) Update(ctx context.Context, jobID int32, update *types.JobU
 	var apiErrors *api.%sOpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	return common.HandleAPIResponse(responseAdapter, "%s")
@@ -1780,6 +1808,8 @@ func (a *NodeAdapter) Update(ctx context.Context, nodeName string, update *types
 	var apiErrors *api.%sOpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	return common.HandleAPIResponse(responseAdapter, "%s")
@@ -1839,6 +1869,8 @@ func (a *AssociationAdapter) Update(ctx context.Context, associationID string, u
 	var apiErrors *api.%sOpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	return common.HandleAPIResponse(responseAdapter, "%s")
@@ -1891,6 +1923,8 @@ func (a *QoSAdapter) Update(ctx context.Context, qosName string, update *types.Q
 	var apiErrors *api.%sOpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	return common.HandleAPIResponse(responseAdapter, "%s")
@@ -1966,6 +2000,8 @@ func (a *ReservationAdapter) Create(ctx context.Context, input *types.Reservatio
 	var apiErrors *api.%sOpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "%s"); err != nil {
@@ -2032,6 +2068,8 @@ func (a *ReservationAdapter) Update(ctx context.Context, reservationName string,
 	var apiErrors *api.%sOpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	return common.HandleAPIResponse(responseAdapter, "%s")
@@ -2064,10 +2102,13 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 		return nil, a.HandleAPIError(err)
 	}
 
-	// Handle response errors
+	// Handle response errors — check JSONDefault on non-200 responses so that
+	// the actual SLURM rejection reason is surfaced instead of a generic HTTP error.
 	var apiErrors *api.{{.APIPrefix}}OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "{{.Version}}"); err != nil {
@@ -2133,6 +2174,8 @@ func (a *JobAdapter) Cancel(ctx context.Context, jobID int32, opts *types.JobCan
 	var apiErrors *api.{{.APIPrefix}}OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	return common.HandleAPIResponse(responseAdapter, "{{.Version}}")
@@ -2370,6 +2413,8 @@ func (a *%sAdapter) Get(ctx context.Context, %s %s) (*types.%s, error) {
 	var apiErrors *api.%sOpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "%s"); err != nil {
@@ -2443,6 +2488,8 @@ func (a *%sAdapter) Delete(ctx context.Context, %s %s) error {
 	var apiErrors *api.%sOpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 
