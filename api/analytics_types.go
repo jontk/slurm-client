@@ -1751,18 +1751,6 @@ type PerformanceStatistics struct {
 	OptimalResources ResourceRecommendation `json:"optimal_resources"`
 }
 
-// PerformanceTrendAnalysiss provides trend analysis for performance metrics.
-type PerformanceTrendAnalysiss struct {
-	CPUTrend        TrendInfo `json:"cpu_trend"`
-	MemoryTrend     TrendInfo `json:"memory_trend"`
-	IOTrend         TrendInfo `json:"io_trend"`
-	EfficiencyTrend TrendInfo `json:"efficiency_trend"`
-
-	PredictedCPU     float64       `json:"predicted_cpu"`
-	PredictedMemory  float64       `json:"predicted_memory"`
-	PredictedRuntime time.Duration `json:"predicted_runtime"`
-}
-
 // ResourceRecommendation contains recommended resource allocations.
 type ResourceRecommendation struct {
 	CPUs      int     `json:"cpus"`
