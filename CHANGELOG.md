@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-02-18
+
+### Fixed
+- **Authentication** (#105): Fixed missing X-SLURM-USER-NAME header causing authentication failures
+  - `auth.NewTokenAuth()` only set `X-SLURM-USER-TOKEN`, missing required `X-SLURM-USER-NAME` header
+  - Most SLURM REST API deployments require **both** headers for successful authentication
+  - **BREAKING FIX**: Deprecated `auth.NewTokenAuth()` and `slurm.WithToken()`
+  - **NEW RECOMMENDED**: Use `slurm.WithUserToken(username, token)` which sets both headers
+  - Updated all 21 examples and documentation with correct authentication patterns
+  - Added prominent warnings in README and doc.go
+  - **Impact**: Critical fix for production deployments - previous examples would fail with real slurmrestd
+- **Error Handling** (#106): Surface detailed SLURM error messages on non-200 responses
+  - Job submissions now return descriptive SLURM error messages instead of generic "job submission failed"
+  - Error details from SLURM API response body are now extracted and included in error messages
+  - Improved debugging experience for failed job submissions
+  - Applied error detail extraction to all adapter versions (v0.0.42, v0.0.43, v0.0.44)
+
+### Added
+- **Integration Tests** (#103): Comprehensive GitHub Actions integration testing workflow
+  - Dual testing strategy: Mock SLURM for PRs (5-8 min) + Real SLURM for main branch (7-10 min)
+  - Ephemeral k3d cluster with mock SLURM API for fast PR feedback
+  - Real SLURM cluster testing capability (currently disabled, can be re-enabled)
+  - Go module caching, race detection, coverage reporting
+  - Automatic resource cleanup and commit status reporting
+
+### Changed
+- **Code Generation** (bc2bde1): Regenerated all adapter files with fixed generator
+  - Applied error detail surfacing fix to all generated adapters
+  - Ensures consistency across all SLURM API versions
+
+### Dependencies
+- Bump actions/upload-artifact from 4.5.0 to 6.0.0 (#93)
+- Bump peter-evans/create-pull-request from 5 to 8 (#91)
+- Bump actions/checkout from 4.2.2 to 6.0.2 (#90)
+- Bump OpenSSF/scorecard-action from 2.4.0 to 2.4.3 (#89)
+
 ## [0.3.0] - 2026-02-08
 
 ### Added

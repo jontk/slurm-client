@@ -9,6 +9,17 @@ import (
 	"github.com/jontk/slurm-client/pkg/errors"
 )
 
+// validateAssociationUpdate validates association update data
+func (a *AssociationAdapter) validateAssociationUpdate(update *types.AssociationUpdate) error {
+	if update == nil {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "association update data is required", "update", nil, nil)
+	}
+	if update.DefaultQoS == nil && len(update.QoSList) == 0 && update.MaxJobs == nil && update.MaxSubmitJobs == nil && update.MaxWallTime == nil {
+		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one field must be provided for update", "update", nil, nil)
+	}
+	return nil
+}
+
 // ValidateAssociationCreate validates association create data
 func (a *AssociationAdapter) ValidateAssociationCreate(create *types.AssociationCreate) error {
 	if create == nil {
@@ -19,17 +30,6 @@ func (a *AssociationAdapter) ValidateAssociationCreate(create *types.Association
 	}
 	if create.User == "" {
 		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "user is required", "user", nil, nil)
-	}
-	return nil
-}
-
-// validateAssociationUpdate validates association update data
-func (a *AssociationAdapter) validateAssociationUpdate(update *types.AssociationUpdate) error {
-	if update == nil {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "association update data is required", "update", nil, nil)
-	}
-	if update.DefaultQoS == nil && len(update.QoSList) == 0 && update.MaxJobs == nil && update.MaxSubmitJobs == nil && update.MaxWallTime == nil {
-		return errors.NewValidationError(errors.ErrorCodeValidationFailed, "at least one field must be provided for update", "update", nil, nil)
 	}
 	return nil
 }
