@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -15,14 +16,34 @@ import (
 	"github.com/jontk/slurm-client/pkg/config"
 )
 
+// userTokenAuth implements authentication with both username and token headers
+type userTokenAuth struct {
+	username string
+	token    string
+}
+
+func newUserTokenAuth(username, token string) auth.Provider {
+	return &userTokenAuth{username: username, token: token}
+}
+
+func (u *userTokenAuth) Authenticate(ctx context.Context, req *http.Request) error {
+	req.Header.Set("X-SLURM-USER-NAME", u.username)
+	req.Header.Set("X-SLURM-USER-TOKEN", u.token)
+	return nil
+}
+
+func (u *userTokenAuth) Type() string {
+	return "user-token"
+}
+
 // Example: Array job submission and management
 func main() {
 	// Create configuration
 	cfg := config.NewDefault()
 	cfg.BaseURL = "https://cluster.example.com:6820"
 
-	// Create authentication
-	authProvider := auth.NewTokenAuth("your-jwt-token")
+	// Create authentication with both username and token headers
+	authProvider := newUserTokenAuth("your-username", "your-jwt-token")
 
 	// Create client
 	ctx := context.Background()

@@ -15,7 +15,19 @@ import (
 
 // Additional client options that aren't in client.go
 
-// WithToken sets the authentication token
+// WithToken sets the authentication token (DEPRECATED)
+//
+// IMPORTANT: Most SLURM deployments require both X-SLURM-USER-NAME and
+// X-SLURM-USER-TOKEN headers. This function only sets X-SLURM-USER-TOKEN,
+// which will cause authentication failures with slurmrestd.
+//
+// Deprecated: Use WithUserToken(username, token) for full authentication.
+// Example:
+//
+//	client, err := slurm.NewClient(ctx,
+//	    slurm.WithBaseURL("https://cluster:6820"),
+//	    slurm.WithUserToken("username", "your-jwt-token"),
+//	)
 func WithToken(token string) ClientOption {
 	return func(f *factory.ClientFactory) error {
 		// Create a token provider for the given token

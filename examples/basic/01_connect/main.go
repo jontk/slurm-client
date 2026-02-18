@@ -39,10 +39,11 @@ func main() {
 }
 
 func basicExample(ctx context.Context) {
-	// Create a basic client with JWT token authentication
+	// Create a basic client with user token authentication
+	// IMPORTANT: Most SLURM deployments require both username and token
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://localhost:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-jwt-token")),
+		slurm.WithUserToken("your-username", "your-jwt-token"),
 	)
 	if err != nil {
 		log.Printf("Failed to create client: %v", err)
@@ -100,7 +101,7 @@ func advancedExample(ctx context.Context) {
 	// Create client with advanced options
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://localhost:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-jwt-token")),
+		slurm.WithUserToken("your-username", "your-jwt-token"),
 
 		// Set custom timeout
 		slurm.WithTimeout(30*time.Second),
@@ -138,24 +139,27 @@ func advancedExample(ctx context.Context) {
 func authExample(ctx context.Context) {
 	baseURL := "https://localhost:6820"
 
-	// JWT Token Authentication (recommended)
-	jwtClient, err := slurm.NewClient(ctx,
-		slurm.WithBaseURL(baseURL),
-		slurm.WithAuth(auth.NewTokenAuth("your-jwt-token")),
-	)
-	if err == nil {
-		defer jwtClient.Close()
-		fmt.Println("✓ JWT Token authentication configured")
-	}
-
-	// User Token Authentication
+	// User Token Authentication (RECOMMENDED for most SLURM deployments)
+	// Sets both X-SLURM-USER-NAME and X-SLURM-USER-TOKEN headers
 	userTokenClient, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL(baseURL),
 		slurm.WithUserToken("username", "user-token"),
 	)
 	if err == nil {
 		defer userTokenClient.Close()
-		fmt.Println("✓ User Token authentication configured")
+		fmt.Println("✓ User Token authentication configured (recommended)")
+	}
+
+	// JWT Token Authentication (DEPRECATED - missing username header)
+	// WARNING: Only sets X-SLURM-USER-TOKEN, will fail with most slurmrestd deployments
+	// This is shown for backwards compatibility only - use WithUserToken instead
+	jwtClient, err := slurm.NewClient(ctx,
+		slurm.WithBaseURL(baseURL),
+		slurm.WithAuth(auth.NewTokenAuth("your-jwt-token")),
+	)
+	if err == nil {
+		defer jwtClient.Close()
+		fmt.Println("✓ JWT Token authentication configured (deprecated - use WithUserToken)")
 	}
 
 	// Basic Authentication

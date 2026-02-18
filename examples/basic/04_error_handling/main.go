@@ -45,7 +45,7 @@ func handleConnectionErrors(ctx context.Context) {
 	// Try to connect to a non-existent server
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://non-existent-server:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("token")),
+		slurm.WithUserToken("username", "token"),
 		slurm.WithTimeout(5*time.Second),
 	)
 
@@ -70,7 +70,7 @@ func handleAuthErrors(ctx context.Context) {
 	// Try with invalid credentials
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://localhost:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("invalid-token")),
+		slurm.WithUserToken("username", "invalid-token"),
 	)
 	if err != nil {
 		fmt.Printf("Failed to create client: %v\n", err)
@@ -105,7 +105,7 @@ func handleAuthErrors(ctx context.Context) {
 func handleAPIErrors(ctx context.Context) {
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://localhost:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-token")),
+		slurm.WithUserToken("username", "your-token"),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -138,7 +138,7 @@ func handleTimeoutErrors(ctx context.Context) {
 	// Create a client with short timeout
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://localhost:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-token")),
+		slurm.WithUserToken("username", "your-token"),
 		slurm.WithTimeout(100*time.Millisecond), // Very short timeout
 	)
 	if err != nil {
@@ -169,7 +169,7 @@ func handleRetryAndRecovery(ctx context.Context) {
 	// Create client with retry configuration
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://localhost:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-token")),
+		slurm.WithUserToken("username", "your-token"),
 		slurm.WithMaxRetries(3),
 	)
 	if err != nil {

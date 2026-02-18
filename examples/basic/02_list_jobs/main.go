@@ -11,16 +11,16 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/pkg/auth"
 )
 
 func main() {
 	ctx := context.Background()
 
-	// Create client
+	// Create client with proper authentication
+	// IMPORTANT: Use WithUserToken to set both username and token headers
 	client, err := slurm.NewClient(ctx,
 		slurm.WithBaseURL("https://localhost:6820"),
-		slurm.WithAuth(auth.NewTokenAuth("your-jwt-token")),
+		slurm.WithUserToken("your-username", "your-jwt-token"),
 	)
 	if err != nil {
 		log.Fatal(err)
