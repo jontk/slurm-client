@@ -48,6 +48,8 @@ func (a *NodeAdapter) drainNodeImpl(ctx context.Context, nodeName string, reason
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
@@ -89,6 +91,8 @@ func (a *NodeAdapter) resumeNodeImpl(ctx context.Context, nodeName string) error
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {

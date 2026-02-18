@@ -54,6 +54,8 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 	var apiErrors *api.V0044OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.44"); err != nil {
@@ -130,6 +132,8 @@ func (a *NodeAdapter) Get(ctx context.Context, nodeName string) (*types.Node, er
 	var apiErrors *api.V0044OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.44"); err != nil {
@@ -180,6 +184,8 @@ func (a *NodeAdapter) Update(ctx context.Context, nodeName string, update *types
 	var apiErrors *api.V0044OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	return common.HandleAPIResponse(responseAdapter, "v0.0.44")
@@ -208,6 +214,8 @@ func (a *NodeAdapter) Delete(ctx context.Context, nodeName string) error {
 	var apiErrors *api.V0044OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 

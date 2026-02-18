@@ -54,6 +54,8 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
@@ -130,6 +132,8 @@ func (a *ReservationAdapter) Get(ctx context.Context, reservationName string) (*
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
@@ -184,6 +188,8 @@ func (a *ReservationAdapter) Delete(ctx context.Context, reservationName string)
 	var apiErrors *api.V0042OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 

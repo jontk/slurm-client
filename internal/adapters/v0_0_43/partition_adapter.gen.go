@@ -54,6 +54,8 @@ func (a *PartitionAdapter) List(ctx context.Context, opts *types.PartitionListOp
 	var apiErrors *api.V0043OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
@@ -130,6 +132,8 @@ func (a *PartitionAdapter) Get(ctx context.Context, partitionName string) (*type
 	var apiErrors *api.V0043OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {

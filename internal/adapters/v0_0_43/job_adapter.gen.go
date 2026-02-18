@@ -55,6 +55,8 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 	var apiErrors *api.V0043OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
@@ -135,6 +137,8 @@ func (a *JobAdapter) Get(ctx context.Context, jobID int32) (*types.Job, error) {
 	var apiErrors *api.V0043OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
@@ -178,10 +182,13 @@ func (a *JobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.J
 		return nil, a.HandleAPIError(err)
 	}
 
-	// Handle response errors
+	// Handle response errors — check JSONDefault on non-200 responses so that
+	// the actual SLURM rejection reason is surfaced instead of a generic HTTP error.
 	var apiErrors *api.V0043OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
@@ -221,6 +228,8 @@ func (a *JobAdapter) Update(ctx context.Context, jobID int32, update *types.JobU
 	var apiErrors *api.V0043OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
@@ -253,6 +262,8 @@ func (a *JobAdapter) Cancel(ctx context.Context, jobID int32, opts *types.JobCan
 	var apiErrors *api.V0043OpenapiErrors
 	if resp.JSON200 != nil {
 		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
 	return common.HandleAPIResponse(responseAdapter, "v0.0.43")
