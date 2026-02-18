@@ -16,6 +16,7 @@ import (
 	"go/format"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -268,8 +269,14 @@ import (
 
 `, version))
 
-	// Generate validation methods for each operation
-	for operation, validationConfig := range entityDef.Validation {
+	// Generate validation methods for each operation (sorted for deterministic output)
+	validationOps := make([]string, 0, len(entityDef.Validation))
+	for op := range entityDef.Validation {
+		validationOps = append(validationOps, op)
+	}
+	sort.Strings(validationOps)
+	for _, operation := range validationOps {
+		validationConfig := entityDef.Validation[operation]
 		methodCode := generateValidationMethod(entityName, operation, validationConfig, entityDef)
 		buf.WriteString(methodCode)
 		buf.WriteString("\n")
@@ -3252,8 +3259,14 @@ func generateTestInputForType(entityName, inputType, operation string) string {
 func generateValidationTests(entityName string, entityDef EntityDef) string {
 	var buf bytes.Buffer
 
-	// Generate tests for each validation operation (create, update)
-	for operation, config := range entityDef.Validation {
+	// Generate tests for each validation operation (sorted for deterministic output)
+	testOps := make([]string, 0, len(entityDef.Validation))
+	for op := range entityDef.Validation {
+		testOps = append(testOps, op)
+	}
+	sort.Strings(testOps)
+	for _, operation := range testOps {
+		config := entityDef.Validation[operation]
 		var inputType string
 		var methodName string
 		switch operation {
