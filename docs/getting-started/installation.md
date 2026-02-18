@@ -15,7 +15,7 @@ go get github.com/jontk/slurm-client@latest
 ## Install Specific Version
 
 ```bash
-go get github.com/jontk/slurm-client@v0.3.0
+go get github.com/jontk/slurm-client@v0.3.1
 ```
 
 ## Verify Installation
