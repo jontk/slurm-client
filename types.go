@@ -258,7 +258,6 @@ type PerformanceHistoryOptions = api.PerformanceHistoryOptions
 type PerformanceSnapshot = api.PerformanceSnapshot
 type PerformanceStatistics = api.PerformanceStatistics
 type PerformanceTrendAnalysis = api.PerformanceTrendAnalysis
-type PerformanceTrendAnalysiss = api.PerformanceTrendAnalysiss
 type PerformanceTrends = api.PerformanceTrends
 type PingResponse = api.PingResponse
 type PriorityWeights = api.PriorityWeights
