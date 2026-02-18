@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/pkg/auth"
 )
 
 func main() {

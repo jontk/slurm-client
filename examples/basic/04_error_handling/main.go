@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/jontk/slurm-client"
-	"github.com/jontk/slurm-client/pkg/auth"
 	slurmErrors "github.com/jontk/slurm-client/pkg/errors"
 )
 
