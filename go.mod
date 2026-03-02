@@ -9,9 +9,9 @@ require (
 	github.com/google/uuid v1.5.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/oapi-codegen/runtime v1.1.1
+	github.com/oapi-codegen/runtime v1.2.0
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/text v0.14.0
+	golang.org/x/text v0.21.0
 )
 
 require (
