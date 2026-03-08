@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **v0.0.41 Converters** (#118): Use JSON round-trip for type assertions in v0.0.41 converters
   - Node, partition, reservation, user, and association converters failed when oapi-codegen returned anonymous structs instead of `map[string]interface{}`
-  - Replaced brittle type assertion paths with JSON marshal/unmarshal round-trip
+  - Replaced brittle type assertion paths with JSON round-trip conversion
   - Aligns with the pattern already used by account, job, and qos converters
   - Association converter simplified from ~55-line inline struct matching to 6-line JSON round-trip
 
