@@ -3,6 +3,7 @@
 package v0_0_41
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -11,10 +12,16 @@ import (
 
 // convertAPIReservationToCommon converts a v0.0.41 API Reservation to common Reservation type
 func (a *ReservationAdapter) convertAPIReservationToCommon(apiRes interface{}) (*types.Reservation, error) {
-	// Use map interface for handling anonymous structs in v0.0.41
+	// v0.0.41 uses anonymous structs from oapi-codegen, convert via JSON round-trip
 	resData, ok := apiRes.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("unexpected reservation data type: %T", apiRes)
+		jsonBytes, err := json.Marshal(apiRes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal reservation data: %w", err)
+		}
+		if err := json.Unmarshal(jsonBytes, &resData); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal reservation data to map: %w", err)
+		}
 	}
 	res := &types.Reservation{}
 	// Basic fields - using safe type assertions

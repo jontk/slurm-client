@@ -3,6 +3,7 @@
 package v0_0_41
 
 import (
+	"encoding/json"
 	"fmt"
 
 	types "github.com/jontk/slurm-client/api"
@@ -11,10 +12,16 @@ import (
 
 // convertAPIUserToCommon converts a v0.0.41 API User to common User type
 func (a *UserAdapter) convertAPIUserToCommon(apiUser interface{}) (*types.User, error) {
-	// Use map interface for handling anonymous structs in v0.0.41
+	// v0.0.41 uses anonymous structs from oapi-codegen, convert via JSON round-trip
 	userData, ok := apiUser.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("unexpected user data type: %T", apiUser)
+		jsonBytes, err := json.Marshal(apiUser)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal user data: %w", err)
+		}
+		if err := json.Unmarshal(jsonBytes, &userData); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal user data to map: %w", err)
+		}
 	}
 	user := &types.User{}
 	// Basic fields - using safe type assertions

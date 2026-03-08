@@ -3,6 +3,7 @@
 package v0_0_41
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -13,10 +14,16 @@ import (
 
 // convertAPINodeToCommon converts a v0.0.41 API Node to common Node type
 func (a *NodeAdapter) convertAPINodeToCommon(apiNode interface{}) (*types.Node, error) {
-	// Use map interface for handling anonymous structs in v0.0.41
+	// v0.0.41 uses anonymous structs from oapi-codegen, convert via JSON round-trip
 	nodeData, ok := apiNode.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("unexpected node data type: %T", apiNode)
+		jsonBytes, err := json.Marshal(apiNode)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal node data: %w", err)
+		}
+		if err := json.Unmarshal(jsonBytes, &nodeData); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal node data to map: %w", err)
+		}
 	}
 	node := &types.Node{}
 	// Basic fields - using safe type assertions
