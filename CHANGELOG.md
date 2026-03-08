@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation** (#108): Improve pkg.go.dev documentation quality
   - Fixed `doc.go` code examples: replaced deprecated `auth.NewTokenAuth()`, corrected job iteration, error handling, filtering, and manager interface signatures
   - Added package-level godoc to `pkg/errors` package
-  - Removed duplicate `PerformanceTrendAnalysiss` type (typo'd copy with identical fields)
+  - Removed duplicate `PerformanceTrendAnalysis` type (typo'd copy with identical fields)
   - Fixed README license references from MIT to Apache-2.0
 
 ## [0.3.1] - 2026-02-18
