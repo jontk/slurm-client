@@ -58,18 +58,26 @@ func (a *PartitionAdapter) List(ctx context.Context, opts *types.PartitionListOp
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "List Partitions"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "List Partitions"); err != nil {
 		return nil, err
 	}
 
 	// Convert response to common types
-	items := make([]types.Partition, 0, len(resp.JSON200.Partitions))
-	for _, apiItem := range resp.JSON200.Partitions {
+	items := make([]types.Partition, 0, len(dataResp.Partitions))
+	for _, apiItem := range dataResp.Partitions {
 		item := a.convertAPIPartitionToCommon(apiItem)
 		items = append(items, *item)
 	}
@@ -136,23 +144,31 @@ func (a *PartitionAdapter) Get(ctx context.Context, partitionName string) (*type
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "Get Partition"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "Get Partition"); err != nil {
 		return nil, err
 	}
 
 	// Check if entity exists
-	if len(resp.JSON200.Partitions) == 0 {
+	if len(dataResp.Partitions) == 0 {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Partition %s not found", partitionName))
 	}
 
 	// Convert and return
-	return a.convertAPIPartitionToCommon(resp.JSON200.Partitions[0]), nil
+	return a.convertAPIPartitionToCommon(dataResp.Partitions[0]), nil
 }
 
 // Create is not supported in this API version

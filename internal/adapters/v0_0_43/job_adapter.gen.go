@@ -59,18 +59,26 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "List Jobs"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "List Jobs"); err != nil {
 		return nil, err
 	}
 
 	// Convert response to common types
-	items := make([]types.Job, 0, len(resp.JSON200.Jobs))
-	for _, apiItem := range resp.JSON200.Jobs {
+	items := make([]types.Job, 0, len(dataResp.Jobs))
+	for _, apiItem := range dataResp.Jobs {
 		item := a.convertAPIJobToCommon(apiItem)
 		items = append(items, *item)
 	}
@@ -141,23 +149,31 @@ func (a *JobAdapter) Get(ctx context.Context, jobID int32) (*types.Job, error) {
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "Get Job"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "Get Job"); err != nil {
 		return nil, err
 	}
 
 	// Check if entity exists
-	if len(resp.JSON200.Jobs) == 0 {
+	if len(dataResp.Jobs) == 0 {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Job %d not found", jobID))
 	}
 
 	// Convert and return
-	return a.convertAPIJobToCommon(resp.JSON200.Jobs[0]), nil
+	return a.convertAPIJobToCommon(dataResp.Jobs[0]), nil
 }
 
 // Submit submits a new job

@@ -58,18 +58,26 @@ func (a *ReservationAdapter) List(ctx context.Context, opts *types.ReservationLi
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "List Reservations"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "List Reservations"); err != nil {
 		return nil, err
 	}
 
 	// Convert response to common types
-	items := make([]types.Reservation, 0, len(resp.JSON200.Reservations))
-	for _, apiItem := range resp.JSON200.Reservations {
+	items := make([]types.Reservation, 0, len(dataResp.Reservations))
+	for _, apiItem := range dataResp.Reservations {
 		item := a.convertAPIReservationToCommon(apiItem)
 		items = append(items, *item)
 	}
@@ -136,23 +144,31 @@ func (a *ReservationAdapter) Get(ctx context.Context, reservationName string) (*
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "Get Reservation"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "Get Reservation"); err != nil {
 		return nil, err
 	}
 
 	// Check if entity exists
-	if len(resp.JSON200.Reservations) == 0 {
+	if len(dataResp.Reservations) == 0 {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Reservation %s not found", reservationName))
 	}
 
 	// Convert and return
-	return a.convertAPIReservationToCommon(resp.JSON200.Reservations[0]), nil
+	return a.convertAPIReservationToCommon(dataResp.Reservations[0]), nil
 }
 
 // Create creates a new reservation

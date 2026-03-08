@@ -174,22 +174,6 @@ func TestJobAdapter_ReadConverter(t *testing.T) {
 	}
 }
 
-func TestJobAdapter_ValidateUpdate(t *testing.T) {
-	adapter := NewJobAdapter(&api.ClientWithResponses{})
-
-	t.Run("nil input returns error", func(t *testing.T) {
-		err := adapter.validateJobUpdate(nil)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "job update data is required")
-	})
-
-	t.Run("valid input passes", func(t *testing.T) {
-		input := &types.JobUpdate{}
-		err := adapter.validateJobUpdate(input)
-		require.NoError(t, err)
-	})
-}
-
 func TestJobAdapter_ValidateCreate(t *testing.T) {
 	adapter := NewJobAdapter(&api.ClientWithResponses{})
 
@@ -209,6 +193,22 @@ func TestJobAdapter_ValidateCreate(t *testing.T) {
 	t.Run("valid input passes", func(t *testing.T) {
 		input := &types.JobCreate{Script: ptrString("test")}
 		err := adapter.ValidateJobCreate(input)
+		require.NoError(t, err)
+	})
+}
+
+func TestJobAdapter_ValidateUpdate(t *testing.T) {
+	adapter := NewJobAdapter(&api.ClientWithResponses{})
+
+	t.Run("nil input returns error", func(t *testing.T) {
+		err := adapter.validateJobUpdate(nil)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "job update data is required")
+	})
+
+	t.Run("valid input passes", func(t *testing.T) {
+		input := &types.JobUpdate{}
+		err := adapter.validateJobUpdate(input)
 		require.NoError(t, err)
 	})
 }

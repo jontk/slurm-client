@@ -60,19 +60,26 @@ func (a *QoSAdapter) List(ctx context.Context, opts *types.QoSListOptions) (*typ
 	if err != nil {
 		return nil, a.WrapError(err, "failed to list QoS")
 	}
-	// Handle response
+	// Handle response - Slurm may return non-2xx (e.g. 500) with valid data
+	// alongside embedded errors (e.g. slurmdb failures). Use JSONDefault
+	// as fallback when JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
-	if resp.JSON200 == nil {
+	if dataResp == nil {
 		return nil, fmt.Errorf("unexpected nil response")
 	}
 	// Convert response to common types
 	qosList := &types.QoSList{
-		QoS:   make([]types.QoS, 0, len(resp.JSON200.Qos)),
+		QoS:   make([]types.QoS, 0, len(dataResp.Qos)),
 		Total: 0,
 	}
-	for _, apiQoS := range resp.JSON200.Qos {
+	for _, apiQoS := range dataResp.Qos {
 		qos, err := a.convertAPIQoSToCommon(apiQoS)
 		if err != nil {
 			// Log the error but continue processing other QoS
@@ -82,13 +89,13 @@ func (a *QoSAdapter) List(ctx context.Context, opts *types.QoSListOptions) (*typ
 	}
 	// Extract warning and error messages if any (but QoSList doesn't have Meta)
 	// Warnings and errors are ignored for now as QoSList structure doesn't support them
-	if resp.JSON200.Warnings != nil {
+	if dataResp.Warnings != nil {
 		// Log warnings if needed
-		_ = resp.JSON200.Warnings
+		_ = dataResp.Warnings
 	}
-	if resp.JSON200.Errors != nil {
+	if dataResp.Errors != nil {
 		// Log errors if needed
-		_ = resp.JSON200.Errors
+		_ = dataResp.Errors
 	}
 	// Update total count
 	qosList.Total = len(qosList.QoS)

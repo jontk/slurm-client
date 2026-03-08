@@ -51,19 +51,26 @@ func (a *PartitionAdapter) List(ctx context.Context, opts *types.PartitionListOp
 	if err != nil {
 		return nil, a.WrapError(err, "failed to list partitions")
 	}
-	// Handle response
+	// Handle response - Slurm may return non-2xx (e.g. 500) with valid data
+	// alongside embedded errors (e.g. slurmdb failures). Use JSONDefault
+	// as fallback when JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
-	if resp.JSON200 == nil {
+	if dataResp == nil {
 		return nil, fmt.Errorf("unexpected nil response")
 	}
 	// Convert response to common types
 	partitionList := &types.PartitionList{
-		Partitions: make([]types.Partition, 0, len(resp.JSON200.Partitions)),
-		Total:      len(resp.JSON200.Partitions),
+		Partitions: make([]types.Partition, 0, len(dataResp.Partitions)),
+		Total:      len(dataResp.Partitions),
 	}
-	for _, apiPartition := range resp.JSON200.Partitions {
+	for _, apiPartition := range dataResp.Partitions {
 		partition, err := a.convertAPIPartitionToCommon(apiPartition)
 		if err != nil {
 			// Log the error but continue processing other partitions
@@ -75,13 +82,13 @@ func (a *PartitionAdapter) List(ctx context.Context, opts *types.PartitionListOp
 	partitionList.Total = len(partitionList.Partitions)
 	// Extract warning and error messages if any (but PartitionList doesn't have Meta)
 	// Warnings and errors are ignored for now as PartitionList structure doesn't support them
-	if resp.JSON200.Warnings != nil {
+	if dataResp.Warnings != nil {
 		// Log warnings if needed
-		_ = resp.JSON200.Warnings
+		_ = dataResp.Warnings
 	}
-	if resp.JSON200.Errors != nil {
+	if dataResp.Errors != nil {
 		// Log errors if needed
-		_ = resp.JSON200.Errors
+		_ = dataResp.Errors
 	}
 	return partitionList, nil
 }

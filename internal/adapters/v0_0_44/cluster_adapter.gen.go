@@ -58,18 +58,26 @@ func (a *ClusterAdapter) List(ctx context.Context, opts *types.ClusterListOption
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.44"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "List Clusters"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "List Clusters"); err != nil {
 		return nil, err
 	}
 
 	// Convert response to common types
-	items := make([]types.Cluster, 0, len(resp.JSON200.Clusters))
-	for _, apiItem := range resp.JSON200.Clusters {
+	items := make([]types.Cluster, 0, len(dataResp.Clusters))
+	for _, apiItem := range dataResp.Clusters {
 		item := a.convertAPIClusterToCommon(apiItem)
 		items = append(items, *item)
 	}
@@ -136,23 +144,31 @@ func (a *ClusterAdapter) Get(ctx context.Context, clusterName string) (*types.Cl
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.44"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "Get Cluster"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "Get Cluster"); err != nil {
 		return nil, err
 	}
 
 	// Check if entity exists
-	if len(resp.JSON200.Clusters) == 0 {
+	if len(dataResp.Clusters) == 0 {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Cluster %s not found", clusterName))
 	}
 
 	// Convert and return
-	return a.convertAPIClusterToCommon(resp.JSON200.Clusters[0]), nil
+	return a.convertAPIClusterToCommon(dataResp.Clusters[0]), nil
 }
 
 // Create creates a new cluster

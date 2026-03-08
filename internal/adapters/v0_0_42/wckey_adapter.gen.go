@@ -58,18 +58,26 @@ func (a *WCKeyAdapter) List(ctx context.Context, opts *types.WCKeyListOptions) (
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "List WCKeys"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "List WCKeys"); err != nil {
 		return nil, err
 	}
 
 	// Convert response to common types
-	items := make([]types.WCKey, 0, len(resp.JSON200.Wckeys))
-	for _, apiItem := range resp.JSON200.Wckeys {
+	items := make([]types.WCKey, 0, len(dataResp.Wckeys))
+	for _, apiItem := range dataResp.Wckeys {
 		item := a.convertAPIWCKeyToCommon(apiItem)
 		items = append(items, *item)
 	}
@@ -133,23 +141,31 @@ func (a *WCKeyAdapter) Get(ctx context.Context, wckeyName string) (*types.WCKey,
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "Get WCKey"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "Get WCKey"); err != nil {
 		return nil, err
 	}
 
 	// Check if entity exists
-	if len(resp.JSON200.Wckeys) == 0 {
+	if len(dataResp.Wckeys) == 0 {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("WCKey %s not found", wckeyName))
 	}
 
 	// Convert and return
-	return a.convertAPIWCKeyToCommon(resp.JSON200.Wckeys[0]), nil
+	return a.convertAPIWCKeyToCommon(dataResp.Wckeys[0]), nil
 }
 
 // Create creates a new wckey
