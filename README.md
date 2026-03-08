@@ -1135,11 +1135,11 @@ We welcome contributions! This project follows enterprise development practices:
 - **Industry First**: Only multi-version Go SLURM client library
 - **Enterprise Grade**: Production patterns from AWS SDK and Kubernetes client-go
 - **Community Impact**: Addresses ecosystem fragmentation with unified solution
-- **Open Source**: MIT licensed for maximum adoption and contribution
+- **Open Source**: Apache-2.0 licensed for maximum adoption and contribution
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 

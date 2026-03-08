@@ -1,6 +1,32 @@
 // SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
 // SPDX-License-Identifier: Apache-2.0
 
+// Package errors provides structured error types and helper functions for the
+// slurm-client library.
+//
+// The central type is [SlurmError], which includes a typed [ErrorCode], an
+// [ErrorCategory], a human-readable message, optional details, and metadata
+// such as the HTTP status code, SLURM API version, and request ID.
+//
+// # Error classification helpers
+//
+// Use the Is* functions to classify errors without casting:
+//
+//	if errors.IsAuthenticationError(err) {
+//	    // handle auth failure
+//	}
+//	if errors.IsNetworkError(err) {
+//	    // handle connectivity issue
+//	}
+//	if errors.IsRetryableError(err) {
+//	    // safe to retry
+//	}
+//
+// # Creating errors
+//
+// Use [NewSlurmError], [NewSlurmErrorWithCause], or the resource-specific
+// constructors ([NewJobError], [NewNodeError], [NewPartitionError], [NewAuthError])
+// to create structured errors. Use [WrapError] to convert generic errors.
 package errors
 
 import (
