@@ -3,6 +3,7 @@
 package v0_0_41
 
 import (
+	"encoding/json"
 	"fmt"
 
 	types "github.com/jontk/slurm-client/api"
@@ -10,10 +11,16 @@ import (
 
 // convertAPIPartitionToCommon converts a v0.0.41 API Partition to common Partition type
 func (a *PartitionAdapter) convertAPIPartitionToCommon(apiPartition interface{}) (*types.Partition, error) {
-	// Use map interface for handling anonymous structs in v0.0.41
+	// v0.0.41 uses anonymous structs from oapi-codegen, convert via JSON round-trip
 	partitionData, ok := apiPartition.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("unexpected partition data type: %T", apiPartition)
+		jsonBytes, err := json.Marshal(apiPartition)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal partition data: %w", err)
+		}
+		if err := json.Unmarshal(jsonBytes, &partitionData); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal partition data to map: %w", err)
+		}
 	}
 	partition := &types.Partition{}
 	// Basic fields - using safe type assertions

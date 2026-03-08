@@ -3,6 +3,7 @@
 package v0_0_41
 
 import (
+	"encoding/json"
 	"fmt"
 
 	types "github.com/jontk/slurm-client/api"
@@ -11,69 +12,17 @@ import (
 
 // convertAPIAssociationToCommon converts a v0.0.41 API association to common association
 func (a *AssociationAdapter) convertAPIAssociationToCommon(apiAssoc interface{}) (*types.Association, error) {
-	// The associations in v0.0.41 are returned as an array of structs
-	// directly in the response
 	assoc := &types.Association{}
-	// Type assertion to access fields from the anonymous struct
+	// v0.0.41 uses anonymous structs from oapi-codegen, convert via JSON round-trip
 	assocData, ok := apiAssoc.(map[string]interface{})
 	if !ok {
-		// Try direct struct access
-		if v, ok := apiAssoc.(struct {
-			Account   *string `json:"account,omitempty"`
-			Cluster   *string `json:"cluster,omitempty"`
-			User      *string `json:"user,omitempty"`
-			Partition *string `json:"partition,omitempty"`
-			Id        *int32  `json:"id,omitempty"`
-			IsDefault *bool   `json:"is_default,omitempty"`
-			Comment   *string `json:"comment,omitempty"`
-			Default   *struct {
-				Qos *string `json:"qos,omitempty"`
-			} `json:"default,omitempty"`
-			Priority *struct {
-				Number *int32 `json:"number,omitempty"`
-			} `json:"priority,omitempty"`
-			SharesRaw *int32 `json:"shares_raw,omitempty"`
-		}); ok {
-			// Extract fields from struct - types.Association uses pointer fields
-			if v.Account != nil {
-				account := *v.Account
-				assoc.Account = &account
-			}
-			if v.Cluster != nil {
-				cluster := *v.Cluster
-				assoc.Cluster = &cluster
-			}
-			if v.User != nil {
-				assoc.User = *v.User
-			}
-			if v.Partition != nil {
-				partition := *v.Partition
-				assoc.Partition = &partition
-			}
-			if v.Id != nil {
-				assoc.ID = v.Id
-			}
-			if v.IsDefault != nil {
-				assoc.IsDefault = v.IsDefault
-			}
-			if v.Comment != nil {
-				comment := *v.Comment
-				assoc.Comment = &comment
-			}
-			if v.Default != nil && v.Default.Qos != nil {
-				qos := *v.Default.Qos
-				assoc.Default = &types.AssociationDefault{QoS: &qos}
-			}
-			if v.Priority != nil && v.Priority.Number != nil {
-				priority := uint32(*v.Priority.Number)
-				assoc.Priority = &priority
-			}
-			if v.SharesRaw != nil {
-				assoc.SharesRaw = v.SharesRaw
-			}
-			return assoc, nil
+		jsonBytes, err := json.Marshal(apiAssoc)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal association data: %w", err)
 		}
-		return nil, fmt.Errorf("unable to convert association: unexpected type")
+		if err := json.Unmarshal(jsonBytes, &assocData); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal association data to map: %w", err)
+		}
 	}
 	// Map access for interface{} type
 	if account, ok := assocData["account"].(string); ok {
