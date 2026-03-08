@@ -64,19 +64,26 @@ func (a *AccountAdapter) List(ctx context.Context, opts *types.AccountListOption
 	if err != nil {
 		return nil, fmt.Errorf("failed to list accounts: %w", err)
 	}
-	// Handle response
+	// Handle response - Slurm may return non-2xx (e.g. 500) with valid data
+	// alongside embedded errors (e.g. slurmdb failures). Use JSONDefault
+	// as fallback when JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if resp.HTTPResponse.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d: failed to list accounts", resp.HTTPResponse.StatusCode)
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, fmt.Errorf("HTTP %d: failed to list accounts", resp.HTTPResponse.StatusCode)
+		}
 	}
-	if resp.JSON200 == nil {
+	if dataResp == nil {
 		return nil, fmt.Errorf("unexpected nil response")
 	}
 	// Convert response to common types
 	accountList := &types.AccountList{
-		Accounts: make([]types.Account, 0, len(resp.JSON200.Accounts)),
-		Total:    len(resp.JSON200.Accounts),
+		Accounts: make([]types.Account, 0, len(dataResp.Accounts)),
+		Total:    len(dataResp.Accounts),
 	}
-	for _, apiAccount := range resp.JSON200.Accounts {
+	for _, apiAccount := range dataResp.Accounts {
 		account, err := a.convertAPIAccountToCommon(apiAccount)
 		if err != nil {
 			// Log the error but continue processing other accounts

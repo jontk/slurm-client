@@ -58,18 +58,26 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "List Users"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "List Users"); err != nil {
 		return nil, err
 	}
 
 	// Convert response to common types
-	items := make([]types.User, 0, len(resp.JSON200.Users))
-	for _, apiItem := range resp.JSON200.Users {
+	items := make([]types.User, 0, len(dataResp.Users))
+	for _, apiItem := range dataResp.Users {
 		item := a.convertAPIUserToCommon(apiItem)
 		items = append(items, *item)
 	}
@@ -136,23 +144,31 @@ func (a *UserAdapter) Get(ctx context.Context, userName string) (*types.User, er
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.42"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "Get User"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "Get User"); err != nil {
 		return nil, err
 	}
 
 	// Check if entity exists
-	if len(resp.JSON200.Users) == 0 {
+	if len(dataResp.Users) == 0 {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("User %s not found", userName))
 	}
 
 	// Convert and return
-	return a.convertAPIUserToCommon(resp.JSON200.Users[0]), nil
+	return a.convertAPIUserToCommon(dataResp.Users[0]), nil
 }
 
 // Create creates a new user

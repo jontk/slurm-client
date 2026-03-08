@@ -58,18 +58,26 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.44"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "List Nodes"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "List Nodes"); err != nil {
 		return nil, err
 	}
 
 	// Convert response to common types
-	items := make([]types.Node, 0, len(resp.JSON200.Nodes))
-	for _, apiItem := range resp.JSON200.Nodes {
+	items := make([]types.Node, 0, len(dataResp.Nodes))
+	for _, apiItem := range dataResp.Nodes {
 		item := a.convertAPINodeToCommon(apiItem)
 		items = append(items, *item)
 	}
@@ -136,23 +144,31 @@ func (a *NodeAdapter) Get(ctx context.Context, nodeName string) (*types.Node, er
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.44"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "Get Node"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "Get Node"); err != nil {
 		return nil, err
 	}
 
 	// Check if entity exists
-	if len(resp.JSON200.Nodes) == 0 {
+	if len(dataResp.Nodes) == 0 {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Node %s not found", nodeName))
 	}
 
 	// Convert and return
-	return a.convertAPINodeToCommon(resp.JSON200.Nodes[0]), nil
+	return a.convertAPINodeToCommon(dataResp.Nodes[0]), nil
 }
 
 // Update updates an existing node

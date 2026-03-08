@@ -49,19 +49,26 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 	if err != nil {
 		return nil, a.WrapError(err, "failed to list nodes")
 	}
-	// Handle response
+	// Handle response - Slurm may return non-2xx (e.g. 500) with valid data
+	// alongside embedded errors (e.g. slurmdb failures). Use JSONDefault
+	// as fallback when JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
-	if resp.JSON200 == nil {
+	if dataResp == nil {
 		return nil, fmt.Errorf("unexpected nil response")
 	}
 	// Convert response to common types
 	nodeList := &types.NodeList{
-		Nodes: make([]types.Node, 0, len(resp.JSON200.Nodes)),
-		Total: len(resp.JSON200.Nodes),
+		Nodes: make([]types.Node, 0, len(dataResp.Nodes)),
+		Total: len(dataResp.Nodes),
 	}
-	for _, apiNode := range resp.JSON200.Nodes {
+	for _, apiNode := range dataResp.Nodes {
 		node, err := a.convertAPINodeToCommon(apiNode)
 		if err != nil {
 			// Log the error but continue processing other nodes
@@ -107,13 +114,13 @@ func (a *NodeAdapter) List(ctx context.Context, opts *types.NodeListOptions) (*t
 	nodeList.Total = len(nodeList.Nodes)
 	// Extract warning and error messages if any (but NodeList doesn't have Meta)
 	// Warnings and errors are ignored for now as NodeList structure doesn't support them
-	if resp.JSON200.Warnings != nil {
+	if dataResp.Warnings != nil {
 		// Log warnings if needed
-		_ = resp.JSON200.Warnings
+		_ = dataResp.Warnings
 	}
-	if resp.JSON200.Errors != nil {
+	if dataResp.Errors != nil {
 		// Log errors if needed
-		_ = resp.JSON200.Errors
+		_ = dataResp.Errors
 	}
 	return nodeList, nil
 }

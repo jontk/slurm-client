@@ -65,19 +65,26 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 	if err != nil {
 		return nil, a.WrapError(err, "failed to list associations")
 	}
-	// Handle response
+	// Handle response - Slurm may return non-2xx (e.g. 500) with valid data
+	// alongside embedded errors (e.g. slurmdb failures). Use JSONDefault
+	// as fallback when JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
-	if resp.JSON200 == nil {
+	if dataResp == nil {
 		return nil, fmt.Errorf("unexpected nil response")
 	}
 	// Convert response to common types
 	assocList := &types.AssociationList{
-		Associations: make([]types.Association, 0, len(resp.JSON200.Associations)),
-		Total:        len(resp.JSON200.Associations),
+		Associations: make([]types.Association, 0, len(dataResp.Associations)),
+		Total:        len(dataResp.Associations),
 	}
-	for _, apiAssoc := range resp.JSON200.Associations {
+	for _, apiAssoc := range dataResp.Associations {
 		assoc, err := a.convertAPIAssociationToCommon(apiAssoc)
 		if err != nil {
 			// Log the error but continue processing other associations

@@ -59,18 +59,26 @@ func (a *AssociationAdapter) List(ctx context.Context, opts *types.AssociationLi
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "List Associations"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "List Associations"); err != nil {
 		return nil, err
 	}
 
 	// Convert response to common types
-	items := make([]types.Association, 0, len(resp.JSON200.Associations))
-	for _, apiItem := range resp.JSON200.Associations {
+	items := make([]types.Association, 0, len(dataResp.Associations))
+	for _, apiItem := range dataResp.Associations {
 		item := a.convertAPIAssociationToCommon(apiItem)
 		items = append(items, *item)
 	}
@@ -140,23 +148,31 @@ func (a *AssociationAdapter) Get(ctx context.Context, associationID string) (*ty
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "Get Association"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "Get Association"); err != nil {
 		return nil, err
 	}
 
 	// Check if entity exists
-	if len(resp.JSON200.Associations) == 0 {
+	if len(dataResp.Associations) == 0 {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("Association %s not found", associationID))
 	}
 
 	// Convert and return
-	return a.convertAPIAssociationToCommon(resp.JSON200.Associations[0]), nil
+	return a.convertAPIAssociationToCommon(dataResp.Associations[0]), nil
 }
 
 // Create creates a new association

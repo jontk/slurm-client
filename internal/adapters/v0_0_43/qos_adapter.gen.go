@@ -58,18 +58,26 @@ func (a *QoSAdapter) List(ctx context.Context, opts *types.QoSListOptions) (*typ
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "List QoSs"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "List QoSs"); err != nil {
 		return nil, err
 	}
 
 	// Convert response to common types
-	items := make([]types.QoS, 0, len(resp.JSON200.Qos))
-	for _, apiItem := range resp.JSON200.Qos {
+	items := make([]types.QoS, 0, len(dataResp.Qos))
+	for _, apiItem := range dataResp.Qos {
 		item := a.convertAPIQoSToCommon(apiItem)
 		items = append(items, *item)
 	}
@@ -136,23 +144,31 @@ func (a *QoSAdapter) Get(ctx context.Context, qosName string) (*types.QoS, error
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "v0.0.43"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "Get QoS"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "Get QoS"); err != nil {
 		return nil, err
 	}
 
 	// Check if entity exists
-	if len(resp.JSON200.Qos) == 0 {
+	if len(dataResp.Qos) == 0 {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("QoS %s not found", qosName))
 	}
 
 	// Convert and return
-	return a.convertAPIQoSToCommon(resp.JSON200.Qos[0]), nil
+	return a.convertAPIQoSToCommon(dataResp.Qos[0]), nil
 }
 
 // Create creates a new qos

@@ -52,18 +52,26 @@ func (a *JobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*typ
 	if err != nil {
 		return nil, a.WrapError(err, "failed to list jobs")
 	}
-	// Handle response
+	// Handle response - Slurm may return non-2xx (e.g. 500) with valid data
+	// alongside embedded errors (e.g. slurmdb_qos_get failures). Use JSONDefault
+	// as fallback when JSON200 is nil but data is present.
+	jobsResp := resp.JSON200
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil && len(resp.JSONDefault.Jobs) > 0 {
+			// Partial failure: non-2xx status but valid data in JSONDefault
+			jobsResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
-	if resp.JSON200 == nil {
+	if jobsResp == nil {
 		return nil, fmt.Errorf("unexpected nil response")
 	}
 	// Convert response to common types
 	jobList := &types.JobList{
-		Jobs: make([]types.Job, 0, len(resp.JSON200.Jobs)),
+		Jobs: make([]types.Job, 0, len(jobsResp.Jobs)),
 	}
-	for _, apiJob := range resp.JSON200.Jobs {
+	for _, apiJob := range jobsResp.Jobs {
 		job, err := a.convertAPIJobToCommon(apiJob)
 		if err != nil {
 			// Log the error but continue processing other jobs

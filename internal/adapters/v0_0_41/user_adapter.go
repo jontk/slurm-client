@@ -76,19 +76,26 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 	if err != nil {
 		return nil, a.WrapError(err, "failed to list users")
 	}
-	// Handle response
+	// Handle response - Slurm may return non-2xx (e.g. 500) with valid data
+	// alongside embedded errors (e.g. slurmdb failures). Use JSONDefault
+	// as fallback when JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := a.HandleHTTPResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
-	if resp.JSON200 == nil {
+	if dataResp == nil {
 		return nil, fmt.Errorf("unexpected nil response")
 	}
 	// Convert response to common types
 	userList := &types.UserList{
-		Users: make([]types.User, 0, len(resp.JSON200.Users)),
+		Users: make([]types.User, 0, len(dataResp.Users)),
 		Total: 0,
 	}
-	for _, apiUser := range resp.JSON200.Users {
+	for _, apiUser := range dataResp.Users {
 		user, err := a.convertAPIUserToCommon(apiUser)
 		if err != nil {
 			// Log the error but continue processing other users
@@ -98,14 +105,14 @@ func (a *UserAdapter) List(ctx context.Context, opts *types.UserListOptions) (*t
 	}
 	// Extract warning and error messages if any (but UserList doesn't have Meta)
 	// Warnings are ignored for now as UserList structure doesn't support them
-	if resp.JSON200.Warnings != nil {
+	if dataResp.Warnings != nil {
 		// Log warnings if needed
-		_ = resp.JSON200.Warnings
+		_ = dataResp.Warnings
 	}
 	// Extract error messages if any
-	if resp.JSON200.Errors != nil {
-		errors := make([]string, 0, len(*resp.JSON200.Errors))
-		for _, error := range *resp.JSON200.Errors {
+	if dataResp.Errors != nil {
+		errors := make([]string, 0, len(*dataResp.Errors))
+		for _, error := range *dataResp.Errors {
 			if error.Description != nil {
 				errors = append(errors, *error.Description)
 			}

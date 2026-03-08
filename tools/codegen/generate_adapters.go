@@ -1221,18 +1221,26 @@ func (a *{{.Entity}}Adapter) List(ctx context.Context, opts *types.{{.ListOption
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "{{.Version}}"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "List {{.Entity}}s"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "List {{.Entity}}s"); err != nil {
 		return nil, err
 	}
 
 	// Convert response to common types
-	items := make([]types.{{.Entity}}, 0, len(resp.JSON200.{{.ResponseList}}))
-	for _, apiItem := range resp.JSON200.{{.ResponseList}} {
+	items := make([]types.{{.Entity}}, 0, len(dataResp.{{.ResponseList}}))
+	for _, apiItem := range dataResp.{{.ResponseList}} {
 		item := a.convertAPI{{.Entity}}ToCommon(apiItem)
 		items = append(items, *item)
 	}
@@ -1342,23 +1350,31 @@ func (a *{{.Entity}}Adapter) Get(ctx context.Context, {{.Identifier}} {{.Identif
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "{{.Version}}"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "Get {{.Entity}}"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "Get {{.Entity}}"); err != nil {
 		return nil, err
 	}
 
 	// Check if entity exists
-	if len(resp.JSON200.{{.ResponseList}}) == 0 {
+	if len(dataResp.{{.ResponseList}}) == 0 {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("{{.Entity}} {{.FormatVerb}} not found", {{.Identifier}}))
 	}
 
 	// Convert and return
-	return a.convertAPI{{.Entity}}ToCommon(resp.JSON200.{{.ResponseList}}[0]), nil
+	return a.convertAPI{{.Entity}}ToCommon(dataResp.{{.ResponseList}}[0]), nil
 }
 `))
 
@@ -2424,23 +2440,31 @@ func (a *%sAdapter) Get(ctx context.Context, %s %s) (*types.%s, error) {
 		apiErrors = resp.JSONDefault.Errors
 	}
 	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	// Slurm may return non-2xx (e.g. 500) with valid data alongside embedded
+	// errors (e.g. slurmdb_qos_get failures). Use JSONDefault as fallback when
+	// JSON200 is nil but data is present.
+	dataResp := resp.JSON200
 	if err := common.HandleAPIResponse(responseAdapter, "%s"); err != nil {
-		return nil, err
+		if resp.JSONDefault != nil {
+			dataResp = resp.JSONDefault
+		} else {
+			return nil, err
+		}
 	}
 
 	// Check for nil response
-	if err := a.CheckNilResponse(resp.JSON200, "Get %s"); err != nil {
+	if err := a.CheckNilResponse(dataResp, "Get %s"); err != nil {
 		return nil, err
 	}
 
 	// Check if entity exists
-	if len(resp.JSON200.%s) == 0 {
+	if len(dataResp.%s) == 0 {
 		return nil, errors.NewSlurmError(errors.ErrorCodeResourceNotFound,
 			fmt.Sprintf("%s %%s not found", %s))
 	}
 
 	// Convert and return
-	return a.convertAPI%sToCommon(resp.JSON200.%s[0]), nil
+	return a.convertAPI%sToCommon(dataResp.%s[0]), nil
 }
 `, data["EntityLower"], data["Identifier"],
 		data["Entity"], data["Identifier"], data["IdentifierType"], data["Entity"],
