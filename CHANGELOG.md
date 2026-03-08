@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-03-08
+
+### Fixed
+- **Adapter Resilience** (#115): Fall back to JSONDefault on non-200 responses with valid data
+  - Slurm 24.05 slurmrestd returns HTTP 500 with embedded `slurmdb_qos_get` errors even when valid data is present
+  - All `List` and `Get` adapter methods now extract usable data from `resp.JSONDefault` instead of treating non-200 as fatal
+  - Applied to all adapter versions: v0.0.41 (7 adapters), v0.0.42 (10 adapters), v0.0.43 (11 adapters), v0.0.44 (10 adapters)
+  - Fix applied in codegen templates (`generate_adapters.go`) so it survives regeneration
+  - v0.0.43 was previously missing the fix entirely
+  - **Impact**: Callers (e.g. s9s) no longer crash on Slurm 24.05 clusters
+
+### Changed
+- **Documentation** (#108): Improve pkg.go.dev documentation quality
+  - Fixed `doc.go` code examples: replaced deprecated `auth.NewTokenAuth()`, corrected job iteration, error handling, filtering, and manager interface signatures
+  - Added package-level godoc to `pkg/errors` package
+  - Removed duplicate `PerformanceTrendAnalysis` type (typo'd copy with identical fields)
+  - Fixed README license references from MIT to Apache-2.0
+
 ## [0.3.1] - 2026-02-18
 
 ### Fixed
