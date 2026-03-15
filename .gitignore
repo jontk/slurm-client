@@ -195,3 +195,7 @@ examples/basic/*/04_error_handling
 *_PROGRESS.md
 *_SUMMARY.md
 *_FIXES*.md
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db

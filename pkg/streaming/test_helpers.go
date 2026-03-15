@@ -89,6 +89,9 @@ func (m *mockJobManager) Get(ctx context.Context, jobID string) (*types.Job, err
 func (m *mockJobManager) Submit(ctx context.Context, job *types.JobSubmission) (*types.JobSubmitResponse, error) {
 	return nil, nil
 }
+func (m *mockJobManager) SubmitRaw(ctx context.Context, job *types.JobCreate) (*types.JobSubmitResponse, error) {
+	return &types.JobSubmitResponse{}, nil
+}
 func (m *mockJobManager) Allocate(ctx context.Context, req *types.JobAllocateRequest) (*types.JobAllocateResponse, error) {
 	return nil, nil
 }

@@ -108,7 +108,13 @@ type JobReader interface {
 
 // JobWriter provides job mutation operations
 type JobWriter interface {
+	// Deprecated: Submit uses the simplified JobSubmission struct which only supports 12 fields.
+	// Use SubmitRaw with *JobCreate for full field support (90+ fields from the SLURM OpenAPI spec).
 	Submit(ctx context.Context, job *JobSubmission) (*JobSubmitResponse, error)
+	// SubmitRaw submits a job using the full JobCreate struct from the SLURM OpenAPI spec.
+	// This provides access to all fields (QoS, GPUs, array, mail, exclusive, requeue,
+	// dependencies, constraints, etc.) without the lossy conversion of Submit.
+	SubmitRaw(ctx context.Context, job *JobCreate) (*JobSubmitResponse, error)
 	Update(ctx context.Context, jobID string, update *JobUpdate) error
 }
 

@@ -445,6 +445,10 @@ func (m *adapterJobManager) Submit(ctx context.Context, job *types.JobSubmission
 	}, nil
 }
 
+func (m *adapterJobManager) SubmitRaw(ctx context.Context, job *types.JobCreate) (*types.JobSubmitResponse, error) {
+	return m.adapter.Submit(ctx, job)
+}
+
 func (m *adapterJobManager) Update(ctx context.Context, jobID string, update *types.JobUpdate) error {
 	// Convert string to int32 for adapter
 	jobIDInt, err := strconv.ParseInt(jobID, 10, 32)

@@ -5,6 +5,7 @@ package factory
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	types "github.com/jontk/slurm-client/api"
@@ -351,6 +352,122 @@ func TestAdapterClient_AssociationOperations(t *testing.T) {
 	for _, assoc := range list.Associations {
 		assert.Equal(t, "user1", assoc.User)
 	}
+}
+
+// Mock job adapter for testing
+type mockJobAdapter struct {
+	submitFunc func(ctx context.Context, job *types.JobCreate) (*types.JobSubmitResponse, error)
+}
+
+func (m *mockJobAdapter) List(ctx context.Context, opts *types.JobListOptions) (*types.JobList, error) {
+	return &types.JobList{}, nil
+}
+func (m *mockJobAdapter) Get(ctx context.Context, jobID int32) (*types.Job, error) {
+	return &types.Job{}, nil
+}
+func (m *mockJobAdapter) Submit(ctx context.Context, job *types.JobCreate) (*types.JobSubmitResponse, error) {
+	if m.submitFunc != nil {
+		return m.submitFunc(ctx, job)
+	}
+	return &types.JobSubmitResponse{}, nil
+}
+func (m *mockJobAdapter) Update(ctx context.Context, jobID int32, update *types.JobUpdate) error {
+	return nil
+}
+func (m *mockJobAdapter) Cancel(ctx context.Context, jobID int32, opts *types.JobCancelRequest) error {
+	return nil
+}
+func (m *mockJobAdapter) Signal(ctx context.Context, req *types.JobSignalRequest) error {
+	return nil
+}
+func (m *mockJobAdapter) Hold(ctx context.Context, req *types.JobHoldRequest) error { return nil }
+func (m *mockJobAdapter) Notify(ctx context.Context, req *types.JobNotifyRequest) error {
+	return nil
+}
+func (m *mockJobAdapter) Requeue(ctx context.Context, jobID int32) error { return nil }
+func (m *mockJobAdapter) Watch(ctx context.Context, opts *types.JobWatchOptions) (<-chan types.JobWatchEvent, error) {
+	return nil, nil
+}
+func (m *mockJobAdapter) Allocate(ctx context.Context, req *types.JobAllocateRequest) (*types.JobAllocateResponse, error) {
+	return nil, nil
+}
+
+func TestAdapterClient_SubmitRaw_PassThrough(t *testing.T) {
+	ctx := helpers.TestContext(t)
+
+	var capturedJob *types.JobCreate
+	mockJob := &mockJobAdapter{
+		submitFunc: func(ctx context.Context, job *types.JobCreate) (*types.JobSubmitResponse, error) {
+			capturedJob = job
+			return &types.JobSubmitResponse{JobId: int32(42)}, nil
+		},
+	}
+
+	client := &AdapterClient{
+		adapter: &testVersionAdapter{
+			version:    "v0.0.42",
+			jobAdapter: mockJob,
+		},
+		version: "v0.0.42",
+	}
+
+	job := &types.JobCreate{
+		Name:        ptrString("test-raw-job"),
+		Account:     ptrString("research"),
+		Partition:   ptrString("gpu"),
+		Script:      ptrString("#!/bin/bash\necho hello"),
+		QoS:         ptrString("high"),
+		Array:       ptrString("0-15%4"),
+		TRESPerNode: ptrString("gres/gpu:2"),
+		Constraints: ptrString("a100"),
+		Requeue:     helpers.BoolPtr(true),
+		Dependency:  ptrString("afterok:12345"),
+		MailUser:    ptrString("user@example.com"),
+		MailType:    []types.MailTypeValue{"END", "FAIL"},
+	}
+
+	resp, err := client.Jobs().SubmitRaw(ctx, job)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, int32(42), resp.JobId)
+
+	// Verify the job was passed through unmodified
+	require.NotNil(t, capturedJob)
+	assert.Equal(t, "test-raw-job", *capturedJob.Name)
+	assert.Equal(t, "high", *capturedJob.QoS)
+	assert.Equal(t, "0-15%4", *capturedJob.Array)
+	assert.Equal(t, "gres/gpu:2", *capturedJob.TRESPerNode)
+	assert.Equal(t, "a100", *capturedJob.Constraints)
+	assert.Equal(t, true, *capturedJob.Requeue)
+	assert.Equal(t, "afterok:12345", *capturedJob.Dependency)
+	assert.Equal(t, "user@example.com", *capturedJob.MailUser)
+	assert.Equal(t, []types.MailTypeValue{"END", "FAIL"}, capturedJob.MailType)
+}
+
+func TestAdapterClient_SubmitRaw_Error(t *testing.T) {
+	ctx := helpers.TestContext(t)
+
+	mockJob := &mockJobAdapter{
+		submitFunc: func(ctx context.Context, job *types.JobCreate) (*types.JobSubmitResponse, error) {
+			return nil, fmt.Errorf("submission failed: invalid QoS")
+		},
+	}
+
+	client := &AdapterClient{
+		adapter: &testVersionAdapter{
+			version:    "v0.0.42",
+			jobAdapter: mockJob,
+		},
+		version: "v0.0.42",
+	}
+
+	resp, err := client.Jobs().SubmitRaw(ctx, &types.JobCreate{
+		Name: ptrString("bad-job"),
+		QoS:  ptrString("nonexistent"),
+	})
+	assert.Nil(t, resp)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid QoS")
 }
 
 func TestAdapterClient_Version(t *testing.T) {

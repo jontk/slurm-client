@@ -14,7 +14,9 @@ import (
 // Job Submission Types
 // ============================================================================
 
-// JobSubmission represents a job submission request.
+// JobSubmission represents a simplified job submission request with 12 fields.
+//
+// Deprecated: Use JobCreate with SubmitRaw for full field support (90+ fields from the SLURM OpenAPI spec).
 type JobSubmission struct {
 	Name        string            `json:"name"`
 	Account     string            `json:"account,omitempty"`
