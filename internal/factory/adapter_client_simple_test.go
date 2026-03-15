@@ -470,6 +470,28 @@ func TestAdapterClient_SubmitRaw_Error(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid QoS")
 }
 
+func TestAdapterClient_SubmitRaw_NilJob(t *testing.T) {
+	ctx := helpers.TestContext(t)
+
+	mockJob := &mockJobAdapter{
+		submitFunc: func(ctx context.Context, job *types.JobCreate) (*types.JobSubmitResponse, error) {
+			return nil, fmt.Errorf("job is nil")
+		},
+	}
+
+	client := &AdapterClient{
+		adapter: &testVersionAdapter{
+			version:    "v0.0.42",
+			jobAdapter: mockJob,
+		},
+		version: "v0.0.42",
+	}
+
+	resp, err := client.Jobs().SubmitRaw(ctx, nil)
+	assert.Nil(t, resp)
+	assert.Error(t, err)
+}
+
 func TestAdapterClient_Version(t *testing.T) {
 	// Test with nil adapter
 	client := &AdapterClient{
