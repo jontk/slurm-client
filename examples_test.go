@@ -114,15 +114,15 @@ func Example_submitJob() {
 	defer client.Close()
 
 	// Prepare job submission
-	job := &slurm.JobSubmission{
-		Name:   "test-job",
-		Script: "#!/bin/bash\n#SBATCH --job-name=test\n#SBATCH --output=test.out\nsleep 60",
-		CPUs:   2,
-		Memory: 4096,
+	job := &slurm.JobCreate{
+		Name:          stringPtr("test-job"),
+		Script:        stringPtr("#!/bin/bash\n#SBATCH --job-name=test\n#SBATCH --output=test.out\nsleep 60"),
+		MinimumCPUs:   int32Ptr(2),
+		MemoryPerNode: uint64Ptr(4096),
 	}
 
 	// Submit the job
-	response, err := client.Jobs().Submit(ctx, job)
+	response, err := client.Jobs().SubmitRaw(ctx, job)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -236,3 +236,9 @@ func Example_withTimeout() {
 
 	fmt.Printf("Found %d jobs\n", len(jobs.Jobs))
 }
+
+func stringPtr(s string) *string { return &s }
+
+func int32Ptr(i int32) *int32 { return &i }
+
+func uint64Ptr(u uint64) *uint64 { return &u }

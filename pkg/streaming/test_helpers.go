@@ -86,6 +86,7 @@ func (m *mockJobManager) List(ctx context.Context, opts *types.ListJobsOptions) 
 func (m *mockJobManager) Get(ctx context.Context, jobID string) (*types.Job, error) {
 	return nil, nil
 }
+//nolint:staticcheck // SA1019: Submit implements the deprecated JobWriter.Submit interface method
 func (m *mockJobManager) Submit(ctx context.Context, job *types.JobSubmission) (*types.JobSubmitResponse, error) {
 	return &types.JobSubmitResponse{}, nil
 }

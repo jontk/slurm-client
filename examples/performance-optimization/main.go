@@ -269,16 +269,16 @@ func demonstrateBatchOperations(ctx context.Context, cfg *config.Config, auth au
 	// Prepare batch of jobs
 	var submittedJobs []string
 	for i := range 5 {
-		job := &slurm.JobSubmission{
-			Name:      fmt.Sprintf("batch-job-%d", i),
-			Command:   fmt.Sprintf("echo 'Batch job %d'", i),
-			Partition: "compute",
-			CPUs:      1,
-			Memory:    1024,
-			TimeLimit: 5,
+		job := &slurm.JobCreate{
+			Name:          ptrString(fmt.Sprintf("batch-job-%d", i)),
+			Script:        ptrString(fmt.Sprintf("#!/bin/bash\necho 'Batch job %d'", i)),
+			Partition:     ptrString("compute"),
+			MinimumCPUs:   ptrInt32(1),
+			MemoryPerNode: ptrUint64(1024),
+			TimeLimit:     ptrUint32(5),
 		}
 
-		resp, err := client.Jobs().Submit(ctx, job)
+		resp, err := client.Jobs().SubmitRaw(ctx, job)
 		if err != nil {
 			log.Printf("Failed to submit job %d: %v", i, err)
 			continue
@@ -532,3 +532,8 @@ func runBenchmark(ctx context.Context, client slurm.SlurmClient) metrics {
 		errors:            errors,
 	}
 }
+
+func ptrString(s string) *string { return &s }
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }
+func ptrUint64(i uint64) *uint64 { return &i }

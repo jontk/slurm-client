@@ -45,16 +45,16 @@ func main() {
 
 func simpleJob(ctx context.Context, client slurm.SlurmClient) {
 	// Create a simple job specification
-	jobSpec := &slurm.JobSubmission{
-		Name:      "simple-test-job",
-		Script:    "#!/bin/bash\n#SBATCH --job-name=simple-test\n\necho 'Hello from SLURM!'\nsleep 60\necho 'Job completed'",
-		Partition: "compute",
-		TimeLimit: 300, // 5 minutes in seconds
-		Account:   "default",
+	jobSpec := &slurm.JobCreate{
+		Name:      ptrString("simple-test-job"),
+		Script:    ptrString("#!/bin/bash\n#SBATCH --job-name=simple-test\n\necho 'Hello from SLURM!'\nsleep 60\necho 'Job completed'"),
+		Partition: ptrString("compute"),
+		TimeLimit: ptrUint32(300), // 5 minutes in minutes
+		Account:   ptrString("default"),
 	}
 
 	// Submit the job
-	response, err := client.Jobs().Submit(ctx, jobSpec)
+	response, err := client.Jobs().SubmitRaw(ctx, jobSpec)
 	if err != nil {
 		log.Printf("Failed to submit job: %v", err)
 		return
@@ -78,9 +78,9 @@ func simpleJob(ctx context.Context, client slurm.SlurmClient) {
 
 func resourceJob(ctx context.Context, client slurm.SlurmClient) {
 	// Job with specific resource requirements
-	jobSpec := &slurm.JobSubmission{
-		Name: "resource-test-job",
-		Script: `#!/bin/bash
+	jobSpec := &slurm.JobCreate{
+		Name: ptrString("resource-test-job"),
+		Script: ptrString(`#!/bin/bash
 #SBATCH --job-name=resource-test
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=4
@@ -93,15 +93,15 @@ echo "Total tasks: $SLURM_NTASKS"
 echo "CPUs per task: $SLURM_CPUS_PER_TASK"
 
 # Run a parallel application
-srun hostname`,
-		Partition: "compute",
-		Nodes:     2,
-		CPUs:      16,    // 2 nodes * 4 tasks/node * 2 cpus/task
-		Memory:    16384, // 16GB in MB
-		TimeLimit: 3600,  // 1 hour in seconds
+srun hostname`),
+		Partition:     ptrString("compute"),
+		MinimumNodes:  ptrInt32(2),
+		MinimumCPUs:   ptrInt32(16),    // 2 nodes * 4 tasks/node * 2 cpus/task
+		MemoryPerNode: ptrUint64(16384), // 16GB in MB
+		TimeLimit:     ptrUint32(3600),  // 1 hour in minutes
 	}
 
-	response, err := client.Jobs().Submit(ctx, jobSpec)
+	response, err := client.Jobs().SubmitRaw(ctx, jobSpec)
 	if err != nil {
 		log.Printf("Failed to submit resource job: %v", err)
 		return
@@ -114,21 +114,21 @@ srun hostname`,
 func arrayJob(ctx context.Context, client slurm.SlurmClient) {
 	// Submit an array job
 	// Note: Array job syntax is typically handled in the script itself
-	jobSpec := &slurm.JobSubmission{
-		Name: "array-test-job",
-		Script: `#!/bin/bash
+	jobSpec := &slurm.JobCreate{
+		Name: ptrString("array-test-job"),
+		Script: ptrString(`#!/bin/bash
 #SBATCH --job-name=array-test
 #SBATCH --array=1-10
 #SBATCH --time=00:10:00
 
 echo "This is array task $SLURM_ARRAY_TASK_ID"
 sleep 30
-echo "Task $SLURM_ARRAY_TASK_ID completed"`,
-		Partition: "compute",
-		TimeLimit: 600, // 10 minutes in seconds
+echo "Task $SLURM_ARRAY_TASK_ID completed"`),
+		Partition: ptrString("compute"),
+		TimeLimit: ptrUint32(600), // 10 minutes in minutes
 	}
 
-	response, err := client.Jobs().Submit(ctx, jobSpec)
+	response, err := client.Jobs().SubmitRaw(ctx, jobSpec)
 	if err != nil {
 		log.Printf("Failed to submit array job: %v", err)
 		return
@@ -140,14 +140,14 @@ echo "Task $SLURM_ARRAY_TASK_ID completed"`,
 
 func dependentJob(ctx context.Context, client slurm.SlurmClient) {
 	// First, submit a job that others will depend on
-	prereqSpec := &slurm.JobSubmission{
-		Name:      "prerequisite-job",
-		Script:    "#!/bin/bash\necho 'Prerequisite job running'\nsleep 30\necho 'Prerequisite complete'",
-		Partition: "compute",
-		TimeLimit: 300, // 5 minutes in seconds
+	prereqSpec := &slurm.JobCreate{
+		Name:      ptrString("prerequisite-job"),
+		Script:    ptrString("#!/bin/bash\necho 'Prerequisite job running'\nsleep 30\necho 'Prerequisite complete'"),
+		Partition: ptrString("compute"),
+		TimeLimit: ptrUint32(300), // 5 minutes in minutes
 	}
 
-	prereqResp, err := client.Jobs().Submit(ctx, prereqSpec)
+	prereqResp, err := client.Jobs().SubmitRaw(ctx, prereqSpec)
 	if err != nil {
 		log.Printf("Failed to submit prerequisite job: %v", err)
 		return
@@ -156,21 +156,21 @@ func dependentJob(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Printf("Submitted prerequisite job with ID: %d\n", prereqResp.JobId)
 
 	// Submit a job that depends on the prerequisite
-	dependentSpec := &slurm.JobSubmission{
-		Name: "dependent-job",
-		Script: fmt.Sprintf(`#!/bin/bash
+	dependentSpec := &slurm.JobCreate{
+		Name: ptrString("dependent-job"),
+		Script: ptrString(fmt.Sprintf(`#!/bin/bash
 #SBATCH --dependency=afterok:%d
 
 echo 'Dependent job started after job %d completed successfully'
 date
 echo 'Running dependent task...'
 sleep 20
-echo 'Dependent job complete'`, prereqResp.JobId, prereqResp.JobId),
-		Partition: "compute",
-		TimeLimit: 300, // 5 minutes in seconds
+echo 'Dependent job complete'`, prereqResp.JobId, prereqResp.JobId)),
+		Partition: ptrString("compute"),
+		TimeLimit: ptrUint32(300), // 5 minutes in minutes
 	}
 
-	dependentResp, err := client.Jobs().Submit(ctx, dependentSpec)
+	dependentResp, err := client.Jobs().SubmitRaw(ctx, dependentSpec)
 	if err != nil {
 		log.Printf("Failed to submit dependent job: %v", err)
 		return
@@ -206,3 +206,8 @@ echo 'Dependent job complete'`, prereqResp.JobId, prereqResp.JobId),
 		time.Sleep(5 * time.Second)
 	}
 }
+
+func ptrString(s string) *string { return &s }
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }
+func ptrUint64(i uint64) *uint64 { return &i }

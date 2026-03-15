@@ -106,16 +106,16 @@ func main() {
 	fmt.Println("--- Example 5: Job Submission Workflow ---")
 	if client42 != nil {
 		// Submit a test job
-		submission := &slurm.JobSubmission{
-			Name:      "demo-job",
-			Script:    "#!/bin/bash\necho 'Hello from Slurm!'\nsleep 30",
-			Partition: "debug",
-			CPUs:      1,
-			Memory:    1024,
-			TimeLimit: 300, // 5 minutes
+		submission := &slurm.JobCreate{
+			Name:          ptrString("demo-job"),
+			Script:        ptrString("#!/bin/bash\necho 'Hello from Slurm!'\nsleep 30"),
+			Partition:     ptrString("debug"),
+			MinimumCPUs:   ptrInt32(1),
+			MemoryPerNode: ptrUint64(1024),
+			TimeLimit:     ptrUint32(300), // 5 minutes
 		}
 
-		response, err := client42.Jobs().Submit(ctx, submission)
+		response, err := client42.Jobs().SubmitRaw(ctx, submission)
 		if err != nil {
 			log.Printf("Failed to submit job: %v\n", err)
 		} else {
@@ -140,3 +140,8 @@ func main() {
 	fmt.Println()
 	fmt.Println("=== Demo Complete ===")
 }
+
+func ptrString(s string) *string { return &s }
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }
+func ptrUint64(i uint64) *uint64 { return &i }

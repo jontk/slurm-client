@@ -235,9 +235,9 @@ func demonstrateFairShareAnalysis(ctx context.Context, client slurm.SlurmClient,
 
 	// Demonstrate job priority calculation
 	fmt.Printf("\n\nJob Priority Calculation for %s:\n", userName)
+	//nolint:staticcheck // SA1019: CalculateJobPriority requires deprecated JobSubmission
 	jobSubmission := &slurm.JobSubmission{
-		Script: "#!/bin/bash\necho 'Test job for priority calculation'",
-		// Account field doesn't exist in JobSubmission
+		Script:    "#!/bin/bash\necho 'Test job for priority calculation'",
 		Partition: "compute",
 		CPUs:      4,
 		Memory:    8192,

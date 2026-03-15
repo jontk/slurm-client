@@ -20,7 +20,7 @@ type InfoManager = types.InfoManager
 // Data structure type aliases
 type Job = types.Job
 type JobList = types.JobList
-type JobSubmission = types.JobSubmission
+type JobSubmission = types.JobSubmission //nolint:staticcheck // SA1019: re-export of deprecated type
 type JobSubmitResponse = types.JobSubmitResponse
 type JobUpdate = types.JobUpdate
 type JobStep = types.JobStep

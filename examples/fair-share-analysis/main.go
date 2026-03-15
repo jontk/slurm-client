@@ -404,6 +404,7 @@ func predictJobPriority(ctx context.Context, client slurmtypes.SlurmClient, user
 	userManager := client.Users()
 
 	// Define test scenarios
+	//nolint:staticcheck // SA1019: CalculateJobPriority requires deprecated JobSubmission
 	scenarios := []struct {
 		name string
 		job  slurmtypes.JobSubmission

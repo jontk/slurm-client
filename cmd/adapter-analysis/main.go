@@ -124,20 +124,16 @@ func testJobsManager(client types.SlurmClient, version string) {
 
 	// Test Submit
 	fmt.Print("Testing Submit: ")
-	submitJob := &types.JobSubmission{
-		Name:       fmt.Sprintf("adapter-analysis-%s-%d", version, time.Now().Unix()),
-		Partition:  "normal",
-		Script:     "#!/bin/bash\necho 'Testing adapter analysis'\nsleep 5",
-		TimeLimit:  1,
-		Nodes:      1,
-		WorkingDir: "/tmp",
-		Environment: map[string]string{
-			"PATH": "/usr/bin:/bin",
-			"USER": "root",
-			"HOME": "/tmp",
-		},
+	submitJob := &types.JobCreate{
+		Name:                    stringPtr(fmt.Sprintf("adapter-analysis-%s-%d", version, time.Now().Unix())),
+		Partition:               stringPtr("normal"),
+		Script:                  stringPtr("#!/bin/bash\necho 'Testing adapter analysis'\nsleep 5"),
+		TimeLimit:               uint32Ptr(1),
+		MinimumNodes:            int32Ptr(1),
+		CurrentWorkingDirectory: stringPtr("/tmp"),
+		Environment:             []string{"PATH=/usr/bin:/bin", "USER=root", "HOME=/tmp"},
 	}
-	submitResp, err := client.Jobs().Submit(ctx, submitJob)
+	submitResp, err := client.Jobs().SubmitRaw(ctx, submitJob)
 	if err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {

@@ -386,10 +386,12 @@ func (m *mockJobAdapter) Notify(ctx context.Context, req *types.JobNotifyRequest
 }
 func (m *mockJobAdapter) Requeue(ctx context.Context, jobID int32) error { return nil }
 func (m *mockJobAdapter) Watch(ctx context.Context, opts *types.JobWatchOptions) (<-chan types.JobWatchEvent, error) {
-	return nil, nil
+	ch := make(chan types.JobWatchEvent)
+	close(ch)
+	return ch, nil
 }
 func (m *mockJobAdapter) Allocate(ctx context.Context, req *types.JobAllocateRequest) (*types.JobAllocateResponse, error) {
-	return nil, nil
+	return &types.JobAllocateResponse{}, nil
 }
 
 func TestAdapterClient_SubmitRaw_PassThrough(t *testing.T) {

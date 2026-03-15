@@ -145,17 +145,17 @@ func testInvalidAccount(client types.SlurmClient) {
 	fmt.Println("Expected: Should get INVALID_ACCOUNT error with enhanced description")
 
 	ctx := context.Background()
-	submitJob := &types.JobSubmission{
-		Name:       "test-invalid-account",
-		Account:    "nonexistent-account-12345", // This account doesn't exist
-		Partition:  "normal",
-		Script:     "#!/bin/bash\necho 'Test job'\n",
-		TimeLimit:  1,
-		Nodes:      1,
-		WorkingDir: "/tmp",
+	submitJob := &types.JobCreate{
+		Name:                    stringPtr("test-invalid-account"),
+		Account:                 stringPtr("nonexistent-account-12345"), // This account doesn't exist
+		Partition:               stringPtr("normal"),
+		Script:                  stringPtr("#!/bin/bash\necho 'Test job'\n"),
+		TimeLimit:               uint32Ptr(1),
+		MinimumNodes:            int32Ptr(1),
+		CurrentWorkingDirectory: stringPtr("/tmp"),
 	}
 
-	_, err := client.Jobs().Submit(ctx, submitJob)
+	_, err := client.Jobs().SubmitRaw(ctx, submitJob)
 	analyzeError(err)
 }
 
@@ -164,17 +164,17 @@ func testInvalidPartition(client types.SlurmClient) {
 	fmt.Println("Expected: Should get INVALID_PARTITION error with enhanced description")
 
 	ctx := context.Background()
-	submitJob := &types.JobSubmission{
-		Name:       "test-invalid-partition",
-		Account:    "root",
-		Partition:  "nonexistent-partition-12345", // This partition doesn't exist
-		Script:     "#!/bin/bash\necho 'Test job'\n",
-		TimeLimit:  1,
-		Nodes:      1,
-		WorkingDir: "/tmp",
+	submitJob := &types.JobCreate{
+		Name:                    stringPtr("test-invalid-partition"),
+		Account:                 stringPtr("root"),
+		Partition:               stringPtr("nonexistent-partition-12345"), // This partition doesn't exist
+		Script:                  stringPtr("#!/bin/bash\necho 'Test job'\n"),
+		TimeLimit:               uint32Ptr(1),
+		MinimumNodes:            int32Ptr(1),
+		CurrentWorkingDirectory: stringPtr("/tmp"),
 	}
 
-	_, err := client.Jobs().Submit(ctx, submitJob)
+	_, err := client.Jobs().SubmitRaw(ctx, submitJob)
 	analyzeError(err)
 }
 
@@ -227,17 +227,17 @@ func testBadJobTime(client types.SlurmClient) {
 	fmt.Println("Expected: Should get INVALID_TIME_LIMIT error with enhanced description")
 
 	ctx := context.Background()
-	submitJob := &types.JobSubmission{
-		Name:       "test-bad-time",
-		Account:    "root",
-		Partition:  "normal",
-		Script:     "#!/bin/bash\necho 'Test job'\n",
-		TimeLimit:  -1, // Negative time limit
-		Nodes:      1,
-		WorkingDir: "/tmp",
+	submitJob := &types.JobCreate{
+		Name:                    stringPtr("test-bad-time"),
+		Account:                 stringPtr("root"),
+		Partition:               stringPtr("normal"),
+		Script:                  stringPtr("#!/bin/bash\necho 'Test job'\n"),
+		TimeLimit:               uint32Ptr(0), // Zero time limit (uint32 cannot be negative)
+		MinimumNodes:            int32Ptr(1),
+		CurrentWorkingDirectory: stringPtr("/tmp"),
 	}
 
-	_, err := client.Jobs().Submit(ctx, submitJob)
+	_, err := client.Jobs().SubmitRaw(ctx, submitJob)
 	analyzeError(err)
 }
 
@@ -341,4 +341,16 @@ func printErrorChain(err error, depth int) {
 
 func intPtr(i int) *int {
 	return &i
+}
+
+func int32Ptr(i int32) *int32 {
+	return &i
+}
+
+func uint32Ptr(i uint32) *uint32 {
+	return &i
+}
+
+func stringPtr(s string) *string {
+	return &s
 }

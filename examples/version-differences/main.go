@@ -105,20 +105,20 @@ func testV40Features(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Testing v0.0.40 features:")
 
 	// v0.0.40 uses minimum_switches in job submission
-	job := &slurm.JobSubmission{
-		Name:      "v40-test",
-		Command:   "echo 'Testing v0.0.40'",
-		Partition: "compute",
-		CPUs:      2,
-		Memory:    4096,
-		TimeLimit: 10,
+	job := &slurm.JobCreate{
+		Name:          ptrString("v40-test"),
+		Script:        ptrString("#!/bin/bash\necho 'Testing v0.0.40'"),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(2),
+		MemoryPerNode: ptrUint64(4096),
+		TimeLimit:     ptrUint32(10),
 		// Metadata would be in SBATCH directives
 		// 		// Removed: Metadata: map[string]interface{}{
 		// 			"minimum_switches": 1, // v0.0.40 specific field
 		// 		},
 	}
 
-	resp, err := client.Jobs().Submit(ctx, job)
+	resp, err := client.Jobs().SubmitRaw(ctx, job)
 	if err != nil {
 		log.Printf("  Job submission failed: %v", err)
 	} else {
@@ -143,20 +143,20 @@ func testV41Features(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Testing v0.0.41 features:")
 
 	// v0.0.41 renamed minimum_switches to required_switches
-	job := &slurm.JobSubmission{
-		Name:      "v41-test",
-		Command:   "echo 'Testing v0.0.41'",
-		Partition: "compute",
-		CPUs:      2,
-		Memory:    4096,
-		TimeLimit: 10,
+	job := &slurm.JobCreate{
+		Name:          ptrString("v41-test"),
+		Script:        ptrString("#!/bin/bash\necho 'Testing v0.0.41'"),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(2),
+		MemoryPerNode: ptrUint64(4096),
+		TimeLimit:     ptrUint32(10),
 		// Metadata would be in SBATCH directives
 		// 		// Removed: Metadata: map[string]interface{}{
 		// 			"required_switches": 1, // v0.0.41 renamed field
 		// 		},
 	}
 
-	resp, err := client.Jobs().Submit(ctx, job)
+	resp, err := client.Jobs().SubmitRaw(ctx, job)
 	if err != nil {
 		log.Printf("  Job submission failed: %v", err)
 	} else {
@@ -184,13 +184,13 @@ func testV42Features(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Testing v0.0.42 features (stable version):")
 
 	// v0.0.42 removed exclusive and oversubscribe from job outputs
-	job := &slurm.JobSubmission{
-		Name:      "v42-test",
-		Command:   "echo 'Testing v0.0.42 stable'",
-		Partition: "compute",
-		CPUs:      4,
-		Memory:    8192,
-		TimeLimit: 15,
+	job := &slurm.JobCreate{
+		Name:          ptrString("v42-test"),
+		Script:        ptrString("#!/bin/bash\necho 'Testing v0.0.42 stable'"),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(4),
+		MemoryPerNode: ptrUint64(8192),
+		TimeLimit:     ptrUint32(15),
 		// Metadata would be in SBATCH directives
 		// 		// Removed: Metadata: map[string]interface{}{
 		// 			"required_switches": 1,
@@ -198,7 +198,7 @@ func testV42Features(ctx context.Context, client slurm.SlurmClient) {
 		// 		},
 	}
 
-	resp, err := client.Jobs().Submit(ctx, job)
+	resp, err := client.Jobs().SubmitRaw(ctx, job)
 	if err != nil {
 		log.Printf("  Job submission failed: %v", err)
 	} else {
@@ -228,20 +228,20 @@ func testV43Features(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Testing v0.0.43 features (latest version):")
 
 	// v0.0.43 adds reservation management support
-	job := &slurm.JobSubmission{
-		Name:      "v43-test",
-		Command:   "echo 'Testing v0.0.43 latest'",
-		Partition: "compute",
-		CPUs:      4,
-		Memory:    8192,
-		TimeLimit: 15,
+	job := &slurm.JobCreate{
+		Name:          ptrString("v43-test"),
+		Script:        ptrString("#!/bin/bash\necho 'Testing v0.0.43 latest'"),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(4),
+		MemoryPerNode: ptrUint64(8192),
+		TimeLimit:     ptrUint32(15),
 		// Metadata would be in SBATCH directives
 		// 		// Removed: Metadata: map[string]interface{}{
 		// 			"reservation": "weekly-maintenance", // v0.0.43 reservation support
 		// 		},
 	}
 
-	resp, err := client.Jobs().Submit(ctx, job)
+	resp, err := client.Jobs().SubmitRaw(ctx, job)
 	if err != nil {
 		log.Printf("  Job submission failed: %v", err)
 	} else {
@@ -285,28 +285,26 @@ func handleBreakingChanges(ctx context.Context, cfg *config.Config, auth auth.Pr
 	}
 
 	// Create job submission based on version
-	job := &slurm.JobSubmission{
-		Name:      "cross-version-job",
-		Command:   "echo 'Cross-version compatible job'",
-		Partition: "compute",
-		CPUs:      2,
-		Memory:    4096,
-		TimeLimit: 10,
+	job := &slurm.JobCreate{
+		Name:          ptrString("cross-version-job"),
+		Script:        ptrString("#!/bin/bash\necho 'Cross-version compatible job'"),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(2),
+		MemoryPerNode: ptrUint64(4096),
+		TimeLimit:     ptrUint32(10),
 	}
 
 	// Handle version-specific fields
 	switch info.Version {
 	case "v0.0.40":
-		// Metadata field doesn't exist in JobSubmission
 		// Switches would be specified in SBATCH directives
 		fmt.Println("Using v0.0.40 field names (minimum_switches)")
 	case "v0.0.41", "v0.0.42", "v0.0.43":
-		// Metadata field doesn't exist in JobSubmission
 		// Switches would be specified in SBATCH directives
 		fmt.Println("Using v0.0.41+ field names (required_switches)")
 	}
 
-	resp, err := client.Jobs().Submit(ctx, job)
+	resp, err := client.Jobs().SubmitRaw(ctx, job)
 	if err != nil {
 		log.Printf("Job submission failed: %v", err)
 		return
@@ -379,3 +377,8 @@ func getVersionCompatibility(slurmVersion string) versionCompatibility {
 		}
 	}
 }
+
+func ptrString(s string) *string { return &s }
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }
+func ptrUint64(i uint64) *uint64 { return &i }

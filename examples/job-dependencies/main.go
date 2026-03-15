@@ -49,69 +49,69 @@ func runSimpleJobChain(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Creating job chain: preprocessing -> processing -> postprocessing")
 
 	// Job 1: Preprocessing
-	job1 := &slurm.JobSubmission{
-		Name: "preprocess",
-		Script: `#!/bin/bash
+	job1 := &slurm.JobCreate{
+		Name: ptrString("preprocess"),
+		Script: ptrString(`#!/bin/bash
 echo "Starting preprocessing at $(date)"
 # Download and prepare data
 wget -q https://example.com/dataset.tar.gz
 tar -xzf dataset.tar.gz
 echo "Preprocessing completed"
-`,
-		Partition: "compute",
-		CPUs:      1,
-		Memory:    2048,
-		TimeLimit: 10,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(1),
+		MemoryPerNode: ptrUint64(2048),
+		TimeLimit:     ptrUint32(10),
 	}
 
-	resp1, err := client.Jobs().Submit(ctx, job1)
+	resp1, err := client.Jobs().SubmitRaw(ctx, job1)
 	if err != nil {
 		log.Fatalf("Failed to submit preprocessing job: %v", err)
 	}
 	fmt.Printf("Submitted Job 1: %d\n", resp1.JobId)
 
 	// Job 2: Processing (depends on Job 1)
-	job2 := &slurm.JobSubmission{
-		Name: "process",
-		Script: `#!/bin/bash
+	job2 := &slurm.JobCreate{
+		Name: ptrString("process"),
+		Script: ptrString(`#!/bin/bash
 echo "Starting main processing at $(date)"
 # Process the data
 python3 /scripts/process_data.py --input dataset/ --output results/
 echo "Processing completed"
-`,
-		Partition: "compute",
-		CPUs:      8,
-		Memory:    16384,
-		TimeLimit: 60,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(8),
+		MemoryPerNode: ptrUint64(16384),
+		TimeLimit:     ptrUint32(60),
 		// Note: Dependencies are typically handled by the scheduler
 		// This example shows the concept, but actual implementation
 		// depends on the SLURM REST API version and capabilities
 	}
 
-	resp2, err := client.Jobs().Submit(ctx, job2)
+	resp2, err := client.Jobs().SubmitRaw(ctx, job2)
 	if err != nil {
 		log.Fatalf("Failed to submit processing job: %v", err)
 	}
 	fmt.Printf("Processing job submitted: %d (depends on %d)\n", resp2.JobId, resp1.JobId)
 
 	// Job 3: Postprocessing (depends on Job 2)
-	job3 := &slurm.JobSubmission{
-		Name: "postprocess",
-		Script: `#!/bin/bash
+	job3 := &slurm.JobCreate{
+		Name: ptrString("postprocess"),
+		Script: ptrString(`#!/bin/bash
 echo "Starting postprocessing at $(date)"
 # Generate reports and clean up
 python3 /scripts/generate_report.py --input results/
 rm -rf dataset/
 echo "Postprocessing completed"
-`,
-		Partition: "compute",
-		CPUs:      2,
-		Memory:    4096,
-		TimeLimit: 15,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(2),
+		MemoryPerNode: ptrUint64(4096),
+		TimeLimit:     ptrUint32(15),
 		// Note: Dependencies are typically handled by the scheduler
 	}
 
-	resp3, err := client.Jobs().Submit(ctx, job3)
+	resp3, err := client.Jobs().SubmitRaw(ctx, job3)
 	if err != nil {
 		log.Fatalf("Failed to submit postprocessing job: %v", err)
 	}
@@ -130,21 +130,21 @@ func runFanOutWorkflow(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Creating fan-out workflow: setup -> parallel tasks -> merge")
 
 	// Setup job
-	setupJob := &slurm.JobSubmission{
-		Name: "setup-fanout",
-		Script: `#!/bin/bash
+	setupJob := &slurm.JobCreate{
+		Name: ptrString("setup-fanout"),
+		Script: ptrString(`#!/bin/bash
 echo "Setting up parallel workflow"
 # Split data into chunks for parallel processing
 split -n 3 input.data chunk_
 echo "Setup completed - data split into 3 chunks"
-`,
-		Partition: "compute",
-		CPUs:      1,
-		Memory:    1024,
-		TimeLimit: 5,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(1),
+		MemoryPerNode: ptrUint64(1024),
+		TimeLimit:     ptrUint32(5),
 	}
 
-	setupResp, err := client.Jobs().Submit(ctx, setupJob)
+	setupResp, err := client.Jobs().SubmitRaw(ctx, setupJob)
 	if err != nil {
 		log.Fatalf("Failed to submit setup job: %v", err)
 	}
@@ -153,22 +153,22 @@ echo "Setup completed - data split into 3 chunks"
 	// Submit parallel processing jobs
 	var parallelJobIds []string
 	for i := range 3 {
-		parallelJob := &slurm.JobSubmission{
-			Name: fmt.Sprintf("parallel-task-%d", i),
-			Script: fmt.Sprintf(`#!/bin/bash
+		parallelJob := &slurm.JobCreate{
+			Name: ptrString(fmt.Sprintf("parallel-task-%d", i)),
+			Script: ptrString(fmt.Sprintf(`#!/bin/bash
 echo "Processing chunk %d"
 # Process specific chunk
 python3 process_chunk.py --input chunk_%c --output result_%d.out
 echo "Chunk %d processing completed"
-`, i, 'a'+i, i, i),
-			Partition: "compute",
-			CPUs:      4,
-			Memory:    8192,
-			TimeLimit: 30,
+`, i, 'a'+i, i, i)),
+			Partition:     ptrString("compute"),
+			MinimumCPUs:   ptrInt32(4),
+			MemoryPerNode: ptrUint64(8192),
+			TimeLimit:     ptrUint32(30),
 			// Note: Dependencies would be set through SLURM scheduler
 		}
 
-		resp, err := client.Jobs().Submit(ctx, parallelJob)
+		resp, err := client.Jobs().SubmitRaw(ctx, parallelJob)
 		if err != nil {
 			log.Printf("Failed to submit parallel job %d: %v", i, err)
 			continue
@@ -183,23 +183,23 @@ echo "Chunk %d processing completed"
 		dependencies[i] = "afterok:" + jobID
 	}
 
-	mergeJob := &slurm.JobSubmission{
-		Name: "merge-results",
-		Script: `#!/bin/bash
+	mergeJob := &slurm.JobCreate{
+		Name: ptrString("merge-results"),
+		Script: ptrString(`#!/bin/bash
 echo "Merging results from parallel jobs"
 cat result_*.out > final_result.out
 # Generate summary report
 python3 summarize.py --input final_result.out --output summary.pdf
 echo "Merge completed"
-`,
-		Partition: "compute",
-		CPUs:      2,
-		Memory:    4096,
-		TimeLimit: 10,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(2),
+		MemoryPerNode: ptrUint64(4096),
+		TimeLimit:     ptrUint32(10),
 		// Note: Dependencies array would be passed to SLURM scheduler
 	}
 
-	mergeResp, err := client.Jobs().Submit(ctx, mergeJob)
+	mergeResp, err := client.Jobs().SubmitRaw(ctx, mergeJob)
 	if err != nil {
 		log.Fatalf("Failed to submit merge job: %v", err)
 	}
@@ -297,13 +297,15 @@ python3 deploy.py --evaluation evaluation/ --models models/
 		}
 
 		// Submit job
-		submission := &slurm.JobSubmission{
-			Name:      job.name,
-			Script:    job.script,
-			Partition: "compute",
-			CPUs:      job.cpus,
-			Memory:    job.cpus * 2048, // 2GB per CPU
-			TimeLimit: 30,
+		cpus := int32(job.cpus)
+		mem := uint64(job.cpus * 2048) // 2GB per CPU
+		submission := &slurm.JobCreate{
+			Name:          ptrString(job.name),
+			Script:        ptrString(job.script),
+			Partition:     ptrString("compute"),
+			MinimumCPUs:   &cpus,
+			MemoryPerNode: &mem,
+			TimeLimit:     ptrUint32(30),
 		}
 		if len(deps) > 0 {
 			// Note: Dependencies would be set on submission
@@ -311,7 +313,7 @@ python3 deploy.py --evaluation evaluation/ --models models/
 			_ = deps // Explicitly handle the deps
 		}
 
-		resp, err := client.Jobs().Submit(ctx, submission)
+		resp, err := client.Jobs().SubmitRaw(ctx, submission)
 		if err != nil {
 			log.Printf("Failed to submit job %s: %v", job.name, err)
 			continue
@@ -331,9 +333,9 @@ func runConditionalWorkflow(ctx context.Context, client slurm.SlurmClient) {
 	fmt.Println("Creating conditional workflow with error handling")
 
 	// Validation job
-	validationJob := &slurm.JobSubmission{
-		Name: "validate-input",
-		Script: `#!/bin/bash
+	validationJob := &slurm.JobCreate{
+		Name: ptrString("validate-input"),
+		Script: ptrString(`#!/bin/bash
 echo "Validating input data"
 if [ ! -f input.data ]; then
     echo "ERROR: Input file not found"
@@ -345,35 +347,35 @@ if [ $(wc -l < input.data) -lt 1000 ]; then
 fi
 echo "Validation passed"
 exit 0
-`,
-		Partition: "compute",
-		CPUs:      1,
-		Memory:    1024,
-		TimeLimit: 5,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(1),
+		MemoryPerNode: ptrUint64(1024),
+		TimeLimit:     ptrUint32(5),
 	}
 
-	valResp, err := client.Jobs().Submit(ctx, validationJob)
+	valResp, err := client.Jobs().SubmitRaw(ctx, validationJob)
 	if err != nil {
 		log.Fatalf("Failed to submit validation job: %v", err)
 	}
 	fmt.Printf("Validation job submitted: %d\n", valResp.JobId)
 
 	// Success path - runs only if validation succeeds
-	successJob := &slurm.JobSubmission{
-		Name: "process-valid-data",
-		Script: `#!/bin/bash
+	successJob := &slurm.JobCreate{
+		Name: ptrString("process-valid-data"),
+		Script: ptrString(`#!/bin/bash
 echo "Processing validated data"
 python3 process.py --input input.data --output output.data
 echo "Processing completed successfully"
-`,
-		Partition: "compute",
-		CPUs:      8,
-		Memory:    16384,
-		TimeLimit: 60,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(8),
+		MemoryPerNode: ptrUint64(16384),
+		TimeLimit:     ptrUint32(60),
 		// Note: afterok dependency on validation job
 	}
 
-	successResp, err := client.Jobs().Submit(ctx, successJob)
+	successResp, err := client.Jobs().SubmitRaw(ctx, successJob)
 	if err != nil {
 		log.Printf("Failed to submit success job: %v", err)
 	} else {
@@ -381,24 +383,24 @@ echo "Processing completed successfully"
 	}
 
 	// Failure path - runs only if validation fails
-	failureJob := &slurm.JobSubmission{
-		Name: "handle-invalid-data",
-		Script: `#!/bin/bash
+	failureJob := &slurm.JobCreate{
+		Name: ptrString("handle-invalid-data"),
+		Script: ptrString(`#!/bin/bash
 echo "Handling validation failure"
 # Send notification
 mail -s "Data validation failed" admin@example.com < /dev/null
 # Try to fetch valid data
 wget -q https://backup.example.com/valid_input.data -O input.data
 echo "Fetched backup data"
-`,
-		Partition: "compute",
-		CPUs:      1,
-		Memory:    1024,
-		TimeLimit: 10,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(1),
+		MemoryPerNode: ptrUint64(1024),
+		TimeLimit:     ptrUint32(10),
 		// Note: afternotok dependency - runs if validation fails
 	}
 
-	failureResp, err := client.Jobs().Submit(ctx, failureJob)
+	failureResp, err := client.Jobs().SubmitRaw(ctx, failureJob)
 	if err != nil {
 		log.Printf("Failed to submit failure job: %v", err)
 	} else {
@@ -406,24 +408,24 @@ echo "Fetched backup data"
 	}
 
 	// Cleanup job - runs regardless of validation result
-	cleanupJob := &slurm.JobSubmission{
-		Name: "cleanup",
-		Script: `#!/bin/bash
+	cleanupJob := &slurm.JobCreate{
+		Name: ptrString("cleanup"),
+		Script: ptrString(`#!/bin/bash
 echo "Performing cleanup"
 # Archive logs
 tar -czf logs_$(date +%Y%m%d).tar.gz *.log
 # Remove temporary files
 rm -f /tmp/work_*
 echo "Cleanup completed"
-`,
-		Partition: "compute",
-		CPUs:      1,
-		Memory:    1024,
-		TimeLimit: 5,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(1),
+		MemoryPerNode: ptrUint64(1024),
+		TimeLimit:     ptrUint32(5),
 		// Note: afterany dependency - runs regardless of validation result
 	}
 
-	cleanupResp, err := client.Jobs().Submit(ctx, cleanupJob)
+	cleanupResp, err := client.Jobs().SubmitRaw(ctx, cleanupJob)
 	if err != nil {
 		log.Printf("Failed to submit cleanup job: %v", err)
 	} else {
@@ -491,3 +493,8 @@ func monitorJobChain(ctx context.Context, client slurm.SlurmClient, jobIDs []str
 		}
 	}
 }
+
+func ptrString(s string) *string { return &s }
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }
+func ptrUint64(i uint64) *uint64 { return &i }

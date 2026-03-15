@@ -57,9 +57,9 @@ func main() {
 // allocateGPUResources demonstrates GPU resource allocation patterns
 func allocateGPUResources(ctx context.Context, client slurm.SlurmClient) {
 	// Single GPU job
-	singleGPUJob := &slurm.JobSubmission{
-		Name: "single-gpu-job",
-		Script: `#!/bin/bash
+	singleGPUJob := &slurm.JobCreate{
+		Name: ptrString("single-gpu-job"),
+		Script: ptrString(`#!/bin/bash
 #SBATCH --gres=gpu:1
 #SBATCH --constraint=gpu_mem_32gb
 
@@ -71,16 +71,16 @@ nvidia-smi
 
 # Run GPU workload
 python3 train_model.py --gpu 0 --batch-size 128
-`,
-		Partition: "gpu",
-		CPUs:      8,
-		Memory:    32768, // 32GB
-		TimeLimit: 120,
+`),
+		Partition:     ptrString("gpu"),
+		MinimumCPUs:   ptrInt32(8),
+		MemoryPerNode: ptrUint64(32768), // 32GB
+		TimeLimit:     ptrUint32(120),
 		// Note: GRES and constraints would be specified in the SBATCH script
-		// as JobSubmission doesn't have a Metadata field
+		// as JobCreate doesn't have a Metadata field
 	}
 
-	resp1, err := client.Jobs().Submit(ctx, singleGPUJob)
+	resp1, err := client.Jobs().SubmitRaw(ctx, singleGPUJob)
 	if err != nil {
 		log.Printf("Failed to submit single GPU job: %v", err)
 	} else {
@@ -88,9 +88,9 @@ python3 train_model.py --gpu 0 --batch-size 128
 	}
 
 	// Multi-GPU job
-	multiGPUJob := &slurm.JobSubmission{
-		Name: "multi-gpu-job",
-		Script: `#!/bin/bash
+	multiGPUJob := &slurm.JobCreate{
+		Name: ptrString("multi-gpu-job"),
+		Script: ptrString(`#!/bin/bash
 #SBATCH --gres=gpu:4
 #SBATCH --constraint=v100
 #SBATCH --ntasks=4
@@ -105,12 +105,12 @@ srun python3 distributed_train.py \
     --rank $SLURM_PROCID \
     --master-addr $SLURM_LAUNCH_NODE_IPADDR \
     --master-port 29500
-`,
-		Partition: "gpu",
-		CPUs:      32,     // 4 tasks * 8 CPUs
-		Memory:    131072, // 128GB total
-		TimeLimit: 360,
-		Nodes:     1, // All GPUs on same node
+`),
+		Partition:     ptrString("gpu"),
+		MinimumCPUs:   ptrInt32(32),     // 4 tasks * 8 CPUs
+		MemoryPerNode: ptrUint64(131072), // 128GB total
+		TimeLimit:     ptrUint32(360),
+		MinimumNodes:  ptrInt32(1), // All GPUs on same node
 		// Metadata would be in SBATCH directives
 		// 		// Removed: Metadata: map[string]interface{}{
 		// 			"gres":       "gpu:4",
@@ -119,7 +119,7 @@ srun python3 distributed_train.py \
 		// 		},
 	}
 
-	resp2, err := client.Jobs().Submit(ctx, multiGPUJob)
+	resp2, err := client.Jobs().SubmitRaw(ctx, multiGPUJob)
 	if err != nil {
 		log.Printf("Failed to submit multi-GPU job: %v", err)
 	} else {
@@ -127,9 +127,9 @@ srun python3 distributed_train.py \
 	}
 
 	// GPU type-specific job
-	gpuTypeJob := &slurm.JobSubmission{
-		Name: "gpu-type-specific",
-		Script: `#!/bin/bash
+	gpuTypeJob := &slurm.JobCreate{
+		Name: ptrString("gpu-type-specific"),
+		Script: ptrString(`#!/bin/bash
 #SBATCH --gres=gpu:a100:2
 #SBATCH --partition=gpu-a100
 
@@ -138,18 +138,18 @@ nvidia-smi --query-gpu=name,memory.total --format=csv
 
 # Run workload optimized for A100
 python3 inference.py --model large_model.pt --precision fp16
-`,
-		Partition: "gpu-a100",
-		CPUs:      16,
-		Memory:    65536,
-		TimeLimit: 60,
+`),
+		Partition:     ptrString("gpu-a100"),
+		MinimumCPUs:   ptrInt32(16),
+		MemoryPerNode: ptrUint64(65536),
+		TimeLimit:     ptrUint32(60),
 		// Metadata would be in SBATCH directives
 		// 		// Removed: Metadata: map[string]interface{}{
 		// 			"gres": "gpu:a100:2",
 		// 		},
 	}
 
-	resp3, err := client.Jobs().Submit(ctx, gpuTypeJob)
+	resp3, err := client.Jobs().SubmitRaw(ctx, gpuTypeJob)
 	if err != nil {
 		log.Printf("Failed to submit GPU type-specific job: %v", err)
 	} else {
@@ -160,22 +160,22 @@ python3 inference.py --model large_model.pt --precision fp16
 // allocateHighMemoryJobs demonstrates memory-intensive job patterns
 func allocateHighMemoryJobs(ctx context.Context, client slurm.SlurmClient) {
 	// Standard memory job
-	standardMemJob := &slurm.JobSubmission{
-		Name: "standard-memory-job",
-		Script: `#!/bin/bash
+	standardMemJob := &slurm.JobCreate{
+		Name: ptrString("standard-memory-job"),
+		Script: ptrString(`#!/bin/bash
 echo "Allocated memory: ${SLURM_MEM_PER_NODE}MB"
 echo "Memory per CPU: ${SLURM_MEM_PER_CPU}MB"
 
 # Run memory-aware application
 python3 analyze_data.py --max-memory ${SLURM_MEM_PER_NODE}
-`,
-		Partition: "compute",
-		CPUs:      4,
-		Memory:    16384, // 16GB total
-		TimeLimit: 30,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(4),
+		MemoryPerNode: ptrUint64(16384), // 16GB total
+		TimeLimit:     ptrUint32(30),
 	}
 
-	resp1, err := client.Jobs().Submit(ctx, standardMemJob)
+	resp1, err := client.Jobs().SubmitRaw(ctx, standardMemJob)
 	if err != nil {
 		log.Printf("Failed to submit standard memory job: %v", err)
 	} else {
@@ -183,9 +183,9 @@ python3 analyze_data.py --max-memory ${SLURM_MEM_PER_NODE}
 	}
 
 	// High memory job with specific memory-per-cpu
-	highMemJob := &slurm.JobSubmission{
-		Name: "high-memory-job",
-		Script: `#!/bin/bash
+	highMemJob := &slurm.JobCreate{
+		Name: ptrString("high-memory-job"),
+		Script: ptrString(`#!/bin/bash
 #SBATCH --mem-per-cpu=32G
 #SBATCH --constraint=highmem
 
@@ -194,11 +194,11 @@ free -h
 
 # Process large dataset in memory
 python3 process_large_dataset.py --input /data/huge_file.csv
-`,
-		Partition: "highmem",
-		CPUs:      8,
-		Memory:    262144, // 256GB total (32GB per CPU)
-		TimeLimit: 120,
+`),
+		Partition:     ptrString("highmem"),
+		MinimumCPUs:   ptrInt32(8),
+		MemoryPerNode: ptrUint64(262144), // 256GB total (32GB per CPU)
+		TimeLimit:     ptrUint32(120),
 		// Metadata would be in SBATCH directives
 		// 		// Removed: Metadata: map[string]interface{}{
 		// 			"mem-per-cpu": "32G",
@@ -206,7 +206,7 @@ python3 process_large_dataset.py --input /data/huge_file.csv
 		// 		},
 	}
 
-	resp2, err := client.Jobs().Submit(ctx, highMemJob)
+	resp2, err := client.Jobs().SubmitRaw(ctx, highMemJob)
 	if err != nil {
 		log.Printf("Failed to submit high memory job: %v", err)
 	} else {
@@ -214,9 +214,9 @@ python3 process_large_dataset.py --input /data/huge_file.csv
 	}
 
 	// Memory reservation pattern
-	memReserveJob := &slurm.JobSubmission{
-		Name: "memory-reservation",
-		Script: `#!/bin/bash
+	memReserveJob := &slurm.JobCreate{
+		Name: ptrString("memory-reservation"),
+		Script: ptrString(`#!/bin/bash
 #SBATCH --mem=0  # Request all available memory on the node
 #SBATCH --exclusive
 
@@ -225,11 +225,11 @@ echo "Total node memory: $(free -h | grep Mem | awk '{print $2}')"
 
 # Run memory-intensive workload
 ./memory_intensive_app --use-all-available-memory
-`,
-		Partition: "compute",
-		CPUs:      48, // Full node
-		Memory:    0,  // All available
-		TimeLimit: 60,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(48), // Full node
+		MemoryPerNode: ptrUint64(0), // All available
+		TimeLimit:     ptrUint32(60),
 		// Metadata would be in SBATCH directives
 		// 		// Removed: Metadata: map[string]interface{}{
 		// 			"exclusive": true,
@@ -237,7 +237,7 @@ echo "Total node memory: $(free -h | grep Mem | awk '{print $2}')"
 		// 		},
 	}
 
-	resp3, err := client.Jobs().Submit(ctx, memReserveJob)
+	resp3, err := client.Jobs().SubmitRaw(ctx, memReserveJob)
 	if err != nil {
 		log.Printf("Failed to submit memory reservation job: %v", err)
 	} else {
@@ -248,9 +248,9 @@ echo "Total node memory: $(free -h | grep Mem | awk '{print $2}')"
 // allocateWithNodeConstraints demonstrates node-specific resource constraints
 func allocateWithNodeConstraints(ctx context.Context, client slurm.SlurmClient) {
 	// CPU architecture constraint
-	archJob := &slurm.JobSubmission{
-		Name: "arch-specific-job",
-		Script: `#!/bin/bash
+	archJob := &slurm.JobCreate{
+		Name: ptrString("arch-specific-job"),
+		Script: ptrString(`#!/bin/bash
 #SBATCH --constraint="haswell|broadwell"
 
 echo "Running on CPU architecture: $(lscpu | grep 'Model name' | cut -d: -f2)"
@@ -258,18 +258,18 @@ echo "Node: $SLURMD_NODENAME"
 
 # Run architecture-optimized code
 ./optimized_binary --arch $(lscpu | grep 'Architecture' | cut -d: -f2 | xargs)
-`,
-		Partition: "compute",
-		CPUs:      16,
-		Memory:    32768,
-		TimeLimit: 45,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(16),
+		MemoryPerNode: ptrUint64(32768),
+		TimeLimit:     ptrUint32(45),
 		// Metadata would be in SBATCH directives
 		// 		// Removed: Metadata: map[string]interface{}{
 		// 			"constraint": "haswell|broadwell",
 		// 		},
 	}
 
-	resp1, err := client.Jobs().Submit(ctx, archJob)
+	resp1, err := client.Jobs().SubmitRaw(ctx, archJob)
 	if err != nil {
 		log.Printf("Failed to submit architecture-specific job: %v", err)
 	} else {
@@ -277,9 +277,9 @@ echo "Node: $SLURMD_NODENAME"
 	}
 
 	// Network topology constraint
-	networkJob := &slurm.JobSubmission{
-		Name: "network-topology-job",
-		Script: `#!/bin/bash
+	networkJob := &slurm.JobCreate{
+		Name: ptrString("network-topology-job"),
+		Script: ptrString(`#!/bin/bash
 #SBATCH --constraint="ib&rack3"
 #SBATCH --switches=1
 
@@ -288,12 +288,12 @@ echo "Ensuring minimal network hops for MPI communication"
 
 # Run MPI job with optimal network topology
 mpirun -np $SLURM_NTASKS ./mpi_application
-`,
-		Partition: "compute",
-		CPUs:      64,
-		Memory:    131072,
-		Nodes:     4,
-		TimeLimit: 180,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(64),
+		MemoryPerNode: ptrUint64(131072),
+		MinimumNodes:  ptrInt32(4),
+		TimeLimit:     ptrUint32(180),
 		// Metadata would be in SBATCH directives
 		// 		// Removed: Metadata: map[string]interface{}{
 		// 			"constraint": "ib&rack3",
@@ -302,7 +302,7 @@ mpirun -np $SLURM_NTASKS ./mpi_application
 		// 		},
 	}
 
-	resp2, err := client.Jobs().Submit(ctx, networkJob)
+	resp2, err := client.Jobs().SubmitRaw(ctx, networkJob)
 	if err != nil {
 		log.Printf("Failed to submit network topology job: %v", err)
 	} else {
@@ -310,9 +310,9 @@ mpirun -np $SLURM_NTASKS ./mpi_application
 	}
 
 	// Feature-based constraint
-	featureJob := &slurm.JobSubmission{
-		Name: "feature-based-job",
-		Script: `#!/bin/bash
+	featureJob := &slurm.JobCreate{
+		Name: ptrString("feature-based-job"),
+		Script: ptrString(`#!/bin/bash
 #SBATCH --constraint="ssd&gpu&centos7"
 
 echo "Running on nodes with SSD, GPU, and CentOS 7"
@@ -322,11 +322,11 @@ echo "Features available: $SLURM_JOB_CONSTRAINTS"
 df -h | grep -E 'ssd|nvme'  # Show SSD storage
 nvidia-smi --list-gpus       # Show GPUs
 cat /etc/redhat-release      # Show OS version
-`,
-		Partition: "mixed",
-		CPUs:      8,
-		Memory:    16384,
-		TimeLimit: 30,
+`),
+		Partition:     ptrString("mixed"),
+		MinimumCPUs:   ptrInt32(8),
+		MemoryPerNode: ptrUint64(16384),
+		TimeLimit:     ptrUint32(30),
 		// Metadata would be in SBATCH directives
 		// 		// Removed: Metadata: map[string]interface{}{
 		// 			"constraint": "ssd&gpu&centos7",
@@ -334,7 +334,7 @@ cat /etc/redhat-release      # Show OS version
 		// 		},
 	}
 
-	resp3, err := client.Jobs().Submit(ctx, featureJob)
+	resp3, err := client.Jobs().SubmitRaw(ctx, featureJob)
 	if err != nil {
 		log.Printf("Failed to submit feature-based job: %v", err)
 	} else {
@@ -345,28 +345,28 @@ cat /etc/redhat-release      # Show OS version
 // demonstrateResourceSharing shows different resource sharing patterns
 func demonstrateResourceSharing(ctx context.Context, client slurm.SlurmClient) {
 	// Exclusive node allocation
-	exclusiveJob := &slurm.JobSubmission{
-		Name: "exclusive-node",
-		Script: `#!/bin/bash
+	exclusiveJob := &slurm.JobCreate{
+		Name: ptrString("exclusive-node"),
+		Script: ptrString(`#!/bin/bash
 #SBATCH --exclusive
 #SBATCH --nodes=2
 
 echo "Exclusive allocation of 2 nodes"
 echo "No other jobs can run on these nodes"
 scontrol show node $SLURM_JOB_NODELIST
-`,
-		Partition: "compute",
-		CPUs:      96, // 2 nodes * 48 CPUs
-		Memory:    0,  // All available
-		Nodes:     2,
-		TimeLimit: 60,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(96), // 2 nodes * 48 CPUs
+		MemoryPerNode: ptrUint64(0), // All available
+		MinimumNodes:  ptrInt32(2),
+		TimeLimit:     ptrUint32(60),
 		// Metadata would be in SBATCH directives
 		// 		// Removed: Metadata: map[string]interface{}{
 		// 			"exclusive": true,
 		// 		},
 	}
 
-	resp1, err := client.Jobs().Submit(ctx, exclusiveJob)
+	resp1, err := client.Jobs().SubmitRaw(ctx, exclusiveJob)
 	if err != nil {
 		log.Printf("Failed to submit exclusive job: %v", err)
 	} else {
@@ -374,9 +374,9 @@ scontrol show node $SLURM_JOB_NODELIST
 	}
 
 	// Shared node allocation
-	sharedJob := &slurm.JobSubmission{
-		Name: "shared-resources",
-		Script: `#!/bin/bash
+	sharedJob := &slurm.JobCreate{
+		Name: ptrString("shared-resources"),
+		Script: ptrString(`#!/bin/bash
 #SBATCH --oversubscribe
 #SBATCH --mem=8G
 
@@ -384,18 +384,18 @@ echo "Shared node allocation"
 echo "Other jobs can run on the same node"
 echo "Allocated CPUs: $SLURM_CPUS_ON_NODE"
 echo "Allocated memory: ${SLURM_MEM_PER_NODE}MB"
-`,
-		Partition: "shared",
-		CPUs:      2,
-		Memory:    8192,
-		TimeLimit: 30,
+`),
+		Partition:     ptrString("shared"),
+		MinimumCPUs:   ptrInt32(2),
+		MemoryPerNode: ptrUint64(8192),
+		TimeLimit:     ptrUint32(30),
 		// Metadata would be in SBATCH directives
 		// 		// Removed: Metadata: map[string]interface{}{
 		// 			"oversubscribe": true,
 		// 		},
 	}
 
-	resp2, err := client.Jobs().Submit(ctx, sharedJob)
+	resp2, err := client.Jobs().SubmitRaw(ctx, sharedJob)
 	if err != nil {
 		log.Printf("Failed to submit shared job: %v", err)
 	} else {
@@ -403,9 +403,9 @@ echo "Allocated memory: ${SLURM_MEM_PER_NODE}MB"
 	}
 
 	// Core binding pattern
-	coreBindJob := &slurm.JobSubmission{
-		Name: "core-binding",
-		Script: `#!/bin/bash
+	coreBindJob := &slurm.JobCreate{
+		Name: ptrString("core-binding"),
+		Script: ptrString(`#!/bin/bash
 #SBATCH --cpu-bind=cores
 #SBATCH --ntasks=4
 #SBATCH --cpus-per-task=2
@@ -416,11 +416,11 @@ srun numactl --show
 
 # Run NUMA-aware application
 srun ./numa_optimized_app
-`,
-		Partition: "compute",
-		CPUs:      8, // 4 tasks * 2 CPUs
-		Memory:    16384,
-		TimeLimit: 45,
+`),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(8), // 4 tasks * 2 CPUs
+		MemoryPerNode: ptrUint64(16384),
+		TimeLimit:     ptrUint32(45),
 		// Metadata would be in SBATCH directives
 		// 		// Removed: Metadata: map[string]interface{}{
 		// 			"cpu-bind":       "cores",
@@ -429,7 +429,7 @@ srun ./numa_optimized_app
 		// 		},
 	}
 
-	resp3, err := client.Jobs().Submit(ctx, coreBindJob)
+	resp3, err := client.Jobs().SubmitRaw(ctx, coreBindJob)
 	if err != nil {
 		log.Printf("Failed to submit core binding job: %v", err)
 	} else {
@@ -545,19 +545,19 @@ func discoverAndAllocateResources(ctx context.Context, client slurm.SlurmClient)
 		if bestPartition.Name != nil {
 			partName = *bestPartition.Name
 		}
-		gpuJob := &slurm.JobSubmission{
-			Name: "dynamic-gpu-job",
-			Script: fmt.Sprintf(`#!/bin/bash
+		gpuJob := &slurm.JobCreate{
+			Name: ptrString("dynamic-gpu-job"),
+			Script: ptrString(fmt.Sprintf(`#!/bin/bash
 #SBATCH --nodelist=%s
 
 echo "Running on discovered GPU node: $SLURMD_NODENAME"
 nvidia-smi
 python3 gpu_workload.py
-`, gpuNodes[0]),
-			Partition: partName,
-			CPUs:      8,
-			Memory:    32768,
-			TimeLimit: 60,
+`, gpuNodes[0])),
+			Partition:     ptrString(partName),
+			MinimumCPUs:   ptrInt32(8),
+			MemoryPerNode: ptrUint64(32768),
+			TimeLimit:     ptrUint32(60),
 			// Metadata would be in SBATCH directives
 			// 		// Removed: Metadata: map[string]interface{}{
 			// 				"gres":     "gpu:1",
@@ -565,7 +565,7 @@ python3 gpu_workload.py
 			// 			},
 		}
 
-		resp, err := client.Jobs().Submit(ctx, gpuJob)
+		resp, err := client.Jobs().SubmitRaw(ctx, gpuJob)
 		if err != nil {
 			log.Printf("Failed to submit GPU job: %v", err)
 		} else {
@@ -579,26 +579,26 @@ python3 gpu_workload.py
 		if bestPartition.Name != nil {
 			partName = *bestPartition.Name
 		}
-		memJob := &slurm.JobSubmission{
-			Name: "dynamic-highmem-job",
-			Script: fmt.Sprintf(`#!/bin/bash
+		memJob := &slurm.JobCreate{
+			Name: ptrString("dynamic-highmem-job"),
+			Script: ptrString(fmt.Sprintf(`#!/bin/bash
 #SBATCH --nodelist=%s
 
 echo "Running on high-memory node: $SLURMD_NODENAME"
 free -h
 python3 memory_analysis.py --use-all-memory
-`, highMemNodes[0]),
-			Partition: partName,
-			CPUs:      16,
-			Memory:    262144, // 256GB
-			TimeLimit: 90,
+`, highMemNodes[0])),
+			Partition:     ptrString(partName),
+			MinimumCPUs:   ptrInt32(16),
+			MemoryPerNode: ptrUint64(262144), // 256GB
+			TimeLimit:     ptrUint32(90),
 			// Metadata would be in SBATCH directives
 			// 		// Removed: Metadata: map[string]interface{}{
 			// 				"nodelist": highMemNodes[0],
 			// 			},
 		}
 
-		resp, err := client.Jobs().Submit(ctx, memJob)
+		resp, err := client.Jobs().SubmitRaw(ctx, memJob)
 		if err != nil {
 			log.Printf("Failed to submit high-memory job: %v", err)
 		} else {
@@ -606,3 +606,8 @@ python3 memory_analysis.py --use-all-memory
 		}
 	}
 }
+
+func ptrString(s string) *string { return &s }
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }
+func ptrUint64(i uint64) *uint64 { return &i }

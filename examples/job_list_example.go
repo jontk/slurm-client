@@ -33,21 +33,19 @@ func main() {
 
 	// 1. Submit a new job
 	fmt.Println("=== Job Submission ===")
-	jobSubmission := &slurm.JobSubmission{
-		Name:       "example-job",
-		Script:     "#!/bin/bash\necho 'Hello from Slurm!'\nsleep 30",
-		Partition:  "debug",
-		CPUs:       2,
-		Memory:     1024 * 1024 * 1024, // 1GB in bytes
-		TimeLimit:  5,                  // 5 minutes
-		Nodes:      1,
-		WorkingDir: "/tmp",
-		Environment: map[string]string{
-			"MY_VAR": "example_value",
-		},
+	jobSubmission := &slurm.JobCreate{
+		Name:                    ptrString("example-job"),
+		Script:                  ptrString("#!/bin/bash\necho 'Hello from Slurm!'\nsleep 30"),
+		Partition:               ptrString("debug"),
+		MinimumCPUs:             ptrInt32(2),
+		MemoryPerNode:           ptrUint64(1024), // 1GB in MB
+		TimeLimit:               ptrUint32(5),    // 5 minutes
+		MinimumNodes:            ptrInt32(1),
+		CurrentWorkingDirectory: ptrString("/tmp"),
+		Environment:             []string{"MY_VAR=example_value"},
 	}
 
-	submitResp, err := jobManager.Submit(ctx, jobSubmission)
+	submitResp, err := jobManager.SubmitRaw(ctx, jobSubmission)
 	if err != nil {
 		fmt.Printf("Expected error (no real server): %v\n", err)
 		// Continue with example using a mock job ID
@@ -144,3 +142,8 @@ func main() {
 		fmt.Printf("Successfully cancelled job %s\n", strconv.Itoa(int(submitResp.JobId)))
 	}
 }
+
+func ptrString(s string) *string { return &s }
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }
+func ptrUint64(i uint64) *uint64 { return &i }
