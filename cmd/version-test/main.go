@@ -101,17 +101,17 @@ func testVersion(ctx context.Context, version, serverURL, token string) {
 
 	// Test 4: Job submission
 	fmt.Print("  Submit Job: ")
-	submission := &slurm.JobSubmission{
-		Name:       fmt.Sprintf("test-%s-%d", version, time.Now().Unix()),
-		Script:     "#!/bin/bash\necho 'Testing " + version + "'\nhostname\ndate\nsleep 5",
-		Partition:  "debug",
-		Nodes:      1,
-		CPUs:       1,
-		TimeLimit:  5,
-		WorkingDir: "/tmp",
+	submission := &slurm.JobCreate{
+		Name:                    ptrString(fmt.Sprintf("test-%s-%d", version, time.Now().Unix())),
+		Script:                  ptrString("#!/bin/bash\necho 'Testing " + version + "'\nhostname\ndate\nsleep 5"),
+		Partition:               ptrString("debug"),
+		MinimumNodes:            ptrInt32(1),
+		MinimumCPUs:             ptrInt32(1),
+		TimeLimit:               ptrUint32(5),
+		CurrentWorkingDirectory: ptrString("/tmp"),
 	}
 
-	if resp, err := client.Jobs().Submit(ctx, submission); err != nil {
+	if resp, err := client.Jobs().SubmitRaw(ctx, submission); err != nil {
 		fmt.Printf("❌ Failed: %v\n", err)
 	} else {
 		jobIdStr := fmt.Sprintf("%d", resp.JobId)
@@ -142,3 +142,7 @@ func testVersion(ctx context.Context, version, serverURL, token string) {
 
 	fmt.Println()
 }
+
+func ptrString(s string) *string { return &s }
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }

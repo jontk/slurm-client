@@ -580,19 +580,19 @@ var submitCmd = &cobra.Command{
 		}
 
 		// Create job submission
-		job := &slurm.JobSubmission{
-			Name:       name,
-			Command:    command,
-			Partition:  partition,
-			CPUs:       cpus,
-			Memory:     memory,
-			TimeLimit:  timeLimit,
-			WorkingDir: workDir,
+		job := &slurm.JobCreate{
+			Name:                    ptrString(name),
+			Script:                  ptrString(command),
+			Partition:               ptrString(partition),
+			MinimumCPUs:             ptrInt32(int32(cpus)),     //nolint:gosec // CLI flag values are bounded
+			MemoryPerNode:           ptrUint64(uint64(memory)), //nolint:gosec // CLI flag values are bounded
+			TimeLimit:               ptrUint32(uint32(timeLimit)), //nolint:gosec // CLI flag values are bounded
+			CurrentWorkingDirectory: ptrString(workDir),
 		}
 
 		// Submit job
 		ctx := context.Background()
-		resp, err := client.Jobs().Submit(ctx, job)
+		resp, err := client.Jobs().SubmitRaw(ctx, job)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -612,6 +612,11 @@ func init() {
 	submitCmd.Flags().IntP("time", "t", 60, "Time limit in minutes")
 	submitCmd.Flags().StringP("workdir", "w", "", "Working directory")
 }
+
+func ptrString(s string) *string { return &s }
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }
+func ptrUint64(i uint64) *uint64 { return &i }
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {

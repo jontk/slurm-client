@@ -66,21 +66,21 @@ func submitBatchJobs(ctx context.Context, client slurm.SlurmClient, count int) [
 		go func(index int) {
 			defer wg.Done()
 
-			job := &slurm.JobSubmission{
-				Name:       fmt.Sprintf("batch-job-%d", index),
-				Command:    fmt.Sprintf("python process.py --input data_%d.txt", index),
-				Partition:  "compute",
-				CPUs:       4,
-				Memory:     8192, // 8GB
-				TimeLimit:  60,   // 60 minutes
-				WorkingDir: "/scratch/batch",
-				Environment: map[string]string{
-					"JOB_INDEX": strconv.Itoa(index),
-					"BATCH_ID":  "example-batch",
+			job := &slurm.JobCreate{
+				Name:      ptrString(fmt.Sprintf("batch-job-%d", index)),
+				Script:    ptrString(fmt.Sprintf("#!/bin/bash\npython process.py --input data_%d.txt", index)),
+				Partition: ptrString("compute"),
+				MinimumCPUs:             ptrInt32(4),
+				MemoryPerNode:           ptrUint64(8192), // 8GB
+				TimeLimit:               ptrUint32(60),   // 60 minutes
+				CurrentWorkingDirectory: ptrString("/scratch/batch"),
+				Environment: []string{
+					fmt.Sprintf("JOB_INDEX=%s", strconv.Itoa(index)),
+					"BATCH_ID=example-batch",
 				},
 			}
 
-			resp, err := client.Jobs().Submit(ctx, job)
+			resp, err := client.Jobs().SubmitRaw(ctx, job)
 			if err != nil {
 				errChan <- fmt.Errorf("failed to submit job %d: %w", index, err)
 				return
@@ -297,3 +297,8 @@ func cleanupJobs(ctx context.Context, client slurm.SlurmClient, jobIDs []string)
 
 	fmt.Println("Cleanup completed")
 }
+
+func ptrString(s string) *string { return &s }
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }
+func ptrUint64(i uint64) *uint64 { return &i }

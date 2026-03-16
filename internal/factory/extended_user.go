@@ -149,6 +149,8 @@ func (m *extendedUserManager) GetUserFairShare(ctx context.Context, userName str
 }
 
 // CalculateJobPriority calculates the estimated job priority for a user
+//
+//nolint:staticcheck // SA1019: CalculateJobPriority uses deprecated JobSubmission (interface contract)
 func (m *extendedUserManager) CalculateJobPriority(ctx context.Context, userName string, jobSubmission *types.JobSubmission) (*types.JobPriorityInfo, error) {
 	if userName == "" {
 		return nil, fmt.Errorf("user name required")

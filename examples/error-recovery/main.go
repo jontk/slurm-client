@@ -64,16 +64,16 @@ func demonstrateStructuredErrorHandling(ctx context.Context, cfg *config.Config,
 	defer client.Close()
 
 	// Example: Submit job with comprehensive error handling
-	job := &slurm.JobSubmission{
-		Name:      "error-test-job",
-		Command:   "echo 'Testing error handling'",
-		Partition: "invalid-partition", // Intentional error
-		CPUs:      1000,                // Excessive resources
-		Memory:    1024 * 1024 * 1024,  // 1TB - likely to fail
-		TimeLimit: 10080,               // 1 week - may exceed limits
+	job := &slurm.JobCreate{
+		Name:          ptrString("error-test-job"),
+		Script:        ptrString("#!/bin/bash\necho 'Testing error handling'"),
+		Partition:     ptrString("invalid-partition"), // Intentional error
+		MinimumCPUs:   ptrInt32(1000),                 // Excessive resources
+		MemoryPerNode: ptrUint64(1024 * 1024 * 1024),  // 1TB - likely to fail
+		TimeLimit:     ptrUint32(10080),                // 1 week - may exceed limits
 	}
 
-	resp, err := client.Jobs().Submit(ctx, job)
+	resp, err := client.Jobs().SubmitRaw(ctx, job)
 	if err != nil {
 		handleJobSubmissionError(err, job)
 		return
@@ -83,7 +83,7 @@ func demonstrateStructuredErrorHandling(ctx context.Context, cfg *config.Config,
 }
 
 // handleJobSubmissionError demonstrates comprehensive error handling
-func handleJobSubmissionError(err error, job *slurm.JobSubmission) {
+func handleJobSubmissionError(err error, job *slurm.JobCreate) {
 	// Check if it's a SLURM error
 	var slurmErr *errors.SlurmError
 	if stderrors.As(err, &slurmErr) {
@@ -110,7 +110,7 @@ func handleJobSubmissionError(err error, job *slurm.JobSubmission) {
 		case errors.ErrorCodeResourceExhausted:
 			fmt.Println("\nResource Exhaustion - Analyzing requirements:")
 			fmt.Printf("  Requested: CPUs=%d, Memory=%dGB\n",
-				job.CPUs, job.Memory/(1024*1024*1024))
+				*job.MinimumCPUs, *job.MemoryPerNode/(1024*1024*1024))
 			fmt.Println("  Suggested actions:")
 			fmt.Println("    - Reduce resource requirements")
 			fmt.Println("    - Check cluster capacity")
@@ -386,13 +386,13 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 	// Workflow: Submit job with automatic recovery
 	fmt.Println("Job submission with automatic recovery:")
 
-	job := &slurm.JobSubmission{
-		Name:      "recovery-test",
-		Command:   "python process.py",
-		Partition: "compute",
-		CPUs:      8,
-		Memory:    16384,
-		TimeLimit: 60,
+	job := &slurm.JobCreate{
+		Name:          ptrString("recovery-test"),
+		Script:        ptrString("#!/bin/bash\npython process.py"),
+		Partition:     ptrString("compute"),
+		MinimumCPUs:   ptrInt32(8),
+		MemoryPerNode: ptrUint64(16384),
+		TimeLimit:     ptrUint32(60),
 	}
 
 	// Attempt submission with recovery logic
@@ -402,7 +402,7 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		fmt.Printf("\nAttempt %d/%d:\n", attempt, maxAttempts)
 
-		resp, err := client.Jobs().Submit(ctx, job)
+		resp, err := client.Jobs().SubmitRaw(ctx, job)
 		if err == nil {
 			jobID = fmt.Sprintf("%d", resp.JobId)
 			fmt.Printf("  Success! Job ID: %s\n", jobID)
@@ -418,19 +418,19 @@ func demonstrateErrorRecoveryWorkflows(ctx context.Context, cfg *config.Config, 
 			switch slurmErr.Code {
 			case errors.ErrorCodeResourceExhausted:
 				// Reduce requirements
-				job.CPUs /= 2
-				job.Memory /= 2
+				*job.MinimumCPUs /= 2
+				*job.MemoryPerNode /= 2
 				fmt.Printf("  Adapting: Reduced to CPUs=%d, Memory=%dGB\n",
-					job.CPUs, job.Memory/(1024*1024))
+					*job.MinimumCPUs, *job.MemoryPerNode/(1024*1024))
 
 			case errors.ErrorCodeValidationFailed:
 				// Try different partition
-				if job.Partition == "compute" {
-					job.Partition = "shared"
+				if *job.Partition == "compute" {
+					job.Partition = ptrString("shared")
 				} else {
-					job.Partition = "compute"
+					job.Partition = ptrString("compute")
 				}
-				fmt.Printf("  Adapting: Changed partition to '%s'\n", job.Partition)
+				fmt.Printf("  Adapting: Changed partition to '%s'\n", *job.Partition)
 
 			case errors.ErrorCodeRateLimited:
 				// Wait and retry
@@ -644,9 +644,13 @@ func simulateOperation(shouldFail bool) error {
 	return nil
 }
 
-func submitToLocalQueue(job *slurm.JobSubmission) {
+func submitToLocalQueue(job *slurm.JobCreate) {
 	// Simulate local queue submission
-	fmt.Printf("Queuing job '%s' locally\n", job.Name)
+	name := ""
+	if job.Name != nil {
+		name = *job.Name
+	}
+	fmt.Printf("Queuing job '%s' locally\n", name)
 }
 
 func shouldResubmit(exitCode int) bool {
@@ -659,6 +663,11 @@ func shouldResubmit(exitCode int) bool {
 	}
 	return false
 }
+
+func ptrString(s string) *string { return &s }
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }
+func ptrUint64(i uint64) *uint64 { return &i }
 
 func testRetryableOperation(ctx context.Context, client slurm.SlurmClient, strategyName string) {
 	fmt.Printf("Testing %s:\n", strategyName)

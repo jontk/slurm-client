@@ -414,6 +414,7 @@ func convertMapToEnvList(env map[string]string) []string {
 	return result
 }
 
+//nolint:staticcheck // SA1019: Submit implements the deprecated JobWriter.Submit interface method
 func (m *adapterJobManager) Submit(ctx context.Context, job *types.JobSubmission) (*types.JobSubmitResponse, error) {
 	// Convert submission - map from types.JobSubmission to types.JobCreate
 	submission := &types.JobCreate{
@@ -443,6 +444,10 @@ func (m *adapterJobManager) Submit(ctx context.Context, job *types.JobSubmission
 	return &types.JobSubmitResponse{
 		JobId: resp.JobId,
 	}, nil
+}
+
+func (m *adapterJobManager) SubmitRaw(ctx context.Context, job *types.JobCreate) (*types.JobSubmitResponse, error) {
+	return m.adapter.Submit(ctx, job)
 }
 
 func (m *adapterJobManager) Update(ctx context.Context, jobID string, update *types.JobUpdate) error {
@@ -1315,6 +1320,7 @@ func (m *adapterUserManager) GetUserFairShare(ctx context.Context, userName stri
 	return ext.GetUserFairShare(ctx, userName)
 }
 
+//nolint:staticcheck // SA1019: CalculateJobPriority uses deprecated JobSubmission (interface contract)
 func (m *adapterUserManager) CalculateJobPriority(ctx context.Context, userName string, jobSubmission *types.JobSubmission) (*types.JobPriorityInfo, error) {
 	ext := &extendedUserManager{adapter: m.adapter, accountAdapter: m.accountAdapter, associationAdapter: m.associationAdapter}
 	return ext.CalculateJobPriority(ctx, userName, jobSubmission)

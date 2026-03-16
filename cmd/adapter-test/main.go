@@ -100,23 +100,18 @@ func main() {
 
 	// Test 2: Submit a test job
 	fmt.Println("\n=== Testing Job Submission ===")
-	testJob := &types.JobSubmission{
-		Name:       fmt.Sprintf("adapter-test-%s-%d", version, time.Now().Unix()),
-		Partition:  "normal",
-		Script:     "#!/bin/bash\necho 'Hello from adapter test'\nsleep 10\necho 'Done'",
-		TimeLimit:  1, // 1 minute
-		Nodes:      1,
-		CPUs:       1,
-		WorkingDir: "/tmp",
-		Environment: map[string]string{
-			"PATH":     "/usr/bin:/bin",
-			"USER":     "root",
-			"HOME":     "/tmp",
-			"TEST_VAR": "adapter_test",
-		},
+	testJob := &types.JobCreate{
+		Name:                    ptrString(fmt.Sprintf("adapter-test-%s-%d", version, time.Now().Unix())),
+		Partition:               ptrString("normal"),
+		Script:                  ptrString("#!/bin/bash\necho 'Hello from adapter test'\nsleep 10\necho 'Done'"),
+		TimeLimit:               ptrUint32(1), // 1 minute
+		MinimumNodes:            ptrInt32(1),
+		MinimumCPUs:             ptrInt32(1),
+		CurrentWorkingDirectory: ptrString("/tmp"),
+		Environment:             []string{"PATH=/usr/bin:/bin", "USER=root", "HOME=/tmp", "TEST_VAR=adapter_test"},
 	}
 
-	submitResp, err := client.Jobs().Submit(ctx, testJob)
+	submitResp, err := client.Jobs().SubmitRaw(ctx, testJob)
 	if err != nil {
 		log.Printf("Failed to submit job: %v", err)
 	} else {
@@ -202,3 +197,7 @@ func main() {
 
 	fmt.Println("\n=== All tests completed ===")
 }
+
+func ptrString(s string) *string { return &s }
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }

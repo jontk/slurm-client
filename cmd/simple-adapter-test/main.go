@@ -85,22 +85,17 @@ func main() {
 	ctx := context.Background()
 
 	fmt.Println("\n=== Testing Job Submission with Adapter Client ===")
-	testJob := &types.JobSubmission{
-		Name:       fmt.Sprintf("adapter-test-%s-%d", version, time.Now().Unix()),
-		Partition:  "normal",
-		Script:     "#!/bin/bash\necho 'Hello from adapter test'\necho 'PATH=$PATH'\necho 'TEST_VAR=$TEST_VAR'\nsleep 10\necho 'Done'",
-		TimeLimit:  1, // 1 minute
-		Nodes:      1,
-		WorkingDir: "/tmp", // Add working directory
-		Environment: map[string]string{
-			"PATH":     "/usr/bin:/bin",
-			"USER":     "root",
-			"HOME":     "/tmp",
-			"TEST_VAR": "adapter_test",
-		},
+	testJob := &types.JobCreate{
+		Name:                    ptrString(fmt.Sprintf("adapter-test-%s-%d", version, time.Now().Unix())),
+		Partition:               ptrString("normal"),
+		Script:                  ptrString("#!/bin/bash\necho 'Hello from adapter test'\necho 'PATH=$PATH'\necho 'TEST_VAR=$TEST_VAR'\nsleep 10\necho 'Done'"),
+		TimeLimit:               ptrUint32(1), // 1 minute
+		MinimumNodes:            ptrInt32(1),
+		CurrentWorkingDirectory: ptrString("/tmp"),
+		Environment:             []string{"PATH=/usr/bin:/bin", "USER=root", "HOME=/tmp", "TEST_VAR=adapter_test"},
 	}
 
-	submitResp, err := client.Jobs().Submit(ctx, testJob)
+	submitResp, err := client.Jobs().SubmitRaw(ctx, testJob)
 	if err != nil {
 		log.Fatalf("Failed to submit job: %v", err)
 	}
@@ -118,3 +113,7 @@ func main() {
 
 	fmt.Println("\n=== Test completed successfully! ===")
 }
+
+func ptrString(s string) *string { return &s }
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }

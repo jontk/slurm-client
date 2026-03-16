@@ -76,9 +76,9 @@ func main() {
 func submitArrayJob(ctx context.Context, client slurm.SlurmClient) string {
 	// Create array job submission
 	// Array syntax: jobname[1-100:5] means tasks 1-100 with step of 5
-	job := &slurm.JobSubmission{
-		Name: "array-example",
-		Script: `#!/bin/bash
+	job := &slurm.JobCreate{
+		Name: ptrString("array-example"),
+		Script: ptrString(`#!/bin/bash
 #SBATCH --array=1-20:2  # Create tasks 1,3,5,7,9,11,13,15,17,19
 
 echo "Starting array task $SLURM_ARRAY_TASK_ID"
@@ -89,16 +89,16 @@ sleep $((SLURM_ARRAY_TASK_ID * 2))
 
 # Write output to task-specific file
 echo "Task $SLURM_ARRAY_TASK_ID completed at $(date)" > output_$SLURM_ARRAY_TASK_ID.txt
-`,
-		Partition:  "compute",
-		CPUs:       2,
-		Memory:     4096, // 4GB
-		TimeLimit:  30,   // 30 minutes
-		WorkingDir: "/scratch/array-jobs",
+`),
+		Partition:               ptrString("compute"),
+		MinimumCPUs:             ptrInt32(2),
+		MemoryPerNode:           ptrUint64(4096), // 4GB
+		TimeLimit:               ptrUint32(30),   // 30 minutes
+		CurrentWorkingDirectory: ptrString("/scratch/array-jobs"),
 	}
 
 	// Submit the array job
-	resp, err := client.Jobs().Submit(ctx, job)
+	resp, err := client.Jobs().SubmitRaw(ctx, job)
 	if err != nil {
 		log.Fatalf("Failed to submit array job: %v", err)
 	}
@@ -294,3 +294,8 @@ func formatRuntime(start, end time.Time) string {
 	runtime := end.Sub(start)
 	return runtime.Round(time.Second).String()
 }
+
+func ptrString(s string) *string { return &s }
+func ptrInt32(i int32) *int32    { return &i }
+func ptrUint32(i uint32) *uint32 { return &i }
+func ptrUint64(i uint64) *uint64 { return &i }

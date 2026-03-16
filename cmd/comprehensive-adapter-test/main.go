@@ -216,21 +216,17 @@ func testJobEndpoints(client types.SlurmClient, version string) {
 
 	// Test Submit Job
 	fmt.Println("Testing: Submit Job")
-	submitJob := &types.JobSubmission{
-		Name:       fmt.Sprintf("adapter-test-%s-%d", version, time.Now().Unix()),
-		Account:    "root", // Required for SLURM v0.0.43
-		Partition:  "normal",
-		Script:     "#!/bin/bash\necho 'Adapter test job'\nhostname\ndate\nsleep 5",
-		TimeLimit:  1,
-		Nodes:      1,
-		WorkingDir: "/tmp",
-		Environment: map[string]string{
-			"PATH": "/usr/bin:/bin",
-			"USER": "root",
-			"HOME": "/tmp",
-		},
+	submitJob := &types.JobCreate{
+		Name:                    stringPtr(fmt.Sprintf("adapter-test-%s-%d", version, time.Now().Unix())),
+		Account:                 stringPtr("root"), // Required for SLURM v0.0.43
+		Partition:               stringPtr("normal"),
+		Script:                  stringPtr("#!/bin/bash\necho 'Adapter test job'\nhostname\ndate\nsleep 5"),
+		TimeLimit:               uint32Ptr(1),
+		MinimumNodes:            int32Ptr(1),
+		CurrentWorkingDirectory: stringPtr("/tmp"),
+		Environment:             []string{"PATH=/usr/bin:/bin", "USER=root", "HOME=/tmp"},
 	}
-	submitResp, err := client.Jobs().Submit(ctx, submitJob)
+	submitResp, err := client.Jobs().SubmitRaw(ctx, submitJob)
 	var jobID string
 	if err == nil && submitResp != nil {
 		jobID = fmt.Sprintf("%d", submitResp.JobId)
