@@ -200,7 +200,8 @@
     "Errorf",
     "Logf",
     "apiv",
-    "nolint"
+    "nolint",
+    "rlimits"
   ],
   "ignorePaths": [
     "vendor/**",

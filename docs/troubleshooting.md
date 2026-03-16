@@ -82,15 +82,18 @@ This guide helps you resolve common issues when using the SLURM REST API Client 
    ```go
    import slurm "github.com/jontk/slurm-client"
 
-   job := &slurm.JobSubmission{
-       Name:      "my-job",
-       Partition: "default",
-       Script:    "#!/bin/bash\necho 'Hello World'",
-       CPUs:      1,
-       Memory:    1024 * 1024 * 1024, // 1GB in bytes
+   // ptr returns a pointer to the given value.
+   // func ptr[T any](v T) *T { return &v }
+
+   job := &slurm.JobCreate{
+       Name:          ptr("my-job"),
+       Partition:     ptr("default"),
+       Script:        ptr("#!/bin/bash\necho 'Hello World'"),
+       MinimumCPUs:   ptr(int32(1)),
+       MemoryPerNode: ptr(uint64(1024)), // 1024 MB
    }
 
-   response, err := client.Jobs().Submit(ctx, job)
+   response, err := client.Jobs().SubmitRaw(ctx, job)
    if err != nil {
        log.Printf("Job submission failed: %v", err)
    }

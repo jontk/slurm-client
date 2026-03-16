@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-16
+
+### Added
+- **SubmitRaw** (#120): Direct job submission using full `JobCreate` struct (90+ fields)
+  - New `SubmitRaw(*JobCreate)` method on `JobWriter`/`JobManager` interface
+  - Bypasses the lossy `JobSubmission` → `JobCreate` conversion for callers that need access to QoS, GPUs, array, mail, constraints, dependencies, and other advanced SLURM fields
+  - Exported missing `JobCreate` field types from root package: `OpenModeValue`, `CPUBindingFlagsValue`, `KillWarningFlagsValue`, `MemoryBindingTypeValue`, `X11Value`, `CronEntry`, `JobCreateRlimits`
+  - **Note**: Custom `JobWriter`/`JobManager` implementations must add `SubmitRaw` to satisfy the interface
+
+### Deprecated
+- **JobSubmission struct**: Use `JobCreate` with `SubmitRaw` for full field support
+- **Submit method**: Use `SubmitRaw` with `*JobCreate` for full field support
+
+### Changed
+- Migrated all cmd/ tools and examples from `Submit`/`JobSubmission` to `SubmitRaw`/`JobCreate`
+
 ## [0.3.3] - 2026-03-08
 
 ### Fixed

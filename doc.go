@@ -151,7 +151,11 @@ Jobs Manager:
 	jobMgr := client.Jobs()
 	jobs, _ := jobMgr.List(ctx, nil)
 	job, _ := jobMgr.Get(ctx, "12345")
-	resp, _ := jobMgr.Submit(ctx, jobSpec)
+	resp, _ := jobMgr.SubmitRaw(ctx, &slurm.JobCreate{
+	    Name:      ptr("my-job"),
+	    Script:    ptr("#!/bin/bash\necho hello"),
+	    Partition: ptr("compute"),
+	})
 	_ = jobMgr.Cancel(ctx, "12345")
 
 Nodes Manager:

@@ -61,10 +61,12 @@ This guide helps you resolve common issues when using the SLURM REST API Client 
 **Solutions:**
 1. Ensure all required fields are provided:
    ```go
-   job := &interfaces.JobSubmission{
-       Name:      "my-job",
-       Partition: "default",
-       Script:    "#!/bin/bash\necho 'Hello World'",
+   func ptr[T any](v T) *T { return &v }
+
+   job := &interfaces.JobCreate{
+       Name:      ptr("my-job"),
+       Partition: ptr("default"),
+       Script:    ptr("#!/bin/bash\necho 'Hello World'"),
        // Add other required fields
    }
    ```
