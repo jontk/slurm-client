@@ -297,8 +297,8 @@ python3 deploy.py --evaluation evaluation/ --models models/
 		}
 
 		// Submit job
-		cpus := int32(job.cpus)           //nolint:gosec // cpus values are small constants (1-16)
-		mem := uint64(job.cpus * 2048)    //nolint:gosec // cpus values are small constants (1-16)
+		cpus := int32(job.cpus)
+		mem := uint64(job.cpus * 2048) // 2GB per CPU
 		submission := &slurm.JobCreate{
 			Name:          ptrString(job.name),
 			Script:        ptrString(job.script),
