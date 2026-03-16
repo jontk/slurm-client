@@ -12,7 +12,10 @@ type JobManager interface {
     // Get a specific job by ID
     Get(ctx context.Context, jobID string) (*Job, error)
 
-    // Submit a new job
+    // Submit a new job (recommended)
+    SubmitRaw(ctx context.Context, job *JobCreate) (*JobSubmitResponse, error)
+
+    // Submit a new job (deprecated: use SubmitRaw with JobCreate instead)
     Submit(ctx context.Context, job *JobSubmission) (*JobSubmitResponse, error)
 
     // Cancel a job
@@ -86,7 +89,40 @@ const (
 )
 ```
 
-### JobSubmission
+### JobCreate (Recommended)
+
+Use `JobCreate` with `SubmitRaw` for new code. This struct uses pointer fields to distinguish between zero values and unset fields, matching the SLURM REST API schema.
+
+```go
+// ptr returns a pointer to the given value (helper for struct literals).
+// func ptr[T any](v T) *T { return &v }
+
+type JobCreate struct {
+    Name                    *string
+    Script                  *string
+    Partition               *string
+    Account                 *string
+    TimeLimit               *uint32
+    MinimumNodes            *int32
+    MinimumCPUs             *int32
+    MemoryPerNode           *uint64  // in MB
+    CurrentWorkingDirectory *string
+    Environment             []string // format: "KEY=value"
+    Constraints             string
+    Dependency              string
+    QoS                     string
+    Reservation             string
+    Array                   string
+    StandardOutput          string
+    StandardError           string
+    MailUser                string
+    MailType                string
+}
+```
+
+### JobSubmission (Deprecated)
+
+> **Deprecated:** Use `JobCreate` with `SubmitRaw` instead. `JobSubmission` with `Submit` will be removed in a future release.
 
 ```go
 type JobSubmission struct {
@@ -172,6 +208,32 @@ jobs, err := client.Jobs().List(ctx, opts)
 ```
 
 ### Submit a Job
+
+```go
+// ptr returns a pointer to the given value.
+// func ptr[T any](v T) *T { return &v }
+
+job := &interfaces.JobCreate{
+    Name:         ptr("my-analysis"),
+    Script:       ptr("#!/bin/bash\n#SBATCH --nodes=2\n\nsrun hostname"),
+    Partition:    ptr("compute"),
+    TimeLimit:    ptr(uint32(120)), // 120 minutes
+    MinimumNodes: ptr(int32(2)),
+    MinimumCPUs:  ptr(int32(64)),   // 2 nodes * 16 tasks * 4 CPUs
+    MemoryPerNode: ptr(uint64(32768)), // 32768 MB per node
+}
+
+response, err := client.Jobs().SubmitRaw(ctx, job)
+if err != nil {
+    return err
+}
+
+fmt.Printf("Submitted job ID: %s\n", response.JobID)
+```
+
+#### Deprecated: Submit with JobSubmission
+
+> **Deprecated:** The following example uses the deprecated `Submit` method with `JobSubmission`. Use `SubmitRaw` with `JobCreate` (shown above) instead.
 
 ```go
 job := &interfaces.JobSubmission{

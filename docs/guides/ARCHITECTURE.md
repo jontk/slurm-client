@@ -49,7 +49,7 @@ This package serves as the stable public API that users import and interact with
 type JobManager interface {
     List(ctx context.Context, opts *ListJobsOptions) (*JobList, error)
     Get(ctx context.Context, jobID string) (*Job, error)
-    Submit(ctx context.Context, job *JobSubmission) (*JobSubmitResponse, error)
+    SubmitRaw(ctx context.Context, job *JobCreate) (*JobSubmitResponse, error)
     // ... more methods
 }
 ```
@@ -154,7 +154,7 @@ Public Types (interfaces) → Adapter Types (common) → API Types (version-spec
 ### Write Operation (e.g., Submit Job)
 
 ```
-1. User calls client.Jobs().Submit()
+1. User calls client.Jobs().SubmitRaw()
 2. Validation occurs at interface layer
 3. Factory routes to version-specific JobManager
 4. JobManager converts to adapter types

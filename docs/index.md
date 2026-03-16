@@ -292,6 +292,9 @@ import (
     "github.com/jontk/slurm-client/pkg/errors"
 )
 
+// ptr returns a pointer to the given value (helper for struct literals).
+func ptr[T any](v T) *T { return &v }
+
 func main() {
     // 🎯 Adapter Pattern: Works across all SLURM versions
     client, err := slurm.NewClient(context.Background(),
@@ -327,16 +330,16 @@ func main() {
     fmt.Printf("Found %d running jobs\\n", len(jobs.Jobs))
 
     // Submit a job with comprehensive error handling
-    submission := &interfaces.JobSubmission{
-        Name:      "test-job",
-        Script:    "#!/bin/bash\\necho 'Hello, SLURM!'",
-        Partition: "compute",
-        CPUs:      2,
-        Memory:    4 * 1024 * 1024 * 1024, // 4GB in bytes
-        TimeLimit: 60, // 60 minutes
+    submission := &interfaces.JobCreate{
+        Name:          ptr("test-job"),
+        Script:        ptr("#!/bin/bash\\necho 'Hello, SLURM!'"),
+        Partition:     ptr("compute"),
+        MinimumCPUs:   ptr(int32(2)),
+        MemoryPerNode: ptr(uint64(4096)), // 4096 MB
+        TimeLimit:     ptr(uint32(60)),   // 60 minutes
     }
 
-    response, err := client.Jobs().Submit(context.Background(), submission)
+    response, err := client.Jobs().SubmitRaw(context.Background(), submission)
     if err != nil {
         if slurmErr, ok := err.(*errors.SlurmError); ok {
             switch slurmErr.Code {
@@ -504,7 +507,7 @@ client, err := slurm.NewClient(
 ### Comprehensive Manager Operations
 ✅ **All 12+ methods implemented** across all managers with structured error handling:
 
-- **JobManager**: `List()`, `Get()`, `Submit()`, `Cancel()` - Complete job lifecycle
+- **JobManager**: `List()`, `Get()`, `SubmitRaw()`, `Cancel()` - Complete job lifecycle
 - **NodeManager**: `List()`, `Get()` - Resource monitoring and management
 - **PartitionManager**: `List()`, `Get()` - Partition discovery and management
 - **InfoManager**: `Get()`, `Ping()`, `Stats()`, `Version()` - Cluster information
@@ -537,17 +540,20 @@ if err != nil {
     }
 }
 
+// ptr returns a pointer to the given value.
+// func ptr[T any](v T) *T { return &v }
+
 // Submit job with comprehensive validation
-response, err := client.Jobs().Submit(ctx, &interfaces.JobSubmission{
-    Name:        "my-job",
-    Script:      "#!/bin/bash\\necho 'Hello World'",
-    Partition:   "compute",
-    CPUs:        4,
-    Memory:      8 * 1024 * 1024 * 1024, // 8GB in bytes
-    TimeLimit:   60, // minutes
-    Nodes:       1,
-    WorkingDir:  "/tmp",
-    Environment: map[string]string{"CUDA_VISIBLE_DEVICES": "0"},
+response, err := client.Jobs().SubmitRaw(ctx, &interfaces.JobCreate{
+    Name:                   ptr("my-job"),
+    Script:                 ptr("#!/bin/bash\\necho 'Hello World'"),
+    Partition:              ptr("compute"),
+    MinimumCPUs:            ptr(int32(4)),
+    MemoryPerNode:          ptr(uint64(8192)), // 8192 MB
+    TimeLimit:              ptr(uint32(60)),   // minutes
+    MinimumNodes:           ptr(int32(1)),
+    CurrentWorkingDirectory: ptr("/tmp"),
+    Environment:            []string{"CUDA_VISIBLE_DEVICES=0"},
 })
 
 // Cancel job with proper error handling

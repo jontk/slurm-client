@@ -91,7 +91,7 @@ Each adapter implements common interfaces:
 type JobAdapter interface {
     List(ctx context.Context, opts *ListJobsOptions) (*JobList, error)
     Get(ctx context.Context, jobID string) (*Job, error)
-    Submit(ctx context.Context, job *JobSubmission) (*JobSubmitResponse, error)
+    SubmitRaw(ctx context.Context, job *JobCreate) (*JobSubmitResponse, error)
     Cancel(ctx context.Context, jobID string) error
 }
 
@@ -132,28 +132,30 @@ Adapters perform **bidirectional type conversion**:
 
 **User Code:**
 ```go
-submission := &slurm.JobSubmission{
-    Name:      "test-job",
-    Script:    "#!/bin/bash\necho hello",
-    Partition: "compute",
-    CPUs:      4,
-    Memory:    4 * 1024 * 1024 * 1024, // 4GB
+func ptr[T any](v T) *T { return &v }
+
+submission := &slurm.JobCreate{
+    Name:          ptr("test-job"),
+    Script:        ptr("#!/bin/bash\necho hello"),
+    Partition:     ptr("compute"),
+    MinimumCPUs:   ptr(int32(4)),
+    MemoryPerNode: ptr(uint64(4096)), // 4GB in MB
 }
 
-response, err := client.Jobs().Submit(ctx, submission)
+response, err := client.Jobs().SubmitRaw(ctx, submission)
 ```
 
 **Adapter Conversion (v0.0.43):**
 ```go
-func (a *JobAdapter) Submit(ctx context.Context, job *slurm.JobSubmission) (*slurm.JobSubmitResponse, error) {
+func (a *JobAdapter) SubmitRaw(ctx context.Context, job *slurm.JobCreate) (*slurm.JobSubmitResponse, error) {
     // Convert public type to API-specific type
     apiJob := &apiv0043.V0043JobSubmitReq{
-        Script: &job.Script,
+        Script: job.Script,
         Job: apiv0043.V0043JobDescMsg{
             Name:          job.Name,
             Partition:     job.Partition,
-            MinCpus:       int32(job.CPUs),
-            MinMemoryNode: int64(job.Memory),
+            MinCpus:       job.MinimumCPUs,
+            MinMemoryNode: job.MemoryPerNode,
             // ... more fields
         },
     }
@@ -363,10 +365,10 @@ type RetryAdapter struct {
     retries int
 }
 
-func (r *RetryAdapter) Submit(ctx context.Context, job *JobSubmission) (*JobSubmitResponse, error) {
+func (r *RetryAdapter) SubmitRaw(ctx context.Context, job *JobCreate) (*JobSubmitResponse, error) {
     var lastErr error
     for i := 0; i < r.retries; i++ {
-        resp, err := r.base.Submit(ctx, job)
+        resp, err := r.base.SubmitRaw(ctx, job)
         if err == nil {
             return resp, nil
         }
@@ -412,11 +414,11 @@ type LoggingAdapter struct {
     logger *log.Logger
 }
 
-func (l *LoggingAdapter) Submit(ctx context.Context, job *JobSubmission) (*JobSubmitResponse, error) {
-    l.logger.Printf("Submitting job: %s", job.Name)
+func (l *LoggingAdapter) SubmitRaw(ctx context.Context, job *JobCreate) (*JobSubmitResponse, error) {
+    l.logger.Printf("Submitting job: %s", *job.Name)
     start := time.Now()
 
-    resp, err := l.base.Submit(ctx, job)
+    resp, err := l.base.SubmitRaw(ctx, job)
 
     elapsed := time.Since(start)
     if err != nil {

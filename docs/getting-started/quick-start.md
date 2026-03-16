@@ -90,17 +90,20 @@ for _, node := range nodes.Nodes {
 ### 5. Submit a Job
 
 ```go
+// ptr returns a pointer to the given value.
+func ptr[T any](v T) *T { return &v }
+
 // Create job submission request
-jobReq := &slurm.JobSubmission{
-    Name:      "test-job",
-    Script:    "#!/bin/bash\nsleep 60",
-    Partition: "compute",
-    Nodes:     1,
-    CPUs:      4,
+jobReq := &slurm.JobCreate{
+    Name:         ptr("test-job"),
+    Script:       ptr("#!/bin/bash\nsleep 60"),
+    Partition:    ptr("compute"),
+    MinimumNodes: ptr(int32(1)),
+    MinimumCPUs:  ptr(int32(4)),
 }
 
 // Submit the job
-response, err := client.Jobs().Submit(ctx, jobReq)
+response, err := client.Jobs().SubmitRaw(ctx, jobReq)
 if err != nil {
     log.Fatal(err)
 }

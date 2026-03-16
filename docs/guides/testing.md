@@ -425,38 +425,40 @@ go test -v ./... -run TestRealServer
 Test multiple scenarios efficiently:
 
 ```go
+func ptr[T any](v T) *T { return &v }
+
 func TestJobSubmission(t *testing.T) {
     tests := []struct {
         name      string
-        job       *slurm.JobSubmission
+        job       *slurm.JobCreate
         wantError bool
     }{
         {
             name: "valid job",
-            job: &slurm.JobSubmission{
-                Name:      "test-job",
-                Script:    "#!/bin/bash\necho hello",
-                Partition: "compute",
-                CPUs:      4,
+            job: &slurm.JobCreate{
+                Name:        ptr("test-job"),
+                Script:      ptr("#!/bin/bash\necho hello"),
+                Partition:   ptr("compute"),
+                MinimumCPUs: ptr(int32(4)),
             },
             wantError: false,
         },
         {
             name: "missing script",
-            job: &slurm.JobSubmission{
-                Name:      "test-job",
-                Partition: "compute",
-                CPUs:      4,
+            job: &slurm.JobCreate{
+                Name:        ptr("test-job"),
+                Partition:   ptr("compute"),
+                MinimumCPUs: ptr(int32(4)),
             },
             wantError: true,
         },
         {
             name: "invalid partition",
-            job: &slurm.JobSubmission{
-                Name:      "test-job",
-                Script:    "#!/bin/bash\necho hello",
-                Partition: "nonexistent",
-                CPUs:      4,
+            job: &slurm.JobCreate{
+                Name:        ptr("test-job"),
+                Script:      ptr("#!/bin/bash\necho hello"),
+                Partition:   ptr("nonexistent"),
+                MinimumCPUs: ptr(int32(4)),
             },
             wantError: true,
         },
@@ -472,7 +474,7 @@ func TestJobSubmission(t *testing.T) {
 
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
-            _, err := client.Jobs().Submit(context.Background(), tt.job)
+            _, err := client.Jobs().SubmitRaw(context.Background(), tt.job)
 
             if tt.wantError && err == nil {
                 t.Error("Expected error but got none")
@@ -551,12 +553,12 @@ func TestJobOperations(t *testing.T) {
         }
     })
 
-    t.Run("Submit", func(t *testing.T) {
-        job := &slurm.JobSubmission{
-            Name:   "test",
-            Script: "#!/bin/bash\necho test",
+    t.Run("SubmitRaw", func(t *testing.T) {
+        job := &slurm.JobCreate{
+            Name:   ptr("test"),
+            Script: ptr("#!/bin/bash\necho test"),
         }
-        resp, err := client.Jobs().Submit(context.Background(), job)
+        resp, err := client.Jobs().SubmitRaw(context.Background(), job)
         if err != nil {
             t.Fatalf("Submit failed: %v", err)
         }
