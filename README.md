@@ -321,17 +321,16 @@ func main() {
 
     fmt.Printf("Found %d running jobs\\n", len(jobs.Jobs))
 
-    // Submit a job with comprehensive error handling
-    submission := &slurm.JobSubmission{
-        Name:      "test-job",
-        Script:    "#!/bin/bash\\necho 'Hello, SLURM!'",
-        Partition: "compute",
-        CPUs:      2,
-        Memory:    4 * 1024 * 1024 * 1024, // 4GB in bytes
-        TimeLimit: 60, // 60 minutes
-    }
-
-    response, err := client.Jobs().Submit(context.Background(), submission)
+    // Submit a job using the full JobCreate struct (90+ fields from SLURM OpenAPI spec)
+    ptr := func(s string) *string { return &s }
+    response, err := client.Jobs().SubmitRaw(context.Background(), &slurm.JobCreate{
+        Name:          ptr("test-job"),
+        Script:        ptr("#!/bin/bash\\necho 'Hello, SLURM!'"),
+        Partition:     ptr("compute"),
+        MinimumCPUs:   &[]int32{2}[0],
+        MemoryPerNode: &[]uint64{4096}[0], // 4GB in MB
+        TimeLimit:     &[]uint32{60}[0],   // 60 minutes
+    })
     if err != nil {
         if slurmErr, ok := err.(*errors.SlurmError); ok {
             switch slurmErr.Code {
@@ -434,7 +433,7 @@ client, err := slurm.NewClient(
 ### Comprehensive Manager Operations
 ✅ **All 12+ methods implemented** across all managers with structured error handling:
 
-- **JobManager**: `List()`, `Get()`, `Submit()`, `Cancel()` - Complete job lifecycle
+- **JobManager**: `List()`, `Get()`, `SubmitRaw()`, `Cancel()` - Complete job lifecycle
 - **NodeManager**: `List()`, `Get()` - Resource monitoring and management
 - **PartitionManager**: `List()`, `Get()` - Partition discovery and management
 - **InfoManager**: `Get()`, `Ping()`, `Stats()`, `Version()` - Cluster information
@@ -467,17 +466,17 @@ if err != nil {
     }
 }
 
-// Submit job with comprehensive validation
-response, err := client.Jobs().Submit(ctx, &slurm.JobSubmission{
-    Name:        "my-job",
-    Script:      "#!/bin/bash\\necho 'Hello World'",
-    Partition:   "compute",
-    CPUs:        4,
-    Memory:      8 * 1024 * 1024 * 1024, // 8GB in bytes
-    TimeLimit:   60, // minutes
-    Nodes:       1,
-    WorkingDir:  "/tmp",
-    Environment: map[string]string{"CUDA_VISIBLE_DEVICES": "0"},
+// Submit job with full field access via SubmitRaw
+response, err := client.Jobs().SubmitRaw(ctx, &slurm.JobCreate{
+    Name:                    ptr("my-job"),
+    Script:                  ptr("#!/bin/bash\\necho 'Hello World'"),
+    Partition:               ptr("compute"),
+    MinimumCPUs:             &[]int32{4}[0],
+    MemoryPerNode:           &[]uint64{8192}[0], // 8GB in MB
+    TimeLimit:               &[]uint32{60}[0],   // minutes
+    MinimumNodes:            &[]int32{1}[0],
+    CurrentWorkingDirectory: ptr("/tmp"),
+    Environment:             []string{"CUDA_VISIBLE_DEVICES=0"},
 })
 
 // Cancel job with proper error handling
