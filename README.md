@@ -217,10 +217,10 @@ Or install a specific version:
 
 ```bash
 # Install a specific release
-go get github.com/jontk/slurm-client@v0.3.3
+go get github.com/jontk/slurm-client@v0.4.0
 
 # Or use a version constraint in go.mod
-require github.com/jontk/slurm-client v0.3.3
+require github.com/jontk/slurm-client v0.4.0
 ```
 
 That's it! The library is ready to use in your applications.
