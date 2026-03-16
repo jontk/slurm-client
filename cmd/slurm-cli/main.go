@@ -584,9 +584,9 @@ var submitCmd = &cobra.Command{
 			Name:                    ptrString(name),
 			Script:                  ptrString(command),
 			Partition:               ptrString(partition),
-			MinimumCPUs:             ptrInt32(int32(cpus)),
-			MemoryPerNode:           ptrUint64(uint64(memory)),
-			TimeLimit:               ptrUint32(uint32(timeLimit)),
+			MinimumCPUs:             ptrInt32(int32(cpus)),     //nolint:gosec // CLI flag values are bounded
+			MemoryPerNode:           ptrUint64(uint64(memory)), //nolint:gosec // CLI flag values are bounded
+			TimeLimit:               ptrUint32(uint32(timeLimit)), //nolint:gosec // CLI flag values are bounded
 			CurrentWorkingDirectory: ptrString(workDir),
 		}
 
