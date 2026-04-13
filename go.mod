@@ -1,17 +1,17 @@
 module github.com/jontk/slurm-client
 
-go 1.22.5
+go 1.24.0
 
 toolchain go1.24.5
 
 require (
 	github.com/getkin/kin-openapi v0.133.0
-	github.com/google/uuid v1.5.0
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/oapi-codegen/runtime v1.1.1
+	github.com/oapi-codegen/runtime v1.4.0
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/text v0.14.0
+	golang.org/x/text v0.32.0
 )
 
 require (
