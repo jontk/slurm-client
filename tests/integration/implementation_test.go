@@ -38,7 +38,7 @@ func TestImplementationStatus(t *testing.T) {
 
 	serverURL := os.Getenv("SLURM_SERVER_URL")
 	if serverURL == "" {
-		serverURL = "http://localhost
+		serverURL = "http://localhost:6820"
 	}
 
 	versions := []string{"v0.0.42", "v0.0.43"}
@@ -198,7 +198,7 @@ func TestV42WithRealServer(t *testing.T) {
 
 	// Force v0.0.42 which has implementations
 	client, err := slurm.NewClientWithVersion(ctx, "v0.0.42",
-		slurm.WithBaseURL("http://localhost
+		slurm.WithBaseURL("http://localhost:6820"),
 		slurm.WithAuth(auth.NewTokenAuth(token)),
 		slurm.WithConfig(&config.Config{
 			Timeout:            30 * time.Second,

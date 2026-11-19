@@ -40,7 +40,7 @@ func (suite *AdapterCrossVersionTestSuite) SetupSuite() {
 	// Get server configuration
 	suite.serverURL = os.Getenv("SLURM_SERVER_URL")
 	if suite.serverURL == "" {
-		suite.serverURL = "http://localhost
+		suite.serverURL = "http://localhost:6820"
 	}
 
 	// Get JWT token

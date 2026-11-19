@@ -31,7 +31,7 @@ func TestPingWithRealServer(t *testing.T) {
 	// Get server configuration
 	serverURL := os.Getenv("SLURM_SERVER_URL")
 	if serverURL == "" {
-		serverURL = "http://localhost
+		serverURL = "http://localhost:6820"
 	}
 
 	token := os.Getenv("SLURM_JWT_TOKEN")

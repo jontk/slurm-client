@@ -99,7 +99,7 @@ func TestSimpleJobSubmit(t *testing.T) {
 			jsonData, err := json.Marshal(payload.body)
 			require.NoError(t, err)
 
-			url := "http://localhost
+			url := "http://localhost:6820/slurm/v0.0.42/job/submit"
 			req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, bytes.NewReader(jsonData))
 			require.NoError(t, err)
 

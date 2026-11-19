@@ -32,7 +32,7 @@ func TestDirectAPIWithAuth(t *testing.T) {
 	}
 
 	// Create client with request editor for authentication
-	client, err := v042.NewClientWithResponses("http://localhost
+	client, err := v042.NewClientWithResponses("http://localhost:6820",
 		v042.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
 			req.Header.Set("X-SLURM-USER-TOKEN", token)
 			return nil

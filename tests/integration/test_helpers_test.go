@@ -73,7 +73,7 @@ func stringPtr(s string) *string {
 // GetTestConfig loads test configuration from environment variables
 func GetTestConfig(version string) *TestConfig {
 	config := &TestConfig{
-		ServerURL:           getEnvWithDefault("SLURM_SERVER_URL", "http://localhost
+		ServerURL:           getEnvWithDefault("SLURM_SERVER_URL", "http://localhost:6820"),
 		Version:             version,
 		Timeout:             30 * time.Second,
 		MaxRetries:          3,
@@ -312,7 +312,7 @@ func getEnvBool(key string, defaultValue bool) bool {
 // fetchJWTTokenViaSSH fetches a JWT token from the server via SSH
 func fetchJWTTokenViaSSH() (string, error) {
 	// Get SSH configuration from environment
-	sshHost := getEnvWithDefault("SLURM_SSH_HOST", "localhost
+	sshHost := getEnvWithDefault("SLURM_SSH_HOST", "localhost")
 	sshUser := getEnvWithDefault("SLURM_SSH_USER", "root")
 
 	// Command to get JWT token

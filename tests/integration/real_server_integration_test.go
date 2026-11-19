@@ -50,7 +50,7 @@ func (suite *RealServerIntegrationTestSuite) SetupSuite() {
 	// Get configuration from environment
 	suite.serverURL = os.Getenv("SLURM_SERVER_URL")
 	if suite.serverURL == "" {
-		suite.serverURL = "http://localhost
+		suite.serverURL = "http://localhost:6820"
 	}
 
 	suite.version = os.Getenv("SLURM_API_VERSION")
