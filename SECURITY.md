@@ -6,7 +6,7 @@ We release patches for security vulnerabilities in the following versions:
 
 | Version | Supported          | SLURM API Version |
 | ------- | ------------------ | ----------------- |
-| 0.1.x   | :white_check_mark: | v0.0.40 - v0.0.44 |
+| 0.1.x   | :white_check_mark: | v0.0.40 - v0.0.45 |
 | < 0.1.0 | :x:                | -                 |
 
 ## Reporting a Vulnerability

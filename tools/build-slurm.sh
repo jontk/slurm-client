@@ -1,17 +1,17 @@
 #!/bin/bash
 
-# Build SLURM with REST API v0.0.44 support
+# Build SLURM with REST API v0.0.45 support
 # This script helps build SLURM from source with the necessary plugins
 
 set -e
 
 # Configuration
-SLURM_VERSION="${SLURM_VERSION:-25.11.1}"
+SLURM_VERSION="${SLURM_VERSION:-26.05.5}"
 SLURM_DIR="${SLURM_DIR:-./slurm-build}"
 INSTALL_PREFIX="${INSTALL_PREFIX:-/usr/local/slurm}"
 PARALLEL_JOBS="${PARALLEL_JOBS:-$(nproc)}"
 
-echo "🔨 Building SLURM $SLURM_VERSION with REST API v0.0.44 support"
+echo "🔨 Building SLURM $SLURM_VERSION with REST API v0.0.45 support"
 echo "Build directory: $SLURM_DIR"
 echo "Install prefix: $INSTALL_PREFIX"
 echo "Parallel jobs: $PARALLEL_JOBS"
@@ -128,23 +128,23 @@ echo "  sudo make install"
 echo ""
 echo "🔧 To configure SLURM, create configuration files in $INSTALL_PREFIX/etc/"
 echo ""
-echo "🚀 To start slurmrestd with v0.0.44 support:"
+echo "🚀 To start slurmrestd with v0.0.45 support:"
 echo "  $INSTALL_PREFIX/sbin/slurmrestd \\"
 echo "    -s openapi/slurmctld,openapi/slurmdbd,openapi/util \\"
-echo "    -s data_parser/v0.0.44 \\"
+echo "    -s data_parser/v0.0.45 \\"
 echo "    localhost:6820"
 echo ""
 echo "🧪 To test the REST API:"
 echo "  curl http://localhost:6820/openapi/v3"
-echo "  curl http://localhost:6820/openapi/v0.0.44"
+echo "  curl http://localhost:6820/openapi/v0.0.45"
 echo ""
 
-# Check if v0.0.44 plugin was built
-V044_PLUGIN=$(find . -name "*v0_0_44*" -type f 2>/dev/null | head -1)
-if [ -n "$V044_PLUGIN" ]; then
-    echo "✅ v0.0.44 plugin found: $V044_PLUGIN"
+# Check if v0.0.45 plugin was built
+V045_PLUGIN=$(find . -name "*v0_0_45*" -type f 2>/dev/null | head -1)
+if [ -n "$V045_PLUGIN" ]; then
+    echo "✅ v0.0.45 plugin found: $V045_PLUGIN"
 else
-    echo "⚠ v0.0.44 plugin not found - may not be available in this SLURM version"
+    echo "⚠ v0.0.45 plugin not found - may not be available in this SLURM version"
 fi
 
 echo ""
@@ -152,5 +152,5 @@ echo "📚 Next steps:"
 echo "1. Install SLURM: sudo make install"
 echo "2. Configure SLURM cluster"
 echo "3. Start slurmctld and slurmdbd"
-echo "4. Start slurmrestd with v0.0.44 plugin"
+echo "4. Start slurmrestd with v0.0.45 plugin"
 echo "5. Run: make download-specs to get OpenAPI specifications"

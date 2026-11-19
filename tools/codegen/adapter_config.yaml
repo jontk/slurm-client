@@ -325,6 +325,125 @@ entities:
 
 # Version-specific API mappings
 versions:
+  v0_0_45:
+    api_prefix: "V0045"
+    api_package: "v0_0_45"
+    api_methods:
+      Account:
+        list: "SlurmdbV0045GetAccountsWithResponse"
+        get: "SlurmdbV0045GetAccountWithResponse"
+        create: "SlurmdbV0045PostAccountsWithResponse"
+        delete: "SlurmdbV0045DeleteAccountWithResponse"
+        list_params: "SlurmdbV0045GetAccountsParams"
+        get_params: "SlurmdbV0045GetAccountParams"
+        response_list: "Accounts"
+        api_type: "V0045Account"
+        request_body_type: "SlurmdbV0045PostAccountsJSONRequestBody"
+        request_list_field: "Accounts"
+      Node:
+        list: "SlurmV0045GetNodesWithResponse"
+        get: "SlurmV0045GetNodeWithResponse"
+        update: "SlurmV0045PostNodeWithResponse"
+        delete: "SlurmV0045DeleteNodeWithResponse"
+        list_params: "SlurmV0045GetNodesParams"
+        get_params: "SlurmV0045GetNodeParams"
+        response_list: "Nodes"
+        api_type: "V0045Node"
+        request_body_type: "SlurmV0045PostNodeJSONRequestBody"
+        # Node uses UpdateNodeMsg, not a list wrapper
+      Job:
+        list: "SlurmV0045GetJobsWithResponse"
+        get: "SlurmV0045GetJobWithResponse"
+        submit: "SlurmV0045PostJobSubmitWithResponse"
+        update: "SlurmV0045PostJobWithResponse"
+        delete: "SlurmV0045DeleteJobWithResponse"
+        allocate: "SlurmV0045PostJobAllocateWithResponse"
+        list_params: "SlurmV0045GetJobsParams"
+        get_params: "SlurmV0045GetJobParams"
+        response_list: "Jobs"
+        api_type: "V0045JobInfo"
+        submit_request_body: "SlurmV0045PostJobSubmitJSONRequestBody"
+        allocate_request_body: "SlurmV0045PostJobAllocateJSONRequestBody"
+      Partition:
+        list: "SlurmV0045GetPartitionsWithResponse"
+        get: "SlurmV0045GetPartitionWithResponse"
+        list_params: "SlurmV0045GetPartitionsParams"
+        get_params: "SlurmV0045GetPartitionParams"
+        response_list: "Partitions"
+        api_type: "V0045PartitionInfo"
+      QoS:
+        list: "SlurmdbV0045GetQosWithResponse"
+        get: "SlurmdbV0045GetSingleQosWithResponse"
+        create: "SlurmdbV0045PostQosWithResponse"
+        delete: "SlurmdbV0045DeleteSingleQosWithResponse"
+        list_params: "SlurmdbV0045GetQosParams"
+        get_params: "SlurmdbV0045GetSingleQosParams"
+        response_list: "Qos"
+        api_type: "V0045Qos"
+        request_body_type: "SlurmdbV0045PostQosJSONRequestBody"
+        request_list_field: "Qos"
+        create_needs_params: true  # API requires params argument
+      Reservation:
+        list: "SlurmV0045GetReservationsWithResponse"
+        get: "SlurmV0045GetReservationWithResponse"
+        create: "SlurmV0045PostReservationsWithResponse"
+        update: "SlurmV0045PostReservationsWithResponse"  # Use plural method (same as create)
+        delete: "SlurmV0045DeleteReservationWithResponse"
+        list_params: "SlurmV0045GetReservationsParams"
+        get_params: "SlurmV0045GetReservationParams"
+        request_body_type: "SlurmV0045PostReservationsJSONRequestBody"
+        request_list_field: "Reservations"
+        response_list: "Reservations"
+        api_type: "V0045ReservationInfo"
+        input_api_type: "V0045ReservationDescMsg"
+      User:
+        list: "SlurmdbV0045GetUsersWithResponse"
+        get: "SlurmdbV0045GetUserWithResponse"
+        create: "SlurmdbV0045PostUsersWithResponse"
+        delete: "SlurmdbV0045DeleteUserWithResponse"
+        list_params: "SlurmdbV0045GetUsersParams"
+        get_params: "SlurmdbV0045GetUserParams"
+        response_list: "Users"
+        api_type: "V0045User"
+        request_body_type: "SlurmdbV0045PostUsersJSONRequestBody"
+        request_list_field: "Users"
+      Association:
+        list: "SlurmdbV0045GetAssociationsWithResponse"
+        get: "SlurmdbV0045GetAssociationWithResponse"
+        create: "SlurmdbV0045PostAssociationsWithResponse"
+        delete: "SlurmdbV0045DeleteAssociationWithResponse"
+        list_params: "SlurmdbV0045GetAssociationsParams"
+        get_params: "SlurmdbV0045GetAssociationParams"
+        response_list: "Associations"
+        api_type: "V0045Assoc"  # Note: API type is Assoc, not Association
+        request_body_type: "SlurmdbV0045PostAssociationsJSONRequestBody"
+        request_list_field: "Associations"
+        # Note: Association Get uses query params, not path params (different pattern)
+      Cluster:
+        list: "SlurmdbV0045GetClustersWithResponse"
+        get: "SlurmdbV0045GetClusterWithResponse"
+        create: "SlurmdbV0045PostClustersWithResponse"
+        delete: "SlurmdbV0045DeleteClusterWithResponse"
+        list_params: "SlurmdbV0045GetClustersParams"
+        get_params: "SlurmdbV0045GetClusterParams"
+        response_list: "Clusters"
+        api_type: "V0045ClusterRec"
+        request_body_type: "SlurmdbV0045PostClustersJSONRequestBody"
+        request_list_field: "Clusters"
+        create_needs_params: true
+        delete_needs_params: true
+      WCKey:
+        list: "SlurmdbV0045GetWckeysWithResponse"
+        get: "SlurmdbV0045GetWckeyWithResponse"
+        create: "SlurmdbV0045PostWckeysWithResponse"
+        delete: "SlurmdbV0045DeleteWckeyWithResponse"
+        list_params: "SlurmdbV0045GetWckeysParams"
+        response_list: "Wckeys"
+        api_type: "V0045Wckey"
+        request_body_type: "SlurmdbV0045PostWckeysJSONRequestBody"
+        request_list_field: "Wckeys"
+        create_needs_params: true
+
   v0_0_44:
     api_prefix: "V0044"
     api_package: "v0_0_44"

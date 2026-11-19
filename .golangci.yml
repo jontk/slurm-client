@@ -456,7 +456,7 @@ linters:
       - linters:
           - goconst
         path: internal/factory/
-        text: "v0\\.0\\.43"  # Version strings in factory switches should not be constants
+        text: "v0\\.0\\.4[3-5]"  # Version strings in factory switches should not be constants
       - linters:
           - goheader
         path: vendor/  # Third-party dependencies

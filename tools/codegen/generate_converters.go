@@ -72,7 +72,7 @@ var (
 func main() {
 	flag.Parse()
 
-	versions := []string{"v0_0_40", "v0_0_41", "v0_0_42", "v0_0_43", "v0_0_44"}
+	versions := []string{"v0_0_40", "v0_0_41", "v0_0_42", "v0_0_43", "v0_0_44", "v0_0_45"}
 
 	if *versionFlag != "" {
 		versions = []string{*versionFlag}

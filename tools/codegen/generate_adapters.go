@@ -411,7 +411,7 @@ func (a *%sAdapter) createAssociationImpl(ctx context.Context, req *types.%s) (*
 		// v0_0_42 and v0_0_43 use short names (FEDERATIONREQUEUE)
 		// v0_0_44+ uses full names (SlurmV0044DeleteJobParamsFlagsFEDERATIONREQUEUE)
 		requeueFlagConst := "FEDERATIONREQUEUE"
-		if versionDef.APIPackage == "v0_0_44" {
+		if versionDef.APIPackage == "v0_0_44" || versionDef.APIPackage == "v0_0_45" {
 			requeueFlagConst = fmt.Sprintf("Slurm%sDeleteJobParamsFlagsFEDERATIONREQUEUE", apiPrefix)
 		}
 

@@ -42,7 +42,7 @@ func TestAllVersionsComprehensive(t *testing.T) {
 	}
 
 	// Test all supported versions
-	versions := []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43", "v0.0.44"}
+	versions := []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43", "v0.0.44", "v0.0.45"}
 
 	for _, version := range versions {
 		t.Run(version, func(t *testing.T) {

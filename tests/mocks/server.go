@@ -20,6 +20,7 @@ import (
 	builderv0042 "github.com/jontk/slurm-client/tests/mocks/generated/v0_0_42"
 	builderv0043 "github.com/jontk/slurm-client/tests/mocks/generated/v0_0_43"
 	builderv0044 "github.com/jontk/slurm-client/tests/mocks/generated/v0_0_44"
+	builderv0045 "github.com/jontk/slurm-client/tests/mocks/generated/v0_0_45"
 )
 
 // MockSlurmServer represents a mock SLURM REST API server for testing
@@ -363,6 +364,8 @@ func (s *MockStorage) initializeDefaultData() {
 		s.initializeV0043Jobs()
 	case "v0.0.44":
 		s.initializeV0044Jobs()
+	case "v0.0.45":
+		s.initializeV0045Jobs()
 	default:
 		// Fallback to v0.0.40 for unknown versions
 		s.initializeV0040Jobs()
@@ -496,6 +499,39 @@ func (s *MockStorage) initializeV0044Jobs() {
 
 	// Job 1002: Pending job
 	s.Jobs["1002"] = builderv0044.NewJobInfo().
+		WithJobId(1002).
+		WithName("test-job-2").
+		WithUserId(1000).
+		WithJobState("PENDING").
+		WithPartition("gpu").
+		WithCpus(8).
+		WithMemoryPerNode(8 * 1024 * 1024 * 1024).
+		WithTimeLimit(120).
+		WithSubmitTime(time.Now().Add(-5 * time.Minute).Unix()).
+		WithCurrentWorkingDirectory("/home/testuser").
+		WithCommand("#!/bin/bash\npython train_model.py").
+		Build()
+}
+
+// initializeV0045Jobs initializes jobs using v0.0.45 generated builders
+func (s *MockStorage) initializeV0045Jobs() {
+	// Job 1001: Running job
+	s.Jobs["1001"] = builderv0045.NewJobInfo().
+		WithJobId(1001).
+		WithName("test-job-1").
+		WithUserId(1000).
+		WithJobState("RUNNING").
+		WithPartition("compute").
+		WithCpus(4).
+		WithMemoryPerNode(4 * 1024 * 1024 * 1024).
+		WithTimeLimit(60).
+		WithSubmitTime(time.Now().Add(-10 * time.Minute).Unix()).
+		WithCurrentWorkingDirectory("/tmp").
+		WithCommand("#!/bin/bash\necho 'Hello World'").
+		Build()
+
+	// Job 1002: Pending job
+	s.Jobs["1002"] = builderv0045.NewJobInfo().
 		WithJobId(1002).
 		WithName("test-job-2").
 		WithUserId(1000).

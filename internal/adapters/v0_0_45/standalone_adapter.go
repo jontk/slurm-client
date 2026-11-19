@@ -1,0 +1,328 @@
+// SPDX-FileCopyrightText: 2025 Jon Thor Kristinsson
+// SPDX-License-Identifier: Apache-2.0
+package v0_0_45
+
+import (
+	"context"
+
+	types "github.com/jontk/slurm-client/api"
+	adapterbase "github.com/jontk/slurm-client/internal/adapters/base"
+	"github.com/jontk/slurm-client/internal/common"
+	api "github.com/jontk/slurm-client/internal/openapi/v0_0_45"
+	"github.com/jontk/slurm-client/pkg/errors"
+)
+
+// StandaloneAdapter implements the standalone operations for v0.0.45
+type StandaloneAdapter struct {
+	*adapterbase.BaseManager
+	client *api.ClientWithResponses
+}
+
+// NewStandaloneAdapter creates a new standalone adapter
+func NewStandaloneAdapter(client *api.ClientWithResponses) *StandaloneAdapter {
+	return &StandaloneAdapter{
+		BaseManager: adapterbase.NewBaseManager("v0.0.45", "Standalone"),
+		client:      client,
+	}
+}
+
+// GetLicenses retrieves license information
+func (a *StandaloneAdapter) GetLicenses(ctx context.Context) (*types.LicenseList, error) {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+	resp, err := a.client.SlurmV0045GetLicensesWithResponse(ctx)
+	if err != nil {
+		return nil, a.HandleAPIError(err)
+	}
+	// Use common response error handling
+	var apiErrors *api.V0045OpenapiErrors
+	if resp.JSON200 != nil {
+		apiErrors = resp.JSON200.Errors
+	}
+	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.45"); err != nil {
+		return nil, err
+	}
+	// Check for unexpected response format
+	if err := a.CheckNilResponse(resp.JSON200, "Get Licenses"); err != nil {
+		return nil, err
+	}
+	// Convert API licenses to common types
+	licenses := make([]types.License, 0, len(resp.JSON200.Licenses))
+	for _, apiLicense := range resp.JSON200.Licenses {
+		license := types.License{}
+		// Handle pointer fields
+		if apiLicense.LicenseName != nil {
+			license.Name = *apiLicense.LicenseName
+		}
+		if apiLicense.Total != nil {
+			license.Total = int(*apiLicense.Total)
+		}
+		if apiLicense.Used != nil {
+			license.Used = int(*apiLicense.Used)
+		}
+		if apiLicense.Free != nil {
+			license.Free = int(*apiLicense.Free)
+		}
+		if apiLicense.Reserved != nil {
+			license.Reserved = int(*apiLicense.Reserved)
+		}
+		if apiLicense.LastConsumed != nil {
+			license.RemoteUsed = int(*apiLicense.LastConsumed)
+		}
+		licenses = append(licenses, license)
+	}
+	return &types.LicenseList{
+		Licenses: licenses,
+	}, nil
+}
+
+// GetTRES retrieves all TRES (Trackable RESources)
+func (a *StandaloneAdapter) GetTRES(ctx context.Context) (*types.TRESList, error) {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+	resp, err := a.client.SlurmdbV0045GetTresWithResponse(ctx)
+	if err != nil {
+		return nil, a.HandleAPIError(err)
+	}
+	// Use common response error handling
+	var apiErrors *api.V0045OpenapiErrors
+	if resp.JSON200 != nil {
+		apiErrors = resp.JSON200.Errors
+	}
+	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.45"); err != nil {
+		return nil, err
+	}
+	// Check for unexpected response format
+	if err := a.CheckNilResponse(resp.JSON200, "Get TRES"); err != nil {
+		return nil, err
+	}
+	// Convert API TRES to common types
+	tresList := make([]types.TRES, 0, len(resp.JSON200.TRES))
+	for _, apiTres := range resp.JSON200.TRES {
+		tres := types.TRES{}
+		if apiTres.Id != nil {
+			id := int32(*apiTres.Id)
+			tres.ID = &id
+		}
+		// Type is not a pointer in v0.0.45
+		tres.Type = apiTres.Type
+		if apiTres.Name != nil {
+			name := *apiTres.Name
+			tres.Name = &name
+		}
+		if apiTres.Count != nil {
+			tres.Count = apiTres.Count
+		}
+		tresList = append(tresList, tres)
+	}
+	return &types.TRESList{
+		TRES: tresList,
+	}, nil
+}
+
+// CreateTRES creates a new TRES entry
+func (a *StandaloneAdapter) CreateTRES(ctx context.Context, req *types.CreateTRESRequest) (*types.TRES, error) {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	if req == nil {
+		return nil, errors.NewValidationError(errors.ErrorCodeValidationFailed, "CreateTRES request is required", "request", req, nil)
+	}
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+	// Note: SLURM v0.0.45 doesn't support TRES creation via REST API
+	return nil, errors.NewSlurmError(errors.ErrorCodeUnsupportedOperation, "TRES creation not supported in v0.0.45")
+}
+
+// GetShares retrieves fairshare information with optional filtering
+func (a *StandaloneAdapter) GetShares(ctx context.Context, opts *types.GetSharesOptions) (*types.SharesList, error) {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+	// Build query parameters
+	params := &api.SlurmV0045GetSharesParams{}
+	if opts != nil {
+		if len(opts.Users) > 0 {
+			params.Users = &opts.Users[0] // API takes single user
+		}
+		if len(opts.Accounts) > 0 {
+			params.Accounts = &opts.Accounts[0] // API takes single account
+		}
+	}
+	resp, err := a.client.SlurmV0045GetSharesWithResponse(ctx, params)
+	if err != nil {
+		return nil, a.HandleAPIError(err)
+	}
+	// Use common response error handling
+	var apiErrors *api.V0045OpenapiErrors
+	if resp.JSON200 != nil {
+		apiErrors = resp.JSON200.Errors
+	}
+	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.45"); err != nil {
+		return nil, err
+	}
+	// Check for unexpected response format
+	if err := a.CheckNilResponse(resp.JSON200, "Get Shares"); err != nil {
+		return nil, err
+	}
+	// Handle nil shares list
+	if resp.JSON200.Shares.Shares == nil {
+		return &types.SharesList{Shares: []types.Share{}}, nil
+	}
+	// Convert API shares to common types
+	shares := make([]types.Share, 0, len(*resp.JSON200.Shares.Shares))
+	for _, apiShare := range *resp.JSON200.Shares.Shares {
+		share := a.convertAPIShareToCommon(apiShare)
+		shares = append(shares, share)
+	}
+	return &types.SharesList{
+		Shares: shares,
+	}, nil
+}
+
+// GetConfig retrieves SLURM configuration
+func (a *StandaloneAdapter) GetConfig(ctx context.Context) (*types.Config, error) {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+	// Note: SLURM v0.0.45 doesn't have a direct config endpoint
+	// Return basic config for now
+	return &types.Config{
+		Version: "v0.0.45",
+	}, nil
+}
+
+// GetDiagnostics retrieves SLURM diagnostics information
+func (a *StandaloneAdapter) GetDiagnostics(ctx context.Context) (*types.Diagnostics, error) {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+	resp, err := a.client.SlurmV0045GetDiagWithResponse(ctx)
+	if err != nil {
+		return nil, a.HandleAPIError(err)
+	}
+	// Use common response error handling
+	var apiErrors *api.V0045OpenapiErrors
+	if resp.JSON200 != nil {
+		apiErrors = resp.JSON200.Errors
+	}
+	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
+	if err := common.HandleAPIResponse(responseAdapter, "v0.0.45"); err != nil {
+		return nil, err
+	}
+	// Check for unexpected response format
+	if err := a.CheckNilResponse(resp.JSON200, "Get Diagnostics"); err != nil {
+		return nil, err
+	}
+	// Convert to common diagnostics format
+	diag := &types.Diagnostics{
+		// Fill basic fields based on API response
+		ServerThreadCount: 0, // Default values since v0.0.45 has different structure
+		AgentQueueSize:    0,
+		AgentCount:        0,
+		AgentThreadCount:  0,
+		DBDAgentCount:     0,
+		GittosCount:       0,
+	}
+	// v0.0.45 response has different structure, use basic conversion
+	// resp.JSON200.Statistics contains different data than expected
+	return diag, nil
+}
+
+// GetDBDiagnostics retrieves SLURM database diagnostics information
+func (a *StandaloneAdapter) GetDBDiagnostics(ctx context.Context) (*types.Diagnostics, error) {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+	// Note: v0.0.45 doesn't have separate DB diagnostics
+	// Delegate to regular diagnostics
+	return a.GetDiagnostics(ctx)
+}
+
+// GetInstance retrieves a specific database instance
+func (a *StandaloneAdapter) GetInstance(ctx context.Context, opts *types.GetInstanceOptions) (*types.Instance, error) {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+	// Note: SLURM v0.0.45 doesn't have instance endpoints
+	return nil, errors.NewSlurmError(errors.ErrorCodeUnsupportedOperation, "Instance operations not supported in v0.0.45")
+}
+
+// GetInstances retrieves multiple database instances with filtering
+func (a *StandaloneAdapter) GetInstances(ctx context.Context, opts *types.GetInstancesOptions) (*types.InstanceList, error) {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+	// Note: SLURM v0.0.45 doesn't have instance endpoints
+	return &types.InstanceList{
+		Instances: []types.Instance{},
+	}, nil
+}
+
+// Reconfigure triggers a SLURM reconfiguration
+func (a *StandaloneAdapter) Reconfigure(ctx context.Context) (*types.ReconfigureResponse, error) {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+	// Note: SLURM v0.0.45 doesn't have reconfigure endpoint
+	return nil, errors.NewSlurmError(errors.ErrorCodeUnsupportedOperation, "Reconfigure operation not supported in v0.0.45")
+}
+
+// PingDatabase pings the SLURM database
+func (a *StandaloneAdapter) PingDatabase(ctx context.Context) (*types.PingResponse, error) {
+	// Use base validation
+	if err := a.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return nil, err
+	}
+	// Note: SLURM v0.0.45 doesn't have ping endpoint
+	return &types.PingResponse{
+		Status:  "ok",
+		Message: "v0.0.45 database ping simulation",
+	}, nil
+}

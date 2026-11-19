@@ -368,9 +368,9 @@ func NewV0042TypeDetector() *V0042TypeDetector {
 
 // getDetectorForVersion returns the appropriate type detector for a given version
 func getDetectorForVersion(pkgVersion string) TypeDetector {
-	// v0.0.42, v0.0.43, v0.0.44 use _no_val_struct pattern
+	// v0.0.42, v0.0.43, v0.0.44, v0.0.45 use _no_val_struct pattern
 	switch pkgVersion {
-	case "v0_0_42", "v0_0_43", "v0_0_44":
+	case "v0_0_42", "v0_0_43", "v0_0_44", "v0_0_45":
 		return NewV0042TypeDetector()
 	default:
 		// v0.0.40 and others use _no_val pattern

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Slurm REST API v0.0.45 support (Slurm 26.05)**: new generated OpenAPI client (`internal/openapi/v0_0_45`),
+  full adapter set (`internal/adapters/v0_0_45`), factory/version wiring, mock builders and versioned mock handlers
+  - Spec generated from Slurm 26.05.5 with `slurmrestd --generate-openapi-spec -d v0.0.45`
+  - `NewClientForSlurmVersion("26.05")` now resolves to v0.0.45; v0.0.45 is the latest supported version
+
+### Changed
+- v0.0.45 removes fields deprecated in v0.0.44 (node/job `power`, node `external_sensors`/`tres_weighted`,
+  reservation `watts`, cluster `select_plugin`, job_desc_msg `power_flags`); the matching common-type fields are left unset
+- v0.0.45 changes partition `cpus.task_binding` from an integer to a list of flags; `PartitionCPUs.TaskBinding` is nil for v0.0.45
+- Support window moved to v0.0.43-v0.0.45; v0.0.42 is now best-effort (see README deprecation policy)
+- Tooling updated for v0.0.45 (Makefile, `download-specs.sh`, `build-slurm.sh`, codegen configs, mock generator)
+
+### Fixed
+- README Slurm-to-API compatibility table contradicted the version matrix and omitted 25.11/26.05
+- Mock server `v0.0.44` job submission built v0.0.43 job objects; it now uses the v0.0.44 builder
+- `doc.go` listed incorrect Slurm releases for each API version
+
 ## [0.4.0] - 2026-03-16
 
 ### Added
@@ -379,6 +397,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | SLURM Version | REST API Version | Support Status |
 |---------------|------------------|----------------|
+| 26.05.0       | v0.0.45          | ✅ Supported    |
 | 25.11.0       | v0.0.44          | ✅ Supported    |
 | 25.05.0       | v0.0.43          | ✅ Supported    |
 | 24.11.0       | v0.0.42          | ✅ Supported    |

@@ -21,6 +21,8 @@ import (
 	builderv0040 "github.com/jontk/slurm-client/tests/mocks/generated/v0_0_40"
 	builderv0042 "github.com/jontk/slurm-client/tests/mocks/generated/v0_0_42"
 	builderv0043 "github.com/jontk/slurm-client/tests/mocks/generated/v0_0_43"
+	builderv0044 "github.com/jontk/slurm-client/tests/mocks/generated/v0_0_44"
+	builderv0045 "github.com/jontk/slurm-client/tests/mocks/generated/v0_0_45"
 )
 
 // Job endpoint handlers
@@ -206,8 +208,36 @@ func (m *MockSlurmServer) handleJobsSubmit(w http.ResponseWriter, r *http.Reques
 			WithCurrentWorkingDirectory(workingDir).
 			WithCommand(submission.Script).
 			Build()
-	case "v0.0.43", "v0.0.44":
+	case "v0.0.43":
 		job = builderv0043.NewJobInfo().
+			WithJobId(jobID).
+			WithName(submission.Name).
+			WithUserId(1000).
+			WithJobState("PENDING").
+			WithPartition(partition).
+			WithCpus(int32(cpus)).
+			WithMemoryPerNode(submission.Memory).
+			WithTimeLimit(int32(timeLimit)).
+			WithSubmitTime(time.Now().Unix()).
+			WithCurrentWorkingDirectory(workingDir).
+			WithCommand(submission.Script).
+			Build()
+	case "v0.0.44":
+		job = builderv0044.NewJobInfo().
+			WithJobId(jobID).
+			WithName(submission.Name).
+			WithUserId(1000).
+			WithJobState("PENDING").
+			WithPartition(partition).
+			WithCpus(int32(cpus)).
+			WithMemoryPerNode(submission.Memory).
+			WithTimeLimit(int32(timeLimit)).
+			WithSubmitTime(time.Now().Unix()).
+			WithCurrentWorkingDirectory(workingDir).
+			WithCommand(submission.Script).
+			Build()
+	case "v0.0.45":
+		job = builderv0045.NewJobInfo().
 			WithJobId(jobID).
 			WithName(submission.Name).
 			WithUserId(1000).

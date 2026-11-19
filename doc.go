@@ -4,7 +4,7 @@
 /*
 Package slurm provides a comprehensive Go client library for the SLURM REST API.
 
-The library supports multiple API versions (v0.0.40 through v0.0.44) and provides
+The library supports multiple API versions (v0.0.40 through v0.0.45) and provides
 both high-level abstractions and direct API access for SLURM workload management.
 
 # Overview
@@ -69,11 +69,12 @@ The library uses the Adapter Pattern to provide version-agnostic interfaces:
 # Version Support
 
 The library supports the following SLURM REST API versions:
-  - v0.0.40 (SLURM 23.02.x)
-  - v0.0.41 (SLURM 23.11.x)
-  - v0.0.42 (SLURM 24.05.x)
-  - v0.0.43 (SLURM 24.11.x)
-  - v0.0.44 (SLURM 25.02.x)
+  - v0.0.40 (SLURM 23.11.x; removed in 25.11)
+  - v0.0.41 (SLURM 24.05.x; removed in 26.05)
+  - v0.0.42 (SLURM 24.11.x; removed in 26.11)
+  - v0.0.43 (SLURM 25.05.x)
+  - v0.0.44 (SLURM 25.11.x)
+  - v0.0.45 (SLURM 26.05.x)
 
 Version detection is automatic, but can be overridden using [NewClientWithVersion]:
 

@@ -12,6 +12,7 @@ import (
 	v0_0_42 "github.com/jontk/slurm-client/internal/openapi/v0_0_42"
 	v0_0_43 "github.com/jontk/slurm-client/internal/openapi/v0_0_43"
 	v0_0_44 "github.com/jontk/slurm-client/internal/openapi/v0_0_44"
+	v0_0_45 "github.com/jontk/slurm-client/internal/openapi/v0_0_45"
 )
 
 // JobHandler provides version-specific job handling
@@ -382,6 +383,95 @@ func (h *V0044JobHandler) matchesFilters(job *v0_0_44.V0044JobInfo, userID, part
 	return true
 }
 
+// V0045JobHandler handles v0.0.45 jobs
+// V0045JobHandler handles v0.0.45 job-related mock requests.
+type V0045JobHandler struct{}
+
+// ListJobs returns a list of jobs for v0.0.45.
+func (h *V0045JobHandler) ListJobs(r *http.Request, storage *MockStorage) ([]interface{}, error) {
+	userID := parseQueryParam(r, "user_id")
+	partition := parseQueryParam(r, "partition")
+	states := parseQueryParam(r, "state")
+
+	stateList := []string{}
+	if states != "" {
+		stateList = strings.Split(states, ",")
+	}
+
+	storage.mu.RLock()
+	defer storage.mu.RUnlock()
+
+	var jobs []interface{}
+	for _, jobInterface := range storage.Jobs {
+		job, ok := jobInterface.(*v0_0_45.V0045JobInfo)
+		if !ok {
+			continue
+		}
+
+		if !h.matchesFilters(job, userID, partition, stateList) {
+			continue
+		}
+
+		jobs = append(jobs, job)
+	}
+
+	return jobs, nil
+}
+
+// GetJob retrieves a specific job for v0.0.45.
+func (h *V0045JobHandler) GetJob(jobID string, storage *MockStorage) (interface{}, error) {
+	storage.mu.RLock()
+	defer storage.mu.RUnlock()
+
+	jobInterface, exists := storage.Jobs[jobID]
+	if !exists {
+		return nil, nil //nolint:nilnil // Intentional: nil job with nil error means "not found" (caller checks job == nil)
+	}
+
+	job, ok := jobInterface.(*v0_0_45.V0045JobInfo)
+	if !ok {
+		return nil, nil //nolint:nilnil // Intentional: wrong type treated as not found
+	}
+
+	return job, nil
+}
+
+func (h *V0045JobHandler) matchesFilters(job *v0_0_45.V0045JobInfo, userID, partition string, states []string) bool {
+	if userID != "" {
+		uid, err := strconv.ParseInt(userID, 10, 32)
+		if err == nil && job.UserId != nil && *job.UserId != int32(uid) {
+			return false
+		}
+	}
+
+	if partition != "" && job.Partition != nil && *job.Partition != partition {
+		return false
+	}
+
+	if len(states) > 0 {
+		found := false
+		if job.JobState != nil {
+			for _, state := range states {
+				for _, jobState := range *job.JobState {
+					// v0.0.45 JobState is an enum type, convert to string
+					if strings.TrimSpace(state) == string(jobState) {
+						found = true
+						break
+					}
+				}
+				if found {
+					break
+				}
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	return true
+}
+
 // NewJobHandler returns the appropriate handler for the version
 func NewJobHandler(version string) JobHandler {
 	switch version {
@@ -393,6 +483,8 @@ func NewJobHandler(version string) JobHandler {
 		return &V0043JobHandler{}
 	case "v0.0.44":
 		return &V0044JobHandler{}
+	case "v0.0.45":
+		return &V0045JobHandler{}
 	default:
 		// Fallback to v0.0.40
 		return &V0040JobHandler{}

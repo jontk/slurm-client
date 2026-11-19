@@ -12,7 +12,7 @@ import (
 
 func TestSupportedVersions(t *testing.T) {
 	// Test that SupportedVersions contains expected versions
-	expected := []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43", "v0.0.44"}
+	expected := []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43", "v0.0.44", "v0.0.45"}
 
 	versionStrings := make([]string, 0, len(SupportedVersions))
 	for _, v := range SupportedVersions {
@@ -29,7 +29,7 @@ func TestStableVersion(t *testing.T) {
 
 func TestLatestVersion(t *testing.T) {
 	version := LatestVersion()
-	helpers.AssertEqual(t, "v0.0.44", version.String())
+	helpers.AssertEqual(t, "v0.0.45", version.String())
 }
 
 func TestIsVersionSupported(t *testing.T) {
@@ -43,6 +43,7 @@ func TestIsVersionSupported(t *testing.T) {
 		{"supported v0.0.42", "v0.0.42", true},
 		{"supported v0.0.43", "v0.0.43", true},
 		{"supported v0.0.44", "v0.0.44", true},
+		{"supported v0.0.45", "v0.0.45", true},
 		{"unsupported v0.0.39", "v0.0.39", true}, // Compatible with v0.0.40 (same major.minor)
 		{"invalid version", "invalid", false},
 		{"empty version", "", true}, // Defaults to latest
@@ -209,7 +210,7 @@ func TestDefaultCompatibilityMatrix(t *testing.T) {
 	helpers.AssertNotNil(t, matrix.BreakingChanges)
 
 	// Test that all supported versions have Slurm version mappings
-	for _, version := range []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43", "v0.0.44"} {
+	for _, version := range []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43", "v0.0.44", "v0.0.45"} {
 		slurmVersions, exists := matrix.SlurmVersions[version]
 		assert.True(t, exists, "Version %s should have Slurm version mapping", version)
 		assert.NotEmpty(t, slurmVersions, "Version %s should have at least one Slurm version", version)
@@ -282,7 +283,7 @@ func TestFindBestVersion(t *testing.T) {
 		{
 			name:        "latest version",
 			constraint:  "latest",
-			expected:    "v0.0.44",
+			expected:    "v0.0.45",
 			expectError: false,
 		},
 		{
@@ -300,7 +301,7 @@ func TestFindBestVersion(t *testing.T) {
 		{
 			name:        "unsupported version",
 			constraint:  "v0.0.39",
-			expected:    "v0.0.44", // Latest compatible version (same major.minor)
+			expected:    "v0.0.45", // Latest compatible version (same major.minor)
 			expectError: false,
 		},
 		{
@@ -312,7 +313,7 @@ func TestFindBestVersion(t *testing.T) {
 		{
 			name:        "empty constraint defaults to latest",
 			constraint:  "",
-			expected:    "v0.0.44",
+			expected:    "v0.0.45",
 			expectError: false,
 		},
 	}

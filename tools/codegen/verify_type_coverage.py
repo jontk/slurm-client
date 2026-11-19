@@ -6,7 +6,7 @@ Usage: python3 verify_type_coverage.py [--spec SPEC] [--types-dir DIR]
 
 Examples:
     python3 verify_type_coverage.py
-    python3 verify_type_coverage.py --spec openapi-specs/slurm-v0.0.44.json
+    python3 verify_type_coverage.py --spec openapi-specs/slurm-v0.0.45.json
     python3 verify_type_coverage.py --types-dir internal/common/types
 """
 
@@ -149,7 +149,7 @@ def main():
     parser.add_argument(
         '--spec', '-s',
         type=Path,
-        default=repo_root / 'openapi-specs/slurm-v0.0.44.json',
+        default=repo_root / 'openapi-specs/slurm-v0.0.45.json',
         help='Path to OpenAPI spec JSON file'
     )
     parser.add_argument(

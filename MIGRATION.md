@@ -8,6 +8,7 @@ This guide helps you migrate between SLURM REST API versions supported by this l
 - [v0.0.40 → v0.0.42](#v0040--v0042)
 - [v0.0.42 → v0.0.43](#v0042--v0043)
 - [v0.0.43 → v0.0.44](#v0043--v0044)
+- [v0.0.44 → v0.0.45](#v0044--v0045)
 - [Testing Your Migration](#testing-your-migration)
 - [Common Pitfalls](#common-pitfalls)
 
@@ -21,12 +22,14 @@ This guide helps you migrate between SLURM REST API versions supported by this l
 | Removed fields (exclusive) | v0.0.41→v0.0.42 | Medium | Update code logic |
 | NoVal type changes | v0.0.40→v0.0.42+ | Internal | Automatic (via builders) |
 | New features (QoS, Reservations) | v0.0.42→v0.0.43 | N/A | Opt-in |
+| Removed deprecated fields (power, watts, select_plugin, ...) | v0.0.44→v0.0.45 | Low | Fields are left unset by the client |
+| `task_binding` int → flag list | v0.0.44→v0.0.45 | Low | `PartitionCPUs.TaskBinding` is nil on v0.0.45 |
 | Account management | v0.0.42→v0.0.43 | N/A | Opt-in |
 
 ### Version Feature Matrix
 
-| Feature | v0.0.40 | v0.0.41 | v0.0.42 | v0.0.43 | v0.0.44 |
-|---------|---------|---------|---------|---------|---------|
+| Feature | v0.0.40 | v0.0.41 | v0.0.42 | v0.0.43 | v0.0.44 | v0.0.45 |
+|---------|---------|---------|---------|---------|---------|---------|
 | Job Management | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Node Management | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Partition Management | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -425,6 +428,53 @@ make generate-mocks VERSION=v0.0.44
 sed -i 's/builderv0043/builderv0044/g' tests/**/*_test.go
 ```
 
+## v0.0.44 → v0.0.45
+
+### Overview
+
+v0.0.45 ships with Slurm 26.05. Unlike v0.0.44, it **removes fields that were deprecated in v0.0.44**.
+The client keeps its public types unchanged, so code using the common types compiles as before, but the
+corresponding fields are left unset when the server speaks v0.0.45.
+
+**Removed in v0.0.45 (common-type fields, where they exist, are left empty):**
+- `Node.Power`, `Node.ExternalSensors`, `Node.TRESWeighted`
+- `Job.Power`
+- `Reservation` watts
+- `Cluster.SelectPlugin` (also no longer sent on cluster create)
+- job step `pid`, `stats_msg.parts_packed`, `controller_ping` `mode`/`pinged` (replaced by `status`)
+
+**Changed:**
+- Partition `cpus.task_binding` is now a list of CPU-bind flags instead of an integer. `PartitionCPUs.TaskBinding`
+  (`*int32`) is therefore nil for v0.0.45.
+
+**Added on the server (not yet surfaced on the common types):**
+- Endpoints: `POST /slurm/v0.0.45/partitions` (create/update), `/slurm/v0.0.45/job/{job_id}/requeue`,
+  `/slurm/v0.0.45/jobs/requeue`, `/slurm/v0.0.45/conf`, `/slurmdb/v0.0.45/conf`
+- Fields: node `suspend_time`; partition `flags`, `preempt_mode`, `exclusive`, `oversubscribe`; job `sluid`,
+  `original_sluid`; step `submit_line`; job request `container_type`, `cores_per_socket`,
+  `memory_update_delay`, `memory_update_margin`
+
+### Migration Steps
+
+```go
+// Before
+client, err := slurm.NewClientWithVersion(ctx, "v0.0.44", opts...)
+
+// After (or just let NewClient auto-detect on Slurm 26.05)
+client, err := slurm.NewClientWithVersion(ctx, "v0.0.45", opts...)
+```
+
+If you read `Node.Power`, `Job.Power` or `PartitionCPUs.TaskBinding`, treat them as optional and handle nil/empty.
+
+```bash
+# Regenerate mock builders for v0.0.45 and update test imports
+make generate-mocks
+sed -i 's/builderv0044/builderv0045/g' tests/**/*_test.go
+```
+
+Slurm 26.05 no longer serves v0.0.41. Clients pinned to `v0.0.41` must move to v0.0.42 or later before upgrading
+the cluster.
+
 ## Testing Your Migration
 
 ### Pre-Migration Checklist
@@ -606,6 +656,11 @@ go test ./tests/integration/... -v
 
 - **Minor updates only** - no significant breaking changes
 - **Additional fields** in responses - test for nil when accessing new fields
+
+### v0.0.44 → v0.0.45
+
+- **Deprecated fields removed** (node/job power, reservation watts, cluster select_plugin) - treat as optional
+- **Partition `task_binding`** changed type - `PartitionCPUs.TaskBinding` is nil on v0.0.45
 
 ## Getting Help
 

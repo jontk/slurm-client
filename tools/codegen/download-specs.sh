@@ -15,7 +15,7 @@ mkdir -p "$SPECS_DIR"
 echo "Downloading OpenAPI specifications from $SLURM_REST_URL..."
 
 # List of API versions to download
-VERSIONS=("v0.0.40" "v0.0.41" "v0.0.42" "v0.0.43" "v0.0.44")
+VERSIONS=("v0.0.40" "v0.0.41" "v0.0.42" "v0.0.43" "v0.0.44" "v0.0.45")
 
 # Function to download a specific version
 download_version() {
@@ -51,7 +51,7 @@ if ! curl -f -s "$SLURM_REST_URL/openapi/v3" >/dev/null 2>&1; then
     echo "3. The REST API plugins are loaded"
     echo ""
     echo "To start slurmrestd with v0.0.44 support:"
-    echo "  slurmrestd -s openapi/slurmctld,openapi/slurmdbd,openapi/util -s data_parser/v0.0.44 localhost:6820"
+    echo "  slurmrestd -s openapi/slurmctld,openapi/slurmdbd,openapi/util -s data_parser/v0.0.45 localhost:6820"
     exit 1
 fi
 
@@ -112,7 +112,7 @@ if [ ! -f "$SPECS_DIR/slurm-v0.0.44.json" ]; then
     echo "   make -j\$(nproc)"
     echo ""
     echo "4. Start slurmrestd with v0.0.44 plugin:"
-    echo "   ./src/slurmrestd/slurmrestd -s openapi/slurmctld,openapi/slurmdbd,openapi/util -s data_parser/v0.0.44 localhost:6820"
+    echo "   ./src/slurmrestd/slurmrestd -s openapi/slurmctld,openapi/slurmdbd,openapi/util -s data_parser/v0.0.45 localhost:6820"
     echo ""
 fi
 

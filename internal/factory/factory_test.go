@@ -215,7 +215,7 @@ func TestClientFactory_ListSupportedVersions(t *testing.T) {
 	versions := factory.ListSupportedVersions()
 
 	// Verify we have the expected versions
-	expectedVersions := []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43", "v0.0.44"}
+	expectedVersions := []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43", "v0.0.44", "v0.0.45"}
 
 	helpers.AssertEqual(t, len(expectedVersions), len(versions))
 
@@ -237,7 +237,7 @@ func TestClientFactory_GetVersionCompatibility(t *testing.T) {
 	helpers.AssertNotNil(t, matrix.BreakingChanges)
 
 	// Verify all supported versions have Slurm version mappings
-	for _, version := range []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43", "v0.0.44"} {
+	for _, version := range []string{"v0.0.40", "v0.0.41", "v0.0.42", "v0.0.43", "v0.0.44", "v0.0.45"} {
 		slurmVersions, exists := matrix.SlurmVersions[version]
 		assert.True(t, exists, "Version %s should have Slurm version mapping", version)
 		assert.NotEmpty(t, slurmVersions, "Version %s should have at least one Slurm version", version)
@@ -307,6 +307,18 @@ func TestClientFactory_findCompatibleAPIVersion(t *testing.T) {
 			name:         "SLURM 25.11 maps to v0.0.44 (highest compatible)",
 			slurmVersion: "25.11",
 			expectedAPI:  "v0.0.44",
+			expectError:  false,
+		},
+		{
+			name:         "SLURM 26.05 maps to v0.0.45 (highest compatible)",
+			slurmVersion: "26.05",
+			expectedAPI:  "v0.0.45",
+			expectError:  false,
+		},
+		{
+			name:         "SLURM 26.05.5 with patch version",
+			slurmVersion: "26.05.5",
+			expectedAPI:  "v0.0.45",
 			expectError:  false,
 		},
 		{

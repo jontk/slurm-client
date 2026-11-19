@@ -74,7 +74,7 @@ func WithHTTPClient(client *http.Client) ClientOption {
 //
 // To specify a version, use NewClientWithVersion instead:
 //
-//	client, err := slurm.NewClientWithVersion(ctx, "v0.0.44", opts...)
+//	client, err := slurm.NewClientWithVersion(ctx, "v0.0.45", opts...)
 //
 // Deprecated: This function is a no-op. Use NewClientWithVersion to specify the API version.
 func WithVersion(version string) ClientOption {

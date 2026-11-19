@@ -24,7 +24,7 @@ func TestAdapterReservationOperations(t *testing.T) {
 	}
 
 	// Test against versions that support reservations (v0.0.43+)
-	versions := []string{"v0.0.43", "v0.0.44"}
+	versions := []string{"v0.0.43", "v0.0.44", "v0.0.45"}
 
 	for _, version := range versions {
 		t.Run(version, func(t *testing.T) {

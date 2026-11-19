@@ -16,7 +16,7 @@ The definitive solution addressing Go SLURM client ecosystem fragmentation throu
 
 ## ✨ Key Features
 
-- **🔄 Multi-Version Support**: Unified client supporting SLURM REST API v0.0.40-v0.0.44 (88,000+ lines OpenAPI specs)
+- **🔄 Multi-Version Support**: Unified client supporting SLURM REST API v0.0.40-v0.0.45 (90,000+ lines OpenAPI specs)
 - **🏢 Enterprise-Grade**: Production patterns inspired by AWS SDK and Kubernetes client-go
 - **🛡️ Structured Error Handling**: Comprehensive error classification with version-specific mapping
 - **⚡ Performance Optimized**: Connection pooling, retry policies with exponential backoff and jitter
@@ -41,7 +41,7 @@ Client Application
     Public API (pkg/slurm)
         ↓
 Version-Specific Adapters
-(v0.0.40, v0.0.41, v0.0.42, v0.0.43, v0.0.44)
+(v0.0.40, v0.0.41, v0.0.42, v0.0.43, v0.0.44, v0.0.45)
 ```
 
 #### Adapter Pattern Benefits
@@ -130,11 +130,20 @@ if err != nil {
 ```
 
 
-| SLURM Version | Supported API Versions | Recommended | Status |
-|---------------|------------------------|-------------|---------|
-| 24.05-25.05 | v0.0.40, v0.0.41, v0.0.42 | **v0.0.42** | ✅ Supported |
-| 24.11-25.11 | v0.0.41, v0.0.42, v0.0.43 | **v0.0.42** | ✅ Supported |
-| 25.05+ | v0.0.42, v0.0.43 | **v0.0.42** | ✅ Supported |
+Slurm serves each `data_parser` API version from the release that adds it until the release that removes it
+([SchedMD schedule](https://slurm.schedmd.com/rest_clients.html)). "Auto-selected" is the version
+`NewClient`/`NewClientForSlurmVersion` picks for that Slurm release.
+
+| SLURM Release | API versions served by slurmrestd | Auto-selected | Status |
+|---------------|-----------------------------------|---------------|--------|
+| 24.05 | v0.0.40, v0.0.41 | **v0.0.40** | ✅ Supported |
+| 24.11 | v0.0.40, v0.0.41, v0.0.42 | **v0.0.41** | ✅ Supported |
+| 25.05 | v0.0.40, v0.0.41, v0.0.42, v0.0.43 | **v0.0.43** | ✅ Supported |
+| 25.11 | v0.0.41, v0.0.42, v0.0.43, v0.0.44 | **v0.0.44** | ✅ Supported |
+| 26.05 | v0.0.42, v0.0.43, v0.0.44, v0.0.45 | **v0.0.45** | ✅ Supported |
+| 26.11 | v0.0.43, v0.0.44, v0.0.45 (and v0.0.46 once released) | **v0.0.45** | ⏳ Pending v0.0.46 support |
+
+v0.0.40 was removed in Slurm 25.11 and v0.0.41 in 26.05; v0.0.42 is removed in 26.11.
 
 ### Automatic Version Detection
 ```go
@@ -145,7 +154,7 @@ client, err := slurm.NewClient(ctx, slurm.WithBaseURL("https://your-cluster:6820
 client, err := slurm.NewClientWithVersion(ctx, "v0.0.42", options...)
 
 // Or target a specific SLURM version
-client, err := slurm.NewClientForSlurmVersion(ctx, "25.05", options...)
+client, err := slurm.NewClientForSlurmVersion(ctx, "26.05", options...)
 ```
 
 ## 📋 Supported Versions
@@ -154,15 +163,16 @@ client, err := slurm.NewClientForSlurmVersion(ctx, "25.05", options...)
 
 | API Version | Builder Support | Mock Server | Status | Notes |
 |-------------|----------------|-------------|---------|-------|
-| v0.0.44 | ✅ Complete (129 methods) | ✅ Native | **Supported** | Latest version |
+| v0.0.45 | ✅ Builders (job, node, partition) | ✅ Native | **Supported** | Latest version (Slurm 26.05) |
+| v0.0.44 | ✅ Complete (129 methods) | ✅ Native | **Supported** | Slurm 25.11 |
 | v0.0.43 | ✅ Complete (128 methods) | ✅ Native | **Supported** | QoS, Reservations, Accounts |
-| v0.0.42 | ✅ Complete (123 methods) | ✅ Native | **Supported** | Stable baseline |
+| v0.0.42 | ✅ Complete (123 methods) | ✅ Native | **Best-effort** | Stable baseline; moved out of the latest-3 window with v0.0.45 |
 | v0.0.41 | ❌ No builders | ⚠️ Fallback | **Best-effort** | Inline schemas unsupported |
 | v0.0.40 | ✅ Complete (126 methods) | ⚠️ Fallback | **Best-effort** | Legacy support |
 
 ### Support Tiers
 
-**Supported** (v0.0.42, v0.0.43, v0.0.44):
+**Supported** (v0.0.43, v0.0.44, v0.0.45):
 - ✅ Full test coverage and validation
 - ✅ Complete builder pattern support
 - ✅ Native mock server implementations
@@ -170,7 +180,7 @@ client, err := slurm.NewClientForSlurmVersion(ctx, "25.05", options...)
 - ✅ Bug fixes and improvements
 - ✅ Documentation and examples
 
-**Best-effort** (v0.0.40, v0.0.41):
+**Best-effort** (v0.0.40, v0.0.41, v0.0.42):
 - ⚠️ Limited test coverage
 - ⚠️ Mock server uses fallback implementations
 - ⚠️ May not receive new features
@@ -192,8 +202,8 @@ When new SLURM REST API versions are released, the library follows this deprecat
 - v0.0.41, v0.0.40 marked **Deprecated**
 
 **Current Status (as of 2026-02-07):**
-- **Supported:** v0.0.44, v0.0.43, v0.0.42 (full support, regular updates)
-- **Best-effort:** v0.0.41, v0.0.40 (minimal maintenance, use at your own risk)
+- **Supported:** v0.0.45, v0.0.44, v0.0.43 (full support, regular updates)
+- **Best-effort:** v0.0.42, v0.0.41, v0.0.40 (minimal maintenance, use at your own risk)
 
 ### Migration Assistance
 

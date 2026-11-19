@@ -357,6 +357,8 @@ func (f *ClientFactory) createClient(ctx context.Context, version *versioning.AP
 		return f.createV0_0_43Client(ctx)
 	case "v0.0.44":
 		return f.createV0_0_44Client(ctx)
+	case "v0.0.45":
+		return f.createV0_0_45Client(ctx)
 	default:
 		return nil, fmt.Errorf("unsupported API version: %s", version.String())
 	}
@@ -484,6 +486,32 @@ func (f *ClientFactory) createV0_0_44Client(ctx context.Context) (SlurmClient, e
 		Debug:      f.config.Debug,
 	}
 	client, err := NewAdapterClient("v0.0.44", config)
+	if err != nil {
+		return nil, err
+	}
+	// Set the pool for proper cleanup on Close()
+	if ac, ok := client.(*AdapterClient); ok && f.enhanced != nil && f.enhanced.ConnectionPool != nil {
+		ac.SetPool(f.enhanced.ConnectionPool)
+	}
+	return client, nil
+}
+
+func (f *ClientFactory) createV0_0_45Client(ctx context.Context) (SlurmClient, error) {
+	// Create enhanced HTTP client with all features
+	httpClient := f.buildEnhancedHTTPClient(ctx)
+
+	// Apply authentication if needed
+	if f.auth != nil {
+		httpClient = createAuthenticatedHTTPClient(httpClient, f.auth)
+	}
+
+	// Use adapters for v0.0.45 as they are now implemented
+	config := &types.ClientConfig{
+		BaseURL:    f.baseURL,
+		HTTPClient: httpClient,
+		Debug:      f.config.Debug,
+	}
+	client, err := NewAdapterClient("v0.0.45", config)
 	if err != nil {
 		return nil, err
 	}

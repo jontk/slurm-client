@@ -20,7 +20,8 @@ check-mocks:
 	@if [ ! -d "tests/mocks/generated/v0_0_40" ] || \
 	    [ ! -d "tests/mocks/generated/v0_0_42" ] || \
 	    [ ! -d "tests/mocks/generated/v0_0_43" ] || \
-	    [ ! -d "tests/mocks/generated/v0_0_44" ]; then \
+	    [ ! -d "tests/mocks/generated/v0_0_44" ] || \
+	    [ ! -d "tests/mocks/generated/v0_0_45" ]; then \
 		echo "❌ Error: Mock builders not found!"; \
 		echo ""; \
 		echo "Mock builders are required for tests but not committed to git."; \
@@ -199,9 +200,9 @@ check-version:
 release-prep: check-version clean tidy fmt vet lint test
 	@echo "Release preparation complete"
 
-# Build SLURM with v0.0.44 support
+# Build SLURM with v0.0.45 support
 build-slurm:
-	@echo "Building SLURM with REST API v0.0.44 support..."
+	@echo "Building SLURM with REST API v0.0.45 support..."
 	@./tools/build-slurm.sh
 
 # Download OpenAPI specifications
@@ -212,7 +213,7 @@ download-specs:
 # Generate API clients from OpenAPI specs
 generate: install-oapi-codegen download-specs
 	@echo "Generating API clients..."
-	@for version in v0.0.40 v0.0.41 v0.0.42 v0.0.43 v0.0.44; do \
+	@for version in v0.0.40 v0.0.41 v0.0.42 v0.0.43 v0.0.44 v0.0.45; do \
 		echo "Generating client for $$version..."; \
 		go run tools/codegen/generate.go $$version || echo "Failed to generate $$version client"; \
 	done
@@ -220,7 +221,7 @@ generate: install-oapi-codegen download-specs
 # Generate mock builders from OpenAPI specs
 generate-mocks: install-oapi-codegen
 	@echo "Generating mock builders..."
-	@for version in v0.0.40 v0.0.41 v0.0.42 v0.0.43 v0.0.44; do \
+	@for version in v0.0.40 v0.0.41 v0.0.42 v0.0.43 v0.0.44 v0.0.45; do \
 		echo "Generating mock builders for $$version..."; \
 		go run tools/codegen/generate_mocks.go $$version || echo "Failed to generate $$version mocks"; \
 	done
@@ -254,12 +255,12 @@ help:
 	@echo "  install-tools   - Install development tools"
 	@echo "  install-hooks   - Install pre-commit hooks"
 	@echo "  uninstall-hooks - Uninstall pre-commit hooks"
-	@echo "  build-slurm     - Build SLURM with REST API v0.0.44 support"
+	@echo "  build-slurm     - Build SLURM with REST API v0.0.45 support"
 	@echo "  download-specs  - Download OpenAPI specifications"
 	@echo "  generate        - Generate all API clients from specs"
 	@echo "  generate-mocks  - Generate mock builders from specs"
 	@echo "  generate-all    - Generate both API clients and mock builders"
-	@echo "  generate-version - Generate specific version client (VERSION=v0.0.44)"
+	@echo "  generate-version - Generate specific version client (VERSION=v0.0.45)"
 	@echo "  tidy            - Tidy up dependencies"
 	@echo "  update          - Update dependencies"
 	@echo "  security        - Run security audit"
@@ -354,7 +355,7 @@ install-goverter: ## Install goverter tool for type converter generation
 	@echo "✓ goverter installed"
 
 .PHONY: generate-goverter
-generate-goverter: install-goverter ## Generate goverter converters for v0_0_40, v0_0_42, v0_0_43, v0_0_44
+generate-goverter: install-goverter ## Generate goverter converters for v0_0_40, v0_0_42, v0_0_43, v0_0_44, v0_0_45
 	@echo "Generating goverter converters for all active API versions..."
 	@echo "  Generating v0_0_40..."
 	@goverter gen ./internal/adapters/v0_0_40/
@@ -364,8 +365,10 @@ generate-goverter: install-goverter ## Generate goverter converters for v0_0_40,
 	@goverter gen ./internal/adapters/v0_0_43/
 	@echo "  Generating v0_0_44..."
 	@goverter gen ./internal/adapters/v0_0_44/
+	@echo "  Generating v0_0_45..."
+	@goverter gen ./internal/adapters/v0_0_45/
 	@echo "Formatting generated files..."
-	@gofmt -w internal/adapters/v0_0_40/*_goverter*.go internal/adapters/v0_0_42/*_goverter*.go internal/adapters/v0_0_43/*_goverter*.go internal/adapters/v0_0_44/*_goverter*.go
+	@gofmt -w internal/adapters/v0_0_40/*_goverter*.go internal/adapters/v0_0_42/*_goverter*.go internal/adapters/v0_0_43/*_goverter*.go internal/adapters/v0_0_44/*_goverter*.go internal/adapters/v0_0_45/*_goverter*.go
 	@echo "✓ Generated goverter converters for all versions"
 
 .PHONY: verify-goverter
@@ -373,7 +376,7 @@ verify-goverter: ## Verify goverter generated files are up to date
 	@echo "Verifying goverter generated files..."
 	@echo "Regenerating goverter converters..."
 	@$(MAKE) generate-goverter > /dev/null 2>&1
-	@if git diff --quiet internal/adapters/v0_0_40/*_goverter*.go internal/adapters/v0_0_42/*_goverter*.go internal/adapters/v0_0_43/*_goverter*.go internal/adapters/v0_0_44/*_goverter*.go 2>/dev/null; then \
+	@if git diff --quiet internal/adapters/v0_0_40/*_goverter*.go internal/adapters/v0_0_42/*_goverter*.go internal/adapters/v0_0_43/*_goverter*.go internal/adapters/v0_0_44/*_goverter*.go internal/adapters/v0_0_45/*_goverter*.go 2>/dev/null; then \
 		echo "✓ Goverter generated files are up to date"; \
 	else \
 		echo "❌ Goverter generated files are out of date!"; \

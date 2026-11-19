@@ -115,6 +115,7 @@ var SupportedVersions = []*APIVersion{
 	{Major: 0, Minor: 0, Patch: 42, Raw: "v0.0.42"},
 	{Major: 0, Minor: 0, Patch: 43, Raw: "v0.0.43"},
 	{Major: 0, Minor: 0, Patch: 44, Raw: "v0.0.44"},
+	{Major: 0, Minor: 0, Patch: 45, Raw: "v0.0.45"},
 }
 
 // LatestVersion returns the latest supported version
@@ -207,9 +208,10 @@ func DefaultCompatibilityMatrix() *VersionCompatibilityMatrix {
 		SlurmVersions: map[string][]string{
 			"v0.0.40": {"24.05", "24.11", "25.05"},
 			"v0.0.41": {"24.11", "25.05", "25.11"},
-			"v0.0.42": {"25.05", "25.11"},
-			"v0.0.43": {"25.05", "25.11"},
-			"v0.0.44": {"25.11"},
+			"v0.0.42": {"25.05", "25.11", "26.05"},
+			"v0.0.43": {"25.05", "25.11", "26.05", "26.11"},
+			"v0.0.44": {"25.11", "26.05", "26.11"},
+			"v0.0.45": {"26.05", "26.11"},
 		},
 		BreakingChanges: map[string][]BreakingChange{
 			"v0.0.40->v0.0.41": {
@@ -281,6 +283,50 @@ func DefaultCompatibilityMatrix() *VersionCompatibilityMatrix {
 					OldValue:    "",
 					NewValue:    "submit_line",
 					Mitigation:  "Field is optional, provides additional context",
+				},
+			},
+			"v0.0.44->v0.0.45": {
+				{
+					Type:        "endpoint_added",
+					Description: "Slurm and slurmdbd configuration endpoints added",
+					OldValue:    "",
+					NewValue:    "/slurm/v0.0.45/conf, /slurmdb/v0.0.45/conf",
+					Mitigation:  "Feature available only in v0.0.45+",
+				},
+				{
+					Type:        "endpoint_added",
+					Description: "Job requeue endpoints added",
+					OldValue:    "",
+					NewValue:    "/slurm/v0.0.45/job/{job_id}/requeue, /slurm/v0.0.45/jobs/requeue",
+					Mitigation:  "Feature available only in v0.0.45+",
+				},
+				{
+					Type:        "endpoint_added",
+					Description: "Partitions can be created or updated via POST",
+					OldValue:    "",
+					NewValue:    "POST /slurm/v0.0.45/partitions",
+					Mitigation:  "Feature available only in v0.0.45+",
+				},
+				{
+					Type:        "field_removed",
+					Description: "Fields deprecated in v0.0.44 were removed: node power/external_sensors/tres_weighted, job power, reservation watts, step pid, cluster select_plugin, job_desc_msg power_flags",
+					OldValue:    "power, external_sensors, tres_weighted, watts, pid, select_plugin, power_flags",
+					NewValue:    "",
+					Mitigation:  "Corresponding common-type fields are left unset when talking to v0.0.45",
+				},
+				{
+					Type:        "type_changed",
+					Description: "partition cpus.task_binding changed from an integer to a list of CPU bind flags",
+					OldValue:    "task_binding (int32)",
+					NewValue:    "task_binding ([]string flags)",
+					Mitigation:  "Common PartitionCPUs.TaskBinding is left unset for v0.0.45",
+				},
+				{
+					Type:        "field_added",
+					Description: "node suspend_time; partition flags, preempt_mode, exclusive and oversubscribe; job sluid/original_sluid/exclusive/oversubscribe; step submit_line",
+					OldValue:    "",
+					NewValue:    "suspend_time, flags, preempt_mode, exclusive, oversubscribe, sluid, original_sluid, submit_line",
+					Mitigation:  "Fields are optional, existing code unaffected",
 				},
 			},
 		},

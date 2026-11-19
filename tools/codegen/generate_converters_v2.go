@@ -116,7 +116,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	versions := []string{"v0_0_40", "v0_0_41", "v0_0_42", "v0_0_43", "v0_0_44"}
+	versions := []string{"v0_0_40", "v0_0_41", "v0_0_42", "v0_0_43", "v0_0_44", "v0_0_45"}
 
 	if *versionFlag != "" {
 		versions = []string{*versionFlag}
@@ -169,6 +169,7 @@ func generateConvertersForVersion(version string, config *GeneratorConfig) error
 		"v0_0_42": true,
 		"v0_0_43": true,
 		"v0_0_44": true,
+		"v0_0_45": true,
 	}
 	if goverterVersions[version] {
 		fmt.Printf("  Skipping %s (uses goverter)\n", version)

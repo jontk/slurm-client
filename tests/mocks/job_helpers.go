@@ -8,6 +8,7 @@ import (
 	v0_0_42 "github.com/jontk/slurm-client/internal/openapi/v0_0_42"
 	v0_0_43 "github.com/jontk/slurm-client/internal/openapi/v0_0_43"
 	v0_0_44 "github.com/jontk/slurm-client/internal/openapi/v0_0_44"
+	v0_0_45 "github.com/jontk/slurm-client/internal/openapi/v0_0_45"
 )
 
 // extractCPUs extracts the CPU count from any job version
@@ -28,6 +29,10 @@ func extractCPUs(jobInterface interface{}) int64 {
 			return int64(*job.Cpus.Number)
 		}
 	case *v0_0_44.V0044JobInfo:
+		if job.Cpus != nil && job.Cpus.Number != nil {
+			return int64(*job.Cpus.Number)
+		}
+	case *v0_0_45.V0045JobInfo:
 		if job.Cpus != nil && job.Cpus.Number != nil {
 			return int64(*job.Cpus.Number)
 		}
@@ -57,6 +62,10 @@ func extractMemory(jobInterface interface{}) int64 {
 		if job.MemoryPerNode != nil && job.MemoryPerNode.Number != nil {
 			return *job.MemoryPerNode.Number
 		}
+	case *v0_0_45.V0045JobInfo:
+		if job.MemoryPerNode != nil && job.MemoryPerNode.Number != nil {
+			return *job.MemoryPerNode.Number
+		}
 	}
 
 	return defaultMemory
@@ -80,6 +89,10 @@ func extractJobState(jobInterface interface{}) string {
 			return string((*job.JobState)[0])
 		}
 	case *v0_0_44.V0044JobInfo:
+		if job.JobState != nil && len(*job.JobState) > 0 {
+			return string((*job.JobState)[0])
+		}
+	case *v0_0_45.V0045JobInfo:
 		if job.JobState != nil && len(*job.JobState) > 0 {
 			return string((*job.JobState)[0])
 		}
