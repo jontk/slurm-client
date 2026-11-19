@@ -197,3 +197,9 @@ func TestPartitionWrite_Endpoints(t *testing.T) {
 	assert.Equal(t, http.MethodDelete, calls[2].method)
 	assert.Equal(t, "/slurm/v0.0.45/partition/p1", calls[2].path)
 }
+
+func TestAdapterCapabilities_V0045(t *testing.T) {
+	caps := NewAdapter(nil).GetCapabilities()
+	assert.True(t, caps.SupportsPartitionWrite, "partition create/update/delete are implemented for v0.0.45")
+	assert.True(t, caps.SupportsPartitions)
+}

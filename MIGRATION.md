@@ -30,15 +30,16 @@ This guide helps you migrate between SLURM REST API versions supported by this l
 
 | Feature | v0.0.40 | v0.0.41 | v0.0.42 | v0.0.43 | v0.0.44 | v0.0.45 |
 |---------|---------|---------|---------|---------|---------|---------|
-| Job Management | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Node Management | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Partition Management | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Cluster Info | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Reservation Management | ❌ | ❌ | ❌ | ✅ | ✅ |
-| QoS Management | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Account Management | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Association Management | ❌ | ❌ | ❌ | ✅ | ✅ |
-| User Management | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Job Management | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Node Management | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Partition Management | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Partition create/update/delete | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Cluster Info | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Reservation Management | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| QoS Management | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Account Management | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Association Management | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| User Management | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
 
 ## v0.0.40 → v0.0.42
 

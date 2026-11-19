@@ -1,5 +1,14 @@
 # Type Generation from OpenAPI Specification
 
+> **Note (v0.0.45):** `api/*.gen.go` were originally generated from the v0.0.44 spec. Since v0.0.45 added
+> *and removed* fields, these files are now a **manual union** of the v0.0.44 and v0.0.45 specs: every field that
+> any supported API version can fill is kept, and fields only newer versions fill are marked `(v0.0.45+)` in their
+> comments. Do **not** regenerate them from a single spec - regenerating from v0.0.44 drops the new fields and
+> regenerating from v0.0.45 drops fields the v0.0.40-v0.0.44 adapters still populate (`Power`, `SelectPlugin`,
+> reservation `Watts`, the integer `TaskBinding`, ...). To pick up changes for a new API version, generate into a
+> scratch directory (`--version 0.0.NN`), diff against the committed files and apply only the additive hunks.
+> CI does not regenerate these files.
+
 ## Overview
 
 This document explains the code generation approach for creating clean, maintainable types from the SLURM REST API OpenAPI specification.
