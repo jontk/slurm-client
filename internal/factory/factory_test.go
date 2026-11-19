@@ -387,6 +387,29 @@ func TestClientFactory_detectVersion_SlurmVersionString(t *testing.T) {
 		errorContains    string
 	}{
 		{
+			name: "OpenAPI returns Slurm-26.05.5 version string",
+			setupServer: func() *httptest.Server {
+				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if r.URL.Path == "/openapi/v3" {
+						w.Header().Set("Content-Type", "application/json")
+						resp := map[string]interface{}{
+							"info": map[string]interface{}{
+								"version": "Slurm-26.05.5",
+							},
+							"servers": []map[string]string{
+								{"url": "/"},
+							},
+						}
+						_ = json.NewEncoder(w).Encode(resp)
+					} else {
+						http.NotFound(w, r)
+					}
+				}))
+			},
+			expectedVersion: "v0.0.45",
+			expectError:     false,
+		},
+		{
 			name: "OpenAPI returns Slurm-25.11.1 version string",
 			setupServer: func() *httptest.Server {
 				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -705,6 +728,27 @@ func TestClientFactory_NewClient_WithSlurmVersionDetection(t *testing.T) {
 		expectedVersion string
 		expectError     bool
 	}{
+		{
+			name: "client creation with Slurm-26.05.5 detection",
+			setupServer: func() *httptest.Server {
+				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if r.URL.Path == "/openapi/v3" {
+						w.Header().Set("Content-Type", "application/json")
+						resp := map[string]interface{}{
+							"info": map[string]interface{}{
+								"version": "Slurm-26.05.5",
+							},
+							"servers": []map[string]string{
+								{"url": "/"},
+							},
+						}
+						_ = json.NewEncoder(w).Encode(resp)
+					}
+				}))
+			},
+			expectedVersion: "v0.0.45",
+			expectError:     false,
+		},
 		{
 			name: "client creation with Slurm-25.11.1 detection",
 			setupServer: func() *httptest.Server {
