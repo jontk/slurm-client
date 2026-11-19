@@ -44,5 +44,7 @@ type PartitionConverterGoverter interface {
 	// goverter:map SuspendTime | ConvertPartitionSuspendTime
 	// goverter:map Timeouts | ConvertPartitionTimeouts
 	// goverter:map Tres TRES | ConvertPartitionTRES
+	// goverter:ignore Flags
+	// goverter:ignore PreemptMode
 	ConvertAPIPartitionToCommon(source api.V0043PartitionInfo) *types.Partition
 }

@@ -97,6 +97,7 @@ type EntityAPIMethods struct {
 	AllocateRequestBody string `yaml:"allocate_request_body"`
 	CreateNeedsParams   bool   `yaml:"create_needs_params"` // API requires params argument for create
 	DeleteNeedsParams   bool   `yaml:"delete_needs_params"` // API requires params argument for delete
+	ManualMethods       []string `yaml:"manual_methods"`     // Methods implemented by hand (e.g. in partition_write.go); not generated
 }
 
 var (
@@ -415,7 +416,7 @@ func (a *%sAdapter) createAssociationImpl(ctx context.Context, req *types.%s) (*
 			requeueFlagConst = fmt.Sprintf("Slurm%sDeleteJobParamsFlagsFEDERATIONREQUEUE", apiPrefix)
 		}
 
-		buf.WriteString(fmt.Sprintf(`// holdJobImpl implements the Hold method
+		jobHelperCode := fmt.Sprintf(`// holdJobImpl implements the Hold method
 func (a *JobAdapter) holdJobImpl(ctx context.Context, req *types.JobHoldRequest) error {
 	// Validate context
 	if err := a.ValidateContext(ctx); err != nil {
@@ -784,7 +785,14 @@ func ptrInt32(i int32) *int32 {
 	return &i
 }
 
-`, apiPrefix, apiPrefix, apiPrefix, apiPrefix, version, apiPrefix, apiPrefix, apiPrefix, version, version, requeueFlagConst, apiPrefix, apiPrefix, apiPrefix, version, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix))
+`, apiPrefix, apiPrefix, apiPrefix, apiPrefix, version, apiPrefix, apiPrefix, apiPrefix, version, version, requeueFlagConst, apiPrefix, apiPrefix, apiPrefix, version, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix, apiPrefix)
+
+		// v0_0_45 added a real requeue endpoint (GET /job/{job_id}/requeue); the older
+		// DELETE+FEDERATION_REQUEUE approach cancels the job instead of requeueing it.
+		if versionDef.APIPackage == "v0_0_45" {
+			jobHelperCode = replaceFuncBody(jobHelperCode, "func (a *JobAdapter) requeueJobImpl(", v045RequeueImpl)
+		}
+		buf.WriteString(jobHelperCode)
 	}
 
 	// Generate node helpers
@@ -1111,6 +1119,13 @@ func New%sAdapter(client *api.ClientWithResponses) *%sAdapter {
 
 func generateMethod(method, entityName string, entityDef EntityDef,
 	versionDef VersionDef, apiMethods EntityAPIMethods) (string, error) {
+
+	// Methods implemented by hand in a non-generated file for this version
+	for _, m := range apiMethods.ManualMethods {
+		if m == method {
+			return fmt.Sprintf("// %s for %s is implemented manually (not generated)\n", strings.Title(method), entityName), nil
+		}
+	}
 
 	// Special handling for Association entity (uses query params instead of path params)
 	if entityName == "Association" {
@@ -3448,4 +3463,57 @@ func getFieldValueForEntity(entityName, fieldName string) string {
 	}
 	// Default: pointer to string
 	return "ptrString(\"test\")"
+}
+
+
+// v045RequeueImpl is the body (after the opening brace) of requeueJobImpl for v0.0.45+.
+const v045RequeueImpl = `
+	// Validate context
+	if err := a.ValidateContext(ctx); err != nil {
+		return err
+	}
+
+	// Validate job ID
+	if err := a.ValidateResourceID(jobID, "jobID"); err != nil {
+		return err
+	}
+
+	// Check client initialization
+	if err := a.CheckClientInitialized(a.client); err != nil {
+		return err
+	}
+
+	// v0.0.45 has a dedicated requeue endpoint
+	resp, err := a.client.SlurmV0045GetJobRequeueWithResponse(ctx, strconv.Itoa(int(jobID)), &api.SlurmV0045GetJobRequeueParams{})
+	if err != nil {
+		return a.HandleAPIError(err)
+	}
+
+	// Handle response errors
+	var apiErrors *api.V0045OpenapiErrors
+	if resp.JSON200 != nil {
+		apiErrors = resp.JSON200.Errors
+	} else if resp.JSONDefault != nil {
+		apiErrors = resp.JSONDefault.Errors
+	}
+	return common.HandleAPIResponse(api.NewResponseAdapter(resp.StatusCode(), apiErrors), "v0.0.45")
+`
+
+// replaceFuncBody replaces the body of the function whose signature starts with sig.
+// The function is assumed to end at the first line that is exactly "}".
+func replaceFuncBody(src, sig, body string) string {
+	start := strings.Index(src, sig)
+	if start < 0 {
+		return src
+	}
+	open := strings.Index(src[start:], "{\n")
+	if open < 0 {
+		return src
+	}
+	bodyStart := start + open + 1
+	end := strings.Index(src[bodyStart:], "\n}\n")
+	if end < 0 {
+		return src
+	}
+	return src[:bodyStart] + body + src[bodyStart+end+1:]
 }

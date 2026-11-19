@@ -164,6 +164,7 @@ func (c *NodeConverterGoverterImpl) ConvertAPINodeToCommon(source v0045.V0045Nod
 		xstring21 := *source.SpecializedCpus
 		apiNode.SpecializedCPUs = &xstring21
 	}
+	apiNode.SuspendTime = ConvertPartitionSuspendTime(source.SuspendTime)
 	if source.SpecializedMemory != nil {
 		xint643 := *source.SpecializedMemory
 		apiNode.SpecializedMemory = &xint643

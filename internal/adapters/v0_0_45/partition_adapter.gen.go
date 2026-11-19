@@ -171,26 +171,8 @@ func (a *PartitionAdapter) Get(ctx context.Context, partitionName string) (*type
 	return a.convertAPIPartitionToCommon(dataResp.Partitions[0]), nil
 }
 
-// Create is not supported in this API version
-func (a *PartitionAdapter) Create(ctx context.Context, partition *types.PartitionCreate) (*types.PartitionCreateResponse, error) {
-	return nil, errors.NewClientError(
-		errors.ErrorCodeUnsupportedOperation,
-		"partition create not supported in this version",
-		"Method not allowed (405)")
-}
+// Create for Partition is implemented manually (not generated)
 
-// Update is not supported in this API version
-func (a *PartitionAdapter) Update(ctx context.Context, partitionName string, update *types.PartitionUpdate) error {
-	return errors.NewClientError(
-		errors.ErrorCodeUnsupportedOperation,
-		"partition update not supported in this version",
-		"Method not allowed (405)")
-}
+// Update for Partition is implemented manually (not generated)
 
-// Delete is not supported in this API version
-func (a *PartitionAdapter) Delete(ctx context.Context, partitionName string) error {
-	return errors.NewClientError(
-		errors.ErrorCodeUnsupportedOperation,
-		"partition delete not supported in this version",
-		"Method not allowed (405)")
-}
+// Delete for Partition is implemented manually (not generated)

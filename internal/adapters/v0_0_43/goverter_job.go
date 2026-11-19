@@ -134,5 +134,8 @@ type JobConverterGoverter interface {
 	// Fields that don't exist in v0_0_43 (added in later versions):
 	// goverter:ignore StepID
 	// goverter:ignore SubmitLine
+	// goverter:ignore ContainerType
+	// goverter:ignore MemoryUpdateDelay
+	// goverter:ignore MemoryUpdateMargin
 	ConvertAPIJobToCommon(source api.V0043JobInfo) *types.Job
 }

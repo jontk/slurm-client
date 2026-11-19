@@ -176,6 +176,10 @@ func (c *JobWriteConverterGoverterImpl) ConvertCommonJobCreateToAPI(source *api.
 			xstring13 := *(*source).ContainerID
 			v0_0_45V0045JobDescMsg.ContainerId = &xstring13
 		}
+		if (*source).ContainerType != nil {
+			xstring14 := *(*source).ContainerType
+			v0_0_45V0045JobDescMsg.ContainerType = &xstring14
+		}
 		if (*source).Contiguous != nil {
 			xbool := *(*source).Contiguous
 			v0_0_45V0045JobDescMsg.Contiguous = &xbool
@@ -184,43 +188,47 @@ func (c *JobWriteConverterGoverterImpl) ConvertCommonJobCreateToAPI(source *api.
 			xint322 := *(*source).CoreSpecification
 			v0_0_45V0045JobDescMsg.CoreSpecification = &xint322
 		}
+		if (*source).CoresPerSocket != nil {
+			xint323 := *(*source).CoresPerSocket
+			v0_0_45V0045JobDescMsg.CoresPerSocket = &xint323
+		}
 		if (*source).CPUBinding != nil {
-			xstring14 := *(*source).CPUBinding
-			v0_0_45V0045JobDescMsg.CpuBinding = &xstring14
+			xstring15 := *(*source).CPUBinding
+			v0_0_45V0045JobDescMsg.CpuBinding = &xstring15
 		}
 		v0_0_45V0045JobDescMsg.CpuBindingFlags = ConvertCPUBindingFlagsSliceToAPI((*source).CPUBindingFlags)
 		if (*source).CPUFrequency != nil {
-			xstring15 := *(*source).CPUFrequency
-			v0_0_45V0045JobDescMsg.CpuFrequency = &xstring15
+			xstring16 := *(*source).CPUFrequency
+			v0_0_45V0045JobDescMsg.CpuFrequency = &xstring16
 		}
 		if (*source).CPUsPerTask != nil {
-			xint323 := *(*source).CPUsPerTask
-			v0_0_45V0045JobDescMsg.CpusPerTask = &xint323
+			xint324 := *(*source).CPUsPerTask
+			v0_0_45V0045JobDescMsg.CpusPerTask = &xint324
 		}
 		if (*source).CPUsPerTRES != nil {
-			xstring16 := *(*source).CPUsPerTRES
-			v0_0_45V0045JobDescMsg.CpusPerTres = &xstring16
+			xstring17 := *(*source).CPUsPerTRES
+			v0_0_45V0045JobDescMsg.CpusPerTres = &xstring17
 		}
 		v0_0_45V0045JobDescMsg.Crontab = ConvertCronEntryToAPI((*source).Crontab)
 		if (*source).CurrentWorkingDirectory != nil {
-			xstring17 := *(*source).CurrentWorkingDirectory
-			v0_0_45V0045JobDescMsg.CurrentWorkingDirectory = &xstring17
+			xstring18 := *(*source).CurrentWorkingDirectory
+			v0_0_45V0045JobDescMsg.CurrentWorkingDirectory = &xstring18
 		}
 		if (*source).Deadline != nil {
 			xint64 := *(*source).Deadline
 			v0_0_45V0045JobDescMsg.Deadline = &xint64
 		}
 		if (*source).DelayBoot != nil {
-			xint324 := *(*source).DelayBoot
-			v0_0_45V0045JobDescMsg.DelayBoot = &xint324
+			xint325 := *(*source).DelayBoot
+			v0_0_45V0045JobDescMsg.DelayBoot = &xint325
 		}
 		if (*source).Dependency != nil {
-			xstring18 := *(*source).Dependency
-			v0_0_45V0045JobDescMsg.Dependency = &xstring18
+			xstring19 := *(*source).Dependency
+			v0_0_45V0045JobDescMsg.Dependency = &xstring19
 		}
 		if (*source).Distribution != nil {
-			xstring19 := *(*source).Distribution
-			v0_0_45V0045JobDescMsg.Distribution = &xstring19
+			xstring20 := *(*source).Distribution
+			v0_0_45V0045JobDescMsg.Distribution = &xstring20
 		}
 		v0_0_45V0045JobDescMsg.DistributionPlaneSize = ConvertUint16PtrToNoValStruct((*source).DistributionPlaneSize)
 		if (*source).EndTime != nil {
@@ -230,17 +238,17 @@ func (c *JobWriteConverterGoverterImpl) ConvertCommonJobCreateToAPI(source *api.
 		v0_0_45V0045JobDescMsg.Environment = ConvertStringSliceToStringArray((*source).Environment)
 		v0_0_45V0045JobDescMsg.ExcludedNodes = ConvertStringSliceToCsvString((*source).ExcludedNodes)
 		if (*source).Extra != nil {
-			xstring20 := *(*source).Extra
-			v0_0_45V0045JobDescMsg.Extra = &xstring20
+			xstring21 := *(*source).Extra
+			v0_0_45V0045JobDescMsg.Extra = &xstring21
 		}
 		v0_0_45V0045JobDescMsg.Flags = ConvertFlagsSliceToAPI((*source).Flags)
 		if (*source).GroupID != nil {
-			xstring21 := *(*source).GroupID
-			v0_0_45V0045JobDescMsg.GroupId = &xstring21
+			xstring22 := *(*source).GroupID
+			v0_0_45V0045JobDescMsg.GroupId = &xstring22
 		}
 		if (*source).HetjobGroup != nil {
-			xint325 := *(*source).HetjobGroup
-			v0_0_45V0045JobDescMsg.HetjobGroup = &xint325
+			xint326 := *(*source).HetjobGroup
+			v0_0_45V0045JobDescMsg.HetjobGroup = &xint326
 		}
 		if (*source).Hold != nil {
 			xbool2 := *(*source).Hold
@@ -251,8 +259,8 @@ func (c *JobWriteConverterGoverterImpl) ConvertCommonJobCreateToAPI(source *api.
 			v0_0_45V0045JobDescMsg.Immediate = &xbool3
 		}
 		if (*source).JobID != nil {
-			xint326 := *(*source).JobID
-			v0_0_45V0045JobDescMsg.JobId = &xint326
+			xint327 := *(*source).JobID
+			v0_0_45V0045JobDescMsg.JobId = &xint327
 		}
 		if (*source).KillOnNodeFail != nil {
 			xbool4 := *(*source).KillOnNodeFail
@@ -261,84 +269,92 @@ func (c *JobWriteConverterGoverterImpl) ConvertCommonJobCreateToAPI(source *api.
 		v0_0_45V0045JobDescMsg.KillWarningDelay = ConvertUint16PtrToNoValStruct((*source).KillWarningDelay)
 		v0_0_45V0045JobDescMsg.KillWarningFlags = ConvertKillWarningFlagsSliceToAPI((*source).KillWarningFlags)
 		if (*source).KillWarningSignal != nil {
-			xstring22 := *(*source).KillWarningSignal
-			v0_0_45V0045JobDescMsg.KillWarningSignal = &xstring22
+			xstring23 := *(*source).KillWarningSignal
+			v0_0_45V0045JobDescMsg.KillWarningSignal = &xstring23
 		}
 		if (*source).Licenses != nil {
-			xstring23 := *(*source).Licenses
-			v0_0_45V0045JobDescMsg.Licenses = &xstring23
+			xstring24 := *(*source).Licenses
+			v0_0_45V0045JobDescMsg.Licenses = &xstring24
 		}
 		v0_0_45V0045JobDescMsg.MailType = ConvertMailTypeSliceToAPI((*source).MailType)
 		if (*source).MailUser != nil {
-			xstring24 := *(*source).MailUser
-			v0_0_45V0045JobDescMsg.MailUser = &xstring24
+			xstring25 := *(*source).MailUser
+			v0_0_45V0045JobDescMsg.MailUser = &xstring25
 		}
 		if (*source).MaximumCPUs != nil {
-			xint327 := *(*source).MaximumCPUs
-			v0_0_45V0045JobDescMsg.MaximumCpus = &xint327
+			xint328 := *(*source).MaximumCPUs
+			v0_0_45V0045JobDescMsg.MaximumCpus = &xint328
 		}
 		if (*source).MaximumNodes != nil {
-			xint328 := *(*source).MaximumNodes
-			v0_0_45V0045JobDescMsg.MaximumNodes = &xint328
+			xint329 := *(*source).MaximumNodes
+			v0_0_45V0045JobDescMsg.MaximumNodes = &xint329
 		}
 		if (*source).MCSLabel != nil {
-			xstring25 := *(*source).MCSLabel
-			v0_0_45V0045JobDescMsg.McsLabel = &xstring25
+			xstring26 := *(*source).MCSLabel
+			v0_0_45V0045JobDescMsg.McsLabel = &xstring26
 		}
 		if (*source).MemoryBinding != nil {
-			xstring26 := *(*source).MemoryBinding
-			v0_0_45V0045JobDescMsg.MemoryBinding = &xstring26
+			xstring27 := *(*source).MemoryBinding
+			v0_0_45V0045JobDescMsg.MemoryBinding = &xstring27
 		}
 		v0_0_45V0045JobDescMsg.MemoryBindingType = ConvertMemoryBindingTypeSliceToAPI((*source).MemoryBindingType)
 		v0_0_45V0045JobDescMsg.MemoryPerCpu = ConvertUint64PtrToNoValStruct((*source).MemoryPerCPU)
 		v0_0_45V0045JobDescMsg.MemoryPerNode = ConvertUint64PtrToNoValStruct((*source).MemoryPerNode)
 		if (*source).MemoryPerTRES != nil {
-			xstring27 := *(*source).MemoryPerTRES
-			v0_0_45V0045JobDescMsg.MemoryPerTres = &xstring27
+			xstring28 := *(*source).MemoryPerTRES
+			v0_0_45V0045JobDescMsg.MemoryPerTres = &xstring28
+		}
+		if (*source).MemoryUpdateDelay != nil {
+			xint3210 := *(*source).MemoryUpdateDelay
+			v0_0_45V0045JobDescMsg.MemoryUpdateDelay = &xint3210
+		}
+		if (*source).MemoryUpdateMargin != nil {
+			xint3211 := *(*source).MemoryUpdateMargin
+			v0_0_45V0045JobDescMsg.MemoryUpdateMargin = &xint3211
 		}
 		if (*source).MinimumBoardsPerNode != nil {
-			xint329 := *(*source).MinimumBoardsPerNode
-			v0_0_45V0045JobDescMsg.MinimumBoardsPerNode = &xint329
+			xint3212 := *(*source).MinimumBoardsPerNode
+			v0_0_45V0045JobDescMsg.MinimumBoardsPerNode = &xint3212
 		}
 		if (*source).MinimumCPUs != nil {
-			xint3210 := *(*source).MinimumCPUs
-			v0_0_45V0045JobDescMsg.MinimumCpus = &xint3210
+			xint3213 := *(*source).MinimumCPUs
+			v0_0_45V0045JobDescMsg.MinimumCpus = &xint3213
 		}
 		if (*source).MinimumCPUsPerNode != nil {
-			xint3211 := *(*source).MinimumCPUsPerNode
-			v0_0_45V0045JobDescMsg.MinimumCpusPerNode = &xint3211
+			xint3214 := *(*source).MinimumCPUsPerNode
+			v0_0_45V0045JobDescMsg.MinimumCpusPerNode = &xint3214
 		}
 		if (*source).MinimumNodes != nil {
-			xint3212 := *(*source).MinimumNodes
-			v0_0_45V0045JobDescMsg.MinimumNodes = &xint3212
+			xint3215 := *(*source).MinimumNodes
+			v0_0_45V0045JobDescMsg.MinimumNodes = &xint3215
 		}
 		if (*source).MinimumSocketsPerBoard != nil {
-			xint3213 := *(*source).MinimumSocketsPerBoard
-			v0_0_45V0045JobDescMsg.MinimumSocketsPerBoard = &xint3213
+			xint3216 := *(*source).MinimumSocketsPerBoard
+			v0_0_45V0045JobDescMsg.MinimumSocketsPerBoard = &xint3216
 		}
 		if (*source).Name != nil {
-			xstring28 := *(*source).Name
-			v0_0_45V0045JobDescMsg.Name = &xstring28
+			xstring29 := *(*source).Name
+			v0_0_45V0045JobDescMsg.Name = &xstring29
 		}
 		if (*source).Network != nil {
-			xstring29 := *(*source).Network
-			v0_0_45V0045JobDescMsg.Network = &xstring29
+			xstring30 := *(*source).Network
+			v0_0_45V0045JobDescMsg.Network = &xstring30
 		}
 		if (*source).Nice != nil {
-			xint3214 := *(*source).Nice
-			v0_0_45V0045JobDescMsg.Nice = &xint3214
+			xint3217 := *(*source).Nice
+			v0_0_45V0045JobDescMsg.Nice = &xint3217
 		}
 		if (*source).Nodes != nil {
-			xstring30 := *(*source).Nodes
-			v0_0_45V0045JobDescMsg.Nodes = &xstring30
+			xstring31 := *(*source).Nodes
+			v0_0_45V0045JobDescMsg.Nodes = &xstring31
 		}
 		if (*source).NtasksPerTRES != nil {
-			xint3215 := *(*source).NtasksPerTRES
-			v0_0_45V0045JobDescMsg.NtasksPerTres = &xint3215
+			xint3218 := *(*source).NtasksPerTRES
+			v0_0_45V0045JobDescMsg.NtasksPerTres = &xint3218
 		}
 		if (*source).OomKillStep != nil {
-			xint3216 := *(*source).OomKillStep
-			v0_0_45V0045JobDescMsg.OomKillStep = &xint3216
+			xint3219 := *(*source).OomKillStep
+			v0_0_45V0045JobDescMsg.OomKillStep = &xint3219
 		}
 		v0_0_45V0045JobDescMsg.OpenMode = ConvertOpenModeSliceToAPI((*source).OpenMode)
 		if (*source).Overcommit != nil {
@@ -346,18 +362,18 @@ func (c *JobWriteConverterGoverterImpl) ConvertCommonJobCreateToAPI(source *api.
 			v0_0_45V0045JobDescMsg.Overcommit = &xbool5
 		}
 		if (*source).Partition != nil {
-			xstring31 := *(*source).Partition
-			v0_0_45V0045JobDescMsg.Partition = &xstring31
+			xstring32 := *(*source).Partition
+			v0_0_45V0045JobDescMsg.Partition = &xstring32
 		}
 		if (*source).Prefer != nil {
-			xstring32 := *(*source).Prefer
-			v0_0_45V0045JobDescMsg.Prefer = &xstring32
+			xstring33 := *(*source).Prefer
+			v0_0_45V0045JobDescMsg.Prefer = &xstring33
 		}
 		v0_0_45V0045JobDescMsg.Priority = ConvertUint32PtrToNoValStruct((*source).Priority)
 		v0_0_45V0045JobDescMsg.Profile = ConvertProfileSliceToAPI((*source).Profile)
 		if (*source).QoS != nil {
-			xstring33 := *(*source).QoS
-			v0_0_45V0045JobDescMsg.Qos = &xstring33
+			xstring34 := *(*source).QoS
+			v0_0_45V0045JobDescMsg.Qos = &xstring34
 		}
 		if (*source).Reboot != nil {
 			xbool6 := *(*source).Reboot
@@ -370,130 +386,130 @@ func (c *JobWriteConverterGoverterImpl) ConvertCommonJobCreateToAPI(source *api.
 		v0_0_45V0045JobDescMsg.RequiredNodes = ConvertStringSliceToCsvString((*source).RequiredNodes)
 		v0_0_45V0045JobDescMsg.RequiredSwitches = ConvertUint32PtrToNoValStruct((*source).RequiredSwitches)
 		if (*source).Reservation != nil {
-			xstring34 := *(*source).Reservation
-			v0_0_45V0045JobDescMsg.Reservation = &xstring34
+			xstring35 := *(*source).Reservation
+			v0_0_45V0045JobDescMsg.Reservation = &xstring35
 		}
 		if (*source).ReservePorts != nil {
-			xint3217 := *(*source).ReservePorts
-			v0_0_45V0045JobDescMsg.ReservePorts = &xint3217
+			xint3220 := *(*source).ReservePorts
+			v0_0_45V0045JobDescMsg.ReservePorts = &xint3220
 		}
 		if (*source).Script != nil {
-			xstring35 := *(*source).Script
-			v0_0_45V0045JobDescMsg.Script = &xstring35
+			xstring36 := *(*source).Script
+			v0_0_45V0045JobDescMsg.Script = &xstring36
 		}
 		v0_0_45V0045JobDescMsg.SegmentSize = ConvertUint16PtrToNoValStruct((*source).SegmentSize)
 		if (*source).SelinuxContext != nil {
-			xstring36 := *(*source).SelinuxContext
-			v0_0_45V0045JobDescMsg.SelinuxContext = &xstring36
+			xstring37 := *(*source).SelinuxContext
+			v0_0_45V0045JobDescMsg.SelinuxContext = &xstring37
 		}
 		v0_0_45V0045JobDescMsg.Shared = ConvertSharedSliceToAPI((*source).Shared)
 		if (*source).SiteFactor != nil {
-			xint3218 := *(*source).SiteFactor
-			v0_0_45V0045JobDescMsg.SiteFactor = &xint3218
+			xint3221 := *(*source).SiteFactor
+			v0_0_45V0045JobDescMsg.SiteFactor = &xint3221
 		}
 		if (*source).SocketsPerNode != nil {
-			xint3219 := *(*source).SocketsPerNode
-			v0_0_45V0045JobDescMsg.SocketsPerNode = &xint3219
+			xint3222 := *(*source).SocketsPerNode
+			v0_0_45V0045JobDescMsg.SocketsPerNode = &xint3222
 		}
 		v0_0_45V0045JobDescMsg.SpankEnvironment = ConvertStringSliceToStringArray((*source).SpankEnvironment)
 		if (*source).StandardError != nil {
-			xstring37 := *(*source).StandardError
-			v0_0_45V0045JobDescMsg.StandardError = &xstring37
+			xstring38 := *(*source).StandardError
+			v0_0_45V0045JobDescMsg.StandardError = &xstring38
 		}
 		if (*source).StandardInput != nil {
-			xstring38 := *(*source).StandardInput
-			v0_0_45V0045JobDescMsg.StandardInput = &xstring38
+			xstring39 := *(*source).StandardInput
+			v0_0_45V0045JobDescMsg.StandardInput = &xstring39
 		}
 		if (*source).StandardOutput != nil {
-			xstring39 := *(*source).StandardOutput
-			v0_0_45V0045JobDescMsg.StandardOutput = &xstring39
+			xstring40 := *(*source).StandardOutput
+			v0_0_45V0045JobDescMsg.StandardOutput = &xstring40
 		}
 		if (*source).Tasks != nil {
-			xint3220 := *(*source).Tasks
-			v0_0_45V0045JobDescMsg.Tasks = &xint3220
+			xint3223 := *(*source).Tasks
+			v0_0_45V0045JobDescMsg.Tasks = &xint3223
 		}
 		if (*source).TasksPerBoard != nil {
-			xint3221 := *(*source).TasksPerBoard
-			v0_0_45V0045JobDescMsg.TasksPerBoard = &xint3221
+			xint3224 := *(*source).TasksPerBoard
+			v0_0_45V0045JobDescMsg.TasksPerBoard = &xint3224
 		}
 		if (*source).TasksPerCore != nil {
-			xint3222 := *(*source).TasksPerCore
-			v0_0_45V0045JobDescMsg.TasksPerCore = &xint3222
+			xint3225 := *(*source).TasksPerCore
+			v0_0_45V0045JobDescMsg.TasksPerCore = &xint3225
 		}
 		if (*source).TasksPerNode != nil {
-			xint3223 := *(*source).TasksPerNode
-			v0_0_45V0045JobDescMsg.TasksPerNode = &xint3223
+			xint3226 := *(*source).TasksPerNode
+			v0_0_45V0045JobDescMsg.TasksPerNode = &xint3226
 		}
 		if (*source).TasksPerSocket != nil {
-			xint3224 := *(*source).TasksPerSocket
-			v0_0_45V0045JobDescMsg.TasksPerSocket = &xint3224
+			xint3227 := *(*source).TasksPerSocket
+			v0_0_45V0045JobDescMsg.TasksPerSocket = &xint3227
 		}
 		if (*source).TemporaryDiskPerNode != nil {
-			xint3225 := *(*source).TemporaryDiskPerNode
-			v0_0_45V0045JobDescMsg.TemporaryDiskPerNode = &xint3225
+			xint3228 := *(*source).TemporaryDiskPerNode
+			v0_0_45V0045JobDescMsg.TemporaryDiskPerNode = &xint3228
 		}
 		if (*source).ThreadSpecification != nil {
-			xint3226 := *(*source).ThreadSpecification
-			v0_0_45V0045JobDescMsg.ThreadSpecification = &xint3226
+			xint3229 := *(*source).ThreadSpecification
+			v0_0_45V0045JobDescMsg.ThreadSpecification = &xint3229
 		}
 		if (*source).ThreadsPerCore != nil {
-			xint3227 := *(*source).ThreadsPerCore
-			v0_0_45V0045JobDescMsg.ThreadsPerCore = &xint3227
+			xint3230 := *(*source).ThreadsPerCore
+			v0_0_45V0045JobDescMsg.ThreadsPerCore = &xint3230
 		}
 		v0_0_45V0045JobDescMsg.TimeLimit = ConvertUint32PtrToNoValStruct((*source).TimeLimit)
 		v0_0_45V0045JobDescMsg.TimeMinimum = ConvertUint32PtrToNoValStruct((*source).TimeMinimum)
 		if (*source).TRESBind != nil {
-			xstring40 := *(*source).TRESBind
-			v0_0_45V0045JobDescMsg.TresBind = &xstring40
+			xstring41 := *(*source).TRESBind
+			v0_0_45V0045JobDescMsg.TresBind = &xstring41
 		}
 		if (*source).TRESFreq != nil {
-			xstring41 := *(*source).TRESFreq
-			v0_0_45V0045JobDescMsg.TresFreq = &xstring41
+			xstring42 := *(*source).TRESFreq
+			v0_0_45V0045JobDescMsg.TresFreq = &xstring42
 		}
 		if (*source).TRESPerJob != nil {
-			xstring42 := *(*source).TRESPerJob
-			v0_0_45V0045JobDescMsg.TresPerJob = &xstring42
+			xstring43 := *(*source).TRESPerJob
+			v0_0_45V0045JobDescMsg.TresPerJob = &xstring43
 		}
 		if (*source).TRESPerNode != nil {
-			xstring43 := *(*source).TRESPerNode
-			v0_0_45V0045JobDescMsg.TresPerNode = &xstring43
+			xstring44 := *(*source).TRESPerNode
+			v0_0_45V0045JobDescMsg.TresPerNode = &xstring44
 		}
 		if (*source).TRESPerSocket != nil {
-			xstring44 := *(*source).TRESPerSocket
-			v0_0_45V0045JobDescMsg.TresPerSocket = &xstring44
+			xstring45 := *(*source).TRESPerSocket
+			v0_0_45V0045JobDescMsg.TresPerSocket = &xstring45
 		}
 		if (*source).TRESPerTask != nil {
-			xstring45 := *(*source).TRESPerTask
-			v0_0_45V0045JobDescMsg.TresPerTask = &xstring45
+			xstring46 := *(*source).TRESPerTask
+			v0_0_45V0045JobDescMsg.TresPerTask = &xstring46
 		}
 		if (*source).UserID != nil {
-			xstring46 := *(*source).UserID
-			v0_0_45V0045JobDescMsg.UserId = &xstring46
+			xstring47 := *(*source).UserID
+			v0_0_45V0045JobDescMsg.UserId = &xstring47
 		}
 		if (*source).WaitAllNodes != nil {
 			xbool8 := *(*source).WaitAllNodes
 			v0_0_45V0045JobDescMsg.WaitAllNodes = &xbool8
 		}
 		if (*source).WaitForSwitch != nil {
-			xint3228 := *(*source).WaitForSwitch
-			v0_0_45V0045JobDescMsg.WaitForSwitch = &xint3228
+			xint3231 := *(*source).WaitForSwitch
+			v0_0_45V0045JobDescMsg.WaitForSwitch = &xint3231
 		}
 		if (*source).Wckey != nil {
-			xstring47 := *(*source).Wckey
-			v0_0_45V0045JobDescMsg.Wckey = &xstring47
+			xstring48 := *(*source).Wckey
+			v0_0_45V0045JobDescMsg.Wckey = &xstring48
 		}
 		v0_0_45V0045JobDescMsg.X11 = ConvertX11SliceToAPI((*source).X11)
 		if (*source).X11MagicCookie != nil {
-			xstring48 := *(*source).X11MagicCookie
-			v0_0_45V0045JobDescMsg.X11MagicCookie = &xstring48
+			xstring49 := *(*source).X11MagicCookie
+			v0_0_45V0045JobDescMsg.X11MagicCookie = &xstring49
 		}
 		if (*source).X11TargetHost != nil {
-			xstring49 := *(*source).X11TargetHost
-			v0_0_45V0045JobDescMsg.X11TargetHost = &xstring49
+			xstring50 := *(*source).X11TargetHost
+			v0_0_45V0045JobDescMsg.X11TargetHost = &xstring50
 		}
 		if (*source).X11TargetPort != nil {
-			xint3229 := *(*source).X11TargetPort
-			v0_0_45V0045JobDescMsg.X11TargetPort = &xint3229
+			xint3232 := *(*source).X11TargetPort
+			v0_0_45V0045JobDescMsg.X11TargetPort = &xint3232
 		}
 		pV0_0_45V0045JobDescMsg = &v0_0_45V0045JobDescMsg
 	}

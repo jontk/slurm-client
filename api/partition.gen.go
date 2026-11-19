@@ -13,6 +13,7 @@ type Partition struct {
 	Cluster *string `json:"cluster,omitempty"` // Cluster name
 	CPUs *PartitionCPUs `json:"cpus,omitempty"`
 	Defaults *PartitionDefaults `json:"defaults,omitempty"`
+	Flags []PartitionDefaultsFlagsValue `json:"flags,omitempty"` // Partition flag options (v0.0.45+)
 	GraceTime *int32 `json:"grace_time,omitempty"` // GraceTime - Grace time in seconds to be extended to a job which has been...
 	Groups *PartitionGroups `json:"groups,omitempty"`
 	Maximums *PartitionMaximums `json:"maximums,omitempty"`
@@ -21,6 +22,7 @@ type Partition struct {
 	NodeSets *string `json:"node_sets,omitempty"` // NodeSets - Comma-separated list of nodesets which are associated with this...
 	Nodes *PartitionNodes `json:"nodes,omitempty"`
 	Partition *PartitionPartition `json:"partition,omitempty"`
+	PreemptMode []PreemptModeValue `json:"preempt_mode,omitempty"` // PreemptMode - Mechanism used to preempt jobs for this partition (v0.0.45+)
 	Priority *PartitionPriority `json:"priority,omitempty"`
 	QoS *PartitionQoS `json:"qos,omitempty"`
 	SelectType []SelectTypeValue `json:"select_type,omitempty"` // Scheduler consumable resource selection type
@@ -40,7 +42,8 @@ type PartitionAccounts struct {
 
 // PartitionCPUs is a nested type within its parent.
 type PartitionCPUs struct {
-	TaskBinding *int32 `json:"task_binding,omitempty"` // CpuBind - Default method controlling how tasks are bound to allocated resources
+	TaskBinding *int32 `json:"task_binding,omitempty"` // CpuBind - Default method controlling how tasks are bound to allocated resources (v0.0.40-v0.0.44)
+	TaskBindingFlags []TaskBindingValue `json:"task_binding_flags,omitempty"` // CpuBind flags (v0.0.45+, replaces the integer task_binding)
 	Total *int32 `json:"total,omitempty"` // TotalCPUs - Number of CPUs available in this partition
 }
 
@@ -108,6 +111,8 @@ type PartitionNodes struct {
 
 // PartitionPartition is a nested type within its parent.
 type PartitionPartition struct {
+	Exclusive *string `json:"exclusive,omitempty"` // Exclusive= string (same as scontrol show partition) (v0.0.45+)
+	Oversubscribe *string `json:"oversubscribe,omitempty"` // OverSubscribe display: FORCE:n, NO, or YES:n (v0.0.45+)
 	State []StateValue `json:"state,omitempty"` // Current state(s)
 }
 
@@ -162,6 +167,23 @@ const (
 	SelectTypeCoreDefaultDistBlock SelectTypeValue = "CORE_DEFAULT_DIST_BLOCK"
 	SelectTypeLln SelectTypeValue = "LLN"
 	SelectTypeLinear SelectTypeValue = "LINEAR"
+	SelectTypeNone SelectTypeValue = "NONE"
+	SelectTypeCrCPUMemory SelectTypeValue = "CR_CPU_MEMORY"
+	SelectTypeCrCPU SelectTypeValue = "CR_CPU"
+	SelectTypeCrCoreMemory SelectTypeValue = "CR_CORE_MEMORY"
+	SelectTypeCrCore SelectTypeValue = "CR_CORE"
+	SelectTypeCrSocketMemory SelectTypeValue = "CR_SOCKET_MEMORY"
+	SelectTypeCrSocket SelectTypeValue = "CR_SOCKET"
+	SelectTypeCrMemory SelectTypeValue = "CR_MEMORY"
+	SelectTypeCrOneTaskPerCore SelectTypeValue = "CR_ONE_TASK_PER_CORE"
+	SelectTypeCrCoreDefaultDistBlock SelectTypeValue = "CR_CORE_DEFAULT_DIST_BLOCK"
+	SelectTypeCrNoDistTopoBlock SelectTypeValue = "CR_NO_DIST_TOPO_BLOCK"
+	SelectTypeCrLln SelectTypeValue = "CR_LLN"
+	SelectTypeCrPackNodes SelectTypeValue = "CR_PACK_NODES"
+	SelectTypeLlSharedGRES SelectTypeValue = "LL_SHARED_GRES"
+	SelectTypeMultipleSharingGRESPj SelectTypeValue = "MULTIPLE_SHARING_GRES_PJ"
+	SelectTypeEnforceBindingGRES SelectTypeValue = "ENFORCE_BINDING_GRES"
+	SelectTypeOneTaskPerSharingGRES SelectTypeValue = "ONE_TASK_PER_SHARING_GRES"
 )
 
 
@@ -170,3 +192,51 @@ type PartitionTRES struct {
 	BillingWeights *string `json:"billing_weights,omitempty"` // TRESBillingWeights - Billing weights of each tracked TRES type that will be...
 	Configured *string `json:"configured,omitempty"` // TRES - Number of each applicable TRES type available in this partition
 }
+
+// TaskBindingValue represents possible values for the partition CpuBind flag list (v0.0.45+).
+type TaskBindingValue string
+
+// TaskBindingValue constants.
+const (
+	TaskBindingCPUBindToThreads TaskBindingValue = "CPU_BIND_TO_THREADS"
+	TaskBindingCPUBindToCores TaskBindingValue = "CPU_BIND_TO_CORES"
+	TaskBindingCPUBindToSockets TaskBindingValue = "CPU_BIND_TO_SOCKETS"
+	TaskBindingCPUBindToLdoms TaskBindingValue = "CPU_BIND_TO_LDOMS"
+	TaskBindingCPUBindNone TaskBindingValue = "CPU_BIND_NONE"
+	TaskBindingCPUBindOff TaskBindingValue = "CPU_BIND_OFF"
+	TaskBindingVerbose TaskBindingValue = "VERBOSE"
+)
+
+// PartitionDefaultsFlagsValue represents possible values for partition flags (v0.0.45+).
+type PartitionDefaultsFlagsValue string
+
+// PartitionDefaultsFlagsValue constants.
+const (
+	PartitionDefaultsFlagsDefault PartitionDefaultsFlagsValue = "DEFAULT"
+	PartitionDefaultsFlagsHidden PartitionDefaultsFlagsValue = "HIDDEN"
+	PartitionDefaultsFlagsNoRoot PartitionDefaultsFlagsValue = "NO_ROOT"
+	PartitionDefaultsFlagsRootOnly PartitionDefaultsFlagsValue = "ROOT_ONLY"
+	PartitionDefaultsFlagsReqResv PartitionDefaultsFlagsValue = "REQ_RESV"
+	PartitionDefaultsFlagsLln PartitionDefaultsFlagsValue = "LLN"
+	PartitionDefaultsFlagsPdoi PartitionDefaultsFlagsValue = "PDOI"
+	PartitionDefaultsFlagsDefaultClear PartitionDefaultsFlagsValue = "DEFAULT_CLEAR"
+	PartitionDefaultsFlagsHiddenClear PartitionDefaultsFlagsValue = "HIDDEN_CLEAR"
+	PartitionDefaultsFlagsNoRootClear PartitionDefaultsFlagsValue = "NO_ROOT_CLEAR"
+	PartitionDefaultsFlagsRootOnlyClear PartitionDefaultsFlagsValue = "ROOT_ONLY_CLEAR"
+	PartitionDefaultsFlagsReqResvClear PartitionDefaultsFlagsValue = "REQ_RESV_CLEAR"
+	PartitionDefaultsFlagsLlnClear PartitionDefaultsFlagsValue = "LLN_CLEAR"
+	PartitionDefaultsFlagsPdoiClear PartitionDefaultsFlagsValue = "PDOI_CLEAR"
+)
+
+// PreemptModeValue represents possible values for partition preempt_mode (v0.0.45+).
+type PreemptModeValue string
+
+// PreemptModeValue constants.
+const (
+	PreemptModeClusterGlobal PreemptModeValue = "CLUSTER_GLOBAL"
+	PreemptModeDisabled PreemptModeValue = "DISABLED"
+	PreemptModeSuspend PreemptModeValue = "SUSPEND"
+	PreemptModeRequeue PreemptModeValue = "REQUEUE"
+	PreemptModeCancel PreemptModeValue = "CANCEL"
+	PreemptModePriority PreemptModeValue = "PRIORITY"
+)

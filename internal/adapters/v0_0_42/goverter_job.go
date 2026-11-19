@@ -139,5 +139,8 @@ type JobConverterGoverter interface {
 	// goverter:ignore StdinExpanded
 	// goverter:ignore StdoutExpanded
 	// goverter:ignore SubmitLine
+	// goverter:ignore ContainerType
+	// goverter:ignore MemoryUpdateDelay
+	// goverter:ignore MemoryUpdateMargin
 	ConvertAPIJobToCommon(source api.V0042JobInfo) *types.Job
 }

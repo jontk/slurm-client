@@ -258,8 +258,6 @@ type JobWriteConverterGoverter interface {
 	// goverter:map TRESPerTask TresPerTask
 	// goverter:map NtasksPerTRES NtasksPerTres
 	// goverter:map MemoryPerTRES MemoryPerTres
-	// New in v0.0.45 and not yet exposed on the common JobCreate type:
-	// goverter:ignore ContainerType CoresPerSocket MemoryUpdateDelay MemoryUpdateMargin
 	ConvertCommonJobCreateToAPI(source *types.JobCreate) *api.V0045JobDescMsg
 }
 

@@ -28,6 +28,7 @@ type Job struct {
 	Command *string `json:"command,omitempty"` // Executed command
 	Comment *string `json:"comment,omitempty"` // Arbitrary comment
 	Container *string `json:"container,omitempty"` // Absolute path to OCI container bundle
+	ContainerType *string `json:"container_type,omitempty"` // Job container type (v0.0.45+)
 	ContainerID *string `json:"container_id,omitempty"` // OCI container ID
 	Contiguous *bool `json:"contiguous,omitempty"` // True if job requires contiguous nodes
 	CoreSpec *int32 `json:"core_spec,omitempty"` // Specialized core count
@@ -77,6 +78,8 @@ type Job struct {
 	MCSLabel *string `json:"mcs_label,omitempty"` // Multi-Category Security label on the job
 	MemoryPerCPU *uint64 `json:"memory_per_cpu,omitempty"` // Minimum memory in megabytes per allocated CPU (64 bit integer number with flags)
 	MemoryPerNode *uint64 `json:"memory_per_node,omitempty"` // Minimum memory in megabytes per allocated node (64 bit integer number with...
+	MemoryUpdateDelay *int32 `json:"memory_update_delay,omitempty"` // Auto-reduce memory delay in minutes (v0.0.45+)
+	MemoryUpdateMargin *int32 `json:"memory_update_margin,omitempty"` // Auto-reduce memory margin percent (v0.0.45+)
 	MemoryPerTRES *string `json:"memory_per_tres,omitempty"` // Semicolon delimited list of TRES=# values indicating how much memory in...
 	MinimumCPUsPerNode *uint16 `json:"minimum_cpus_per_node,omitempty"` // Minimum number of CPUs per node (16 bit integer number with flags)
 	MinimumTmpDiskPerNode *uint32 `json:"minimum_tmp_disk_per_node,omitempty"` // Minimum tmp disk space required per node (32 bit integer number with flags)
@@ -167,6 +170,7 @@ const (
 	FlagsSpreadJob FlagsValue = "SPREAD_JOB"
 	FlagsPreferMinimumNodeCount FlagsValue = "PREFER_MINIMUM_NODE_COUNT"
 	FlagsJobKillHurry FlagsValue = "JOB_KILL_HURRY"
+	FlagsJobImplicitMaxNodes FlagsValue = "JOB_IMPLICIT_MAX_NODES"
 	FlagsSkipTRESStringAccounting FlagsValue = "SKIP_TRES_STRING_ACCOUNTING"
 	FlagsSiblingClusterUpdateOnly FlagsValue = "SIBLING_CLUSTER_UPDATE_ONLY"
 	FlagsHeterogeneousJob FlagsValue = "HETEROGENEOUS_JOB"

@@ -78,5 +78,6 @@ type NodeConverterGoverter interface {
 	// goverter:ignore CertFlags
 	// goverter:ignore TLSCertLastRenewal
 	// goverter:ignore Topology
+	// goverter:ignore SuspendTime
 	ConvertAPINodeToCommon(source api.V0042Node) *types.Node
 }

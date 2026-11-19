@@ -57,6 +57,7 @@ type Node struct {
 	Sockets *int32 `json:"sockets,omitempty"` // Number of physical processor sockets/chips on the node
 	SpecializedCores *int32 `json:"specialized_cores,omitempty"` // Number of cores reserved for system use
 	SpecializedCPUs *string `json:"specialized_cpus,omitempty"` // Abstract CPU IDs on this node reserved for exclusive use by slurmd and...
+	SuspendTime time.Time `json:"suspend_time,omitempty"` // Time in idle state before being considered for power save (v0.0.45+)
 	SpecializedMemory *int64 `json:"specialized_memory,omitempty"` // Combined memory limit, in MB, for Slurm compute node daemons
 	State []NodeState `json:"state,omitempty"` // Node state(s) applicable to this node
 	TemporaryDisk *int32 `json:"temporary_disk,omitempty"` // Total size in MB of temporary disk storage in TmpFS
@@ -113,6 +114,8 @@ const (
 	NodeStateInvalidReg NodeState = "INVALID_REG"
 	NodeStatePowerDown NodeState = "POWER_DOWN"
 	NodeStatePowerUp NodeState = "POWER_UP"
+	NodeStatePowerDownAsap NodeState = "POWER_DOWN_ASAP"
+	NodeStatePowerDownForce NodeState = "POWER_DOWN_FORCE"
 	NodeStatePowerDrain NodeState = "POWER_DRAIN"
 	NodeStateDynamicNorm NodeState = "DYNAMIC_NORM"
 	NodeStateBlocked NodeState = "BLOCKED"

@@ -77,9 +77,13 @@ func (c *JobConverterGoverterImpl) ConvertAPIJobToCommon(source v0045.V0045JobIn
 		xstring13 := *source.Container
 		apiJob.Container = &xstring13
 	}
+	if source.ContainerType != nil {
+		xstring14 := *source.ContainerType
+		apiJob.ContainerType = &xstring14
+	}
 	if source.ContainerId != nil {
-		xstring14 := *source.ContainerId
-		apiJob.ContainerID = &xstring14
+		xstring15 := *source.ContainerId
+		apiJob.ContainerID = &xstring15
 	}
 	if source.Contiguous != nil {
 		xbool2 := *source.Contiguous
@@ -96,54 +100,54 @@ func (c *JobConverterGoverterImpl) ConvertAPIJobToCommon(source v0045.V0045JobIn
 	apiJob.CPUs = ConvertUint32NoVal(source.Cpus)
 	apiJob.CPUsPerTask = ConvertUint16NoVal(source.CpusPerTask)
 	if source.CpusPerTres != nil {
-		xstring15 := *source.CpusPerTres
-		apiJob.CPUsPerTRES = &xstring15
+		xstring16 := *source.CpusPerTres
+		apiJob.CPUsPerTRES = &xstring16
 	}
 	if source.Cron != nil {
-		xstring16 := *source.Cron
-		apiJob.Cron = &xstring16
+		xstring17 := *source.Cron
+		apiJob.Cron = &xstring17
 	}
 	if source.CurrentWorkingDirectory != nil {
-		xstring17 := *source.CurrentWorkingDirectory
-		apiJob.CurrentWorkingDirectory = &xstring17
+		xstring18 := *source.CurrentWorkingDirectory
+		apiJob.CurrentWorkingDirectory = &xstring18
 	}
 	apiJob.Deadline = ConvertTimeNoVal(source.Deadline)
 	apiJob.DelayBoot = ConvertUint32NoVal(source.DelayBoot)
 	if source.Dependency != nil {
-		xstring18 := *source.Dependency
-		apiJob.Dependency = &xstring18
+		xstring19 := *source.Dependency
+		apiJob.Dependency = &xstring19
 	}
 	apiJob.DerivedExitCode = ConvertExitCode(source.DerivedExitCode)
 	apiJob.EligibleTime = ConvertTimeNoVal(source.EligibleTime)
 	apiJob.EndTime = ConvertTimeNoVal(source.EndTime)
 	if source.ExcludedNodes != nil {
-		xstring19 := *source.ExcludedNodes
-		apiJob.ExcludedNodes = &xstring19
+		xstring20 := *source.ExcludedNodes
+		apiJob.ExcludedNodes = &xstring20
 	}
 	apiJob.ExitCode = ConvertExitCode(source.ExitCode)
 	if source.Extra != nil {
-		xstring20 := *source.Extra
-		apiJob.Extra = &xstring20
+		xstring21 := *source.Extra
+		apiJob.Extra = &xstring21
 	}
 	if source.FailedNode != nil {
-		xstring21 := *source.FailedNode
-		apiJob.FailedNode = &xstring21
+		xstring22 := *source.FailedNode
+		apiJob.FailedNode = &xstring22
 	}
 	if source.Features != nil {
-		xstring22 := *source.Features
-		apiJob.Features = &xstring22
+		xstring23 := *source.Features
+		apiJob.Features = &xstring23
 	}
 	if source.FederationOrigin != nil {
-		xstring23 := *source.FederationOrigin
-		apiJob.FederationOrigin = &xstring23
+		xstring24 := *source.FederationOrigin
+		apiJob.FederationOrigin = &xstring24
 	}
 	if source.FederationSiblingsActive != nil {
-		xstring24 := *source.FederationSiblingsActive
-		apiJob.FederationSiblingsActive = &xstring24
+		xstring25 := *source.FederationSiblingsActive
+		apiJob.FederationSiblingsActive = &xstring25
 	}
 	if source.FederationSiblingsViable != nil {
-		xstring25 := *source.FederationSiblingsViable
-		apiJob.FederationSiblingsViable = &xstring25
+		xstring26 := *source.FederationSiblingsViable
+		apiJob.FederationSiblingsViable = &xstring26
 	}
 	apiJob.Flags = ConvertJobFlags(source.Flags)
 	apiJob.GRESDetail = ConvertJobGRESDetail(source.GresDetail)
@@ -152,13 +156,13 @@ func (c *JobConverterGoverterImpl) ConvertAPIJobToCommon(source v0045.V0045JobIn
 		apiJob.GroupID = &xint323
 	}
 	if source.GroupName != nil {
-		xstring26 := *source.GroupName
-		apiJob.GroupName = &xstring26
+		xstring27 := *source.GroupName
+		apiJob.GroupName = &xstring27
 	}
 	apiJob.HetJobID = ConvertUint32NoVal(source.HetJobId)
 	if source.HetJobIdSet != nil {
-		xstring27 := *source.HetJobIdSet
-		apiJob.HetJobIDSet = &xstring27
+		xstring28 := *source.HetJobIdSet
+		apiJob.HetJobIDSet = &xstring28
 	}
 	apiJob.HetJobOffset = ConvertUint32NoVal(source.HetJobOffset)
 	if source.Hold != nil {
@@ -174,17 +178,17 @@ func (c *JobConverterGoverterImpl) ConvertAPIJobToCommon(source v0045.V0045JobIn
 	apiJob.JobState = ConvertJobStateSlice(source.JobState)
 	apiJob.LastSchedEvaluation = ConvertTimeNoVal(source.LastSchedEvaluation)
 	if source.Licenses != nil {
-		xstring28 := *source.Licenses
-		apiJob.Licenses = &xstring28
+		xstring29 := *source.Licenses
+		apiJob.Licenses = &xstring29
 	}
 	if source.LicensesAllocated != nil {
-		xstring29 := *source.LicensesAllocated
-		apiJob.LicensesAllocated = &xstring29
+		xstring30 := *source.LicensesAllocated
+		apiJob.LicensesAllocated = &xstring30
 	}
 	apiJob.MailType = ConvertJobMailType(source.MailType)
 	if source.MailUser != nil {
-		xstring30 := *source.MailUser
-		apiJob.MailUser = &xstring30
+		xstring31 := *source.MailUser
+		apiJob.MailUser = &xstring31
 	}
 	apiJob.MaxCPUs = ConvertUint32NoVal(source.MaxCpus)
 	apiJob.MaxNodes = ConvertUint32NoVal(source.MaxNodes)
@@ -193,51 +197,59 @@ func (c *JobConverterGoverterImpl) ConvertAPIJobToCommon(source v0045.V0045JobIn
 		apiJob.MaximumSwitchWaitTime = &xint325
 	}
 	if source.McsLabel != nil {
-		xstring31 := *source.McsLabel
-		apiJob.MCSLabel = &xstring31
+		xstring32 := *source.McsLabel
+		apiJob.MCSLabel = &xstring32
 	}
 	apiJob.MemoryPerCPU = ConvertUint64NoVal(source.MemoryPerCpu)
 	apiJob.MemoryPerNode = ConvertUint64NoVal(source.MemoryPerNode)
+	if source.MemoryUpdateDelay != nil {
+		xint326 := *source.MemoryUpdateDelay
+		apiJob.MemoryUpdateDelay = &xint326
+	}
+	if source.MemoryUpdateMargin != nil {
+		xint327 := *source.MemoryUpdateMargin
+		apiJob.MemoryUpdateMargin = &xint327
+	}
 	if source.MemoryPerTres != nil {
-		xstring32 := *source.MemoryPerTres
-		apiJob.MemoryPerTRES = &xstring32
+		xstring33 := *source.MemoryPerTres
+		apiJob.MemoryPerTRES = &xstring33
 	}
 	apiJob.MinimumCPUsPerNode = ConvertUint16NoVal(source.MinimumCpusPerNode)
 	apiJob.MinimumTmpDiskPerNode = ConvertUint32NoVal(source.MinimumTmpDiskPerNode)
 	if source.Name != nil {
-		xstring33 := *source.Name
-		apiJob.Name = &xstring33
+		xstring34 := *source.Name
+		apiJob.Name = &xstring34
 	}
 	if source.Network != nil {
-		xstring34 := *source.Network
-		apiJob.Network = &xstring34
+		xstring35 := *source.Network
+		apiJob.Network = &xstring35
 	}
 	if source.Nice != nil {
-		xint326 := *source.Nice
-		apiJob.Nice = &xint326
+		xint328 := *source.Nice
+		apiJob.Nice = &xint328
 	}
 	apiJob.NodeCount = ConvertUint32NoVal(source.NodeCount)
 	if source.Nodes != nil {
-		xstring35 := *source.Nodes
-		apiJob.Nodes = &xstring35
+		xstring36 := *source.Nodes
+		apiJob.Nodes = &xstring36
 	}
 	if source.Partition != nil {
-		xstring36 := *source.Partition
-		apiJob.Partition = &xstring36
+		xstring37 := *source.Partition
+		apiJob.Partition = &xstring37
 	}
 	apiJob.PreSusTime = ConvertUint64NoVal(source.PreSusTime)
 	apiJob.PreemptTime = ConvertTimeNoVal(source.PreemptTime)
 	apiJob.PreemptableTime = ConvertTimeNoVal(source.PreemptableTime)
 	if source.Prefer != nil {
-		xstring37 := *source.Prefer
-		apiJob.Prefer = &xstring37
+		xstring38 := *source.Prefer
+		apiJob.Prefer = &xstring38
 	}
 	apiJob.Priority = ConvertUint32NoVal(source.Priority)
 	apiJob.PriorityByPartition = ConvertJobPriorityByPartition(source.PriorityByPartition)
 	apiJob.Profile = ConvertJobProfile(source.Profile)
 	if source.Qos != nil {
-		xstring38 := *source.Qos
-		apiJob.QoS = &xstring38
+		xstring39 := *source.Qos
+		apiJob.QoS = &xstring39
 	}
 	if source.Reboot != nil {
 		xbool4 := *source.Reboot
@@ -248,83 +260,83 @@ func (c *JobConverterGoverterImpl) ConvertAPIJobToCommon(source v0045.V0045JobIn
 		apiJob.Requeue = &xbool5
 	}
 	if source.RequiredNodes != nil {
-		xstring39 := *source.RequiredNodes
-		apiJob.RequiredNodes = &xstring39
+		xstring40 := *source.RequiredNodes
+		apiJob.RequiredNodes = &xstring40
 	}
 	if source.RequiredSwitches != nil {
-		xint327 := *source.RequiredSwitches
-		apiJob.RequiredSwitches = &xint327
+		xint329 := *source.RequiredSwitches
+		apiJob.RequiredSwitches = &xint329
 	}
 	apiJob.ResizeTime = ConvertTimeNoVal(source.ResizeTime)
 	if source.RestartCnt != nil {
-		xint328 := *source.RestartCnt
-		apiJob.RestartCnt = &xint328
+		xint3210 := *source.RestartCnt
+		apiJob.RestartCnt = &xint3210
 	}
 	if source.ResvName != nil {
-		xstring40 := *source.ResvName
-		apiJob.ResvName = &xstring40
+		xstring41 := *source.ResvName
+		apiJob.ResvName = &xstring41
 	}
 	if source.ScheduledNodes != nil {
-		xstring41 := *source.ScheduledNodes
-		apiJob.ScheduledNodes = &xstring41
+		xstring42 := *source.ScheduledNodes
+		apiJob.ScheduledNodes = &xstring42
 	}
 	if source.SegmentSize != nil {
-		xint329 := *source.SegmentSize
-		apiJob.SegmentSize = &xint329
+		xint3211 := *source.SegmentSize
+		apiJob.SegmentSize = &xint3211
 	}
 	if source.SelinuxContext != nil {
-		xstring42 := *source.SelinuxContext
-		apiJob.SelinuxContext = &xstring42
+		xstring43 := *source.SelinuxContext
+		apiJob.SelinuxContext = &xstring43
 	}
 	apiJob.Shared = ConvertJobShared(source.Shared)
 	if source.SocketsPerBoard != nil {
-		xint3210 := *source.SocketsPerBoard
-		apiJob.SocketsPerBoard = &xint3210
+		xint3212 := *source.SocketsPerBoard
+		apiJob.SocketsPerBoard = &xint3212
 	}
 	apiJob.SocketsPerNode = ConvertUint16NoVal(source.SocketsPerNode)
 	if source.StandardError != nil {
-		xstring43 := *source.StandardError
-		apiJob.StandardError = &xstring43
+		xstring44 := *source.StandardError
+		apiJob.StandardError = &xstring44
 	}
 	if source.StandardInput != nil {
-		xstring44 := *source.StandardInput
-		apiJob.StandardInput = &xstring44
+		xstring45 := *source.StandardInput
+		apiJob.StandardInput = &xstring45
 	}
 	if source.StandardOutput != nil {
-		xstring45 := *source.StandardOutput
-		apiJob.StandardOutput = &xstring45
+		xstring46 := *source.StandardOutput
+		apiJob.StandardOutput = &xstring46
 	}
 	apiJob.StartTime = ConvertTimeNoVal(source.StartTime)
 	if source.StateDescription != nil {
-		xstring46 := *source.StateDescription
-		apiJob.StateDescription = &xstring46
+		xstring47 := *source.StateDescription
+		apiJob.StateDescription = &xstring47
 	}
 	if source.StateReason != nil {
-		xstring47 := *source.StateReason
-		apiJob.StateReason = &xstring47
+		xstring48 := *source.StateReason
+		apiJob.StateReason = &xstring48
 	}
 	if source.StderrExpanded != nil {
-		xstring48 := *source.StderrExpanded
-		apiJob.StderrExpanded = &xstring48
+		xstring49 := *source.StderrExpanded
+		apiJob.StderrExpanded = &xstring49
 	}
 	if source.StdinExpanded != nil {
-		xstring49 := *source.StdinExpanded
-		apiJob.StdinExpanded = &xstring49
+		xstring50 := *source.StdinExpanded
+		apiJob.StdinExpanded = &xstring50
 	}
 	if source.StdoutExpanded != nil {
-		xstring50 := *source.StdoutExpanded
-		apiJob.StdoutExpanded = &xstring50
+		xstring51 := *source.StdoutExpanded
+		apiJob.StdoutExpanded = &xstring51
 	}
 	apiJob.StepID = ConvertJobStepID(source.StepId)
 	if source.SubmitLine != nil {
-		xstring51 := *source.SubmitLine
-		apiJob.SubmitLine = &xstring51
+		xstring52 := *source.SubmitLine
+		apiJob.SubmitLine = &xstring52
 	}
 	apiJob.SubmitTime = ConvertTimeNoVal(source.SubmitTime)
 	apiJob.SuspendTime = ConvertTimeNoVal(source.SuspendTime)
 	if source.SystemComment != nil {
-		xstring52 := *source.SystemComment
-		apiJob.SystemComment = &xstring52
+		xstring53 := *source.SystemComment
+		apiJob.SystemComment = &xstring53
 	}
 	apiJob.Tasks = ConvertUint32NoVal(source.Tasks)
 	apiJob.TasksPerBoard = ConvertUint16NoVal(source.TasksPerBoard)
@@ -333,55 +345,55 @@ func (c *JobConverterGoverterImpl) ConvertAPIJobToCommon(source v0045.V0045JobIn
 	apiJob.TasksPerSocket = ConvertUint16NoVal(source.TasksPerSocket)
 	apiJob.TasksPerTRES = ConvertUint16NoVal(source.TasksPerTres)
 	if source.ThreadSpec != nil {
-		xint3211 := *source.ThreadSpec
-		apiJob.ThreadSpec = &xint3211
+		xint3213 := *source.ThreadSpec
+		apiJob.ThreadSpec = &xint3213
 	}
 	apiJob.ThreadsPerCore = ConvertUint16NoVal(source.ThreadsPerCore)
 	apiJob.TimeLimit = ConvertUint32NoVal(source.TimeLimit)
 	apiJob.TimeMinimum = ConvertUint32NoVal(source.TimeMinimum)
 	if source.TresAllocStr != nil {
-		xstring53 := *source.TresAllocStr
-		apiJob.TRESAllocStr = &xstring53
+		xstring54 := *source.TresAllocStr
+		apiJob.TRESAllocStr = &xstring54
 	}
 	if source.TresBind != nil {
-		xstring54 := *source.TresBind
-		apiJob.TRESBind = &xstring54
+		xstring55 := *source.TresBind
+		apiJob.TRESBind = &xstring55
 	}
 	if source.TresFreq != nil {
-		xstring55 := *source.TresFreq
-		apiJob.TRESFreq = &xstring55
+		xstring56 := *source.TresFreq
+		apiJob.TRESFreq = &xstring56
 	}
 	if source.TresPerJob != nil {
-		xstring56 := *source.TresPerJob
-		apiJob.TRESPerJob = &xstring56
+		xstring57 := *source.TresPerJob
+		apiJob.TRESPerJob = &xstring57
 	}
 	if source.TresPerNode != nil {
-		xstring57 := *source.TresPerNode
-		apiJob.TRESPerNode = &xstring57
+		xstring58 := *source.TresPerNode
+		apiJob.TRESPerNode = &xstring58
 	}
 	if source.TresPerSocket != nil {
-		xstring58 := *source.TresPerSocket
-		apiJob.TRESPerSocket = &xstring58
+		xstring59 := *source.TresPerSocket
+		apiJob.TRESPerSocket = &xstring59
 	}
 	if source.TresPerTask != nil {
-		xstring59 := *source.TresPerTask
-		apiJob.TRESPerTask = &xstring59
+		xstring60 := *source.TresPerTask
+		apiJob.TRESPerTask = &xstring60
 	}
 	if source.TresReqStr != nil {
-		xstring60 := *source.TresReqStr
-		apiJob.TRESReqStr = &xstring60
+		xstring61 := *source.TresReqStr
+		apiJob.TRESReqStr = &xstring61
 	}
 	if source.UserId != nil {
-		xint3212 := *source.UserId
-		apiJob.UserID = &xint3212
+		xint3214 := *source.UserId
+		apiJob.UserID = &xint3214
 	}
 	if source.UserName != nil {
-		xstring61 := *source.UserName
-		apiJob.UserName = &xstring61
+		xstring62 := *source.UserName
+		apiJob.UserName = &xstring62
 	}
 	if source.Wckey != nil {
-		xstring62 := *source.Wckey
-		apiJob.Wckey = &xstring62
+		xstring63 := *source.Wckey
+		apiJob.Wckey = &xstring63
 	}
 	return &apiJob
 }

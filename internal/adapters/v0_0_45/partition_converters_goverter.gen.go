@@ -23,6 +23,7 @@ func (c *PartitionConverterGoverterImpl) ConvertAPIPartitionToCommon(source v004
 	}
 	apiPartition.CPUs = ConvertPartitionCPUs(source.Cpus)
 	apiPartition.Defaults = ConvertPartitionDefaults(source.Defaults)
+	apiPartition.Flags = ConvertPartitionFlags(source.Flags)
 	if source.GraceTime != nil {
 		xint32 := *source.GraceTime
 		apiPartition.GraceTime = &xint32
@@ -40,6 +41,7 @@ func (c *PartitionConverterGoverterImpl) ConvertAPIPartitionToCommon(source v004
 	}
 	apiPartition.Nodes = ConvertPartitionNodes(source.Nodes)
 	apiPartition.Partition = ConvertPartitionPartition(source.Partition)
+	apiPartition.PreemptMode = ConvertPartitionPreemptMode(source.PreemptMode)
 	apiPartition.Priority = ConvertPartitionPriority(source.Priority)
 	apiPartition.QoS = ConvertPartitionQoS(source.Qos)
 	apiPartition.SelectType = ConvertPartitionSelectType(source.SelectType)

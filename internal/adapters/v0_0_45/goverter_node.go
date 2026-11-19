@@ -24,6 +24,7 @@ import (
 // goverter:extend ConvertResumeAfterGoverter
 // goverter:extend ConvertCertFlagsGoverter
 // goverter:extend ConvertCSVStringToSlice
+// goverter:extend ConvertPartitionSuspendTime
 type NodeConverterGoverter interface {
 	// ConvertAPINodeToCommon converts API V0045Node to common Node type
 	//
@@ -44,6 +45,7 @@ type NodeConverterGoverter interface {
 	// Custom helpers:
 	// goverter:map Energy | ConvertNodeEnergyGoverter
 	// goverter:map ResumeAfter | ConvertResumeAfterGoverter
+	// goverter:map SuspendTime | ConvertPartitionSuspendTime
 	// goverter:map CertFlags | ConvertCertFlagsGoverter
 	//
 	// CSV string to slice:

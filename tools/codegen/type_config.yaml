@@ -106,6 +106,59 @@ defaults:
 # Version-specific configurations
 # Each version can override any of the defaults above
 versions:
+  "0.0.45":
+    # Write entities for v0.0.45
+    write_entities:
+      job_desc_msg: JobCreate
+      reservation_desc_msg: ReservationCreate
+      update_node_msg: NodeUpdate
+
+    # Additional type unwraps specific to v0.0.45
+    type_unwrap:
+      # Primitive wrappers
+      uint32_no_val_struct: uint32
+      uint64_no_val_struct: uint64
+      uint16_no_val_struct: uint16
+      int32_no_val_struct: int32
+      float64_no_val_struct: float64
+      # Special types
+      csv_string: "[]string"
+      string_array: "[]string"
+      hostlist_string: "[]string"
+      hostlist: "[]string"
+      # List types
+      accounting_list: "[]Accounting"
+      assoc_short_list: "[]AssocShort"
+      coord_list: "[]Coord"
+      qos_string_id_list: "[]string"
+      tres_list: "[]TRES"
+      # Array type aliases
+      job_info_gres_detail: "[]string"
+      priority_by_partition: "[]JobPartitionPriority"
+      qos_preempt_list: "[]string"
+      job_res_nodes: "[]JobResNode"
+      reservation_info_core_spec: "[]ReservationCoreSpec"
+      wckey_list: "[]WCKey"
+      job_res_socket_array: "[]JobResSocket"
+      job_res_core_array: "[]JobResCore"
+
+    # Auxiliary types to generate (in addition to base entities)
+    auxiliary_types:
+      accounting: Accounting
+      assoc_short: AssocShort
+      coord: Coord
+      tres: TRES
+      job_res: JobResources
+      acct_gather_energy: NodeEnergy
+      process_exit_code_verbose: ExitCode
+      slurm_step_id: StepID
+      reservation_core_spec: ReservationCoreSpec
+      part_prio: JobPartitionPriority
+      wckey: WCKey
+      job_res_node: JobResNode
+      job_res_socket: JobResSocket
+      job_res_core: JobResCore
+
   "0.0.44":
     # Write entities for v0.0.44
     write_entities:

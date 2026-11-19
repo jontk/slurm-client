@@ -156,14 +156,8 @@ func (a *JobAdapter) requeueJobImpl(ctx context.Context, jobID int32) error {
 		return err
 	}
 
-	// Job requeue uses DELETE with FEDERATION_REQUEUE flag
-	requeueFlag := api.SlurmV0045DeleteJobParamsFlagsFEDERATIONREQUEUE
-	params := &api.SlurmV0045DeleteJobParams{
-		Flags: &requeueFlag,
-	}
-
-	// Call the API to requeue the job
-	resp, err := a.client.SlurmV0045DeleteJobWithResponse(ctx, strconv.Itoa(int(jobID)), params)
+	// v0.0.45 has a dedicated requeue endpoint
+	resp, err := a.client.SlurmV0045GetJobRequeueWithResponse(ctx, strconv.Itoa(int(jobID)), &api.SlurmV0045GetJobRequeueParams{})
 	if err != nil {
 		return a.HandleAPIError(err)
 	}
@@ -175,12 +169,7 @@ func (a *JobAdapter) requeueJobImpl(ctx context.Context, jobID int32) error {
 	} else if resp.JSONDefault != nil {
 		apiErrors = resp.JSONDefault.Errors
 	}
-	responseAdapter := api.NewResponseAdapter(resp.StatusCode(), apiErrors)
-	if err := common.HandleAPIResponse(responseAdapter, "v0.0.45"); err != nil {
-		return err
-	}
-
-	return nil
+	return common.HandleAPIResponse(api.NewResponseAdapter(resp.StatusCode(), apiErrors), "v0.0.45")
 }
 
 // NOTE: watchJobsImpl is intentionally NOT generated here.

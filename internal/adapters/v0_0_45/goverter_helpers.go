@@ -739,9 +739,11 @@ func ConvertPartitionCPUs(source *struct {
 		return nil
 	}
 	return &types.PartitionCPUs{
-		// v0.0.45 changed task_binding from an int32 to a list of CPU bind flags.
-		TaskBinding: nil,
-		Total:       source.Total,
+		// v0.0.45 changed task_binding from an int32 to a list of CPU bind flags;
+		// the integer field stays nil and the flags are exposed as TaskBindingFlags.
+		TaskBinding:      nil,
+		TaskBindingFlags: convertTaskBindingFlags(source.TaskBinding),
+		Total:            source.Total,
 	}
 }
 
@@ -886,7 +888,10 @@ func ConvertPartitionPartition(source *struct {
 	if source == nil {
 		return nil
 	}
-	result := &types.PartitionPartition{}
+	result := &types.PartitionPartition{
+		Exclusive:     source.Exclusive,
+		Oversubscribe: source.Oversubscribe,
+	}
 	if source.State != nil {
 		states := make([]types.StateValue, len(*source.State))
 		for i, s := range *source.State {
@@ -938,6 +943,44 @@ func ConvertPartitionSelectType(source *[]api.V0045PartitionInfoSelectType) []ty
 	result := make([]types.SelectTypeValue, len(*source))
 	for i, s := range *source {
 		result[i] = types.SelectTypeValue(string(s))
+	}
+	return result
+}
+
+// convertTaskBindingFlags converts the v0.0.45 task_binding flag list to common values.
+func convertTaskBindingFlags(source *[]api.V0045PartitionInfoCpusTaskBinding) []types.TaskBindingValue {
+	if source == nil || len(*source) == 0 {
+		return nil
+	}
+	result := make([]types.TaskBindingValue, len(*source))
+	for i, f := range *source {
+		result[i] = types.TaskBindingValue(string(f))
+	}
+	return result
+}
+
+// ConvertPartitionFlags converts API PartitionInfo Flags to common PartitionDefaultsFlagsValue slice.
+// Used by goverter as an extend function.
+func ConvertPartitionFlags(source *[]api.V0045PartitionInfoFlags) []types.PartitionDefaultsFlagsValue {
+	if source == nil || len(*source) == 0 {
+		return nil
+	}
+	result := make([]types.PartitionDefaultsFlagsValue, len(*source))
+	for i, f := range *source {
+		result[i] = types.PartitionDefaultsFlagsValue(string(f))
+	}
+	return result
+}
+
+// ConvertPartitionPreemptMode converts API PartitionInfo PreemptMode to common PreemptModeValue slice.
+// Used by goverter as an extend function.
+func ConvertPartitionPreemptMode(source *[]api.V0045PartitionInfoPreemptMode) []types.PreemptModeValue {
+	if source == nil || len(*source) == 0 {
+		return nil
+	}
+	result := make([]types.PreemptModeValue, len(*source))
+	for i, f := range *source {
+		result[i] = types.PreemptModeValue(string(f))
 	}
 	return result
 }

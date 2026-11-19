@@ -132,5 +132,8 @@ type JobConverterGoverter interface {
 	//
 	// Complex nested type conversions:
 	// goverter:map JobResources | ConvertJobResources
+	// goverter:ignore ContainerType
+	// goverter:ignore MemoryUpdateDelay
+	// goverter:ignore MemoryUpdateMargin
 	ConvertAPIJobToCommon(source api.V0044JobInfo) *types.Job
 }

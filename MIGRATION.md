@@ -445,14 +445,25 @@ corresponding fields are left unset when the server speaks v0.0.45.
 
 **Changed:**
 - Partition `cpus.task_binding` is now a list of CPU-bind flags instead of an integer. `PartitionCPUs.TaskBinding`
-  (`*int32`) is therefore nil for v0.0.45.
+  (`*int32`) is therefore nil for v0.0.45; the flags are available as `PartitionCPUs.TaskBindingFlags`.
+- `JobManager.Requeue` now uses the dedicated `GET /slurm/v0.0.45/job/{job_id}/requeue` endpoint. On earlier
+  versions it issued `DELETE ...?flags=FEDERATION_REQUEUE`, which cancels the job (see issue `slurm-client-5vu`).
 
-**Added on the server (not yet surfaced on the common types):**
-- Endpoints: `POST /slurm/v0.0.45/partitions` (create/update), `/slurm/v0.0.45/job/{job_id}/requeue`,
-  `/slurm/v0.0.45/jobs/requeue`, `/slurm/v0.0.45/conf`, `/slurmdb/v0.0.45/conf`
-- Fields: node `suspend_time`; partition `flags`, `preempt_mode`, `exclusive`, `oversubscribe`; job `sluid`,
-  `original_sluid`; step `submit_line`; job request `container_type`, `cores_per_socket`,
-  `memory_update_delay`, `memory_update_margin`
+**Added (all additive, nil/empty on older API versions):**
+- `Node.SuspendTime`
+- `Partition.Flags`, `Partition.PreemptMode`, `Partition.Partition.Exclusive`, `Partition.Partition.Oversubscribe`,
+  `PartitionCPUs.TaskBindingFlags`
+- `Job.ContainerType`, `Job.MemoryUpdateDelay`, `Job.MemoryUpdateMargin`
+- `JobCreate.ContainerType`, `JobCreate.CoresPerSocket`, `JobCreate.MemoryUpdateDelay`, `JobCreate.MemoryUpdateMargin`
+  (sent only when talking to v0.0.45; older API versions ignore them)
+- New enum values for `SelectTypeValue`, `NodeState` (`POWER_DOWN_ASAP`, `POWER_DOWN_FORCE`) and `FlagsValue`
+- **Partition management**: `PartitionManager.Create`, `Update` and `Delete` work on v0.0.45
+  (`POST /slurm/v0.0.45/partitions`, `DELETE /slurm/v0.0.45/partition/{name}`). `PartitionCreate`/`PartitionUpdate`
+  settings that v0.0.45 cannot express (`TresStr`, `SelectTypeParameters`, `PowerDownOnIdle`) are rejected with a
+  validation error rather than silently dropped. Earlier API versions still return "unsupported".
+
+**Not yet exposed:** the slurmctld/slurmdbd configuration endpoints (`/slurm/v0.0.45/conf`, `/slurmdb/v0.0.45/conf`)
+and the bulk `POST /slurm/v0.0.45/jobs/requeue`.
 
 ### Migration Steps
 

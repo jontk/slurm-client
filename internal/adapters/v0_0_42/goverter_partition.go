@@ -47,5 +47,7 @@ type PartitionConverterGoverter interface {
 	//
 	// Fields that don't exist in v0_0_42 (added in later versions):
 	// goverter:ignore Topology
+	// goverter:ignore Flags
+	// goverter:ignore PreemptMode
 	ConvertAPIPartitionToCommon(source api.V0042PartitionInfo) *types.Partition
 }

@@ -371,6 +371,8 @@ versions:
         get_params: "SlurmV0045GetPartitionParams"
         response_list: "Partitions"
         api_type: "V0045PartitionInfo"
+        # v0.0.45 added POST /partitions and DELETE /partition/{name}; implemented in partition_write.go
+        manual_methods: ["create", "update", "delete"]
       QoS:
         list: "SlurmdbV0045GetQosWithResponse"
         get: "SlurmdbV0045GetSingleQosWithResponse"

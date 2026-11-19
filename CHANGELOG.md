@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Partition create/update/delete** on API v0.0.45 (`POST /partitions`, `DELETE /partition/{name}`); settings v0.0.45 cannot express are rejected, not dropped
+- New additive fields on the public types: `Node.SuspendTime`, `Partition.Flags`/`PreemptMode`, `PartitionPartition.Exclusive`/`Oversubscribe`, `PartitionCPUs.TaskBindingFlags`, `Job.ContainerType`/`MemoryUpdateDelay`/`MemoryUpdateMargin`, and `JobCreate.ContainerType`/`CoresPerSocket`/`MemoryUpdateDelay`/`MemoryUpdateMargin`
+- Code generator support for hand-written adapter methods (`manual_methods` in `adapter_config.yaml`) and a v0.0.45 section in `type_config.yaml`
 - **Slurm REST API v0.0.45 support (Slurm 26.05)**: new generated OpenAPI client (`internal/openapi/v0_0_45`),
   full adapter set (`internal/adapters/v0_0_45`), factory/version wiring, mock builders and versioned mock handlers
   - Spec generated from Slurm 26.05.5 with `slurmrestd --generate-openapi-spec -d v0.0.45`
@@ -16,11 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - v0.0.45 removes fields deprecated in v0.0.44 (node/job `power`, node `external_sensors`/`tres_weighted`,
   reservation `watts`, cluster `select_plugin`, job_desc_msg `power_flags`); the matching common-type fields are left unset
-- v0.0.45 changes partition `cpus.task_binding` from an integer to a list of flags; `PartitionCPUs.TaskBinding` is nil for v0.0.45
+- v0.0.45 changes partition `cpus.task_binding` from an integer to a list of flags; `PartitionCPUs.TaskBinding` is nil for v0.0.45 and the flags are in `TaskBindingFlags`
 - Support window moved to v0.0.43-v0.0.45; v0.0.42 is now best-effort (see README deprecation policy)
 - Tooling updated for v0.0.45 (Makefile, `download-specs.sh`, `build-slurm.sh`, codegen configs, mock generator)
 
 ### Fixed
+- **`Requeue` on v0.0.45 cancelled the job** (it used `DELETE` with `FEDERATION_REQUEUE`); it now uses the dedicated requeue endpoint. v0.0.40-v0.0.44 are likely affected too and are tracked separately
 - README Slurm-to-API compatibility table contradicted the version matrix and omitted 25.11/26.05
 - Mock server `v0.0.44` job submission built v0.0.43 job objects; it now uses the v0.0.44 builder
 - `doc.go` listed incorrect Slurm releases for each API version

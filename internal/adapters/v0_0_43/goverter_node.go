@@ -73,5 +73,6 @@ type NodeConverterGoverter interface {
 	// goverter:map Tres TRES
 	// goverter:map TresUsed TRESUsed
 	// goverter:map TresWeighted TRESWeighted
+	// goverter:ignore SuspendTime
 	ConvertAPINodeToCommon(source api.V0043Node) *types.Node
 }

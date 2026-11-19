@@ -21,6 +21,10 @@ type JobCreate struct {
 	Comment *string `json:"comment,omitempty"` // Arbitrary comment made by user
 	Constraints *string `json:"constraints,omitempty"` // Comma-separated list of features that are required
 	Container *string `json:"container,omitempty"` // Absolute path to OCI container bundle
+	ContainerType *string `json:"container_type,omitempty"` // Job container type (v0.0.45+; ignored by older API versions)
+	CoresPerSocket *int32 `json:"cores_per_socket,omitempty"` // Cores per socket required (v0.0.45+; ignored by older API versions)
+	MemoryUpdateDelay *int32 `json:"memory_update_delay,omitempty"` // Auto-reduce memory delay in minutes (v0.0.45+; ignored by older API versions)
+	MemoryUpdateMargin *int32 `json:"memory_update_margin,omitempty"` // Auto-reduce memory margin percent (v0.0.45+; ignored by older API versions)
 	ContainerID *string `json:"container_id,omitempty"` // OCI container ID
 	Contiguous *bool `json:"contiguous,omitempty"` // True if job requires contiguous nodes
 	CoreSpecification *int32 `json:"core_specification,omitempty"` // Specialized core count

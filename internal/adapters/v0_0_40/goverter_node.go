@@ -75,5 +75,6 @@ type NodeConverterGoverter interface {
 	// goverter:ignore Topology
 	// goverter:ignore GPUSpec
 	// goverter:ignore ResCoresPerGPU
+	// goverter:ignore SuspendTime
 	ConvertAPINodeToCommon(source api.V0040Node) *types.Node
 }

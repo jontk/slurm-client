@@ -24,6 +24,8 @@ import (
 // goverter:extend ConvertPartitionQoS
 // goverter:extend ConvertPartitionSelectType
 // goverter:extend ConvertPartitionSuspendTime
+// goverter:extend ConvertPartitionFlags
+// goverter:extend ConvertPartitionPreemptMode
 // goverter:extend ConvertPartitionTimeouts
 // goverter:extend ConvertPartitionTRES
 //
@@ -42,6 +44,8 @@ type PartitionConverterGoverter interface {
 	// goverter:map Qos QoS | ConvertPartitionQoS
 	// goverter:map SelectType | ConvertPartitionSelectType
 	// goverter:map SuspendTime | ConvertPartitionSuspendTime
+	// goverter:map Flags | ConvertPartitionFlags
+	// goverter:map PreemptMode | ConvertPartitionPreemptMode
 	// goverter:map Timeouts | ConvertPartitionTimeouts
 	// goverter:map Tres TRES | ConvertPartitionTRES
 	ConvertAPIPartitionToCommon(source api.V0045PartitionInfo) *types.Partition
